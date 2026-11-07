@@ -35,6 +35,8 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Zoom | roda do mouse |
 | Menu (voltar ao 2D) / ajuda | **Esc** / **H** |
 
+**Mascotes:** ao criar o personagem você escolhe um companheiro — ⚔️ Faísca (ataque), 💚 Bolhinha (suporte) ou 🛡️ Pedrinho (guardião). Ele te segue, ganha EXP junto com você e evolui no Nv. 10 e no Nv. 25. A linha de evolução aparece na Árvore de Classes (**T**).
+
 O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mundo contínuo; heróis e esqueletos animados; monstros fofos; combate com alvo; habilidades; troca de classe com a Mestra Ivra; cura com a Irmã Clara; **loja do Bento**; saque de itens e cartas; **as mesmas janelas do 2D** (C, I, E, K, T, L, H); **sugestões com Q** (clique em qualquer coisa do mundo 3D); **God Mode (Z)** e **Painel do Mestre (⌘Z)** com troca de classe e teleporte pelo mapa do mundo.
 
 ### Pausa e sugestões (seu canal direto com o Claude)

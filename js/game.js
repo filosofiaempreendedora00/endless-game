@@ -34,7 +34,7 @@ function initRuntime(p) {
     dead: false, buffs: {}, cds: {}, atkT: -9, regenHp: 0, regenSp: 0, d: {}, repathT: 0, say: null,
   });
 }
-const SAVE_FIELDS = ['charId', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
+const SAVE_FIELDS = ['charId', 'pet', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
 function saveGame() {
   if (!G.player || G.state === 'title') return;
   const s = {}; for (const k of SAVE_FIELDS) s[k] = G.player[k];

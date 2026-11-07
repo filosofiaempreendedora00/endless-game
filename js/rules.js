@@ -129,3 +129,21 @@ function rollMagic(p, m, mult, element) {
   dmg *= 100 / (100 + m.def.mdef);
   return { dmg: Math.max(1, Math.round(dmg)) };
 }
+
+/* ---------------- Mascotes ---------------- */
+function petStage(pet) { let s = 0; for (let i = 0; i < PET_EVOLVE.length; i++) if (pet.lv >= PET_EVOLVE[i]) s = i; return s; }
+function petInfo(pet) { const sp = PETS[pet.species], st = petStage(pet); return { ...sp.stages[st], stage: st, species: sp }; }
+function petExpNext(lv) { return Math.floor(18 * lv * lv + 30 * lv + 20); }
+function newPet(species) { return { species, lv: 1, exp: 0 }; }
+// dá EXP ao mascote; devolve { up: níveis ganhos, evolved: novo estágio ou null }
+function petGainExp(pet, amount) {
+  if (!pet || pet.lv >= PET_MAX_LV) return { up: 0, evolved: null };
+  const before = petStage(pet); let up = 0;
+  pet.exp += Math.max(1, Math.floor(amount));
+  while (pet.lv < PET_MAX_LV && pet.exp >= petExpNext(pet.lv)) { pet.exp -= petExpNext(pet.lv); pet.lv++; up++; }
+  if (pet.lv >= PET_MAX_LV) pet.exp = 0;
+  const after = petStage(pet);
+  return { up, evolved: after > before ? after : null };
+}
+// força do mascote (usada nos ataques, curas e proteção)
+function petPower(pet) { const st = petStage(pet); return { atk: Math.round((8 + pet.lv * 3.2) * (1 + st * 0.6)), heal: 0.05 + st * 0.03, guard: 8 + st * 6, speedMult: 1 + st * 0.2 }; }

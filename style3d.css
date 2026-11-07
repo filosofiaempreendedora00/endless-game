@@ -45,3 +45,39 @@ body.g3d { background: #9fd3ff; }
 #mybars.low .hp > div { background: linear-gradient(#ff7a7a, #d83a3a); }
 #mybars .sp { height: 4px; }
 #mybars .sp > div { background: linear-gradient(#8ab8ff, #3a7aff); }
+
+/* ---- Minimapa estilo WoW ---- */
+#minimap-wrap { background: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; backdrop-filter: none !important; text-align: center; }
+#minimap { border: none !important; border-radius: 50%; display: block; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6)); }
+#mapname { display: inline-block; margin: 0 auto 4px; padding: 3px 12px; border-radius: 10px; background: linear-gradient(rgba(30, 22, 8, 0.92), rgba(18, 14, 6, 0.92)); border: 1px solid #c9a24a; font-family: Cinzel, serif; font-size: 12px; color: #ffe9a8; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+#mapname small { font-family: Nunito; color: #d8c89a; }
+.mm-zoom { position: absolute; right: 2px; bottom: 6px; display: flex; flex-direction: column; gap: 3px; }
+.mm-zoom button { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #c9a24a; background: radial-gradient(#3a2e14, #1a140a); color: #ffe9a8; font-weight: 800; cursor: pointer; line-height: 18px; padding: 0; }
+.mm-zoom button:hover { background: radial-gradient(#5a4520, #2a200e); }
+#minimap-wrap { position: fixed; }
+#menubar { top: 222px; }
+
+/* ---- Painel do Mestre ---- */
+#win-admin .win-body { display: flex; flex-direction: column; gap: 10px; }
+.adm-card { background: linear-gradient(rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.18)); border: 1px solid var(--border-soft); border-radius: 12px; padding: 10px 12px; }
+.adm-card-h { font-family: Cinzel, serif; color: var(--gold); font-size: 13px; margin-bottom: 8px; }
+.adm-godcard { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.adm-godcard .adm-card-h { margin-bottom: 2px; }
+.adm-godcard.on { border-color: var(--gold); box-shadow: 0 0 16px rgba(255, 215, 106, 0.25) inset; }
+.adm-switch { width: 52px; height: 28px; border-radius: 14px; border: 1px solid var(--border-soft); background: rgba(0, 0, 0, 0.5); position: relative; cursor: pointer; flex: none; }
+.adm-switch span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #8a8698; transition: left 0.15s, background 0.15s; }
+.adm-switch.on { background: linear-gradient(#c9a24a, #8a6a2a); border-color: var(--gold); }
+.adm-switch.on span { left: 27px; background: #fff6d0; }
+.adm-tier { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 5px; }
+.adm-tier-n { width: 64px; flex: none; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding-top: 7px; }
+.adm-classgrid { display: flex; flex-wrap: wrap; gap: 5px; }
+.adm-class { display: flex; align-items: center; gap: 5px; padding: 4px 10px 4px 6px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0, 0, 0, 0.35); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.adm-class span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, 0.08); }
+.adm-class:hover { border-color: var(--border); }
+.adm-class.on { border-color: var(--gold); background: rgba(201, 162, 74, 0.28); }
+.adm-mapframe { border-radius: 10px; overflow: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+#adm-map3d { display: block; width: 100% !important; max-width: none; height: auto; border: none; border-radius: 0; cursor: crosshair; }
+.adm-info { text-align: center; margin: 6px 0; font-size: 12px; min-height: 18px; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.adm-chip { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-soft); background: rgba(0, 0, 0, 0.3); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.adm-chip:hover { border-color: var(--gold); background: rgba(201, 162, 74, 0.18); }

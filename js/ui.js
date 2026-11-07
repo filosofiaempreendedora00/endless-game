@@ -56,6 +56,7 @@ const UI = {
       e.stopPropagation();
     });
     $('st-alert').onclick = e => { const w = e.target.dataset.win; if (w) this.open(w); };
+    if ($('st-pet')) $('st-pet').onclick = () => this.open('tree');
   },
 
   markDirty() { this.dirty = true; },
@@ -347,9 +348,16 @@ const UI = {
     const sel = this.treeSel || p.cls, c = CLASSES[sel];
     const skl = c.skills.map(id => `<span class="tag" data-tip="skill:${id}" style="font-size:12px;padding:2px 6px">${SKILLS[id].icon} ${SKILLS[id].name}</span>`).join(' ');
     const ws = c.weapons.map(w => WEAPON_TYPES[w].name).join(', ');
+    // evolução dos mascotes (abaixo das classes)
+    const pet = p.pet;
+    const petHtml = typeof PETS === 'undefined' ? '' : `<div class="pet-evo"><h4>🐾 Evolução dos Mascotes</h4>${Object.keys(PETS).map(k => {
+      const sp = PETS[k], mine = pet && pet.species === k, st = mine ? petStage(pet) : -1;
+      return `<div class="pet-line ${mine ? 'mine' : ''}"><div class="pet-role">${sp.roleIcon} ${sp.roleName}${mine ? ' <span class="gold">• seu mascote</span>' : ''}</div><div class="pet-chain">${sp.stages.map((s, i) =>
+        `<div class="pet-st ${mine && i === st ? 'cur' : ''} ${mine && i <= st ? 'got' : ''}" title="${s.desc.replace(/"/g, '&quot;')}"><div class="pi">${s.icon}</div><div class="pn">${s.name}</div><div class="pr">${i ? 'Nv. ' + PET_EVOLVE[i] : 'Início'}</div></div>${i < sp.stages.length - 1 ? '<div class="parrow">→</div>' : ''}`).join('')}</div></div>`;
+    }).join('')}${pet ? `<div class="muted" style="margin-top:6px">Seu ${petInfo(pet).name} está no <b>Nv. ${pet.lv}</b> (EXP ${pet.lv >= PET_MAX_LV ? 'máxima' : Math.floor(pet.exp / petExpNext(pet.lv) * 100) + '%'}). O mascote ganha EXP junto com você.</div>` : '<div class="muted">Você ainda não tem um mascote.</div>'}</div>`;
     this.body('tree').innerHTML = `<div class="tree">${node('aprendiz')}<div class="tline on"></div><div class="tbar"></div><div class="trow">${cols}</div></div>
       <div class="tinfo"><b class="gold" style="font-size:14px">${c.icon} ${c.name}</b> <span class="muted">— ${c.tier === 0 ? 'Classe inicial' : c.tier + 'ª classe'}</span>
-        <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>`;
+        <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>${petHtml}`;
   },
 
   /* ---------- Ajuda ---------- */

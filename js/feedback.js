@@ -8,7 +8,7 @@
 
 const FB_KIND = {
   monstro: 'Monstro', npc: 'NPC', item_no_chao: 'Item no chão', jogador: 'Seu personagem', portal: 'Portal',
-  cenario: 'Cenário', terreno: 'Terreno', area: 'Área do mapa', interface: 'Interface',
+  cenario: 'Cenário', terreno: 'Terreno', area: 'Área do mapa', interface: 'Interface', mascote: 'Mascote',
 };
 const FB_CATS = ['🎨 Visual', '⚔️ Jogabilidade', '⚖️ Balanceamento', '🐞 Bug', '🎵 Som', '✨ Ideia nova'];
 const OBJ_NAMES = { tree: 'Árvore', pine: 'Pinheiro', bush: 'Arbusto', rock: 'Pedra', pillar: 'Pilar em ruínas', wall: 'Muro em ruínas', deadtree: 'Árvore morta', house: 'Casa', fountain: 'Fonte', lamp: 'Poste de luz', crate: 'Caixote' };

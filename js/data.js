@@ -491,6 +491,44 @@ const MAPS = {
   },
 };
 
+/* ---------------- Mascotes (companheiros que evoluem) ----------------
+   role: 'ataque' | 'suporte' | 'guardiao'. Evoluem nos níveis de PET_EVOLVE.
+------------------------------------------------- */
+const PET_EVOLVE = [1, 10, 25];
+const PET_MAX_LV = 40;
+const PETS = {
+  fogo: {
+    role: 'ataque', roleName: 'Ataque', roleIcon: '⚔️', element: 'fogo', color: '#ff7a3a',
+    desc: 'Corre até os inimigos e cospe fogo neles. Para quem quer derrotar monstros mais rápido.',
+    stages: [
+      { name: 'Faísca', icon: '🦊', desc: 'Raposinha curiosa com a ponta do rabo em chamas.' },
+      { name: 'Labareda', icon: '🔥', desc: 'Dois rabos flamejantes e uma juba de brasas. Ataca mais rápido.' },
+      { name: 'Solaris', icon: '☀️', desc: 'Raposa solar de três caudas. Suas chamas explodem em área.' },
+    ],
+  },
+  agua: {
+    role: 'suporte', roleName: 'Suporte', roleIcon: '💚', element: 'agua', color: '#4ab0ff',
+    desc: 'Cuida de você: cura quando você se machuca e de tempos em tempos te dá um escudo de água (mais DEF e regeneração).',
+    stages: [
+      { name: 'Bolhinha', icon: '🫧', desc: 'Criaturinha de água que solta bolhas quando está feliz.' },
+      { name: 'Maré', icon: '🌊', desc: 'Nadadeiras maiores e três bolhas mágicas orbitando. Cura mais.' },
+      { name: 'Aquária', icon: '💠', desc: 'Guardiã das águas com coroa de cristal. Bênçãos mais fortes.' },
+    ],
+  },
+  terra: {
+    role: 'guardiao', roleName: 'Guardião', roleIcon: '🛡️', element: 'terra', color: '#b08a5a',
+    desc: 'Protege você: enquanto estiver por perto, você recebe menos dano, e ele atordoa seu alvo com pancadas de pedra.',
+    stages: [
+      { name: 'Pedrinho', icon: '🪨', desc: 'Tatuzinho de pedra que adora rolar.' },
+      { name: 'Rochedo', icon: '⛰️', desc: 'Casco com cristais. Protege ainda mais.' },
+      { name: 'Monolito', icon: '🗿', desc: 'Colosso de pedra com cristal brilhante. Atordoa por mais tempo.' },
+    ],
+  },
+};
+
+// buff dado pelo mascote de água (aparece nos ícones de buff)
+SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive', maxLv: 1, bonuses: () => ({}), desc: () => 'Escudo de água do seu mascote: mais DEF e regeneração de HP por 20s.' };
+
 /* ---------------- Loja ---------------- */
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
   'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto',
