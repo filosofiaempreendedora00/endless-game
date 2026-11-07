@@ -22,6 +22,13 @@ Quando ele pedir para aplicar as sugestões:
 - `js/admin.js` = Painel do Mestre (⌘/Ctrl+Z); `toggleGod`/`godTeleport`/`isAdmin` em `js/game.js`. Só ativo na conta de administrador (hoje: jogo rodando localmente). Novas ferramentas de admin pedidas pelo Roberto entram no painel.
 - Teclas ocupadas: WASD/setas (mover), 1–9, C I E K T H N X F P Q L Z, Enter, Esc. Confira antes de criar atalho novo.
 
+## Versão 3D (protótipo, estilo WoW)
+- `3d.html` + `js3d/` (ES modules com import map para `lib/three/`, three.js r160). Reusa `js/data.js`, `js/rules.js` e `js/audio.js` (scripts clássicos, globais).
+- Regras de jogo ficam em `js/rules.js` — mudanças de fórmula valem para 2D e 3D. Não duplique regras no 3D.
+- Save compartilhado: o 3D grava os mesmos campos + `pos3d` e preserva `mapId/x/y` do 2D.
+- Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
+- Próxima fase combinada: levar loja, janelas (atributos/inventário/equip/habilidades), sugestões (Q) e Painel do Mestre para o 3D; depois o 3D vira o jogo principal.
+
 ## Testar
 - `python3 server.py` e abrir http://localhost:5577 (há um `.claude/launch.json`). O servidor serve o jogo e recebe as sugestões.
 - Comandos de teste no chat do jogo: `/taxa`, `/nivel`, `/classe`, `/zeny`, `/item`, `/carta`, `/ir`, `/cura`, `/resetar`.

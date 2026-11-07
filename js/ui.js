@@ -457,6 +457,7 @@ const UI = {
         <label style="margin-top:0">Seus personagens</label>
         ${chars.map((c, i) => `<button class="btn ${i ? '' : 'gold'} t-cont" data-i="${i}" style="width:100%;padding:9px;font-size:14px;margin-bottom:5px;text-align:left">▶ ${label(c)}</button>`).join('')}
         <div class="row"><button class="btn" id="t-create">＋ Criar novo personagem</button></div>
+        <div class="row" style="margin-top:8px"><a class="btn gold" href="3d.html" style="text-align:center;text-decoration:none">🌍 Jogar no mundo aberto 3D (protótipo)</a></div>
       </div><div class="ver">v${GAME_VERSION} • clique para ativar o som</div></div>`;
     o.classList.add('show');
     o.onclick = () => Sound.init();

@@ -18,6 +18,25 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 
 **Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas o progresso e as sugestões (tecla Q) ficam só no navegador até você abrir o jogo pelo `server.py`. Quando abrir, eles são enviados para o projeto automaticamente.
 
+### 🌍 Mundo aberto 3D (protótipo)
+
+Com o servidor ligado, abra **http://localhost:5577/3d.html** (ou o botão "Jogar no mundo aberto 3D" na tela inicial). O personagem é o **mesmo** do 2D: nível, classe, itens e cartas são compartilhados.
+
+| Ação (estilo WoW) | Comando |
+|---|---|
+| Andar para frente / trás | **W / S** |
+| Virar | **A / D** |
+| Girar câmera + personagem (A/D passam a andar de lado) | **segurar botão direito** |
+| Olhar em volta (só a câmera) | **segurar botão esquerdo** |
+| Correr para frente | **os dois botões** |
+| Pular | **Espaço** |
+| Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |
+| Habilidades e itens | **1–9** |
+| Zoom | roda do mouse |
+| Menu (voltar ao 2D) / ajuda | **Esc** / **H** |
+
+O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mundo contínuo; heróis e esqueletos animados; monstros fofos; combate com alvo; habilidades; troca de classe com a Mestra Ivra; cura com a Irmã Clara; saque de itens e cartas. Ainda só no 2D: loja, janelas de atributos/inventário/equipamento, sugestões (Q) e Painel do Mestre.
+
 ### Pausa e sugestões (seu canal direto com o Claude)
 
 - **P** pausa o jogo.
@@ -69,7 +88,10 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 | `js/world.js` | Geração dos mapas e pathfinding (A*). |
 | `js/audio.js` | Músicas e efeitos sonoros (Web Audio). |
 | `js/feedback.js` | Pausa + modo sugestão (Q): seleção, caixa de texto, print e envio. |
-| `server.py` | Servidor local do jogo que grava as sugestões em `feedback/`. |
+| `server.py` | Servidor local do jogo que grava as sugestões em `feedback/` e os personagens em `saves/`. |
+| `js/rules.js` | Regras compartilhadas entre 2D e 3D (atributos, EXP, inventário, dano). |
+| `3d.html`, `js3d/` | Protótipo 3D: `world3d.js` (terreno e regiões), `critters.js` (monstros fofos em código), `main3d.js` (jogo). |
+| `assets3d/`, `lib/three/` | Modelos 3D (KayKit, CC0) e o motor three.js. |
 
 **Quer criar um monstro novo?** Adicione uma entrada em `MONSTERS` (em `data.js`) e coloque-o em `spawns` de um mapa. A carta dele é criada automaticamente.
 
@@ -97,4 +119,7 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 
 ## Créditos
 
-Inspirado no estilo dos MMORPGs clássicos, com conteúdo, nomes, arte e música originais.
+Inspirado no estilo dos MMORPGs clássicos, com conteúdo, nomes e música originais.
+
+- **Modelos 3D:** [KayKit](https://kaylousberg.itch.io/) — Adventurers, Skeletons e Medieval Hexagon — por **Kay Lousberg** (kaylousberg.com), licença **CC0**. Licenças originais em `assets3d/licencas/`.
+- **Motor 3D:** [three.js](https://threejs.org) (licença MIT).
