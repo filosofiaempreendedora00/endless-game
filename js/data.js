@@ -104,9 +104,9 @@ const CLASSES = {
     desc: 'Guerreiro que grava runas na lâmina. Dano físico devastador em um único alvo.',
   },
   guardiao_sagrado: {
-    name: 'Guardião Sagrado', tier: 2, parent: 'guerreiro', icon: '✨', color: '#d8d2c0', accent: '#e8c040', hat: 'helm', cape: true,
+    name: 'Paladino', tier: 2, parent: 'guerreiro', icon: '🛡️', color: '#d8d2c0', accent: '#e8c040', hat: 'helm', cape: true,
     hpMod: 2.2, spMod: 1.1, skills: ['julgamento', 'escudo_sagrado'], next: [], gift: [['elmo_de_ferro', 1]],
-    desc: 'Protetor abençoado. Resistente ao extremo, com dano Sagrado em área — perfeito contra Sombra.',
+    desc: 'Paladino da luz: armadura branca e dourada, escudo abençoado e asas de luz. Resistente ao extremo, com dano Sagrado em área — perfeito contra Sombra.',
   },
   arquimago: {
     name: 'Arquimago', tier: 2, parent: 'mago', icon: '☄️', color: '#5b2a8a', accent: '#ff9a3d', hat: 'wizard', robe: true, cape: true,
@@ -124,9 +124,9 @@ const CLASSES = {
     desc: 'Rastreador com um falcão companheiro que ataca junto com você.',
   },
   menestrel: {
-    name: 'Menestrel', tier: 2, parent: 'arqueiro', icon: '🎵', color: '#2f4f8e', accent: '#ffb3d9', hat: 'feather',
+    name: 'Bardo', tier: 2, parent: 'arqueiro', icon: '🎵', color: '#2f4f8e', accent: '#ffb3d9', hat: 'feather',
     hpMod: 1.3, spMod: 1.4, skills: ['cancao_de_batalha', 'nota_dissonante'], next: [], gift: [['brinco_sabio', 1]],
-    desc: 'Artista de guerra. Canções que fortalecem e notas que atordoam inimigos ao redor.',
+    desc: 'Bardo errante com alaúde e chapéu de pena. Canções que fortalecem e notas que atordoam inimigos ao redor.',
   },
   lamina_sombria: {
     name: 'Lâmina Sombria', tier: 2, parent: 'ladino', icon: '🌑', color: '#2a2233', accent: '#9a6bff', hat: 'hood', cape: true,
@@ -232,7 +232,7 @@ const SKILLS = {
     effect: { kind: 'buff', dur: 60000, bonuses: lv => ({ atkPct: lv * 5, aspdPct: lv * 4 }) },
     desc: lv => `Por 60s: +${lv * 5}% ATQ e +${lv * 4}% vel. de ataque.`,
   },
-  // Guardião Sagrado
+  // Paladino (id interno: guardiao_sagrado)
   julgamento: {
     name: 'Julgamento', icon: '🌟', type: 'active', target: 'selfAoe', maxLv: 10, sp: () => 25, cd: 1500, fx: 'holy',
     effect: { kind: 'damage', dmg: 'phys', element: 'sagrado', mult: lv => 1.5 + lv * 0.3, radius: 3 },
@@ -275,7 +275,7 @@ const SKILLS = {
     name: 'Falcão Companheiro', icon: '🦅', type: 'passive', maxLv: 5,
     bonuses: lv => ({ falcon: lv }), desc: lv => `Chance de ${lv * 4}% + SOR/3 do falcão atacar junto (dano por DES).`,
   },
-  // Menestrel
+  // Bardo (id interno: menestrel)
   cancao_de_batalha: {
     name: 'Canção de Batalha', icon: '🎶', type: 'active', target: 'self', maxLv: 5, sp: () => 35, cd: 1000, fx: 'aura', fxColor: '#ffb3d9',
     effect: { kind: 'buff', dur: 120000, bonuses: lv => ({ atkPct: lv * 4, matkPct: lv * 4, aspdPct: lv * 3 }) },

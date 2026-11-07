@@ -29,6 +29,8 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Girar câmera + personagem (A/D passam a andar de lado) | **segurar botão direito** |
 | Olhar em volta (só a câmera) | **segurar botão esquerdo** |
 | Correr para frente | **os dois botões** |
+| Zoom / ângulo da câmera | **rodinha** / **Shift + rodinha** |
+| Ver o personagem de frente | **segurar botão do meio** |
 | Pular | **Espaço** |
 | Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |
 | Habilidades e itens | **1–9** |
@@ -93,7 +95,7 @@ O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mu
 | `js/feedback.js` | Pausa + modo sugestão (Q): seleção, caixa de texto, print e envio. |
 | `server.py` | Servidor local do jogo que grava as sugestões em `feedback/` e os personagens em `saves/`. |
 | `js/rules.js` | Regras compartilhadas entre 2D e 3D (atributos, EXP, inventário, dano). |
-| `index.html`, `js3d/` | Jogo 3D (principal): `world3d.js` (terreno e regiões), `critters.js` (monstros fofos em código), `bridge3d.js` (ponte com as janelas), `main3d.js` (jogo). |
+| `index.html`, `js3d/` | Jogo 3D (principal): `world3d.js` (terreno e regiões), `critters.js` (monstros fofos em código), `looks3d.js` (visual de cada classe), `trees3d.js` (árvores em código), `pets3d.js` (mascotes), `bridge3d.js` (ponte com as janelas), `main3d.js` (jogo). |
 | `2d.html` | Versão clássica 2D (`js/game.js`, `world.js`, `render.js`). |
 | `assets3d/`, `lib/three/` | Modelos 3D (KayKit, CC0) e o motor three.js. |
 

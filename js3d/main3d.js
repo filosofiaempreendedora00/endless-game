@@ -8,6 +8,8 @@ import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
+import { dress, CLASS_LOOKS } from './looks3d.js';
+import { makeTreeTemplates } from './trees3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -92,16 +94,18 @@ const placed = []; // todos os objetos de cenário (sugestões identificam o mod
 function place(name, x, z, o = {}) {
   const g = MODELS[name]; if (!g) return null;
   const obj = g.scene.clone(true);
-  const s = WS * (o.scale || 1) * (TYPE_SCALE[name] || 1);
+  const native = !!g.native; // árvores feitas em código já estão em metros
+  const s = (native ? 1 : WS) * (o.scale || 1) * (TYPE_SCALE[name] || 1);
   obj.scale.setScalar(s);
   obj.rotation.y = o.rot ?? rng() * Math.PI * 2;
   obj.position.set(x, (o.y ?? heightAt(x, z)) - (o.sink || 0), z);
   scene.add(obj);
   obj.userData.asset = name; placed.push(obj);
+  if (/^(mountain|cloud)/.test(name)) obj.traverse(m => { if (m.isMesh) m.castShadow = false; });
   if (o.solid !== false && !/^(fence|flag|lily|cloud)/.test(name)) occluders.push(obj);
   if (o.solid !== false) {
     const b = bbox(name);
-    const r = o.r ?? Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 * s * (o.rf || 0.75);
+    const r = o.r ?? (native && g.radius ? g.radius * s : Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 * s * (o.rf || 0.75));
     colliders.push({ x, z, r, name });
   }
   return obj;
@@ -146,9 +150,11 @@ function buildWorld() {
       placed++;
     }
   };
-  scatter('campos', ['tree_A', 'tree_B', 'tree_A', 'trees_A_m'], 55, 0.45, 5);
+  // árvores feitas em código (mais naturais que os pinheiros pontudos do pacote)
+  for (const [k, v] of Object.entries(makeTreeTemplates())) MODELS[k] = { ...v, native: true };
+  scatter('campos', ['oak_0', 'oak_1', 'oak_2', 'oak_3', 'oak_4', 'oak_1', 'pine_0', 'pine_1'], 60, 0.45, 5, { s0: 0.85, s1: 0.4 });
   scatter('campos', ['rock_A', 'rock_B', 'rock_C'], 22, 0.4, 3, { s0: 0.8, s1: 0.8, rf: 0.6 });
-  scatter('floresta', ['trees_A_l', 'trees_B_l', 'trees_B_m', 'tree_B', 'trees_A_m'], 150, 0.4, 3.2, { rf: 0.3 });
+  scatter('floresta', ['pinedark_0', 'pinedark_1', 'pinedark_2', 'pinedark_3', 'pine_2', 'pine_3', 'pine_4', 'oakdark_0', 'oakdark_1', 'oakdark_2'], 150, 0.4, 3.4, { s0: 0.85, s1: 0.5 });
   scatter('floresta', ['rock_D', 'rock_E'], 18, 0.4, 3, { rf: 0.6 });
   scatter('ruinas', ['rock_A', 'rock_C', 'rock_D', 'rock_E', 'stump'], 45, 0.35, 3, { s0: 0.9, s1: 1, rf: 0.6 });
   // ruínas: prédios destruídos e muros quebrados
@@ -196,31 +202,30 @@ class Anim {
   }
   update(dt) { this.mixer.update(dt); }
 }
-const charScaleCache = {};
+// escala única: todos os modelos KayKit têm o mesmo esqueleto, então usamos a altura do CORPO do
+// Cavaleiro (sem elmo/chapéu/capa) como referência. Antes cada modelo era medido com seus acessórios,
+// e quem não tinha chapéu (Arqueiro, Ladino...) ficava gigante.
+let CHAR_SCALE = 0;
+function charScale() {
+  if (CHAR_SCALE) return CHAR_SCALE;
+  const sc = MODELS.Knight.scene; sc.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  sc.traverse(o => { if ((o.isMesh || o.isSkinnedMesh) && /_(Body|Head|LegLeft|LegRight|ArmLeft|ArmRight)$/.test(o.name)) { o.geometry.computeBoundingBox(); box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld)); } });
+  CHAR_SCALE = 1.8 / Math.max(0.01, box.max.y - box.min.y);
+  return CHAR_SCALE;
+}
 function makeChar(model, show, height = 1.8) {
   const g = MODELS[model];
   const root = SkeletonUtils.clone(g.scene);
   const acc = ACCESSORIES[model];
   if (acc && show) root.traverse(o => { if (acc.includes(o.name)) o.visible = show.includes(o.name); });
-  if (!charScaleCache[model]) { const b = new THREE.Box3().setFromObject(g.scene); charScaleCache[model] = 1.8 / Math.max(0.01, b.max.y - b.min.y); }
-  root.scale.setScalar(charScaleCache[model] * height / 1.8);
+  root.scale.setScalar(charScale() * height / 1.8);
   const wrap = new THREE.Group(); wrap.add(root);
   return { obj: wrap, root, anim: new Anim(root, g.animations) };
 }
 function attach(root, item, hand = 'r') {
   const bone = root.getObjectByName('handslot' + hand) || root.getObjectByName('handslot.' + hand);
   if (bone && MODELS[item]) bone.add(MODELS[item].scene.clone(true));
-}
-// visual de cada classe (modelo + acessórios + estilo de ataque)
-function classLook(cls) {
-  const fam = lineage(cls)[1];
-  if (fam === 'guerreiro') return cls === 'cavaleiro_runico' ? { model: 'Knight', show: ['2H_Sword', 'Knight_Helmet', 'Knight_Cape'], style: '2h' }
-    : cls === 'guardiao_sagrado' ? { model: 'Knight', show: ['1H_Sword', 'Badge_Shield', 'Knight_Helmet', 'Knight_Cape'], style: '1h' }
-      : { model: 'Knight', show: ['1H_Sword', 'Round_Shield', 'Knight_Cape'], style: '1h' };
-  if (fam === 'mago') return cls === 'sabio_elemental' ? { model: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Hat', 'Mage_Cape'], style: 'cast' } : { model: 'Mage', show: cls === 'mago' ? ['2H_Staff', 'Mage_Cape'] : ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], style: 'cast' };
-  if (fam === 'arqueiro') return { model: 'Rogue', show: ['2H_Crossbow', 'Rogue_Cape'], style: 'ranged' };
-  if (fam === 'ladino') return { model: 'Rogue_Hooded', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], style: 'dual' };
-  return { model: 'Knight', show: ['1H_Sword'], style: '1h' }; // aprendiz
 }
 const ATTACK_ANIM = { '1h': ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'], '2h': ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Chop'], dual: ['Dualwield_Melee_Attack_Slice', 'Dualwield_Melee_Attack_Stab'], ranged: ['2H_Ranged_Shoot'], cast: ['2H_Melee_Attack_Chop'] };
 
@@ -423,9 +428,10 @@ function spawnNpcs() {
 /* =========================== Jogador =========================== */
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
-  const look = classLook(S.p.cls);
-  const ch = makeChar(look.model, look.show);
-  S.me = { ...ch, look };
+  const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
+  const ch = makeChar(L.outfit, L.show);
+  const d = dress(ch, S.p.cls, MODELS, (S.p.look && S.p.look.head) || 'Knight');
+  S.me = { ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
 }
@@ -452,6 +458,7 @@ function resolve(x, z, r) {
 function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
   me.anim.update(dt);
+  if (me.lookFx) me.lookFx(t);
   if (p.dead) return;
   // buffs e regeneração
   for (const id in p.buffs) if (p.buffs[id].until <= t) { delete p.buffs[id]; recalc(p); log(`${SKILLS[id].name} terminou.`); hudDirty = true; }
@@ -475,8 +482,15 @@ function updatePlayer(dt) {
     const sp = base * (mi.fwd < 0 ? 0.55 : mi.fwd === 0 ? 0.85 : 1) * (inLake ? 0.6 : 1);
     vx = dx / l * sp; vz = dz / l * sp;
   }
-  const r = resolve(P.x + vx * dt, P.z + vz * dt, 0.45);
+  // aceleração/desaceleração suave: ao soltar a tecla o personagem para em ~0,2 s, não de uma vez
+  S.vel = S.vel || { x: 0, z: 0 };
+  const kv = 1 - Math.exp(-dt * (vx || vz ? 16 : 9));
+  if (!P.ground) { S.vel.x += (vx - S.vel.x) * kv * 0.25; S.vel.z += (vz - S.vel.z) * kv * 0.25; }
+  else { S.vel.x += (vx - S.vel.x) * kv; S.vel.z += (vz - S.vel.z) * kv; }
+  if (Math.hypot(S.vel.x, S.vel.z) < 0.05) { S.vel.x = 0; S.vel.z = 0; }
+  const r = resolve(P.x + S.vel.x * dt, P.z + S.vel.z * dt, 0.45);
   P.x = r.x; P.z = r.z;
+  const coast = !mi.any ? Math.hypot(S.vel.x, S.vel.z) : 0;
   let gy = heightAt(P.x, P.z); if (inLake) gy = Math.max(gy, LAKE.level - 1.05);
   if (P.ground) P.y = gy;
   else {
@@ -495,6 +509,7 @@ function updatePlayer(dt) {
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.4 : 1 });
   else if (mi.fwd < 0) me.anim.play('Walking_Backwards');
   else if (mi.strafe) me.anim.play(mi.strafe < 0 ? 'Running_Strafe_Left' : 'Running_Strafe_Right');
+  else if (coast > 0.8) me.anim.play('Running_A', { speed: Math.max(0.45, coast / base) });
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
   else me.anim.play(S.autoAttack && S.target ? (S.me.look.style === '2h' || S.me.look.style === 'cast' ? '2H_Melee_Idle' : 'Idle') : 'Idle');
   // conjuração
@@ -606,22 +621,36 @@ function updatePet(dt) {
       recalc(p); ring(S.pos, 2, '#4ab0ff'); log(`🌊 ${petInfo(data).name} te protegeu com a Bênção da Maré!`); hudDirty = true;
     }
   }
-  // movimento
-  pe.moving = false;
+  // movimento com inércia: acelera, faz curvas e desacelera suavemente
   const dToPlayer = Math.hypot(P.x - pe.x, P.z - pe.z);
-  if (dToPlayer > 30) { pe.x = P.x - 1.5; pe.z = P.z - 1.5; } // ficou longe demais: aparece ao seu lado
+  const maxSp = S.p.d.speed / 32 * TM * 1.25 * pw.speedMult;
+  let wantX = 0, wantZ = 0;
+  if (dToPlayer > 30) { pe.x = P.x - 1.5; pe.z = P.z - 1.5; pe.vx = pe.vz = 0; } // ficou longe demais: aparece ao seu lado
   else if (goal) {
-    const d = Math.hypot(goal.x - pe.x, goal.z - pe.z);
-    if (d > stopAt) {
-      const sp = Math.min(d / dt, S.p.d.speed / 32 * TM * 1.25 * pw.speedMult * (d > 6 ? 1.4 : 1));
-      const a = Math.atan2(goal.x - pe.x, goal.z - pe.z);
-      pe.x += Math.sin(a) * sp * dt; pe.z += Math.cos(a) * sp * dt; pe.yaw = angLerp(pe.yaw, a, Math.min(1, dt * 10)); pe.moving = d > 0.6;
+    const dx = goal.x - pe.x, dz = goal.z - pe.z, d = Math.hypot(dx, dz);
+    if (d > stopAt) { // freia ao chegar perto (velocidade proporcional à distância)
+      const sp = Math.min(maxSp * (d > 6 ? 1.4 : 1), (d - stopAt) * 2.2 + 0.4);
+      wantX = dx / d * sp; wantZ = dz / d * sp;
     }
   }
-  if (!pe.moving) pe.yaw = angLerp(pe.yaw, face ? Math.atan2(face.x - pe.x, face.z - pe.z) : P.yaw, Math.min(1, dt * 4));
+  const k = 1 - Math.exp(-dt * ((wantX || wantZ) ? 5 : 7));
+  pe.vx = (pe.vx || 0) + (wantX - (pe.vx || 0)) * k; pe.vz = (pe.vz || 0) + (wantZ - (pe.vz || 0)) * k;
+  const spd = Math.hypot(pe.vx, pe.vz);
+  if (spd < 0.03) pe.vx = pe.vz = 0;
+  pe.x += pe.vx * dt; pe.z += pe.vz * dt;
+  pe.moving = spd > 0.25;
+  const prevYaw = pe.yaw;
+  const wantYaw = spd > 0.25 ? Math.atan2(pe.vx, pe.vz) : face ? Math.atan2(face.x - pe.x, face.z - pe.z) : spd < 0.05 && dToPlayer < 3.5 ? P.yaw : pe.yaw;
+  pe.yaw = angLerp(pe.yaw, wantYaw, 1 - Math.exp(-dt * (spd > 0.25 ? 7 : 3)));
+  let dy = pe.yaw - prevYaw; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2;
+  pe.turn = (pe.turn || 0) + ((dt > 0 ? dy / dt : 0) - (pe.turn || 0)) * (1 - Math.exp(-dt * 6));
   const r = resolve(pe.x, pe.z, 0.3); pe.x = r.x; pe.z = r.z;
-  pe.obj.position.set(pe.x, heightAt(pe.x, pe.z), pe.z); pe.obj.rotation.y = pe.yaw;
-  pe.animate(t, pe.moving, dt);
+  // acompanha a inclinação do terreno
+  const fx = Math.sin(pe.yaw) * 0.3, fz = Math.cos(pe.yaw) * 0.3;
+  const slope = Math.atan2(heightAt(pe.x + fx, pe.z + fz) - heightAt(pe.x - fx, pe.z - fz), 0.6);
+  pe.pitch = (pe.pitch || 0) + (-slope - (pe.pitch || 0)) * (1 - Math.exp(-dt * 8));
+  pe.obj.position.set(pe.x, heightAt(pe.x, pe.z), pe.z); pe.obj.rotation.set(pe.pitch, pe.yaw, 0, 'YXZ');
+  pe.animate(t, { speed: spd / Math.max(1, maxSp), turn: Math.max(-4, Math.min(4, pe.turn)) }, dt);
 }
 function petExpGain(baseExp) {
   const data = S.p.pet; if (!data) return;
@@ -970,8 +999,8 @@ function buildMinimap() {
   for (const o of placed) {
     const a = o.userData.asset, x = w2m(o.position.x), y = w2m(o.position.z);
     if (/^cloud|^lily|^mountain/.test(a)) continue;
-    if (/^tree|^trees|^stump/.test(a)) {
-      const r = (/_l$/.test(a) ? 3.2 : /_m$/.test(a) ? 2.4 : 1.6) / px;
+    if (/^tree|^trees|^stump|^oak|^pine/.test(a)) {
+      const r = (/^oak/.test(a) ? 2.6 * o.scale.x : /^pine/.test(a) ? 2.0 * o.scale.x : /_l$/.test(a) ? 3.2 : /_m$/.test(a) ? 2.4 : 1.6) / px;
       g.fillStyle = 'rgba(20,50,22,0.35)'; g.beginPath(); g.arc(x + 1, y + 1, r, 0, 7); g.fill();
       g.fillStyle = '#2f6a30'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
       g.fillStyle = 'rgba(140,200,110,0.45)'; g.beginPath(); g.arc(x - r * 0.3, y - r * 0.3, r * 0.45, 0, 7); g.fill();
@@ -1051,6 +1080,7 @@ addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.le
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
   if (!S.started || S.menuOpen || FB.picking || FB.box) return;
+  if (e.button === 1) { e.preventDefault(); S.frontView = true; return; } // segurar o botão do meio: vista de frente
   if (e.button === 0) mouse.left = true; else if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
 });
@@ -1061,12 +1091,13 @@ addEventListener('mousemove', e => {
   if (mouse.moved > 4 && document.pointerLockElement !== canvas && canvas.requestPointerLock) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } }
   if (mouse.moved > 2) {
     S.cam.yaw -= dx * 0.005;
-    S.cam.pitch = clamp(S.cam.pitch + dy * 0.004, -0.3, 1.35);
+    S.cam.pitch = clamp(S.cam.pitch + dy * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch;
     if (mouse.right) S.pos.yaw = S.cam.yaw;
   }
 });
 addEventListener('mouseup', e => {
   const wasClick = mouse.moved <= 4 && (e.button === 0 ? mouse.left : mouse.right);
+  if (e.button === 1) S.frontView = false;
   if (e.button === 0) mouse.left = false; else if (e.button === 2) mouse.right = false;
   if (!mouse.left && !mouse.right && document.pointerLockElement) document.exitPointerLock();
   if (wasClick && S.started && e.target === canvas && !FB.picking && !FB.box) {
@@ -1075,7 +1106,13 @@ addEventListener('mouseup', e => {
     else if (e.button === 0) setTarget(null);
   }
 });
-canvas.addEventListener('wheel', e => { e.preventDefault(); S.cam.distT = clamp(S.cam.distT * (e.deltaY > 0 ? 1.12 : 0.89), 2.5, 24); }, { passive: false });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const d = e.deltaY || e.deltaX; // com Shift, alguns navegadores mandam a rolagem na horizontal
+  if (e.shiftKey) S.cam.pitchT = clamp((S.cam.pitchT ?? S.cam.pitch) + (d > 0 ? 0.07 : -0.07), -0.12, 1.52); // de rente ao chão até quase 90°
+  else S.cam.distT = clamp(S.cam.distT * (d > 0 ? 1.12 : 0.89), 1.6, 26);
+}, { passive: false });
+canvas.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
 
 /* =========================== Menu, ajuda, salvar =========================== */
 function toggleMenu() {
@@ -1148,9 +1185,11 @@ function draw(dt) {
     // câmera estilo WoW: atrás do personagem, orbitando
     const P = S.pos, cam = S.cam;
     cam.dist += (cam.distT - cam.dist) * Math.min(1, dt * 10);
-    const head = new THREE.Vector3(P.x, P.y + 1.55, P.z);
+    if (cam.pitchT !== undefined) cam.pitch += (cam.pitchT - cam.pitch) * Math.min(1, dt * 12);
+    cam.viewYaw = angLerp(cam.viewYaw ?? cam.yaw, S.frontView ? P.yaw + Math.PI : cam.yaw, Math.min(1, dt * 10));
+    const head = new THREE.Vector3(P.x, P.y + 1.4 - Math.max(0, 1.6 - cam.dist) * 0.3, P.z);
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
-    let cx = P.x - Math.sin(cam.yaw) * cp * cam.dist, cz = P.z - Math.cos(cam.yaw) * cp * cam.dist, cy = head.y + sp * cam.dist;
+    let cx = P.x - Math.sin(cam.viewYaw) * cp * cam.dist, cz = P.z - Math.cos(cam.viewYaw) * cp * cam.dist, cy = head.y + sp * cam.dist;
     const gy = heightAt(cx, cz) + 0.5; if (cy < gy) cy = gy;
     const camPos = new THREE.Vector3(cx, cy, cz), dir = camPos.clone().sub(head), len = dir.length();
     camRay.set(head, dir.normalize()); camRay.far = len;
@@ -1262,7 +1301,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -1296,7 +1335,7 @@ function fbPick(sx, sy) {
   let o = h.object; while (o && !o.userData.asset && o.parent) o = o.parent;
   if (o && o.userData.asset) {
     const a = o.userData.asset;
-    return { kind: 'cenario', id: a, name: ASSET_NAMES[a] || a, wpos: { x: o.position.x, y: o.position.y, z: o.position.z }, r: 2, x: o.position.x, y: o.position.z, tile: tileOf(o.position.x, o.position.z), codigo: `${ASSETS[a]} (modelo KayKit) · js3d/main3d.js → buildWorld (posição/escala) e TYPE_SCALE`, details: { modelo: a, versao: '3D' } };
+    return { kind: 'cenario', id: a, name: ASSET_NAMES[a] || a, wpos: { x: o.position.x, y: o.position.y, z: o.position.z }, r: 2, x: o.position.x, y: o.position.z, tile: tileOf(o.position.x, o.position.z), codigo: ASSETS[a] ? `${ASSETS[a]} (modelo KayKit) · js3d/main3d.js → buildWorld (posição/escala) e TYPE_SCALE` : `js3d/trees3d.js → árvore feita em código ('${a}') · js3d/main3d.js → buildWorld (onde nasce)`, details: { modelo: a, versao: '3D' } };
   }
   const zn = zoneAt(pt.x, pt.z), rd = roadDist(pt.x, pt.z), lake = Math.hypot(pt.x - LAKE.x, pt.z - LAKE.z) < LAKE.r;
   const what = lake ? 'Lago' : rd < 3 ? 'Estrada de terra' : pt.y > 6 ? 'Encosta / montanha' : 'Chão';
@@ -1431,6 +1470,6 @@ function drawAdmMap(cv) {
   installIntegration();
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { scene, camera, buildPet, petExpGain, updatePet, talk, interact, trySkill, tabTarget, pick, toScreen, fbPick, fbArea, teleport3d, useSlot }; // para testes
+  window.__S3 = S; window.__api = { makeChar, dressAs: (ch, cls) => dress(ch, cls, MODELS, "Knight"), CLASS_LOOKS, scene, camera, buildPet, petExpGain, updatePet, talk, interact, trySkill, tabTarget, pick, toScreen, fbPick, fbArea, teleport3d, useSlot }; // para testes
   chooseCharacter();
 })();

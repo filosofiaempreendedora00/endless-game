@@ -545,5 +545,967 @@
     "criadoEm": "2026-11-07T16:50:38",
     "imagem": "img/S-011.png",
     "resposta": "Mascotes! Ao criar o personagem você escolhe entre Faísca (ataque, raposa de fogo), Bolhinha (suporte: cura e escudo de água) e Pedrinho (guardião: reduz dano e atordoa). Cada um evolui no Nv. 10 e no Nv. 25 (Labareda/Solaris, Maré/Aquária, Rochedo/Monolito), ganha EXP com você e te segue pelo mundo. A evolução aparece na Árvore de Classes (T). Personagens antigos, como o Vidro, escolhem o mascote ao entrar."
+  },
+  {
+    "texto": "Essas árvores aqui convenhamos Ficaram bem feias né Elas estão totalmente pontio agudas e parecendo muito de desanimado Gostaria de algo um pouco mais realista",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (725×201 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 4,
+          "Fungolino": 4,
+          "Coelho-Chifre": 1,
+          "Gosmão": 1,
+          "Lobo Cinzento": 5,
+          "Esqueleto Vigia": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Grupo de árvores": 19,
+          "Pinheiro": 14,
+          "Pedra": 6,
+          "Bosque denso": 17
+        },
+        "centro": "Pinheiro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        12,
+        15
+      ],
+      "pos": [
+        12,
+        15
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "16/20"
+    },
+    "id": "S-012",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:06:46",
+    "imagem": "img/S-012.png",
+    "resposta": "Árvores novas feitas em código: carvalhos de copa volumosa e pinheiros em camadas, com variações e cores mais naturais (nada de espinhos)."
+  },
+  {
+    "texto": "Um outro jogo de câmera aqui para mim é muito importante é um que eu consiga segurar a tecla shift e escolar o mouse e dessa forma eu altero o ângulo Ou seja eu consigo ver algo muito mais de cima ou consigo ver algo muito mais chegando perto dos pés do meu jogador Ou seja eu altero o ângulo entre 0 e 90 graus digamos assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (289×303 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        5,
+        17
+      ],
+      "pos": [
+        5,
+        17
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "19/20"
+    },
+    "id": "S-013",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:07:45",
+    "imagem": "img/S-013.png",
+    "resposta": "Shift + rodinha do mouse agora muda o ângulo da câmera (de quase rente ao chão até olhar de cima)."
+  },
+  {
+    "texto": "Nessa parte aqui a estética ficou bastante comprometida parece que existe uma sombra invadindo algo que chega a um fim isso é muito estranho e não desejável",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (403×166 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Bosque Sussurrante",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        114,
+        -82
+      ],
+      "pos": [
+        114,
+        -82
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-014",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:08:48",
+    "imagem": "img/S-014.png",
+    "resposta": "A sombra gigante vinha das montanhas e nuvens; elas não projetam mais sombra, então o corte sumiu."
+  },
+  {
+    "texto": "Eu não gostei dessa mascote ele está muito redondo e muito artificial eu gostaria que ele tivesse movimentos muito muito mais fluidos e tridimensionais e também perceber que ele é meio trucado os movimentos dele não são tão interessantes eu gostaria inclusive que os próprios movimentos do meu personagem ele tivesse uma leve desaceleração enquanto eu estou andando e paro para que ele seja mais realista de forma como o próprio World of Warcraft é",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (94×55 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        69,
+        -75
+      ],
+      "pos": [
+        69,
+        -75
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-015",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:09:29",
+    "imagem": "img/S-015.png",
+    "resposta": "Bolhinha virou uma salamandra d'água (estilo axolote) com brânquias e cauda que ondula. Todos os mascotes agora aceleram, freiam, inclinam nas curvas e acompanham o terreno. Seu personagem também desacelera de leve ao parar."
+  },
+  {
+    "texto": "O tamanho do arqueiro ficou completamente bugado gigantesco você precisa entender isso e corrigir para que não seja assim tão estranho Além disso eu gostaria de que ao trocar os meus ou melhor ao trocar de classe do mantivesse a mesma estética de cabelo e aparência e mudasse apenas a roupa dos meus personagens",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (256×186 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Arqueiro)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        57,
+        -58
+      ],
+      "pos": [
+        57,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "20/20"
+    },
+    "id": "S-016",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:10:56",
+    "imagem": "img/S-016.png",
+    "resposta": "Corrigido o tamanho gigante (todas as classes usam a mesma escala). Ao mudar de classe, rosto e cabelo continuam os mesmos; só a roupa e os equipamentos mudam."
+  },
+  {
+    "texto": "O ladino também ficou completamente horroroso no sentido de além dessa Pontinha na cabeça dele ter ficado muito pequena e não ter parecido um gorro também ele ficou gigantesco assim como o Arqueiro ficou",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (268×222 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Ladino)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        57,
+        -58
+      ],
+      "pos": [
+        57,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Ladino",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "82/82",
+      "sp": "19/19"
+    },
+    "id": "S-017",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:11:30",
+    "imagem": "img/S-017.png",
+    "resposta": "Ladino agora tem tamanho normal, bandana e cachecol no lugar do capuz pontudo."
+  },
+  {
+    "texto": "O Guardião sagrado ficou com a mesma estética do cavaleiro único e isso não é desejável preciso que reveja os seus conceitos e inclusive quero que alguma das classes seja paladino",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (250×164 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Guardião Sagrado)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        52,
+        -57
+      ],
+      "pos": [
+        52,
+        -57
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guardião Sagrado",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "113/113",
+      "sp": "20/20"
+    },
+    "id": "S-018",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:12:23",
+    "imagem": "img/S-018.png",
+    "resposta": "Guardião Sagrado virou Paladino: armadura branca e dourada, auréola, asas de luz, tabardo e espada e escudo brilhantes. Bem diferente do Cavaleiro Rúnico, que agora tem armadura escura e runas azuis."
+  },
+  {
+    "texto": "Esse chapéu do arquimago ficou muito grande e completamente desproporcional",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (185×135 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Arquimago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        52,
+        -57
+      ],
+      "pos": [
+        52,
+        -57
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "70/70",
+      "sp": "31/31"
+    },
+    "id": "S-019",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:12:43",
+    "imagem": "img/S-019.png",
+    "resposta": "Chapéu do Arquimago reduzido, e ele ganhou anéis arcanos e faíscas flutuando."
+  },
+  {
+    "texto": "O sábio ficou com o mesmo chapéu do arquimago e ficou praticamente igual isso não é desejável também",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (197×150 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Sábio Elemental)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        53,
+        -58
+      ],
+      "pos": [
+        53,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Sábio Elemental",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "29/29"
+    },
+    "id": "S-020",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:13:21",
+    "imagem": "img/S-020.png",
+    "resposta": "Sábio agora usa varinha, livro aberto, tiara e orbes elementais girando, sem chapéu de mago."
+  },
+  {
+    "texto": "Aparentemente o caçador ficou idêntico ao arqueiro e também está com problema de estar gigantesco",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (212×135 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        50,
+        -56
+      ],
+      "pos": [
+        50,
+        -56
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Caçador",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "84/84",
+      "sp": "21/21"
+    },
+    "id": "S-021",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:13:41",
+    "imagem": "img/S-021.png",
+    "resposta": "Caçador tem tamanho normal, roupa de caçador, besta, aljava, faixa de penas e um falcão no ombro."
+  },
+  {
+    "texto": "O menestrel ficou bugado também ficou gigante assim como o Arqueiro e também ficou gigantesco assim como caçador e eu preciso que ele seja muito mais na pegada de um bardo inclusive pode mudar o nome dele para bardo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (278×188 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Menestrel)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        53,
+        -58
+      ],
+      "pos": [
+        53,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Menestrel",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "84/84",
+      "sp": "23/23"
+    },
+    "id": "S-022",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:14:10",
+    "imagem": "img/S-022.png",
+    "resposta": "Menestrel virou Bardo: tamanho normal, alaúde, chapéu de bardo com pena e notas musicais flutuando."
+  },
+  {
+    "texto": "Esse lâmina sombria ficou com o mesmo problema do ladinho e ele precisa ser esteticamente melhor por ser uma evolução natural do ladino e esse meu conselho das evoluções serem mais fodas até esteticamente você precisa destrinchar para todas as outras classes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (324×232 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Lâmina Sombria)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        53,
+        -58
+      ],
+      "pos": [
+        53,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "20/20"
+    },
+    "id": "S-023",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:14:51",
+    "imagem": "img/S-023.png",
+    "resposta": "Lâmina Sombria tem capuz sombrio, ombreiras com espinhos, fumaça roxa e adagas brilhantes. As evoluções de todas as classes ganharam efeitos e acessórios próprios."
+  },
+  {
+    "texto": "O saqueador também de Corsa está com a mesma estética dos companheiros como o lá como o ladino e outro e eu preciso que ele de costas também seja bem diferente e Inclusive eu gostaria de uma seguinte funcionalidade eu gostaria de que ao apertar a bolinha do mouse ou melhor ao segurar a bolinha do mouse a câmera automaticamente ficasse invertida enquanto eu pressiono o botão para que eu consiga ver a parte da frente do meu personagem também e não só as costas Isso é apenas para que eu consiga fazer uma conferência melhor",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (370×240 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Saqueador)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        53,
+        -58
+      ],
+      "pos": [
+        53,
+        -58
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Saqueador",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "20/20"
+    },
+    "id": "S-024",
+    "status": "feito",
+    "criadoEm": "2026-11-07T17:16:09",
+    "imagem": "img/S-024.png",
+    "resposta": "Saqueador tem visual próprio (machados duplos, tricórnio, saco de saque e moedas). Segurar o botão do meio do mouse vira a câmera para ver o personagem de frente."
+  },
+  {
+    "texto": "troncos muito bugados e flutuantes. Alem de feitos e aleatorios, tao bugados. Aprobveite pra melhorar a estetica desses elementos se,pre que eles aparecem",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (427×121 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Tocos": 1
+        },
+        "centro": "Tocos",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -7,
+        -42
+      ],
+      "pos": [
+        -7,
+        -42
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Saqueador",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "20/20"
+    },
+    "id": "S-025",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:19:18",
+    "imagem": "img/S-025.png"
+  },
+  {
+    "texto": "Gostaria que esse menu de equipamentos se parece muito com o que existia do Ragnarok ou seja com o personagem no meio de frente e ter ali todos os equipamentos como a parte de cima do meio da boca acessórios botas escudo esse tipo de coisa por padrão realmente muito parecido com que existia no Ragnarok online",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (329×345 px) (sobre: Ícones de buff, Janela \"Equipamento\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Tocos",
+        "versao": "3D",
+        "interface": [
+          "Ícones de buff",
+          "Janela \"Equipamento\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -7,
+        -42
+      ],
+      "pos": [
+        -7,
+        -42
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-026",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:21:03",
+    "imagem": "img/S-026.png"
+  },
+  {
+    "texto": "Peço que você tenha capacidade de quando eu clicar no q e selecionar algo você não pegue algo só do mundo e sim quaisquer janelas que estiverem abertas na minha tela pois há muito comum que eu queira mexer em janelas e não apenas no mundo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (895×616 px) (sobre: Janela \"Árvore de Classes\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Casa": 1,
+          "Ferraria": 1,
+          "Alvo de treino": 1,
+          "Cerca": 9
+        },
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D",
+        "interface": [
+          "Janela \"Árvore de Classes\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -11,
+        -34
+      ],
+      "pos": [
+        -11,
+        -34
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-027",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:23:12",
+    "imagem": "img/S-027.png"
+  },
+  {
+    "texto": "Uma coisa que eu gostaria de fazer com a árvore de classes é melhorar o whilex de forma com que sim por padrão apareça a dos personagens mas existem um switcher na parte superior da janela tal que eu consiga mudar entre a árvore do personagem e árvore dos mascotes e outra coisa que eu não gostei foi o fato de eu entrar na tela e ter que escalar para a esquerda ou para a direita para ver todas as classes Sinto que elas poderiam ser organizadas de forma melhor",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (916×608 px) (sobre: Ícones de buff, Janela \"Árvore de Classes\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Casa": 1,
+          "Ferraria": 1,
+          "Alvo de treino": 1,
+          "Cerca": 9
+        },
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D",
+        "interface": [
+          "Ícones de buff",
+          "Janela \"Árvore de Classes\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -11,
+        -34
+      ],
+      "pos": [
+        -11,
+        -34
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-028",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:24:16",
+    "imagem": "img/S-028.png"
+  },
+  {
+    "texto": "Eu gostaria que essa Esse comando de som estivesse atrelado a algo de configurações que por sua vez ficasse dentro da tela ASC e não ali no canto direito poluindo de forma desnecessária",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (51×34 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Pinheiro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        2,
+        36
+      ],
+      "pos": [
+        2,
+        36
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-029",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:28:16",
+    "imagem": "img/S-029.png"
+  },
+  {
+    "texto": "Gostaria que os nomes dos Monstros Só aparecessem quando eu estivesse mais próximo a eles e não nessa distância toda",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (770×166 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 5,
+          "Fungolino": 4,
+          "Coelho-Chifre": 2,
+          "Abelha Rubra": 1,
+          "Gosmão": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Grupo de árvores": 2,
+          "Pinheiro": 7,
+          "Pedra": 5,
+          "Bosque denso": 2
+        },
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        17,
+        13
+      ],
+      "pos": [
+        17,
+        13
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-030",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:30:06",
+    "imagem": "img/S-030.png"
+  },
+  {
+    "texto": "A verdade é que eu achei essas gramas muito exageradas no sentido de que é melhor você fazer algo mais minimalistas com gramas menores do que ficar enfiando essas gramas maiores em todos os lugares sabe eu gostaria de gramas mais realistas e menores linhas para que não ficasse assim tão esquisito vários tufos idênticos saindo do chão",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (542×183 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -42,
+        -40
+      ],
+      "pos": [
+        -42,
+        -40
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-031",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:31:07",
+    "imagem": "img/S-031.png"
+  },
+  {
+    "texto": "sino que ta com 2 musicas simultaneas sobrepostas e isso é bug",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (234×176 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -23,
+        -43
+      ],
+      "pos": [
+        -23,
+        -43
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "20/20"
+    },
+    "id": "S-032",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:34:29",
+    "imagem": "img/S-032.png"
   }
 ]

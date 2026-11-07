@@ -27,6 +27,7 @@ Quando ele pedir para aplicar as sugestões:
 - Regras de jogo ficam em `js/rules.js` e ações do personagem (equipar, cartas, loja, atributos, habilidades, atalhos) em `js/actions.js` — valem para 2D e 3D. Não duplique no 3D.
 - O 3D reaproveita `js/ui.js`, `js/feedback.js` e `js/admin.js` através de `js3d/bridge3d.js` (define `G`, `saveGame`, `useItem`, `handleChat`... e repassa para `H3`, preenchido em `main3d.js`). Para o 3D, `FB.pickAt/pickArea` e `ADMIN.render` são substituídos em `installIntegration()`.
 - Save compartilhado: o 3D grava os mesmos campos + `pos3d` e preserva `mapId/x/y` do 2D.
+- Visual das classes: `js3d/looks3d.js` (`CLASS_LOOKS`: roupa, tinta, acessórios e efeitos por classe; o rosto/cabelo do jogador é preservado). Árvores em código: `js3d/trees3d.js`. Guardião Sagrado = Paladino, Menestrel = Bardo (só o nome exibido; os ids continuam).
 - Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
