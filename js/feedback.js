@@ -213,7 +213,11 @@ const FB = {
       <div class="fb-meta">${esc(G.map.def.name)}${tl}</div>
       <div class="fb-scroll">
         ${shot ? `<img class="fb-shot" src="${shot}" alt="">` : ''}
-        <textarea id="fb-text" rows="4" placeholder="O que você quer mudar aqui?\nEx.: não gostei do visual desse monstro, deixe-o mais fofo."></textarea>
+        <div class="fb-ta">
+          <textarea id="fb-text" rows="4" placeholder="O que você quer mudar aqui? Escreva ou clique no 🎤 e fale.\nEx.: não gostei do visual desse monstro, deixe-o mais fofo."></textarea>
+          <button class="fb-mic" id="fb-mic" title="Ditar por voz (clique para começar / parar)">🎤</button>
+        </div>
+        <div class="fb-voice" id="fb-voice"><canvas id="fb-wave" width="120" height="22"></canvas><span></span></div>
         <div class="fb-cats">${FB_CATS.map(c => `<span class="fb-cat" data-c="${c}">${c}</span>`).join('')}</div>
       </div>
       <div class="fb-actions"><span class="muted">Enter envia · Shift+Enter nova linha · Esc cancela</span><span><button class="btn" id="fb-cancel">Cancelar</button> <button class="btn gold" id="fb-send">Enviar sugestão</button></span></div>`;
@@ -229,13 +233,15 @@ const FB = {
       if (cat === el.dataset.c) cat = null; else { cat = el.dataset.c; el.classList.add('on'); }
     });
     const ta = b.querySelector('#fb-text');
+    b.querySelector('#fb-mic').onclick = () => (this.voice.on ? this.stopVoice() : this.startVoice(ta));
+    ta.addEventListener('input', e => { if (this.voice.on && e.isTrusted) this.voice.base = ta.value; }); // digitou junto com a voz
     ta.addEventListener('keydown', e => {
       e.stopPropagation();
       if (e.key === 'Escape') this.cancel();
-      else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.submit(ta.value, cat); } // Shift+Enter = nova linha
+      else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.stopVoice(); this.submit(ta.value, cat); } // Shift+Enter = nova linha
     });
     b.querySelector('#fb-cancel').onclick = () => this.cancel();
-    b.querySelector('#fb-send').onclick = () => this.submit(ta.value, cat);
+    b.querySelector('#fb-send').onclick = () => { this.stopVoice(); this.submit(ta.value, cat); };
     ta.focus();
     updatePauseBar();
   },
@@ -251,7 +257,104 @@ const FB = {
     top = Math.max(m, Math.min(VH - bh - m, top));
     b.style.left = left + 'px'; b.style.top = top + 'px';
   },
-  closeBox() { if (this.box) { this.box.remove(); this.box = null; } this.cur = null; },
+  closeBox() { this.stopVoice(); if (this.box) { this.box.remove(); this.box = null; } this.cur = null; },
+
+  /* ---------- ditado por voz (🎤) ----------
+     Usa o reconhecimento de voz do navegador em pt-BR (Chrome/Edge: Google;
+     Safari: Apple). O texto aparece enquanto você fala. */
+  voice: { on: false, rec: null, base: '', stream: null, raf: 0, actx: null },
+  voiceMsg(text, cls = '') {
+    const el = this.box && this.box.querySelector('#fb-voice'); if (!el) return;
+    el.className = 'fb-voice' + (cls ? ' ' + cls : '') + (text ? ' show' : '');
+    el.querySelector('span').textContent = text;
+    this.placeBox(); // a mensagem muda a altura da caixa: mantém tudo (e o Enviar) dentro da tela
+  },
+  // pontuação falada e maiúsculas, para o texto sair parecido com um texto digitado
+  polish(txt) {
+    let s = ' ' + txt.trim() + ' ';
+    const rules = [[/\s+ponto de interroga[cç][aã]o\b/gi, '?'], [/\s+ponto de exclama[cç][aã]o\b/gi, '!'], [/\s+ponto final\b/gi, '.'], [/\s+v[ií]rgula\b/gi, ','],
+      [/\s+dois pontos\b/gi, ':'], [/\s+(nova linha|pr[oó]xima linha|novo par[aá]grafo)\b/gi, '\n'], [/\s+abre par[eê]nteses\b/gi, ' ('], [/\s+fecha par[eê]nteses\b/gi, ')']];
+    for (const [re, rep] of rules) s = s.replace(re, rep);
+    s = s.replace(/[ \t]+/g, ' ').replace(/ ([,.!?:)])/g, '$1').replace(/ ?\n ?/g, '\n').replace(/^[ \t]+|[ \t]+$/g, ''); // mantém a quebra de linha no fim
+    // maiúscula só depois de ponto/quebra de linha; o começo do trecho quem decide é joinText
+    return s.replace(/([.!?\n]\s*)(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase());
+  },
+  joinText(base, add) {
+    if (!add) return base;
+    if (!base.trim()) return add.charAt(0).toUpperCase() + add.slice(1);
+    const endSentence = /[.!?\n]\s*$/.test(base);
+    const sep = /[\s\n]$/.test(base) || /^[,.!?:)]/.test(add) ? '' : ' ';
+    return base + sep + (endSentence ? add.charAt(0).toUpperCase() + add.slice(1) : add);
+  },
+  startVoice(ta) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { this.voiceMsg('Este navegador não tem ditado por voz. Use o Chrome, o Edge ou o Safari.', 'err'); return; }
+    const v = this.voice, mic = this.box.querySelector('#fb-mic');
+    const rec = new SR();
+    rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    v.rec = rec; v.on = true; v.base = ta.value;
+    mic.classList.add('on'); mic.textContent = '⏹'; mic.title = 'Parar o ditado';
+    this.voiceMsg('🔴 Ouvindo... fale normalmente. Diga "vírgula", "ponto final" ou "nova linha" para pontuar.', 'live');
+    rec.onresult = e => {
+      let fin = '', interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) { const r = e.results[i]; if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript; }
+      if (fin) v.base = this.joinText(v.base, this.polish(fin));
+      const tail = interim ? this.joinText(v.base, interim.trim()) : v.base;
+      ta.value = tail; ta.scrollTop = ta.scrollHeight;
+      ta.classList.toggle('interim', !!interim);
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { this.stopVoice(); this.voiceMsg('O navegador bloqueou o microfone. Clique no cadeado ao lado do endereço e permita o microfone.', 'err'); }
+      else if (e.error === 'network') { this.stopVoice(); this.voiceMsg('O ditado precisa de internet (o navegador transcreve online).', 'err'); }
+      else if (e.error === 'audio-capture') { this.stopVoice(); this.voiceMsg('Nenhum microfone encontrado.', 'err'); }
+    };
+    // o navegador encerra sozinho depois de um silêncio: se ainda estamos ouvindo, recomeça
+    rec.onend = () => { if (v.on && v.rec === rec) { try { rec.start(); } catch (err) { } } };
+    try { rec.start(); } catch (err) { this.stopVoice(); this.voiceMsg('Não consegui iniciar o ditado.', 'err'); return; }
+    this.startWave();
+  },
+  stopVoice() {
+    const v = this.voice;
+    if (!v.on && !v.rec) return;
+    v.on = false;
+    if (v.rec) { try { v.rec.stop(); } catch (err) { } v.rec = null; }
+    this.stopWave();
+    const mic = this.box && this.box.querySelector('#fb-mic');
+    if (mic) { mic.classList.remove('on'); mic.textContent = '🎤'; mic.title = 'Ditar por voz (clique para começar / parar)'; }
+    const ta = this.box && this.box.querySelector('#fb-text');
+    if (ta) { ta.classList.remove('interim'); ta.focus(); }
+    this.voiceMsg('');
+  },
+  // ondinha que reage à voz (como no app do Claude)
+  async startWave() {
+    const v = this.voice, cv = this.box && this.box.querySelector('#fb-wave'); if (!cv) return;
+    try {
+      v.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!v.on) { v.stream.getTracks().forEach(t => t.stop()); v.stream = null; return; }
+      v.actx = new (window.AudioContext || window.webkitAudioContext)();
+      const an = v.actx.createAnalyser(); an.fftSize = 256;
+      v.actx.createMediaStreamSource(v.stream).connect(an);
+      const data = new Uint8Array(an.frequencyBinCount), c = cv.getContext('2d'), N = 16;
+      const draw = () => {
+        if (!v.on) return;
+        an.getByteFrequencyData(data);
+        c.clearRect(0, 0, cv.width, cv.height);
+        for (let i = 0; i < N; i++) {
+          const val = data[2 + i * 3] / 255, h = Math.max(2, val * cv.height);
+          c.fillStyle = `rgba(255,${120 + val * 100},${110},${0.5 + val * 0.5})`;
+          c.fillRect(i * (cv.width / N) + 1, (cv.height - h) / 2, cv.width / N - 3, h);
+        }
+        v.raf = requestAnimationFrame(draw);
+      };
+      draw();
+    } catch (err) { /* sem onda: o ditado continua funcionando */ }
+  },
+  stopWave() {
+    const v = this.voice;
+    cancelAnimationFrame(v.raf);
+    if (v.stream) { v.stream.getTracks().forEach(t => t.stop()); v.stream = null; }
+    if (v.actx) { v.actx.close().catch(() => { }); v.actx = null; }
+  },
 
   async submit(text, cat) {
     text = (text || '').trim();

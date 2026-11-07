@@ -42,6 +42,7 @@ O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mu
 - **P** pausa o jogo.
 - **Q** entra no *modo sugestão*: clique em qualquer coisa (monstro, NPC, item, árvore, chão, seu personagem, um pedaço da interface) ou **arraste** para marcar uma área, e escreva o que quer mudar.
 - Cada sugestão vai para `feedback/sugestoes.json` (e `feedback/SUGESTOES.md`), com um print em `feedback/img/` e a indicação de onde aquilo está no código.
+- Na caixa da sugestão há um **🎤 microfone**: clique e fale, e o texto aparece enquanto você fala (ditado em pt-BR do próprio navegador: Chrome/Edge/Safari; precisa de internet no Chrome). Diga “vírgula”, “ponto final”, “ponto de interrogação” ou “nova linha” para pontuar.
 - **L** mostra a lista das sugestões e o que o Claude respondeu. Com o jogo pausado, um 💡 marca no mapa onde cada uma foi feita.
 - Para aplicar: peça ao Claude *"aplique minhas sugestões pendentes"*.
 
