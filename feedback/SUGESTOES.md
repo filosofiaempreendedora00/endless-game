@@ -2,45 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (6)
+## Pendentes (0)
 
-### S-036 · Área do mapa: Área da tela (220×151 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:44:48 · **Mapa:** Vila de Alvorada (tile [-68, 17])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** quero criar a feature de "skin". Preciso criar um local de skins pagas e quero usar como referencia o que existe hoje no CS Go e no league of legends, pois sei que ambos jogos tem um mercdo infinito de skin. Porem serão uma moeda que nao será o zenny e sim terá outro nome tipo gemas mas nao pode ser gemas e sim algo interessante.Essas moedas especiais seriam compradas com dinheiro real, mas so coisas esteticas, nada que dê vantagem pra pessoa. Outra coisa que ela poderia comprar era montaria com cash
-- ![print](img/S-036.png)
+_Nenhuma._
 
-### S-037 · Área do mapa: Área da tela (588×337 px) (sobre: Barra de atalhos, Ícones de buff)
-- **Status:** pendente · **Quando:** 2026-11-07T17:49:36 · **Mapa:** Campos de Verdelume (tile [-138, 7])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** montanhas muito feias e irreais . Melhore esse mundo aberto por favor esteticamente. Se inspire em skyrim. Nao obviamente com os graficos foda, mas da pra ser bem melhor, especialmente que nao faz sentido arvores em cima de montanha, elas nascem da terra
-- ![print](img/S-037.png)
-
-### S-038 · Área do mapa: Área da tela (102×95 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:52:20 · **Mapa:** Vila de Alvorada (tile [-45, 25])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu gostaria que no onboard ao criar um novo personagem ele fosse um pouco mais guiado e mais Óbvio o que precisava o que precisaria ser feito escolhido até o personagem ser criado então eu gostaria inclusive de um onboard inspirado em MMO rpgs e eu gostaria que antes de escolher outras coisas eu tivesse que escolher uma raça e pudesse escolher entre três humano elfo e anão as raças elas proporcionariam alguns atributos diferentes sendo que não são muito expressivamente diferentes e sim dão uma leve vantagem entre uma raça e outra e também Eles teriam fins mais estéticos do que qualquer coisa aliás por enquanto eu quero que eles sejam apenas estéticos
-- ![print](img/S-038.png)
-
-### S-039 · Área do mapa: Área da tela (66×49 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:53:14 · **Mapa:** Bosque Sussurrante (tile [60, -29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Esse lobo ficou muito Quadradão muito horrível muito com cara de Minecraft Assim como as pedras ficaram muito quadradonas eu quero que você leve a essência desse meu feedback sobre as coisas serem muito quadradonas ou muito artificiais e leve para tudo de forma com que a gente consiga Ir melhorando continuamente os monstros e os gráficos eu não quero algo que seja tão escancaradamente com o formato geométrico
-- ![print](img/S-039.png)
-
-### S-040 · Área do mapa: Área da tela (303×178 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:54:29 · **Mapa:** Campos de Verdelume (tile [-9, -27])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu preciso que um dos menus à direita seja uma verdadeira Wiki a respeito dos Monstros onde eu consiga consultar facilmente todos os monstros como um grande Pokédex digamos assim e eu consiga ver todas as informações sobre eles como os drops as possibilidades de drops no quesito chances o que a carta deles faz e tudo o que é pertinente sobre eles desde habilidades desde HP desde tudo de nível Ou seja todos os portos que são pertinentes aos Monstros raça e etc eu preciso que esteja tudo em uma Wiki e ela seja facilmente encontrada por um dos Comandos do canto direito da tela
-- ![print](img/S-040.png)
-
-### S-041 · Área do mapa: Área da tela (245×204 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:54:49 · **Mapa:** Campos de Verdelume (tile [-6, -23])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** todos os bonecos ficaram com rosto muuuito feio de cu e nao quero essa careta tao feia assim
-- ![print](img/S-041.png)
-
-## Feitas (35)
+## Feitas (41)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -288,3 +254,45 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** gostaria que ALGUMAS das cases tivessem portais tipo do ragnarok, onde a pessoa entra e vai pra outra tela. Nesse ambiente interno podem ter NPCs um npc importante que eu queria era o da montaria. Conversando com ele, ele me daria a opção de uma montaria, pra que eu subisse em cima de um bicho e pudesse andar mais rapido entre o lugares
 - ![print](img/S-035.png)
 - **Resposta do Claude:** Duas casas da vila agora têm portal na porta: a Taverna Caneca Alegre (Dona Rosa vende suco que recupera SP, e o Velho Gui conta histórias) e o Estábulo do Tomé. O Tomé te dá uma montaria à escolha (Corcel Lanudo, da Noite ou Ruivo). Lá fora, aperte M para montar ou desmontar (≈70% mais rápido; atacar desmonta).
+
+### S-036 · Área do mapa: Área da tela (220×151 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:44:48 · **Mapa:** Vila de Alvorada (tile [-68, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quero criar a feature de "skin". Preciso criar um local de skins pagas e quero usar como referencia o que existe hoje no CS Go e no league of legends, pois sei que ambos jogos tem um mercdo infinito de skin. Porem serão uma moeda que nao será o zenny e sim terá outro nome tipo gemas mas nao pode ser gemas e sim algo interessante.Essas moedas especiais seriam compradas com dinheiro real, mas so coisas esteticas, nada que dê vantagem pra pessoa. Outra coisa que ela poderia comprar era montaria com cash
+- ![print](img/S-036.png)
+- **Resposta do Claude:** Nova Loja de Auroras ✦ (botão ✦ à direita ou tecla O). Só cosméticos, nada que dê vantagem: 8 skins em 4 raridades (Comum, Rara, Épica e Lendária, algumas com efeitos como pétalas, gelo, fumaça, faíscas, auréola ou estrelas) e 2 montarias exclusivas (Corcel Real e Corcel Estelar). A compra de Auroras com dinheiro real aparece como "em breve": falta um sistema de pagamento e contas online. Para testar, use o Painel do Mestre (+1.000 Auroras).
+
+### S-037 · Área do mapa: Área da tela (588×337 px) (sobre: Barra de atalhos, Ícones de buff)
+- **Status:** feito · **Quando:** 2026-11-07T17:49:36 · **Mapa:** Campos de Verdelume (tile [-138, 7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** montanhas muito feias e irreais . Melhore esse mundo aberto por favor esteticamente. Se inspire em skyrim. Nao obviamente com os graficos foda, mas da pra ser bem melhor, especialmente que nao faz sentido arvores em cima de montanha, elas nascem da terra
+- ![print](img/S-037.png)
+- **Resposta do Claude:** As montanhas agora fazem parte do terreno, com cristas, picos de alturas diferentes, rocha nas encostas e neve no topo. Os pinheiros nascem só no sopé (nada de árvore no pico), e há uma cordilheira distante no horizonte. A névoa ficou mais longe para dar profundidade, e as nuvens ficaram mais altas e claras.
+
+### S-038 · Área do mapa: Área da tela (102×95 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:52:20 · **Mapa:** Vila de Alvorada (tile [-45, 25])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostaria que no onboard ao criar um novo personagem ele fosse um pouco mais guiado e mais Óbvio o que precisava o que precisaria ser feito escolhido até o personagem ser criado então eu gostaria inclusive de um onboard inspirado em MMO rpgs e eu gostaria que antes de escolher outras coisas eu tivesse que escolher uma raça e pudesse escolher entre três humano elfo e anão as raças elas proporcionariam alguns atributos diferentes sendo que não são muito expressivamente diferentes e sim dão uma leve vantagem entre uma raça e outra e também Eles teriam fins mais estéticos do que qualquer coisa aliás por enquanto eu quero que eles sejam apenas estéticos
+- ![print](img/S-038.png)
+- **Resposta do Claude:** A criação de personagem ficou guiada, em 4 etapas com barra de progresso: 1) Raça (Humano, Elfo ou Anão, com prévia 3D), 2) Aparência (4 rostos e cabelos), 3) Companheiro, 4) Nome, com um resumo de tudo. Por enquanto as raças são só visuais: o elfo tem orelhas pontudas e é mais esguio, e o anão é mais baixo, forte e barbudo.
+
+### S-039 · Área do mapa: Área da tela (66×49 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:53:14 · **Mapa:** Bosque Sussurrante (tile [60, -29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse lobo ficou muito Quadradão muito horrível muito com cara de Minecraft Assim como as pedras ficaram muito quadradonas eu quero que você leve a essência desse meu feedback sobre as coisas serem muito quadradonas ou muito artificiais e leve para tudo de forma com que a gente consiga Ir melhorando continuamente os monstros e os gráficos eu não quero algo que seja tão escancaradamente com o formato geométrico
+- ![print](img/S-039.png)
+- **Resposta do Claude:** O lobo foi refeito com formas arredondadas (tronco, juba de pelo, focinho, patas com joelho e rabo felpudo) e anda com passo suave. As pedras quadradas foram trocadas por rochas arredondadas e irregulares, com musgo em cima. Todos os monstros e as copas das árvores agora têm sombreado suave, sem facetas.
+
+### S-040 · Área do mapa: Área da tela (303×178 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:54:29 · **Mapa:** Campos de Verdelume (tile [-9, -27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu preciso que um dos menus à direita seja uma verdadeira Wiki a respeito dos Monstros onde eu consiga consultar facilmente todos os monstros como um grande Pokédex digamos assim e eu consiga ver todas as informações sobre eles como os drops as possibilidades de drops no quesito chances o que a carta deles faz e tudo o que é pertinente sobre eles desde habilidades desde HP desde tudo de nível Ou seja todos os portos que são pertinentes aos Monstros raça e etc eu preciso que esteja tudo em uma Wiki e ela seja facilmente encontrada por um dos Comandos do canto direito da tela
+- ![print](img/S-040.png)
+- **Resposta do Claude:** Novo Bestiário 📖 (botão no menu à direita ou tecla B): a lista de todos os monstros tem busca. Cada um mostra nível, HP, ataque, defesas, precisão e esquiva, elemento e fraquezas, raça, tamanho, comportamento, EXP, onde aparece, a chance de cada drop e o que a carta faz.
+
+### S-041 · Área do mapa: Área da tela (245×204 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:54:49 · **Mapa:** Campos de Verdelume (tile [-6, -23])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** todos os bonecos ficaram com rosto muuuito feio de cu e nao quero essa careta tao feia assim
+- ![print](img/S-041.png)
+- **Resposta do Claude:** Rostos refeitos em todos os bonecos (jogador e NPCs): as sobrancelhas franzidas viraram retas e simpáticas, e o nariz ficou menor. Acabou a cara de bravo.

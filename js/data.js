@@ -468,9 +468,14 @@ const MONSTERS = {
   },
 };
 // valores padrão + geração automática das cartas
+// raça e ícone de cada monstro (Bestiário)
+const MONSTER_RACES = { blob: 'Amorfo', mushroom: 'Planta', rabbit: 'Fera', bee: 'Inseto', wolf: 'Fera', scarecrow: 'Constructo', bat: 'Fera', skeleton: 'Morto-vivo', golem: 'Constructo', ghost: 'Morto-vivo', knight: 'Morto-vivo', treant: 'Planta' };
+const MONSTER_ICONS = { blob: '💧', mushroom: '🍄', rabbit: '🐇', bee: '🐝', wolf: '🐺', scarecrow: '🎃', bat: '🦇', skeleton: '💀', golem: '🗿', ghost: '👻', knight: '⚔️', treant: '🌳' };
 for (const id in MONSTERS) {
   const m = MONSTERS[id];
   m.id = id;
+  m.race = m.race ?? MONSTER_RACES[m.shape] ?? 'Desconhecida';
+  m.icon = m.icon ?? MONSTER_ICONS[m.shape] ?? '👾';
   m.hit = m.hit ?? Math.round(m.lv * 1.5 + 18);
   m.flee = m.flee ?? Math.round(m.lv * 1.2 + 4);
   m.mdef = m.mdef ?? Math.floor(m.def / 2);

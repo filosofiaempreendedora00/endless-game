@@ -5,10 +5,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS } from './looks3d.js';
+import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
@@ -34,7 +34,7 @@ const canvas = renderer.domElement;
 
 const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
-scene.fog = new THREE.Fog(FOG_DAY.clone(), 60, 240);
+scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 900);
 const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#fff1d0', 2.4); sun.layers.enable(1);
@@ -162,7 +162,7 @@ function buildInteriors() {
     for (const [x, z] of [[-I.w / 4, -1], [I.w / 4, -1], [0, I.d / 4]]) { const l = F(lantern(), x, z); l.position.y = I.h - 0.9; }
     if (id === 'estabulo') {
       // três baias com as montarias em exposição
-      Object.keys(MOUNTS).forEach((k, i) => {
+      Object.keys(MOUNTS).filter(k => !MOUNTS[k].premium).forEach((k, i) => {
         const sx = (i - 1) * 4.2;
         F(stall(3.4, 3.2), sx, -I.d / 2 + 2.1);
         const mt = makeMount(k); mt.obj.scale.setScalar(0.92); F(mt.obj, sx, -I.d / 2 + 2.2, 0.25 * (i - 1), 1.4); roomMounts.push(mt);
@@ -250,6 +250,37 @@ function dismount(silent) {
 }
 function toggleMount() { if (S.riding) dismount(); else mount(); }
 
+/* ---------- Loja de Auroras ✦ (só cosméticos: skins e montarias) ---------- */
+const AURORA_PACKS = [{ n: 500, price: 'R$ 9,90' }, { n: 1100, price: 'R$ 19,90', bonus: '+10%' }, { n: 2400, price: 'R$ 39,90', bonus: '+20%' }, { n: 6500, price: 'R$ 99,90', bonus: '+30%' }];
+function cosm() { const p = S.p; if (!p.cosmetics) p.cosmetics = { auroras: 0, skins: [], skin: null, mounts: [] }; return p.cosmetics; }
+let lojaTab = 'skins';
+function renderLoja() {
+  const c = cosm(), body = UI.body('loja');
+  const tabs = `<div class="tabs"><div class="tab ${lojaTab === 'skins' ? 'on' : ''}" data-lt="skins">🎨 Skins</div><div class="tab ${lojaTab === 'montarias' ? 'on' : ''}" data-lt="montarias">🐎 Montarias</div><div class="tab ${lojaTab === 'auroras' ? 'on' : ''}" data-lt="auroras">✦ Comprar Auroras</div></div>`;
+  const head = `<div class="lj-head"><div><b class="lj-title">Loja de Auroras</b><div class="muted" style="font-size:11px">Só visual — nada aqui dá vantagem em combate.</div></div><div class="lj-bal">✦ <b>${c.auroras.toLocaleString('pt-BR')}</b> Auroras</div></div>`;
+  let grid = '';
+  if (lojaTab === 'skins') {
+    grid = `<div class="lj-grid">${Object.entries(SKINS).map(([k, sk]) => { const R = RARITY[sk.rarity], own = c.skins.includes(k), on = c.skin === k;
+      return `<div class="lj-item" style="--rc:${R.color}"><div class="lj-sw">${['body', 'legs', 'cape', 'hat'].map(q => `<i style="background:${sk.tint[q] || '#555'}"></i>`).join('')}</div><div class="lj-n">${sk.name}</div><div class="lj-r">${R.name}${sk.aura ? ' · com efeito' : ''}</div><div class="lj-d">${sk.desc}</div>
+        ${own ? `<button class="btn ${on ? '' : 'gold'}" data-skin="${k}">${on ? '✔ Usando (tirar)' : 'Usar'}</button>` : `<button class="btn gold" data-buy-skin="${k}">✦ ${sk.price.toLocaleString('pt-BR')}</button>`}</div>`; }).join('')}</div>`;
+  } else if (lojaTab === 'montarias') {
+    grid = `<div class="lj-grid">${Object.entries(MOUNTS).filter(([, m]) => m.premium).map(([k, m]) => { const R = RARITY[m.rarity], own = c.mounts.includes(k), on = S.p.mount && S.p.mount.kind === k;
+      return `<div class="lj-item" style="--rc:${R.color}"><div class="lj-sw">${[m.wool, m.mane, m.blanket, m.horn].map(x => `<i style="background:${x}"></i>`).join('')}</div><div class="lj-n">🐎 ${m.name}</div><div class="lj-r">${R.name} · mesma velocidade</div><div class="lj-d">${m.desc}</div>
+        ${own ? `<button class="btn ${on ? '' : 'gold'}" data-mnt="${k}">${on ? '✔ Montaria atual' : 'Usar'}</button>` : `<button class="btn gold" data-buy-mnt="${k}">✦ ${m.price.toLocaleString('pt-BR')}</button>`}</div>`; }).join('')}</div>
+      <div class="muted" style="font-size:11px;margin-top:6px">As montarias da loja andam na mesma velocidade das do Tomé — a diferença é só o visual. Aperte M para montar.</div>`;
+  } else {
+    grid = `<div class="lj-grid four">${AURORA_PACKS.map(pk => `<div class="lj-item pack"><div class="lj-big">✦</div><div class="lj-n">${pk.n.toLocaleString('pt-BR')} Auroras</div><div class="lj-r">${pk.bonus || '&nbsp;'}</div><button class="btn" disabled>${pk.price}</button></div>`).join('')}</div>
+      <div class="lj-note">💳 A compra com dinheiro de verdade ainda não está ligada: precisa de um sistema de pagamento e de contas online (com servidor). Por enquanto, no seu computador, o Painel do Mestre (⌘Z) dá Auroras de teste.</div>`;
+  }
+  body.innerHTML = head + tabs + grid;
+  const buy = (price, fn) => { if (c.auroras < price) { log('Auroras insuficientes.', 'warn'); Sound.play('error'); return; } c.auroras -= price; fn(); Sound.play('card'); save3d(); renderLoja(); hudDirty = true; };
+  body.querySelectorAll('[data-lt]').forEach(el => el.onclick = () => { lojaTab = el.dataset.lt; Sound.play('click'); renderLoja(); });
+  body.querySelectorAll('[data-buy-skin]').forEach(el => el.onclick = () => { const k = el.dataset.buySkin; buy(SKINS[k].price, () => { c.skins.push(k); c.skin = k; buildPlayerModel(); banner('Nova skin!', SKINS[k].name); }); });
+  body.querySelectorAll('[data-skin]').forEach(el => el.onclick = () => { const k = el.dataset.skin; c.skin = c.skin === k ? null : k; buildPlayerModel(); Sound.play('click'); save3d(); renderLoja(); });
+  body.querySelectorAll('[data-buy-mnt]').forEach(el => el.onclick = () => { const k = el.dataset.buyMnt; buy(MOUNTS[k].price, () => { c.mounts.push(k); S.p.mount = { kind: k }; if (S.riding) { dismount(true); mount(); } banner('Nova montaria!', MOUNTS[k].name); }); });
+  body.querySelectorAll('[data-mnt]').forEach(el => el.onclick = () => { S.p.mount = { kind: el.dataset.mnt }; if (S.riding) { dismount(true); mount(); } Sound.play('click'); save3d(); renderLoja(); });
+}
+
 /* =========================== Montagem do mundo =========================== */
 const clouds = [];
 function buildWorld() {
@@ -298,10 +329,10 @@ function buildWorld() {
   // árvores feitas em código (mais naturais que os pinheiros pontudos do pacote)
   for (const [k, v] of Object.entries(makeTreeTemplates())) MODELS[k] = { ...v, native: true };
   scatter('campos', ['oak_0', 'oak_1', 'oak_2', 'oak_3', 'oak_4', 'oak_1', 'pine_0', 'pine_1'], 60, 0.45, 5, { s0: 0.85, s1: 0.4 });
-  scatter('campos', ['rock_A', 'rock_B', 'rock_C'], 22, 0.4, 3, { s0: 0.8, s1: 0.8, rf: 0.6 });
+  scatter('campos', ['stone_0', 'stone_1', 'stone_2', 'stone_3', 'stone_4', 'stone_5'], 26, 0.4, 3, { s0: 0.7, s1: 0.8 });
   scatter('floresta', ['pinedark_0', 'pinedark_1', 'pinedark_2', 'pinedark_3', 'pine_2', 'pine_3', 'pine_4', 'oakdark_0', 'oakdark_1', 'oakdark_2'], 150, 0.4, 3.4, { s0: 0.85, s1: 0.5 });
-  scatter('floresta', ['rock_D', 'rock_E'], 18, 0.4, 3, { rf: 0.6 });
-  scatter('ruinas', ['rock_A', 'rock_C', 'rock_D', 'rock_E'], 36, 0.35, 3, { s0: 0.9, s1: 1, rf: 0.6 });
+  scatter('floresta', ['stonedark_0', 'stonedark_1', 'stonedark_2', 'stonedark_3'], 20, 0.4, 3, { s0: 0.7, s1: 0.7 });
+  scatter('ruinas', ['stonedark_0', 'stonedark_1', 'stone_3', 'stone_4', 'stone_5'], 36, 0.35, 3, { s0: 0.7, s1: 0.9 });
   scatter('ruinas', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 14, 0.3, 3, { s0: 0.9, s1: 0.3 });
   scatter('floresta', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 16, 0.4, 3, { s0: 0.9, s1: 0.3 });
   // ruínas: prédios destruídos e muros quebrados
@@ -316,15 +347,18 @@ function buildWorld() {
   }
   // lago: vitórias-régias
   buildLilyPads();
-  // montanhas na borda do mundo
-  for (let t = -140; t <= 140; t += 18) for (const [x, z] of [[t, -140], [t, 140], [-140, t], [140, t]]) {
-    const n = ['mountain_A', 'mountain_B', 'mountain_C'][Math.floor(rng() * 3)];
-    place(n, x + (rng() - 0.5) * 8, z + (rng() - 0.5) * 8, { scale: 2.6 + rng() * 1.4, solid: false, sink: 2 });
+  // pinheiros só no sopé das montanhas (nascem da terra, não no topo)
+  for (let k = 0, n = 0; k < 4000 && n < 90; k++) {
+    const x = (rng() * 2 - 1) * 148, z = (rng() * 2 - 1) * 148, h = heightAt(x, z), mm = mountainMask(x, z);
+    if (mm < 0.12 || mm > 0.6 || h > 12 || Math.max(Math.abs(x), Math.abs(z)) < 112 || Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) > 2.2) continue;
+    if (Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT - 2 && !freeAt(x, z, 3)) continue;
+    place(['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'][Math.floor(rng() * 6)], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
+  scene.add(buildDistantMountains());
   // nuvens
   for (let i = 0; i < 16; i++) {
-    const c = place(rng() < 0.6 ? 'cloud' : 'cloud_s', (rng() * 2 - 1) * 160, (rng() * 2 - 1) * 160, { y: 48 + rng() * 22, scale: 3 + rng() * 3, solid: false });
-    if (c) { c.traverse(o => { if (o.isMesh) o.castShadow = false; }); clouds.push(c); }
+    const c = place(rng() < 0.6 ? 'cloud' : 'cloud_s', (rng() * 2 - 1) * 160, (rng() * 2 - 1) * 160, { y: 95 + rng() * 35, scale: 3 + rng() * 3, solid: false });
+    if (c) { c.traverse(o => { if (o.isMesh) { o.castShadow = false; o.material = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#dfe8f2', emissiveIntensity: 0.55, roughness: 1, transparent: true, opacity: 0.92 }); } }); clouds.push(c); } // nuvens altas e claras
   }
 }
 
@@ -578,7 +612,9 @@ function buildPlayerModel() {
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
   const ch = makeChar(L.outfit, L.show);
   const d = dress(ch, S.p.cls, MODELS, (S.p.look && S.p.look.head) || 'Knight');
-  S.me = { ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: d.update };
+  applyRace(ch, S.p.look && S.p.look.race);
+  const skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null;
+  S.me = { ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
 }
@@ -1078,7 +1114,7 @@ function talk(n) {
   else if (n.id === 'bento') UI.dialog(n, 'Bem-vindo, bem-vindo! Poções fresquinhas, armas para toda classe... e compro qualquer tralha que você trouxer dos campos!', [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.open('shop'); } }, bye]);
   else if (n.id === 'tome') {
     const cur = p.mount && MOUNTS[p.mount.kind];
-    const opts = Object.entries(MOUNTS).map(([k, m]) => ({ label: `${p.mount && p.mount.kind === k ? '✔ ' : '🐎 '}${m.name} <span class="muted">— ${m.desc}</span>`, gold: !p.mount, fn: () => {
+    const opts = Object.entries(MOUNTS).filter(([k, m]) => !m.premium).map(([k, m]) => ({ label: `${p.mount && p.mount.kind === k ? '✔ ' : '🐎 '}${m.name} <span class="muted">— ${m.desc}</span>`, gold: !p.mount, fn: () => {
       p.mount = { kind: k }; UI.close('dialog'); Sound.play('levelup'); banner('Nova montaria!', m.name);
       log(`🐎 ${m.name} agora é seu! Aperte M lá fora para montar e andar bem mais rápido.`, 'sys'); save3d();
     } }));
@@ -1195,7 +1231,7 @@ function buildMinimap() {
       g.fillStyle = 'rgba(20,50,22,0.35)'; g.beginPath(); g.arc(x + 1, y + 1, r, 0, 7); g.fill();
       g.fillStyle = '#2f6a30'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
       g.fillStyle = 'rgba(140,200,110,0.45)'; g.beginPath(); g.arc(x - r * 0.3, y - r * 0.3, r * 0.45, 0, 7); g.fill();
-    } else if (/^rock/.test(a)) { g.fillStyle = '#8c8c88'; g.beginPath(); g.arc(x, y, 0.9 / px, 0, 7); g.fill(); }
+    } else if (/^rock|^stone/.test(a)) { g.fillStyle = '#8c8c88'; g.beginPath(); g.arc(x, y, 0.9 / px, 0, 7); g.fill(); }
     else if (/^(wall|fence)/.test(a)) { g.fillStyle = a === 'fence' ? '#7a5532' : '#77736b'; g.fillRect(x - 1.5, y - 1.5, 3, 3); }
     else { // prédios: telhado na cor do pacote
       const roof = /red|market/.test(a) ? '#b8483a' : /destroyed|scaffold/.test(a) ? '#6a6258' : '#3f6fb5', s = (/tower|well/.test(a) ? 2.2 : 3.6) / px;
@@ -1256,7 +1292,7 @@ addEventListener('keydown', e => {
   if (k === 'p') { H3.setPaused(!G.paused); return; }
   if (k === 'enter') { UI.setChatMin(false); $('chatinput').focus(); e.preventDefault(); return; }
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); return; }
-  const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes' }[k];
+  const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes', b: 'bestiario', o: 'loja' }[k];
   if (win) { UI.toggle(win); return; }
   if (k === 'n') { toggleSound(); return; }
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
@@ -1326,7 +1362,7 @@ function toggleMenu() {
   $('m-2d').onclick = () => { save3d(); location.href = '2d.html'; };
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
-const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
+const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
 function save3d() {
   if (!S.p || !HAS_SRV) return;
   const s = {}; for (const k of SAVE_FIELDS3) s[k] = S.p[k];
@@ -1395,7 +1431,7 @@ function draw(dt) {
     // névoa por região
     const wr = zoneWeight('ruinas', P.x, P.z), wf = zoneWeight('floresta', P.x, P.z);
     scene.fog.color.copy(FOG_DAY).lerp(FOG_FOREST, wf * 0.6).lerp(FOG_RUINS, wr * 0.85);
-    scene.fog.near = 60 - wr * 35 - wf * 15; scene.fog.far = 240 - wr * 120 - wf * 60;
+    scene.fog.near = 90 - wr * 60 - wf * 35; scene.fog.far = 420 - wr * 270 - wf * 180;
     // seleção
     const t = S.target;
     if (t && !(t.dead && !t.isNpc)) { selRing.visible = true; selRing.position.set(t.x, t.obj.position.y + 0.06, t.z); selRing.scale.setScalar(Math.max(0.7, t.radius + 0.35)); selRing.material.color.set(t.isNpc ? '#7dff9a' : (t.def.aggressive || t.aggro) ? '#ff4040' : '#ffe36a'); }
@@ -1438,35 +1474,85 @@ async function chooseCharacter() {
   });
 }
 // criação de personagem no 3D (nome obrigatório; mesmo começo do 2D)
-function showCreate3d(list) {
+// criação guiada, em etapas (estilo MMO): raça → aparência → mascote → nome
+const FACES = [['Knight', 'Cabelo claro'], ['Barbarian', 'Ruivo'], ['Mage', 'Grisalho'], ['Rogue', 'Moreno']];
+const previewCache = {};
+function previewChar(race, head, cls = 'aprendiz') { // imagem do personagem de frente (para as cartas da criação)
+  const key = race + '|' + head + '|' + cls; if (previewCache[key]) return previewCache[key];
+  const L = CLASS_LOOKS[cls], ch = makeChar(L.outfit, L.show); dress(ch, cls, MODELS, head); applyRace(ch, race);
+  ch.obj.position.set(900, 0, 900); ch.obj.rotation.y = 0.35; scene.add(ch.obj); ch.anim.play('Idle'); ch.anim.update(0.4);
+  const url = renderObj(ch.obj, 220, 300); scene.remove(ch.obj);
+  return (previewCache[key] = url);
+}
+function renderObj(obj, W, H) {
+  const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
+  obj.updateMatrixWorld(true); obj.traverse(o => o.layers.enable(1));
+  const box = new THREE.Box3().setFromObject(obj), h = Math.max(1, box.max.y - box.min.y), c = box.getCenter(new THREE.Vector3());
+  const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 60); cam.position.set(c.x, c.y + h * 0.12, c.z + h * 2.6); cam.lookAt(c); cam.layers.set(1);
+  const bg = scene.background, fog = scene.fog, cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
+  scene.background = null; scene.fog = null; renderer.setClearColor(0, 0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, cam);
+  const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf);
+  renderer.setRenderTarget(null); scene.background = bg; scene.fog = fog; renderer.setClearColor(cc, ca); rt.dispose();
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), img = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);
+  g.putImageData(img, 0, 0); return cv.toDataURL('image/png');
+}
+function showCreate3d(list, st = { step: 0, race: null, head: 'Knight', pet: null, name: '' }) {
   const o = $('overlay');
-  o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">CRIAR NOVO PERSONAGEM</div><div class="card">
-    <label style="margin-top:0">Nome <span style="color:#ff8a8a">*</span></label><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?">
-    <div id="c3-err" style="color:#ff8a8a;font-size:12px;min-height:16px;margin-top:3px"></div>
-    <div class="muted" style="font-size:12px;margin:4px 0 10px">Você começa como 🌱 Aprendiz na Vila de Alvorada. No Nível de Classe ${CONFIG.JOB_CHANGE_1}, a Mestra Ivra te ajuda a escolher seu caminho.</div>
-    <div class="row">${list.length ? '<button class="btn" id="c3-back">← Voltar</button>' : ''}<button class="btn gold" id="c3-ok">Criar personagem</button></div>
-  </div><div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
-  o.classList.add('show');
-  const nameEl = $('c3-name'), err = $('c3-err');
-  const create = async () => {
-    const name = nameEl.value.trim();
-    if (name.length < 2) { err.textContent = 'Dê um nome ao seu personagem (pelo menos 2 letras).'; nameEl.focus(); Sound.play('error'); return; }
-    if (list.some(c => c.slug === saveSlug(name))) { err.textContent = 'Você já tem um personagem com esse nome. Escolha outro.'; nameEl.focus(); Sound.play('error'); return; }
-    Sound.init();
-    showPetChoice('Toda jornada começa com um companheiro. Ele vai lutar ao seu lado e evoluir junto com você.', species => createWithPet(name, species), () => showCreate3d(list));
+  const STEPS = ['Raça', 'Aparência', 'Companheiro', 'Nome'];
+  const prog = `<div class="cw-steps">${STEPS.map((t, i) => `<div class="cw-st ${i < st.step ? 'done' : i === st.step ? 'on' : ''}"><b>${i < st.step ? '✔' : i + 1}</b>${t}</div>`).join('<i></i>')}</div>`;
+  const back = st.step > 0 ? '<button class="btn" id="cw-back">← Voltar</button>' : list.length ? '<button class="btn" id="cw-back">← Meus personagens</button>' : '<span></span>';
+  const frame = (title, sub, body, okLabel, okOn) => {
+    o.innerHTML = `<div class="title-box cw"><h1>${GAME_TITLE}</h1><div class="sub">CRIAR NOVO PERSONAGEM</div>${prog}<div class="card">
+      <div class="cw-title">${title}</div><div class="cw-sub">${sub}</div>${body}
+      <div class="cw-err" id="cw-err"></div>
+      <div class="row cw-nav">${back}<button class="btn gold" id="cw-ok" ${okOn ? '' : 'disabled'}>${okLabel}</button></div></div>
+      <div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
+    o.classList.add('show');
+    $('cw-back') && ($('cw-back').onclick = () => { Sound.play('click'); if (st.step > 0) showCreate3d(list, { ...st, step: st.step - 1 }); else chooseCharacter(); });
   };
-  const createWithPet = async (name, species) => {
-    const c = createCharacter(name, {}, species);
-    const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
-    Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
-    try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
-    startWith(s);
-    log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
-  };
-  $('c3-ok').onclick = create;
-  nameEl.addEventListener('keydown', e => { e.stopPropagation(); err.textContent = ''; if (e.key === 'Enter') create(); });
-  if ($('c3-back')) $('c3-back').onclick = () => chooseCharacter();
-  setTimeout(() => nameEl.focus(), 50);
+  const next = patch => { Sound.play('click'); showCreate3d(list, { ...st, ...patch, step: st.step + 1 }); };
+  if (st.step === 0) { // raça
+    frame('Escolha sua raça', 'Ela define a sua aparência. <span class="muted">(Por enquanto as raças são só visuais — vantagens leves virão depois.)</span>',
+      `<div class="cw-grid">${Object.entries(RACES).map(([k, r]) => `<div class="cw-card ${st.race === k ? 'sel' : ''}" data-k="${k}"><img src="${previewChar(k, st.head)}" alt=""><div class="cw-n">${r.icon} ${r.name}</div><div class="cw-h">${r.hint}</div><div class="cw-d">${r.desc}</div></div>`).join('')}</div>`,
+      'Continuar →', !!st.race);
+    o.querySelectorAll('.cw-card').forEach(c => { c.onclick = () => { Sound.play('click'); st.race = c.dataset.k; o.querySelectorAll('.cw-card').forEach(x => x.classList.toggle('sel', x === c)); $('cw-ok').disabled = false; }; c.ondblclick = () => next({ race: c.dataset.k }); });
+    $('cw-ok').onclick = () => st.race && next({});
+  } else if (st.step === 1) { // aparência
+    frame('Escolha sua aparência', `Rosto e cabelo do seu ${RACES[st.race].name.toLowerCase()}. Eles ficam iguais quando você trocar de classe — só a roupa muda.`,
+      `<div class="cw-grid four">${FACES.map(([k, n]) => `<div class="cw-card ${st.head === k ? 'sel' : ''}" data-k="${k}"><img src="${previewChar(st.race, k)}" alt=""><div class="cw-n">${n}</div></div>`).join('')}</div>`,
+      'Continuar →', true);
+    o.querySelectorAll('.cw-card').forEach(c => { c.onclick = () => { Sound.play('click'); st.head = c.dataset.k; o.querySelectorAll('.cw-card').forEach(x => x.classList.toggle('sel', x === c)); }; c.ondblclick = () => next({ head: c.dataset.k }); });
+    $('cw-ok').onclick = () => next({});
+  } else if (st.step === 2) { // mascote
+    showPetChoice('Toda jornada começa com um companheiro. Ele luta ao seu lado e evolui junto com você.', species => next({ pet: species }), () => showCreate3d(list, { ...st, step: 1 }));
+    const box = o.querySelector('.title-box'); if (box && !box.querySelector('.cw-steps')) box.querySelector('.sub')?.insertAdjacentHTML('afterend', prog);
+  } else { // nome + resumo
+    frame('Como você vai se chamar?', 'Último passo! Confira tudo e dê um nome ao seu aventureiro.',
+      `<div class="cw-sum"><img src="${previewChar(st.race, st.head)}" alt=""><div>
+        <div class="cw-line">${RACES[st.race].icon} <b>${RACES[st.race].name}</b> · ${FACES.find(f => f[0] === st.head)[1]}</div>
+        <div class="cw-line">${PETS[st.pet].stages[0].icon} Companheiro: <b>${PETS[st.pet].stages[0].name}</b></div>
+        <div class="cw-line">🌱 Classe inicial: <b>Aprendiz</b> <span class="muted">(no Nv. de Classe ${CONFIG.JOB_CHANGE_1} você escolhe seu caminho com a Mestra Ivra)</span></div>
+        <label>Nome <span style="color:#ff8a8a">*</span></label><input type="text" id="c3-name" maxlength="16" placeholder="Ex.: Lírio, Bruma, Tor..." value="${escH(st.name || '')}">
+      </div></div>`, '✨ Criar personagem', true);
+    const nameEl = $('c3-name'), err = $('cw-err');
+    const create = async () => {
+      const name = nameEl.value.trim();
+      if (name.length < 2) { err.textContent = 'Dê um nome ao seu personagem (pelo menos 2 letras).'; nameEl.focus(); Sound.play('error'); return; }
+      if (list.some(c => c.slug === saveSlug(name))) { err.textContent = 'Você já tem um personagem com esse nome. Escolha outro.'; nameEl.focus(); Sound.play('error'); return; }
+      Sound.init();
+      const c = createCharacter(name, { race: st.race, head: st.head }, st.pet);
+      const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
+      Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
+      try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
+      startWith(s);
+      log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
+    };
+    $('cw-ok').onclick = create;
+    nameEl.addEventListener('keydown', e => { e.stopPropagation(); err.textContent = ''; st.name = nameEl.value; if (e.key === 'Enter') create(); });
+    nameEl.addEventListener('input', () => { st.name = nameEl.value; });
+    setTimeout(() => nameEl.focus(), 50);
+  }
 }
 function startWith(s) {
   if (!s.pet) {
@@ -1494,7 +1580,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -1584,8 +1670,10 @@ function portrait() {
   return portraitCache.url;
 }
 function installIntegration() {
+  UI.render_loja = renderLoja;
   Object.assign(H3, {
-    save: save3d, useItem: use3d, useSlot, levelFx, portrait, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
+    save: save3d, useItem: use3d, useSlot, levelFx, portrait,
+    spawnInfo: () => { const o = {}; for (const [zone, type] of SPAWNS) { const zn = ZONES.find(q => q.id === zone); (o[type] = o[type] || []).includes(zn.name) || o[type].push(zn.name); } return o; }, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
     setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime((on ? 0.05 : 0.16) * Sound.musicVol, Sound.ctx.currentTime, 0.2); updatePauseBar(); },
     say: txt => floatAt(S.me.obj.position, '💬 ' + txt, '#ffffff', 2.6),
   });
@@ -1646,11 +1734,12 @@ function adminRender() {
         <button class="adm-chip" data-cmd="cura">❤️ Curar tudo</button><button class="adm-chip" data-cmd="lv1">⭐ +1 Nível Base</button><button class="adm-chip" data-cmd="lv5">⭐ +5 Níveis Base</button>
         <button class="adm-chip" data-cmd="job1">✦ +1 Nível Classe</button><button class="adm-chip" data-cmd="job10">✦ +10 Níveis Classe</button><button class="adm-chip" data-cmd="zeny">💰 +10.000 z</button>
         <button class="adm-chip" data-cmd="rate">📈 EXP ${CONFIG.EXP_RATE}× (trocar)</button>
-        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}</div>
+        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
     </div>`;
   body.querySelector('#adm-god').onclick = () => toggleGod();
   body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => ADMIN.setClass(el.dataset.cls));
   body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
+  body.querySelectorAll('[data-aur]').forEach(el => el.onclick = () => { cosm().auroras += 1000; log('✦ +1.000 Auroras (teste do mestre).', 'sys'); UI.markDirty(); save3d(); });
   body.querySelectorAll('[data-pet]').forEach(el => el.onclick = () => { for (let i = 0; i < 5; i++) petExpGain(petExpNext(p.pet.lv) * 2); hudDirty = true; UI.markDirty(); });
   body.querySelectorAll('[data-poi]').forEach(el => el.onclick = () => { const o = pois[+el.dataset.poi]; UI.close('admin'); teleport3d(o.x, o.z); log(`Teleportado: ${o.label}`); });
   const cv = body.querySelector('#adm-map3d');
@@ -1686,6 +1775,7 @@ function drawAdmMap(cv) {
 (async function boot() {
   requestAnimationFrame(frame);
   await loadAll();
+  friendlyFaces(MODELS);
   buildWorld();
   spawnNpcs();
   for (const [zone, type, n] of SPAWNS) for (let i = 0; i < n; i++) spawnMonster(zone, type);
@@ -1693,6 +1783,11 @@ function drawAdmMap(cv) {
   installIntegration();
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { makeChar, dressAs: (ch, cls) => dress(ch, cls, MODELS, "Knight"), CLASS_LOOKS, scene, camera, buildPet, petExpGain, updatePet, talk, interact, trySkill, tabTarget, pick, toScreen, fbPick, fbArea, teleport3d, useSlot }; // para testes
+  window.__S3 = S; window.__api = { shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+    const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
+    const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
+    const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), img = g.createImageData(W, H);
+    for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); g.putImageData(img, 0, 0); return cv.toDataURL('image/jpeg', 0.85); }, makeChar, dressAs: (ch, cls) => dress(ch, cls, MODELS, "Knight"), CLASS_LOOKS, scene, camera, buildPet, petExpGain, updatePet, talk, interact, trySkill, tabTarget, pick, toScreen, fbPick, fbArea, teleport3d, useSlot }; // para testes
   chooseCharacter();
 })();

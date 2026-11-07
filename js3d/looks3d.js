@@ -219,3 +219,159 @@ export function dress(ch, cls, MODELS, headModel = 'Knight') {
   for (const e of L.extras || []) if (EXTRAS[e]) EXTRAS[e](root, fx);
   return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
 }
+
+/* ---------- rostos mais simpáticos ----------
+   As cabeças do pacote vêm com sobrancelhas franzidas (cara de bravo) e nariz grande.
+   Aqui, uma única vez ao carregar, nivelamos e erguemos as sobrancelhas e diminuímos o nariz.
+   As peças do rosto são "ilhas" separadas da malha: nariz (no centro), olhos e sobrancelhas (pares). */
+export function friendlyFaces(MODELS) {
+  const done = new Set();
+  for (const model of Object.keys(HEADS)) {
+    const head = MODELS[model] && MODELS[model].scene.getObjectByName(HEADS[model]);
+    if (!head || !head.geometry || done.has(head.geometry)) continue;
+    done.add(head.geometry);
+    const g = head.geometry, P = g.attributes.position, idx = g.index ? g.index.array : null, n = P.count;
+    const par = new Int32Array(n).map((_, i) => i);
+    const f = x => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
+    const un = (a, b) => { a = f(a); b = f(b); if (a !== b) par[a] = b; };
+    if (idx) for (let i = 0; i < idx.length; i += 3) { un(idx[i], idx[i + 1]); un(idx[i + 1], idx[i + 2]); }
+    const seen = new Map();
+    for (let i = 0; i < n; i++) { const k = P.getX(i).toFixed(4) + ',' + P.getY(i).toFixed(4) + ',' + P.getZ(i).toFixed(4); if (seen.has(k)) un(i, seen.get(k)); else seen.set(k, i); }
+    const groups = {};
+    for (let i = 0; i < n; i++) (groups[f(i)] = groups[f(i)] || []).push(i);
+    const comps = Object.values(groups).map(vs => {
+      const b = { vs, x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, z0: 1e9, z1: -1e9 };
+      for (const i of vs) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.y0 = Math.min(b.y0, y); b.y1 = Math.max(b.y1, y); b.z0 = Math.min(b.z0, z); b.z1 = Math.max(b.z1, z); }
+      b.cx = (b.x0 + b.x1) / 2; b.cy = (b.y0 + b.y1) / 2; return b;
+    }).sort((a, b) => b.vs.length - a.vs.length);
+    const face = comps.slice(1).filter(c => c.z1 > 0.2 && c.vs.length < 200); // peças pequenas na frente
+    const nose = face.filter(c => Math.abs(c.cx) < 0.03).sort((a, b) => b.z1 - a.z1)[0];
+    const right = face.filter(c => c.cx > 0.05).sort((a, b) => a.cy - b.cy); // de baixo para cima: olho, sobrancelha
+    if (nose) for (const i of nose.vs) { // nariz menor e menos pontudo
+      const cz = nose.z0, cyn = nose.cy;
+      P.setXYZ(i, P.getX(i) * 0.8, cyn + (P.getY(i) - cyn) * 0.75, cz + (P.getZ(i) - cz) * 0.7);
+    }
+    if (right.length >= 2) {
+      const eyeY = right[0].cy;
+      for (const brow of face.filter(c => Math.abs(c.cx) > 0.05 && c.cy > eyeY + 0.03)) {
+        // inclinação atual (regressão de y por x) → deixa reta e sobe um pouco
+        let sx = 0, sy = 0, sxx = 0, sxy = 0; const m = brow.vs.length;
+        for (const i of brow.vs) { const x = P.getX(i), y = P.getY(i); sx += x; sy += y; sxx += x * x; sxy += x * y; }
+        const slope = (m * sxy - sx * sy) / Math.max(1e-6, m * sxx - sx * sx), mx = sx / m;
+        for (const i of brow.vs) { const x = P.getX(i); P.setY(i, P.getY(i) - slope * (x - mx) * 1.25 + 0.025); }
+      }
+    }
+    P.needsUpdate = true; g.computeVertexNormals(); g.computeBoundingSphere();
+  }
+}
+
+/* ---------- raças (por enquanto só visual) ---------- */
+export const RACES = {
+  humano: { name: 'Humano', icon: '🧑', desc: 'Versáteis e determinados. Se adaptam a qualquer caminho.', hint: 'Equilibrado' },
+  elfo: { name: 'Elfo', icon: '🧝', desc: 'Ágeis e ligados à magia da floresta. Orelhas pontudas, porte esguio.', hint: 'Ágil e místico' },
+  anao: { name: 'Anão', icon: '🧔', desc: 'Robustos e teimosos como rocha. Mais baixos, fortes e barbudos.', hint: 'Resistente' },
+};
+function visibleHead(root) { let h = null; root.traverse(o => { if (o.isSkinnedMesh && o.visible && (o.name === 'PlayerHead' || /_Head(_Hooded)?$/.test(o.name))) h = o; }); return h; }
+function islands(g) {
+  const P = g.attributes.position, idx = g.index ? g.index.array : null, n = P.count, par = new Int32Array(n).map((_, i) => i);
+  const f = x => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
+  const un = (a, b) => { a = f(a); b = f(b); if (a !== b) par[a] = b; };
+  if (idx) for (let i = 0; i < idx.length; i += 3) { un(idx[i], idx[i + 1]); un(idx[i + 1], idx[i + 2]); }
+  const seen = new Map();
+  for (let i = 0; i < n; i++) { const k = P.getX(i).toFixed(4) + ',' + P.getY(i).toFixed(4) + ',' + P.getZ(i).toFixed(4); if (seen.has(k)) un(i, seen.get(k)); else seen.set(k, i); }
+  const gr = {}; for (let i = 0; i < n; i++) (gr[f(i)] = gr[f(i)] || []).push(i);
+  return Object.values(gr).map(vs => { const b = { vs, x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, z0: 1e9, z1: -1e9 }; for (const i of vs) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.y0 = Math.min(b.y0, y); b.y1 = Math.max(b.y1, y); b.z0 = Math.min(b.z0, z); b.z1 = Math.max(b.z1, z); } b.cx = (b.x0 + b.x1) / 2; b.cy = (b.y0 + b.y1) / 2; return b; });
+}
+function hairColor(head) { // cor das sobrancelhas na textura
+  try {
+    const g = head.geometry, U = g.attributes.uv, img = head.material.map.image;
+    const brow = islands(g).filter(c => c.cx > 0.05 && c.z1 > 0.2 && c.vs.length < 200).sort((a, b) => b.cy - a.cy)[0];
+    const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d');
+    const i = brow.vs[0], u = U.getX(i), v = U.getY(i);
+    x.drawImage(img, Math.floor(u * img.width), Math.floor((head.material.map.flipY ? 1 - v : v) * img.height), 1, 1, 0, 0, 1, 1);
+    const d = x.getImageData(0, 0, 1, 1).data; return new THREE.Color(d[0] / 255, d[1] / 255, d[2] / 255).convertSRGBToLinear();
+  } catch (e) { return new THREE.Color('#7a5a3a'); }
+}
+export function applyRace(ch, race) {
+  if (!race || race === 'humano') return;
+  const head = visibleHead(ch.root); if (!head) return;
+  if (race === 'elfo') {
+    const g = head.geometry.clone(), P = g.attributes.position;
+    for (const ear of islands(g).filter(c => Math.abs(c.cx) > 0.3 && c.z1 < 0.25 && c.vs.length < 200)) {
+      const s = Math.sign(ear.cx);
+      for (const i of ear.vs) { const t = Math.max(0, (P.getY(i) - ear.y0) / (ear.y1 - ear.y0)); P.setXYZ(i, P.getX(i) + s * t * t * 0.18, P.getY(i) + t * t * 0.32, P.getZ(i) - t * t * 0.1); }
+    }
+    P.needsUpdate = true; g.computeVertexNormals(); head.geometry = g;
+    ch.obj.scale.set(0.96, 1.05, 0.96);
+  } else if (race === 'anao') {
+    ch.obj.scale.set(1.1, 0.86, 1.1);
+    // barba: malha presa ao mesmo esqueleto da cabeça (peso total no osso da cabeça)
+    const hg = head.geometry, si = hg.attributes.skinIndex, sw = hg.attributes.skinWeight;
+    const parts = [];
+    const bl = new THREE.SphereGeometry(0.3, 14, 10, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.65); bl.scale(1.25, 1.1, 0.75); bl.translate(0, 1.32, 0.24); parts.push(bl);
+    const tip = new THREE.ConeGeometry(0.2, 0.32, 10); tip.rotateX(Math.PI); tip.translate(0, 1.02, 0.36); parts.push(tip);
+    for (const s of [-1, 1]) { const m = new THREE.CapsuleGeometry(0.06, 0.16, 4, 8); m.rotateZ(s * 1.2); m.translate(s * 0.12, 1.42, 0.46); parts.push(m); } // bigode
+    const geo = new THREE.BufferGeometry();
+    const merged = parts.map(p => p.index ? p.toNonIndexed() : p);
+    const pos = [], nor = [];
+    for (const p of merged) { pos.push(...p.attributes.position.array); nor.push(...p.attributes.normal.array); }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    const nv = pos.length / 3, sIdx = new Uint16Array(nv * 4), sW = new Float32Array(nv * 4);
+    let hb = 0, best = -1; for (let k = 0; k < 4; k++) if (sw.getComponent(0, k) > best) { best = sw.getComponent(0, k); hb = si.getComponent(0, k); }
+    for (let v = 0; v < nv; v++) { sIdx[v * 4] = hb; sW[v * 4] = 1; }
+    geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(sIdx, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sW, 4));
+    geo.computeVertexNormals();
+    const beard = new THREE.SkinnedMesh(geo, new THREE.MeshStandardMaterial({ color: hairColor(head).multiplyScalar(0.85), roughness: 0.9, flatShading: false }));
+    beard.name = 'RaceBeard'; beard.position.copy(head.position); beard.quaternion.copy(head.quaternion); beard.scale.copy(head.scale);
+    beard.castShadow = true; beard.frustumCulled = false; head.parent.add(beard); beard.bind(head.skeleton, head.bindMatrix);
+  }
+}
+
+/* ---------- skins (só visual, compradas com Auroras ✦) ---------- */
+export const RARITY = {
+  comum: { name: 'Comum', color: '#b8c4d0' }, rara: { name: 'Rara', color: '#5aa8ff' },
+  epica: { name: 'Épica', color: '#b47aff' }, lendaria: { name: 'Lendária', color: '#ffb84a' },
+};
+export const SKINS = {
+  campones: { name: 'Traje do Campo', rarity: 'comum', price: 150, desc: 'Tons de terra e linho, para quem gosta do simples.', tint: { body: '#a8865a', legs: '#6a5236', cape: '#8a6a44', hat: '#c9a46a' } },
+  marinho: { name: 'Uniforme Marinho', rarity: 'comum', price: 150, desc: 'Azul e branco, como os guardas do porto.', tint: { body: '#2f5a9a', legs: '#e8e8ee', cape: '#1f3a6a', hat: '#2f5a9a' } },
+  floral: { name: 'Primavera Florida', rarity: 'rara', price: 350, desc: 'Verde-folha e rosa-pétala. Pétalas caem ao seu redor.', tint: { body: '#4f9a4a', legs: '#2f6a3a', cape: '#ff8ab8', hat: '#ff9ac8' }, aura: { color: '#ff9ac8', kind: 'petalas' } },
+  glacial: { name: 'Coração Glacial', rarity: 'rara', price: 350, desc: 'Azul-gelo com brilho cristalino.', tint: { body: '#9fd8ff', legs: '#3a6a9a', cape: '#cfefff', hat: '#9fd8ff', helmet: '#cfefff' }, aura: { color: '#9fe8ff', kind: 'flocos' } },
+  sombrio: { name: 'Manto do Eclipse', rarity: 'epica', price: 750, desc: 'Negro e roxo, com fumaça sombria nos pés.', tint: { body: '#2a2238', legs: '#1a1624', cape: '#5a2a8a', hat: '#2a2238', helmet: '#3a2a5a' }, aura: { color: '#a77bff', kind: 'fumaça' } },
+  brasa: { name: 'Coração de Brasa', rarity: 'epica', price: 750, desc: 'Vermelho-fogo; faíscas sobem enquanto você anda.', tint: { body: '#a8301e', legs: '#3a1a14', cape: '#ff6a2a', hat: '#a8301e', helmet: '#5a2a1a' }, aura: { color: '#ff8a3a', kind: 'faíscas' } },
+  real: { name: 'Majestade Dourada', rarity: 'lendaria', price: 1500, desc: 'Branco e ouro, com uma auréola de luz e brilho constante.', tint: { body: '#f2ead8', legs: '#c9a14a', cape: '#ffd76a', hat: '#ffd76a', helmet: '#ffe9a8' }, aura: { color: '#ffd76a', kind: 'luz', light: true } },
+  estelar: { name: 'Viajante Estelar', rarity: 'lendaria', price: 1500, desc: 'O céu noturno no tecido, com estrelas orbitando você.', tint: { body: '#1a2050', legs: '#10142e', cape: '#3a3aa8', hat: '#1a2050', helmet: '#2a3070' }, aura: { color: '#9fb4ff', kind: 'estrelas', light: true } },
+};
+export function applySkin(ch, id) {
+  const S = SKINS[id]; if (!S) return null;
+  const t = S.tint, root = ch.root;
+  root.traverse(o => {
+    if (!o.isMesh && !o.isSkinnedMesh) return;
+    const n = o.name;
+    if (t.body && /_Body$/.test(n)) tintMesh(o, t.body);
+    else if (t.legs && /_Leg(Left|Right)$/.test(n)) tintMesh(o, t.legs);
+    else if (t.cape && /_Cape$/.test(n)) tintMesh(o, t.cape);
+    else if (t.hat && /_Hat$/.test(n)) tintMesh(o, t.hat);
+    else if (t.helmet && /_Helmet$/.test(n)) tintMesh(o, t.helmet, 0.7);
+  });
+  if (!S.aura) return null;
+  // aura: partículas ao redor do personagem (presas no objeto, não no osso)
+  const g = new THREE.Group(); ch.obj.add(g);
+  const c = new THREE.Color(S.aura.color), N = S.aura.kind === 'luz' ? 10 : 14;
+  const m = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+  const geo = S.aura.kind === 'flocos' || S.aura.kind === 'estrelas' ? new THREE.OctahedronGeometry(0.05, 0) : S.aura.kind === 'petalas' ? new THREE.SphereGeometry(0.045, 6, 4) : new THREE.SphereGeometry(0.04, 6, 4);
+  const ps = []; for (let i = 0; i < N; i++) { const p = new THREE.Mesh(geo, m); g.add(p); ps.push({ p, o: i / N }); }
+  let halo = null; if (S.aura.kind === 'luz') { halo = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 24), m); halo.rotation.x = Math.PI / 2; halo.position.y = 2.05; g.add(halo); }
+  if (S.aura.light) { const l = new THREE.PointLight(c, 1.2, 4); l.position.y = 1.2; g.add(l); }
+  const k = S.aura.kind;
+  return t => ps.forEach(({ p, o }) => {
+    const ph = (t * (k === 'fumaça' ? 0.35 : 0.5) + o) % 1, a = o * Math.PI * 2 + t * (k === 'estrelas' ? 0.9 : 1.6);
+    if (k === 'petalas' || k === 'flocos') p.position.set(Math.cos(a) * 0.7, 2.2 - ph * 2.2, Math.sin(a) * 0.7);
+    else if (k === 'fumaça') p.position.set(Math.cos(a) * (0.35 + ph * 0.3), ph * 0.8, Math.sin(a) * (0.35 + ph * 0.3));
+    else if (k === 'faíscas') p.position.set(Math.cos(a) * 0.45, ph * 2, Math.sin(a) * 0.45);
+    else if (k === 'estrelas') p.position.set(Math.cos(a) * 0.85, 1.0 + Math.sin(a * 2 + t) * 0.4, Math.sin(a) * 0.85);
+    else p.position.set(Math.cos(a) * 0.55, 0.3 + ph * 1.8, Math.sin(a) * 0.55);
+    p.scale.setScalar(k === 'fumaça' ? 1.6 - ph : 1 - ph * 0.6);
+    if (halo) halo.rotation.z = t;
+  });
+}

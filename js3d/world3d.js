@@ -44,6 +44,17 @@ export function roadDist(x, z) {
   return d;
 }
 
+/* ---------- montanhas na borda do mundo (fazem parte do terreno) ---------- */
+const edgeDist = (x, z) => Math.pow(Math.pow(Math.abs(x), 6) + Math.pow(Math.abs(z), 6), 1 / 6); // quadrado de cantos arredondados
+const ridged = (x, z) => 1 - Math.abs(vnoise(x, z) * 2 - 1);
+export function mountainMask(x, z) { return smooth(104, 146, edgeDist(x, z) + (vnoise(x * 0.03, z * 0.03) - 0.5) * 18); }
+export function mountainH(x, z) {
+  const m = mountainMask(x, z); if (m <= 0) return 0;
+  const r = ridged(x * 0.022, z * 0.022) * 0.5 + ridged(x * 0.05 + 7, z * 0.05) * 0.28 + ridged(x * 0.13, z * 0.13 + 4) * 0.14 + vnoise(x * 0.3, z * 0.3) * 0.08; // cristas, picos e rochas
+  const big = 0.45 + vnoise(x * 0.011 + 3, z * 0.011) * 0.9; // picos altos e vales mais baixos ao longo da cordilheira
+  return Math.pow(m, 1.7) * (12 + r * 58) * big;
+}
+
 /* ---------- altura do terreno ---------- */
 /* ---------- lago com margem irregular (não é um círculo perfeito) ---------- */
 export function lakeShape(x, z) { const a = Math.atan2(z - LAKE.z, x - LAKE.x); return 1 + 0.16 * Math.sin(3 * a + 1.1) + 0.09 * Math.sin(5 * a + 2.4) + 0.05 * Math.sin(8 * a + 0.3); }
@@ -55,8 +66,7 @@ export function heightAt(x, z) {
   h *= 0.3 + 0.7 * smooth(2.5, 8, roadDist(x, z)); // estradas suaves
   const dl = lakeDist(x, z);
   if (dl < LAKE.r + 6) { const k = smooth(LAKE.r + 6, LAKE.r - 4, dl); h = h * (1 - k) + (LAKE.level - 1.3 - 1.5 * smooth(LAKE.r - 3, LAKE.r * 0.25, dl) + (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.4) * k; } // fundo mais fundo no meio
-  const e = Math.max(Math.abs(x), Math.abs(z));
-  h += Math.pow(Math.max(0, e - 118) / 22, 2) * 22; // montanhas na borda
+  h += mountainH(x, z); // montanhas na borda
   return h;
 }
 
@@ -91,6 +101,16 @@ export function groundColor(x, z, h) {
   const dl = lakeDist(x, z);
   if (dl < LAKE.r + 2.5) c.lerp(new THREE.Color('#c9b98a'), smooth(LAKE.r + 2.5, LAKE.r, dl) * (0.75 + vnoise(x * 0.5, z * 0.5) * 0.25)); // areia
   if (dl < LAKE.r - 0.5) c.lerp(new THREE.Color('#6d6a4a'), smooth(LAKE.r - 0.5, LAKE.r - 4, dl) * 0.7); // lodo no fundo
+  const mm = mountainMask(x, z);
+  if (mm > 0.02) { // encostas: grama → rocha → neve, conforme altura e inclinação
+    const dx = heightAt(x + 1, z) - heightAt(x - 1, z), dz = heightAt(x, z + 1) - heightAt(x, z - 1), slope = Math.hypot(dx, dz) / 2;
+    const nn = vnoise(x * 0.2, z * 0.2);
+    const rock = new THREE.Color('#9a958b').lerp(new THREE.Color('#7b766d'), nn).offsetHSL(0, 0, (vnoise(x * 0.6, z * 0.6) - 0.5) * 0.08);
+    const kr = Math.min(1, smooth(7, 18, h + nn * 5) * 0.85 + smooth(0.6, 1.2, slope)) * mm;
+    c.lerp(rock, kr);
+    const ks = smooth(44, 54, h + (nn - 0.5) * 10) * (1 - smooth(0.9, 1.5, slope) * 0.8);
+    if (ks > 0) c.lerp(new THREE.Color('#f2f5f8').offsetHSL(0, 0, (nn - 0.5) * 0.05), ks);
+  }
   const wr = zoneWeight('ruinas', x, z);
   if (wr > 0.3) { // lajes de pedra antigas no chão das ruínas
     const cell = (Math.floor(x / 3) + Math.floor(z / 3)) & 1, crack = vnoise(x * 0.7, z * 0.7);
@@ -135,6 +155,28 @@ export function buildTerrain() {
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   return mesh;
+}
+
+// cordilheira distante no horizonte (silhueta azulada com neve, como no fundo de um vale)
+export function buildDistantMountains() {
+  const SEGA = 240, ROWS = 7, R0 = 175, R1 = 330, pos = [], col = [], idx = [];
+  const rockC = new THREE.Color('#56606e'), farC = new THREE.Color('#8ea3ba'), snowC = new THREE.Color('#e6edf4');
+  for (let j = 0; j <= ROWS; j++) for (let i = 0; i <= SEGA; i++) {
+    const a = i / SEGA * Math.PI * 2, k = j / ROWS, r = R0 + (R1 - R0) * k;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const peak = ridged(a * 3.1, k * 2 + 3) * 0.6 + ridged(a * 7.3 + 2, k * 3) * 0.3 + vnoise(a * 17, k * 4) * 0.1;
+    const h = (j === 0 || j === ROWS ? 0 : 1) * (40 + peak * 95) * Math.sin(k * Math.PI) - 4;
+    pos.push(x, h, z);
+    const c = rockC.clone().lerp(farC, 0.35 + k * 0.4);
+    if (h > 92 + vnoise(a * 9, k) * 22) c.lerp(snowC, 0.8);
+    col.push(c.r, c.g, c.b);
+  }
+  for (let j = 0; j < ROWS; j++) for (let i = 0; i < SEGA; i++) { const a = j * (SEGA + 1) + i, b = a + SEGA + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, fog: false, side: THREE.DoubleSide }));
+  m.renderOrder = -1;
+  return m;
 }
 
 // água com ondas, brilho do sol, cor rasa perto da margem, espuma na beira e reflexo do céu

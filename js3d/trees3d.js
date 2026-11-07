@@ -4,7 +4,7 @@
    desenho por árvore), com cores por vértice (escuro embaixo, claro em cima).
    ========================================================================= */
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 
 function rngOf(seed) { let a = seed | 0; return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function colorize(geo, fn) {
@@ -52,7 +52,7 @@ export function oakGeometry(seed, opts = {}) {
   const n = 6 + Math.floor(rng() * 4), cy = h + R * 0.55;
   for (let i = 0; i < n; i++) {
     const a = rng() * Math.PI * 2, d = i === 0 ? 0 : R * (0.35 + rng() * 0.45), rr = R * (i === 0 ? 0.85 : 0.5 + rng() * 0.35);
-    const blob = lumpy(new THREE.IcosahedronGeometry(rr, 2), rng, 0.13);
+    const blob = lumpy(mergeVertices(new THREE.IcosahedronGeometry(rr, 3)), rng, 0.13);
     blob.scale(1, 0.82, 1);
     blob.translate(Math.cos(a) * d, cy + (rng() - 0.3) * R * 0.5 - (i === 0 ? 0 : d * 0.15), Math.sin(a) * d);
     parts.push(colorize(toNonIndexed(blob), (c, x, y, z) => {
@@ -60,7 +60,7 @@ export function oakGeometry(seed, opts = {}) {
       c.copy(leafDark).lerp(leafLight, k * 0.85 + (Math.sin(x * 7 + z * 5) * 0.5 + 0.5) * 0.15);
     }));
   }
-  const g = mergeGeometries(parts); g.computeVertexNormals();
+  const g = mergeGeometries(parts); // mantém as normais suaves de cada parte
   return { geo: g, radius: 0.55, height: cy + R };
 }
 
@@ -141,6 +141,31 @@ export function logGeometry(seed) {
   return { geo, radius: r + 0.2, height: r * 1.6, collider: 'log', length: L };
 }
 
+/* ---------- Pedra arredondada e irregular (com musgo em cima) ---------- */
+export function rockGeometry(seed, opts = {}) {
+  const rng = rngOf(seed);
+  const R = (opts.size || 1) * (0.6 + rng() * 0.7);
+  const g = mergeVertices(new THREE.IcosahedronGeometry(R, 4)), p = g.attributes.position, v = new THREE.Vector3(); // vértices unidos = sombreado suave
+  const sx = 1 + rng() * 0.6, sy = 0.45 + rng() * 0.35, sz = 0.8 + rng() * 0.5, ph = rng() * 10;
+  // ruído suave em várias escalas + achatado embaixo (assenta no chão)
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i).normalize();
+    const n = Math.sin(v.x * 2.1 + ph) * Math.cos(v.z * 1.7 + ph) * 0.14 + Math.sin(v.x * 5.3 + v.y * 4.1 + ph * 2) * 0.05 + Math.sin(v.z * 9.1 - v.y * 7.3 + ph) * 0.02;
+    v.multiplyScalar(R * (1 + n)); v.x *= sx; v.y *= sy; v.z *= sz;
+    if (v.y < -R * sy * 0.35) v.y = -R * sy * 0.35 + (v.y + R * sy * 0.35) * 0.15;
+    p.setXYZ(i, v.x, v.y + R * sy * 0.25, v.z);
+  }
+  g.computeVertexNormals();
+  const N = g.attributes.normal;
+  const stone = new THREE.Color(opts.dark ? '#6f6d66' : '#8f8b82'), stone2 = new THREE.Color(opts.dark ? '#5a5852' : '#7a766d'), moss = new THREE.Color(opts.dark ? '#4a6a34' : '#6a8f45');
+  colorize(g, (c, x, y, z) => {
+    c.copy(stone).lerp(stone2, Math.sin(x * 3.1 + z * 2.3 + y * 5) * 0.5 + 0.5);
+  });
+  const col = g.attributes.color;
+  for (let i = 0; i < p.count; i++) { const up = N.getY(i); if (up > 0.55 && opts.moss !== false) { const k = Math.min(1, (up - 0.55) * 2.5) * 0.85; col.setXYZ(i, col.getX(i) + (moss.r - col.getX(i)) * k, col.getY(i) + (moss.g - col.getY(i)) * k, col.getZ(i) + (moss.b - col.getZ(i)) * k); } }
+  return { geo: g, radius: R * Math.max(sx, sz) * 0.85, height: R * sy * 1.6 };
+}
+
 // gera variações prontas para clonar: { nome: { scene, radius } }
 export function makeTreeTemplates() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: false });
@@ -155,6 +180,8 @@ export function makeTreeTemplates() {
   for (let i = 0; i < 5; i++) add('pine_' + i, pineGeometry(500 + i * 31));
   for (let i = 0; i < 4; i++) add('pinedark_' + i, pineGeometry(700 + i * 29, { dark: true }));
   for (let i = 0; i < 3; i++) add('stump_' + i, stumpGeometry(900 + i * 13));
+  for (let i = 0; i < 6; i++) add('stone_' + i, rockGeometry(1200 + i * 11, { size: i < 3 ? 0.8 : 1.3 }));
+  for (let i = 0; i < 4; i++) add('stonedark_' + i, rockGeometry(1300 + i * 17, { size: 1.1, dark: true }));
   for (let i = 0; i < 2; i++) add('log_' + i, logGeometry(950 + i * 7));
   return out;
 }

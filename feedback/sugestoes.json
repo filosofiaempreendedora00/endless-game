@@ -1705,9 +1705,10 @@
       "sp": "20/20"
     },
     "id": "S-036",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:44:48",
-    "imagem": "img/S-036.png"
+    "imagem": "img/S-036.png",
+    "resposta": "Nova Loja de Auroras ✦ (botão ✦ à direita ou tecla O). Só cosméticos, nada que dê vantagem: 8 skins em 4 raridades (Comum, Rara, Épica e Lendária, algumas com efeitos como pétalas, gelo, fumaça, faíscas, auréola ou estrelas) e 2 montarias exclusivas (Corcel Real e Corcel Estelar). A compra de Auroras com dinheiro real aparece como \"em breve\": falta um sistema de pagamento e contas online. Para testar, use o Painel do Mestre (+1.000 Auroras)."
   },
   {
     "texto": "montanhas muito feias e irreais . Melhore esse mundo aberto por favor esteticamente. Se inspire em skyrim. Nao obviamente com os graficos foda, mas da pra ser bem melhor, especialmente que nao faz sentido arvores em cima de montanha, elas nascem da terra",
@@ -1752,9 +1753,10 @@
       "sp": "27/27"
     },
     "id": "S-037",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:49:36",
-    "imagem": "img/S-037.png"
+    "imagem": "img/S-037.png",
+    "resposta": "As montanhas agora fazem parte do terreno, com cristas, picos de alturas diferentes, rocha nas encostas e neve no topo. Os pinheiros nascem só no sopé (nada de árvore no pico), e há uma cordilheira distante no horizonte. A névoa ficou mais longe para dar profundidade, e as nuvens ficaram mais altas e claras."
   },
   {
     "texto": "Eu gostaria que no onboard ao criar um novo personagem ele fosse um pouco mais guiado e mais Óbvio o que precisava o que precisaria ser feito escolhido até o personagem ser criado então eu gostaria inclusive de um onboard inspirado em MMO rpgs e eu gostaria que antes de escolher outras coisas eu tivesse que escolher uma raça e pudesse escolher entre três humano elfo e anão as raças elas proporcionariam alguns atributos diferentes sendo que não são muito expressivamente diferentes e sim dão uma leve vantagem entre uma raça e outra e também Eles teriam fins mais estéticos do que qualquer coisa aliás por enquanto eu quero que eles sejam apenas estéticos",
@@ -1795,9 +1797,10 @@
       "sp": "27/27"
     },
     "id": "S-038",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:52:20",
-    "imagem": "img/S-038.png"
+    "imagem": "img/S-038.png",
+    "resposta": "A criação de personagem ficou guiada, em 4 etapas com barra de progresso: 1) Raça (Humano, Elfo ou Anão, com prévia 3D), 2) Aparência (4 rostos e cabelos), 3) Companheiro, 4) Nome, com um resumo de tudo. Por enquanto as raças são só visuais: o elfo tem orelhas pontudas e é mais esguio, e o anão é mais baixo, forte e barbudo."
   },
   {
     "texto": "Esse lobo ficou muito Quadradão muito horrível muito com cara de Minecraft Assim como as pedras ficaram muito quadradonas eu quero que você leve a essência desse meu feedback sobre as coisas serem muito quadradonas ou muito artificiais e leve para tudo de forma com que a gente consiga Ir melhorando continuamente os monstros e os gráficos eu não quero algo que seja tão escancaradamente com o formato geométrico",
@@ -1840,9 +1843,10 @@
       "sp": "27/27"
     },
     "id": "S-039",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:53:14",
-    "imagem": "img/S-039.png"
+    "imagem": "img/S-039.png",
+    "resposta": "O lobo foi refeito com formas arredondadas (tronco, juba de pelo, focinho, patas com joelho e rabo felpudo) e anda com passo suave. As pedras quadradas foram trocadas por rochas arredondadas e irregulares, com musgo em cima. Todos os monstros e as copas das árvores agora têm sombreado suave, sem facetas."
   },
   {
     "texto": "Eu preciso que um dos menus à direita seja uma verdadeira Wiki a respeito dos Monstros onde eu consiga consultar facilmente todos os monstros como um grande Pokédex digamos assim e eu consiga ver todas as informações sobre eles como os drops as possibilidades de drops no quesito chances o que a carta deles faz e tudo o que é pertinente sobre eles desde habilidades desde HP desde tudo de nível Ou seja todos os portos que são pertinentes aos Monstros raça e etc eu preciso que esteja tudo em uma Wiki e ela seja facilmente encontrada por um dos Comandos do canto direito da tela",
@@ -1883,9 +1887,10 @@
       "sp": "27/27"
     },
     "id": "S-040",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:54:29",
-    "imagem": "img/S-040.png"
+    "imagem": "img/S-040.png",
+    "resposta": "Novo Bestiário 📖 (botão no menu à direita ou tecla B): a lista de todos os monstros tem busca. Cada um mostra nível, HP, ataque, defesas, precisão e esquiva, elemento e fraquezas, raça, tamanho, comportamento, EXP, onde aparece, a chance de cada drop e o que a carta faz."
   },
   {
     "texto": "todos os bonecos ficaram com rosto muuuito feio de cu e nao quero essa careta tao feia assim",
@@ -1926,8 +1931,9 @@
       "sp": "27/27"
     },
     "id": "S-041",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:54:49",
-    "imagem": "img/S-041.png"
+    "imagem": "img/S-041.png",
+    "resposta": "Rostos refeitos em todos os bonecos (jogador e NPCs): as sobrancelhas franzidas viraram retas e simpáticas, e o nariz ficou menor. Acabou a cara de bravo."
   }
 ]

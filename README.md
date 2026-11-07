@@ -33,6 +33,8 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Ver o personagem de frente | **segurar botão do meio** |
 | Menu e configurações (som, volumes) | **Esc** |
 | Montar / desmontar (montaria do Tomé, no estábulo) | **M** |
+| Bestiário (todos os monstros) | **B** |
+| Loja de Auroras (skins e montarias) | **O** |
 | Pular | **Espaço** |
 | Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |
 | Habilidades e itens | **1–9** |

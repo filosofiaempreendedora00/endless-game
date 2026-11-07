@@ -170,8 +170,8 @@ const UI = {
   },
   body(id) { return this.wins[id].querySelector('.win-body'); },
   open(id) {
-    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
-    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
+    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 390), 60, Math.min(780, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -217,6 +217,7 @@ const UI = {
       case 'sell': { const en = invByUid(+ds.uid); if (en) sellItem(en, e.shiftKey ? en.qty : 1); break; }
       case 'treesel': this.treeSel = ds.c; this.render_tree(); break;
       case 'treetab': this.treeTab = ds.t; this.render_tree(); break;
+      case 'bestsel': this.bestSel = ds.id; this.render_bestiario(); break;
       case 'dlg': { const opt = this.dlg && this.dlg.options[+ds.i]; if (opt) opt.fn(); break; }
     }
   },
@@ -372,6 +373,40 @@ const UI = {
     this.body('tree').innerHTML = `${tabs}<div class="tree">${node('aprendiz')}<div class="tline on"></div><div class="tgrid">${cols}</div></div>
       <div class="tinfo"><b class="gold" style="font-size:14px">${c.icon} ${c.name}</b> <span class="muted">— ${c.tier === 0 ? 'Classe inicial' : c.tier + 'ª classe'}</span>
         <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>`;
+  },
+
+  /* ---------- Bestiário (wiki dos monstros) ---------- */
+  render_bestiario() {
+    const ids = Object.keys(MONSTERS).sort((a, b) => MONSTERS[a].lv - MONSTERS[b].lv);
+    const sel = MONSTERS[this.bestSel] ? this.bestSel : ids[0], m = MONSTERS[sel];
+    const where = (typeof H3 !== 'undefined' && H3.spawnInfo) ? H3.spawnInfo() : Object.fromEntries(ids.map(id => [id, Object.values(MAPS).filter(mp => (mp.spawns || []).some(sp => sp.type === id)).map(mp => mp.name)]));
+    const q = (this.bestQ || '').toLowerCase();
+    const list = ids.filter(id => !q || MONSTERS[id].name.toLowerCase().includes(q) || MONSTERS[id].race.toLowerCase().includes(q) || ELEMENTS[MONSTERS[id].element].name.toLowerCase().includes(q)).map(id => {
+      const x = MONSTERS[id], tag = x.boss ? '<span class="bs-tag boss">Chefe</span>' : x.mini ? '<span class="bs-tag mini">Mini</span>' : '';
+      return `<div class="bs-item ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${x.icon}</span><span class="bs-nm">${esc(x.name)}${tag}</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
+    }).join('') || '<div class="muted" style="padding:8px">Nada encontrado.</div>';
+    const weak = Object.keys(ELEMENT_STRONG).filter(e => ELEMENT_STRONG[e] === m.element).map(e => `<span style="color:${ELEMENTS[e].color}">${ELEMENTS[e].name}</span>`).join(', ') || '—';
+    const strongVs = ELEMENT_STRONG[m.element] ? `<span style="color:${ELEMENTS[ELEMENT_STRONG[m.element]].color}">${ELEMENTS[ELEMENT_STRONG[m.element]].name}</span>` : '—';
+    const size = m.size >= 1.5 ? 'Grande' : m.size <= 0.8 ? 'Pequeno' : 'Médio';
+    const traits = [m.aggressive ? '😠 Agressivo (ataca ao ver você)' : '🙂 Passivo (só revida)', m.range > 2 ? '🏹 Ataca à distância' : '🗡️ Corpo a corpo', m.special === 'slam' ? '💥 Golpe no chão que atinge em área' : null, m.flee >= 40 ? '💨 Difícil de acertar' : null, m.boss ? '👑 Chefe — volta a cada ' + Math.round((m.respawn || 0) / 60000) + ' min' : m.mini ? '⭐ Mini-chefe — volta a cada ' + Math.round((m.respawn || 0) / 60000) + ' min' : null].filter(Boolean);
+    const drops = (m.drops || []).map(([id, ch]) => `<div class="bs-drop" data-tip="item:${id}"><span>${ITEMS[id].icon} ${esc(ITEMS[id].name)}</span><b>${(ch * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%</b></div>`).join('');
+    const card = ITEMS['carta_' + sel];
+    const cardRate = ((m.cardRate ?? CONFIG.CARD_DROP_RATE ?? 0.01) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+    const zones = (where[sel] || []);
+    const stat = (k, v) => `<div class="bs-stat"><span>${k}</span><b>${v}</b></div>`;
+    this.body('bestiario').innerHTML = `<div class="bs">
+      <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-list">${list}</div></div>
+      <div class="bs-right">
+        <div class="bs-head"><div class="bs-big">${m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
+        <div class="bs-stats">${stat('HP', m.hp.toLocaleString('pt-BR'))}${stat('Ataque', m.atk[0] + '–' + m.atk[1])}${stat('Defesa', m.def)}${stat('Def. Mágica', m.mdef)}${stat('Precisão', m.hit)}${stat('Esquiva', m.flee)}${stat('EXP Base', m.exp.toLocaleString('pt-BR'))}${stat('EXP Classe', m.jexp.toLocaleString('pt-BR'))}</div>
+        <h4>Elemento</h4><div class="bs-p">Leva <b>+50%</b> de dano de: ${weak} · causa +50% em: ${strongVs}</div>
+        <h4>Comportamento</h4><div class="bs-p">${traits.join('<br>')}</div>
+        <h4>Onde encontrar</h4><div class="bs-p">${zones.length ? zones.join(', ') : '<span class="muted">Ainda não aparece no mundo.</span>'}</div>
+        <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>🃏 ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
+        ${card ? `<h4>Carta</h4><div class="bs-p">Encaixe em: <b>${SLOT_NAMES[card.equip]}</b><br>${fmtBonuses(card.bonuses).join(' · ')}</div>` : ''}
+      </div></div>`;
+    const inp = $('bs-q');
+    inp.oninput = () => { this.bestQ = inp.value; const pos = inp.selectionStart; this.render_bestiario(); const n = $('bs-q'); n.focus(); n.setSelectionRange(pos, pos); };
   },
 
   /* ---------- Ajuda ---------- */

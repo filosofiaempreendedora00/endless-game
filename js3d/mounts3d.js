@@ -8,6 +8,8 @@ import * as THREE from 'three';
 export const MOUNTS = {
   lanudo: { name: 'Corcel Lanudo', desc: 'Lã creme, calmo e confiável.', wool: '#efe3c8', skin: '#8a6a4a', horn: '#d8c9a8', mane: '#c9b48a', blanket: '#b8403a' },
   noturno: { name: 'Corcel da Noite', desc: 'Lã escura com crina que brilha em azul.', wool: '#3a3848', skin: '#22202a', horn: '#9aa6c8', mane: '#5ab0ff', blanket: '#2f4f9a', glow: true },
+  real: { name: 'Corcel Real', premium: true, price: 900, rarity: 'epica', desc: 'Lã branca como nuvem e crina dourada que brilha.', wool: '#f6f2ea', skin: '#c9b48a', horn: '#ffd76a', mane: '#ffd76a', blanket: '#6a2a8a', glow: true },
+  estelar: { name: 'Corcel Estelar', premium: true, price: 1800, rarity: 'lendaria', desc: 'Lã azul-noite e crina de luz violeta: deixa o céu com inveja.', wool: '#20264a', skin: '#141830', horn: '#cfd8ff', mane: '#b47aff', blanket: '#2a3a8a', glow: true },
   ruivo: { name: 'Corcel Ruivo', desc: 'Pelagem cor de canela, cheio de energia.', wool: '#c9733a', skin: '#6a3a22', horn: '#efd9a8', mane: '#8a3a1a', blanket: '#3f7a3a' },
 };
 export const MOUNT_SPEED = 1.7; // multiplicador de velocidade montado

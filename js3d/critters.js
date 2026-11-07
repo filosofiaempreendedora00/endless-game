@@ -4,7 +4,8 @@
    ========================================================================= */
 import * as THREE from 'three';
 
-const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, flatShading: true, ...extra });
+// sombreado suave (nada de facetas quadradas)
+const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, flatShading: false, ...extra });
 const BLACK = mat('#1e1a2a', { roughness: 0.4 });
 const WHITE = mat('#ffffff', { roughness: 0.4 });
 
@@ -87,27 +88,52 @@ export function bee(color) {
   } };
 }
 
+// lobo com formas orgânicas: tronco em cápsula, juba de pelo, focinho afinado, patas com articulação e rabo felpudo
 export function wolf(color) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const c = mat(color), dark = mat(new THREE.Color(color).offsetHSL(0, 0, -0.12));
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.95), c); torso.position.y = 0.62; body.add(torso);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.32, 0.36), c); head.position.set(0, 0.86, 0.6); body.add(head);
-  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.16, 0.24), dark); snout.position.set(0, 0.8, 0.84); body.add(snout);
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.05), BLACK); nose.position.set(0, 0.86, 0.97); body.add(nose);
-  for (const s of [-1, 1]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.18, 4), dark); ear.position.set(s * 0.11, 1.07, 0.55); body.add(ear); }
-  const eyeMat = new THREE.MeshBasicMaterial({ color: '#ffd84a' });
-  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.02), eyeMat); e.position.set(s * 0.09, 0.92, 0.79); body.add(e); }
-  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.45), dark); tail.position.set(0, 0.78, -0.62); tail.rotation.x = 0.6; body.add(tail);
-  const legs = [[-0.14, 0.33], [0.14, 0.33], [-0.14, -0.33], [0.14, -0.33]].map(([x, z]) => {
-    const pivot = new THREE.Group(); pivot.position.set(x, 0.48, z);
-    const l = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.48, 0.11), dark); l.position.y = -0.24; pivot.add(l); body.add(pivot); return pivot;
+  const base = new THREE.Color(color), c = mat(base), dark = mat(base.clone().offsetHSL(0, 0, -0.1)), light = mat(base.clone().offsetHSL(0, -0.05, 0.14));
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.62, 8, 16), c); torso.rotation.x = Math.PI / 2; torso.scale.set(1, 1.05, 1); torso.position.set(0, 0.64, -0.02); body.add(torso);
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), c); chest.scale.set(0.95, 1.05, 0.9); chest.position.set(0, 0.7, 0.3); body.add(chest);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10), light); belly.scale.set(0.9, 0.7, 1.6); belly.position.set(0, 0.56, 0.18); body.add(belly);
+  // juba (tufos de pelo no pescoço)
+  const tuft = new THREE.IcosahedronGeometry(0.11, 2);
+  for (let i = 0; i < 9; i++) { const a = (i / 8 - 0.5) * 2.6; const t = new THREE.Mesh(tuft, i % 2 ? c : light); t.position.set(Math.sin(a) * 0.2, 0.82 + Math.cos(a) * 0.1, 0.36 - Math.abs(Math.sin(a)) * 0.06); t.scale.set(1, 1.3, 0.8); body.add(t); }
+  const neck = new THREE.Group(); neck.position.set(0, 0.86, 0.42); body.add(neck);
+  const head = new THREE.Group(); head.position.set(0, 0.08, 0.14); neck.add(head);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 14), c); skull.scale.set(1, 0.92, 1.05); head.add(skull);
+  for (const s of [-1, 1]) { const ck = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), light); ck.scale.set(1, 0.8, 1.2); ck.position.set(s * 0.1, -0.06, 0.06); head.add(ck); }
+  const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.1, 0.26, 14), light); snout.rotation.x = Math.PI / 2; snout.position.set(0, -0.05, 0.22); head.add(snout);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), BLACK); nose.scale.set(1.3, 0.9, 1); nose.position.set(0, -0.02, 0.35); head.add(nose);
+  const ears = [-1, 1].map(s => { const e = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.17, 12), dark); e.position.set(s * 0.1, 0.15, -0.02); e.rotation.z = -s * 0.25; head.add(e); return e; });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: '#ffd84a', emissive: '#ffb020', emissiveIntensity: 0.5, roughness: 0.3 });
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), eyeMat); e.scale.set(1.4, 0.8, 0.6); e.position.set(s * 0.075, 0.03, 0.15); e.rotation.z = s * 0.25; head.add(e); const p = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), BLACK); p.position.set(s * 0.075, 0.03, 0.168); head.add(p); }
+  // rabo curvo e felpudo
+  const tail = new THREE.Group(); tail.position.set(0, 0.74, -0.42); body.add(tail);
+  const tailCurve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.06, -0.18), new THREE.Vector3(0, -0.18, -0.34), new THREE.Vector3(0, -0.34, -0.42)]);
+  const tailGeo = new THREE.TubeGeometry(tailCurve, 14, 0.07, 10); const tp = tailGeo.attributes.position; // afina na ponta
+  tail.add(new THREE.Mesh(tailGeo, c));
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 10), light); tip.scale.set(1, 1.5, 1); tip.position.set(0, -0.36, -0.43); tail.add(tip);
+  // patas: coxa + canela + pata
+  const legs = [[-0.12, 0.3, true], [0.12, 0.3, true], [-0.12, -0.3, false], [0.12, -0.3, false]].map(([x, z, front]) => {
+    const pivot = new THREE.Group(); pivot.position.set(x, 0.6, z); body.add(pivot);
+    const up = new THREE.Mesh(new THREE.CapsuleGeometry(front ? 0.065 : 0.08, 0.2, 6, 10), c); up.position.y = -0.14; pivot.add(up);
+    const knee = new THREE.Group(); knee.position.y = -0.28; pivot.add(knee);
+    const low = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, 0.2, 6, 10), dark); low.position.y = -0.12; knee.add(low);
+    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), dark); paw.scale.set(1, 0.6, 1.3); paw.position.set(0, -0.27, 0.03); knee.add(paw);
+    return { pivot, knee, front };
   });
   shadowAll(root);
-  return { root, eyeMat, animate(t, moving) {
-    const f = moving ? 12 : 0;
-    legs.forEach((lg, i) => { lg.rotation.x = moving ? Math.sin(t * f + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI / 2 : 0)) * 0.6 : 0; });
-    body.position.y = moving ? Math.abs(Math.sin(t * f)) * 0.05 : Math.sin(t * 2) * 0.01;
-    tail.rotation.y = Math.sin(t * (moving ? 10 : 3)) * 0.4;
+  let ph = 0, gait = 0;
+  return { root, eyeMat, animate(t, moving, dt = 1 / 60) {
+    gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6);
+    ph += dt * (2 + gait * 10);
+    legs.forEach(({ pivot, knee, front }, i) => { const p = ph + (i % 2 ? Math.PI : 0) + (front ? 0 : Math.PI * 0.5); pivot.rotation.x = Math.sin(p) * 0.6 * gait; knee.rotation.x = (front ? -1 : 1) * Math.max(0, Math.cos(p)) * 0.7 * gait; });
+    body.position.y = Math.abs(Math.sin(ph)) * 0.045 * gait + Math.sin(t * 2) * 0.008 * (1 - gait);
+    body.rotation.x = Math.sin(ph * 2) * 0.03 * gait;
+    neck.rotation.x = Math.sin(ph * 2) * 0.05 * gait + Math.sin(t * 0.8) * 0.04 * (1 - gait);
+    neck.rotation.y = Math.sin(t * 0.5) * 0.25 * (1 - gait);
+    ears.forEach((e, i) => { e.rotation.x = -0.25 * gait + Math.sin(t * 2.3 + i) * 0.04; });
+    tail.rotation.y = Math.sin(t * (2.5 + gait * 6)) * 0.35; tail.rotation.x = 0.35 * gait - 0.1;
   } };
 }
 
