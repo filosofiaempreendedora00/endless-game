@@ -76,3 +76,21 @@ function assignHotbar(kind, id, silent) {
   if (!silent) UI.log(`Atalho ${i + 1}: ${(kind === 'skill' ? SKILLS : ITEMS)[id].name}`, 'sys');
   UI.markDirty();
 }
+
+// personagem novo (mesmo começo no 2D e no 3D): aprendiz com adaga, túnica e itens básicos
+function createCharacter(name, look = {}) {
+  const p = {
+    name, look, cls: 'aprendiz', baseLv: 1, jobLv: 1, baseExp: 0, jobExp: 0,
+    stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, statPoints: CONFIG.STAT_START_POINTS, skillPoints: 0, skills: {},
+    zeny: 150, inventory: [], equip: { arma: null, cabeca: null, armadura: null, acessorio: null }, hotbar: Array(9).fill(null),
+    hp: 1, sp: 1, charId: newCharId(), buffs: {}, cds: {},
+  };
+  addItem(p, 'adaga_simples', 1); addItem(p, 'tunica_algodao', 1);
+  addItem(p, 'maca', 10); addItem(p, 'pocao_vermelha', 3); addItem(p, 'pergaminho_retorno', 1);
+  equipItem(p.inventory.find(e => e.id === 'adaga_simples'), p, true);
+  equipItem(p.inventory.find(e => e.id === 'tunica_algodao'), p, true);
+  p.hotbar[0] = { kind: 'item', id: 'maca' };
+  p.hotbar[1] = { kind: 'item', id: 'pocao_vermelha' };
+  recalc(p); p.hp = p.d.maxHp; p.sp = p.d.maxSp;
+  return p;
+}

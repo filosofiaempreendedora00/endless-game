@@ -897,13 +897,13 @@ function toggleMenu() {
     <div class="menu-btns">
       <button class="btn gold" id="m-cont">▶ Continuar <span class="muted">(Esc)</span></button>
       <button class="btn" id="m-help">❔ Controles</button>
-      <button class="btn" id="m-2d">🗺️ Ir para a versão 2D</button>
+      <button class="btn" id="m-2d">🗺️ Versão clássica 2D</button>
       <button class="btn" id="m-chars">🏠 Trocar de personagem</button>
     </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente. Seu personagem é o mesmo no 2D e no 3D.</div></div>`;
   o.classList.add('show');
   $('m-cont').onclick = toggleMenu;
   $('m-help').onclick = () => { toggleMenu(); UI.open('help'); };
-  $('m-2d').onclick = () => { save3d(); location.href = 'index.html'; };
+  $('m-2d').onclick = () => { save3d(); location.href = '2d.html'; };
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
 const SAVE_FIELDS3 = ['charId', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
@@ -998,17 +998,48 @@ async function chooseCharacter() {
   let list = [];
   try { list = await (await fetch('/api/saves')).json(); } catch (e) { }
   list = list.filter(c => c && c.name && CLASSES[c.cls]);
-  o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">MUNDO ABERTO 3D • PROTÓTIPO</div><div class="card">
+  o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">UM RPG DE MUNDO ABERTO • CLASSES • CARTAS</div><div class="card">
     ${list.length ? '<label style="margin-top:0">Escolha seu personagem</label>' + list.map((c, i) => `<button class="btn ${i ? '' : 'gold'} c3" data-i="${i}" style="width:100%;padding:9px;font-size:14px;margin-bottom:5px;text-align:left">▶ <b>${escH(c.name)}</b> <span class="muted">— Nv. ${c.baseLv} ${CLASSES[c.cls].icon} ${CLASSES[c.cls].name}</span></button>`).join('')
-      : '<div class="muted">Nenhum personagem salvo. Crie um na versão 2D primeiro.</div>'}
-    <div class="row"><a class="btn" href="index.html" style="text-align:center;text-decoration:none">🗺️ Voltar para a versão 2D</a></div>
+      : ''}
+    <div class="row"><button class="btn ${list.length ? '' : 'gold'}" id="c3-new">＋ Criar novo personagem</button></div>
+    <div class="row" style="margin-top:6px"><a class="btn" href="2d.html" style="text-align:center;text-decoration:none">🗺️ Versão clássica 2D</a></div>
     </div><div class="ver">Seu personagem é o mesmo no 2D e no 3D • clique para ativar o som<br>Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
   o.classList.add('show');
+  $('c3-new').onclick = () => { Sound.init(); showCreate3d(list); };
+  if (!list.length) { showCreate3d(list); return; }
   o.querySelectorAll('.c3').forEach(b => b.onclick = async () => {
     Sound.init();
     const s = await (await fetch('/api/save/' + list[+b.dataset.i].slug)).json();
     startWith(s);
   });
+}
+// criação de personagem no 3D (nome obrigatório; mesmo começo do 2D)
+function showCreate3d(list) {
+  const o = $('overlay');
+  o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">CRIAR NOVO PERSONAGEM</div><div class="card">
+    <label style="margin-top:0">Nome <span style="color:#ff8a8a">*</span></label><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?">
+    <div id="c3-err" style="color:#ff8a8a;font-size:12px;min-height:16px;margin-top:3px"></div>
+    <div class="muted" style="font-size:12px;margin:4px 0 10px">Você começa como 🌱 Aprendiz na Vila de Alvorada. No Nível de Classe ${CONFIG.JOB_CHANGE_1}, a Mestra Ivra te ajuda a escolher seu caminho.</div>
+    <div class="row">${list.length ? '<button class="btn" id="c3-back">← Voltar</button>' : ''}<button class="btn gold" id="c3-ok">Criar personagem</button></div>
+  </div><div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
+  o.classList.add('show');
+  const nameEl = $('c3-name'), err = $('c3-err');
+  const create = async () => {
+    const name = nameEl.value.trim();
+    if (name.length < 2) { err.textContent = 'Dê um nome ao seu personagem (pelo menos 2 letras).'; nameEl.focus(); Sound.play('error'); return; }
+    if (list.some(c => c.slug === saveSlug(name))) { err.textContent = 'Você já tem um personagem com esse nome. Escolha outro.'; nameEl.focus(); Sound.play('error'); return; }
+    Sound.init();
+    const c = createCharacter(name, {});
+    const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
+    Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
+    try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
+    startWith(s);
+    log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
+  };
+  $('c3-ok').onclick = create;
+  nameEl.addEventListener('keydown', e => { e.stopPropagation(); err.textContent = ''; if (e.key === 'Enter') create(); });
+  if ($('c3-back')) $('c3-back').onclick = () => chooseCharacter();
+  setTimeout(() => nameEl.focus(), 50);
 }
 function startWith(s) {
   const p = { ...s };

@@ -1,11 +1,11 @@
 # Crônicas de Aethra — guia para sessões de desenvolvimento
 
-Projeto pessoal de longo prazo do Roberto: um RPG 2D no navegador, inspirado no *estilo* de MMORPGs clássicos (classes em Y, cartas de monstros, Nível de Base/Classe, drops, trilha sonora). A ideia é evoluir em iterações pequenas até ficar bom para publicar.
+Projeto pessoal de longo prazo do Roberto: um RPG de mundo aberto 3D no navegador (o 2D original segue como versão clássica em `2d.html`), inspirado no *estilo* de MMORPGs clássicos (classes em Y, cartas de monstros, Nível de Base/Classe, drops, trilha sonora). A ideia é evoluir em iterações pequenas até ficar bom para publicar.
 
 ## Regras do projeto
 - **Tudo original**: nomes, monstros, mapas, arte e música próprios. Inspiração em sistemas, nunca cópia de conteúdo de jogos existentes.
 - **Interface e textos em português (pt-BR).**
-- **Sem build e sem dependências**: JS puro com scripts globais carregados por `index.html` (ordem: data → audio → world → render → ui → game). Precisa funcionar abrindo o `index.html` direto (file://), então não use ES modules nem fetch de arquivos locais.
+- **Sem build**: JS puro. O 2D (`2d.html`) usa scripts globais (data → audio → rules → actions → world → render → ui → game → feedback → admin) e funciona até por file://. O 3D (`index.html`) usa ES modules + import map e precisa do `server.py`.
 - **Conteúdo é guiado por dados**: classes, habilidades, itens, monstros e mapas ficam em `js/data.js`. Prefira adicionar dados a escrever casos especiais na lógica.
 - Saves: `saves/<slug do nome>.json` via `server.py` (fonte principal, fora do git) + `localStorage` (`SAVE_KEY`) como reserva. Ao abrir o jogo, um save local mais novo é enviado ao projeto. Se mudar o formato, mantenha compatibilidade. Nunca apague `saves/`; o personagem do Roberto se chama Vidro.
 - Em testes, não carregue o personagem dele: uma sessão aberta salva por cima (o mais recente vence).
@@ -22,13 +22,13 @@ Quando ele pedir para aplicar as sugestões:
 - `js/admin.js` = Painel do Mestre (⌘/Ctrl+Z); `toggleGod`/`godTeleport`/`isAdmin` em `js/game.js`. Só ativo na conta de administrador (hoje: jogo rodando localmente). Novas ferramentas de admin pedidas pelo Roberto entram no painel.
 - Teclas ocupadas: WASD/setas (mover), 1–9, C I E K T H N X F P Q L Z, Enter, Esc. Confira antes de criar atalho novo.
 
-## Versão 3D (protótipo, estilo WoW)
-- `3d.html` + `js3d/` (ES modules com import map para `lib/three/`, three.js r160). Reusa `js/data.js`, `js/rules.js` e `js/audio.js` (scripts clássicos, globais).
+## Versão 3D (jogo principal, estilo WoW)
+- `index.html` + `js3d/` (a versão clássica 2D é `2d.html` + `js/game.js`, `world.js`, `render.js`) (ES modules com import map para `lib/three/`, three.js r160). Reusa `js/data.js`, `js/rules.js` e `js/audio.js` (scripts clássicos, globais).
 - Regras de jogo ficam em `js/rules.js` e ações do personagem (equipar, cartas, loja, atributos, habilidades, atalhos) em `js/actions.js` — valem para 2D e 3D. Não duplique no 3D.
 - O 3D reaproveita `js/ui.js`, `js/feedback.js` e `js/admin.js` através de `js3d/bridge3d.js` (define `G`, `saveGame`, `useItem`, `handleChat`... e repassa para `H3`, preenchido em `main3d.js`). Para o 3D, `FB.pickAt/pickArea` e `ADMIN.render` são substituídos em `installIntegration()`.
 - Save compartilhado: o 3D grava os mesmos campos + `pos3d` e preserva `mapId/x/y` do 2D.
 - Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
-- Fase 2 feita (loja, janelas, sugestões Q, Painel do Mestre no 3D). Próximo passo combinado: o 3D virar o jogo principal (e o 2D, legado).
+- Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar
 - `python3 server.py` e abrir http://localhost:5577 (há um `.claude/launch.json`). O servidor serve o jogo e recebe as sugestões.

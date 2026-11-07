@@ -452,12 +452,12 @@ const UI = {
     this.titleChars = chars;
     if (!chars.length) { this.showCreate(); return; }
     const label = c => `<b>${esc(c.name)}</b> <span class="muted">— Nv. ${c.baseLv} ${CLASSES[c.cls].icon} ${CLASSES[c.cls].name}</span>`;
-    o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">UM RPG DE CLASSES, CARTAS E AVENTURA</div>
+    o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">VERSÃO CLÁSSICA 2D</div>
       <div class="card">
         <label style="margin-top:0">Seus personagens</label>
         ${chars.map((c, i) => `<button class="btn ${i ? '' : 'gold'} t-cont" data-i="${i}" style="width:100%;padding:9px;font-size:14px;margin-bottom:5px;text-align:left">▶ ${label(c)}</button>`).join('')}
         <div class="row"><button class="btn" id="t-create">＋ Criar novo personagem</button></div>
-        <div class="row" style="margin-top:8px"><a class="btn gold" href="3d.html" style="text-align:center;text-decoration:none">🌍 Jogar no mundo aberto 3D (protótipo)</a></div>
+        <div class="row" style="margin-top:8px"><a class="btn gold" href="index.html" style="text-align:center;text-decoration:none">🌍 Ir para o mundo aberto 3D</a></div>
       </div><div class="ver">v${GAME_VERSION} • clique para ativar o som</div></div>`;
     o.classList.add('show');
     o.onclick = () => Sound.init();
@@ -525,6 +525,7 @@ const UI = {
         <button class="btn" id="m-help">❔ Como jogar</button>
         <button class="btn" id="m-sound">${Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'}</button>
         <button class="btn" id="m-title">🏠 Voltar ao menu principal</button>
+        <button class="btn" id="m-3d">🌍 Ir para o mundo 3D</button>
       </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente.</div></div>`;
     o.onclick = null;
     o.classList.add('show');
@@ -532,6 +533,7 @@ const UI = {
     $('m-help').onclick = () => { this.closeGameMenu(); this.open('help'); };
     $('m-sound').onclick = () => { toggleSound(); $('m-sound').textContent = Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'; };
     $('m-title').onclick = () => { this.menuOpen = false; returnToTitle(); };
+    $('m-3d').onclick = () => { saveGame(); location.href = 'index.html'; };
   },
   closeGameMenu() {
     if (!this.menuOpen) return;

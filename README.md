@@ -1,8 +1,8 @@
 # Crônicas de Aethra *(nome provisório)*
 
-Um RPG de ação 2D no navegador, com espírito de MMORPG clássico: **matar monstros, subir de nível, escolher uma carreira de classes em Y e caçar cartas raras** que dão personalidade aos equipamentos.
+Um RPG de **mundo aberto em 3D** no navegador, com espírito de MMORPG clássico: **matar monstros, subir de nível, escolher uma carreira de classes em Y e caçar cartas raras** que dão personalidade aos equipamentos. Controles e câmera no estilo World of Warcraft.
 
-> Projeto pessoal de longo prazo. Esta é a versão **0.1 (MVP)**: tudo roda offline, num único arquivo HTML, sem instalar nada.
+> Projeto pessoal de longo prazo. Versão **0.2 (mundo 3D)**. A versão 2D original continua disponível como *versão clássica*.
 
 ## Como jogar
 
@@ -12,15 +12,15 @@ Um RPG de ação 2D no navegador, com espírito de MMORPG clássico: **matar mon
 python3 server.py
 ```
 
-Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa a próxima livre e mostra o endereço).
+Depois acesse **http://localhost:5577** — abre o mundo 3D. A versão clássica 2D fica em http://localhost:5577/2d.html. (Se a porta estiver ocupada, o servidor usa a próxima livre e mostra o endereço.)
 
 **Onde fica o progresso:** cada personagem é salvo em `saves/<nome>.json`, na pasta do projeto. Por isso ele aparece em qualquer porta ou navegador, e você pode ter vários personagens (todos aparecem na tela inicial). O navegador guarda uma cópia reserva. O save anterior fica em `.bak` e o comando `/resetar` move o personagem para `saves/lixeira/` em vez de apagar.
 
-**Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas o progresso e as sugestões (tecla Q) ficam só no navegador até você abrir o jogo pelo `server.py`. Quando abrir, eles são enviados para o projeto automaticamente.
+**Sem servidor:** o 3D precisa do `server.py`. A versão clássica pode ser aberta direto pelo arquivo `2d.html`, mas aí o progresso e as sugestões ficam só no navegador até você abrir o jogo pelo `server.py`.
 
-### 🌍 Mundo aberto 3D (protótipo)
+### 🌍 Mundo aberto 3D (o jogo principal)
 
-Com o servidor ligado, abra **http://localhost:5577/3d.html** (ou o botão "Jogar no mundo aberto 3D" na tela inicial). O personagem é o **mesmo** do 2D: nível, classe, itens e cartas são compartilhados.
+Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesmo** na versão clássica 2D: nível, classe, itens e cartas são compartilhados.
 
 | Ação (estilo WoW) | Comando |
 |---|---|
@@ -45,7 +45,7 @@ O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mu
 - **L** mostra a lista das sugestões e o que o Claude respondeu. Com o jogo pausado, um 💡 marca no mapa onde cada uma foi feita.
 - Para aplicar: peça ao Claude *"aplique minhas sugestões pendentes"*.
 
-### Controles
+### Controles da versão clássica 2D
 
 | Ação | Comando |
 |---|---|
@@ -90,7 +90,8 @@ O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mu
 | `js/feedback.js` | Pausa + modo sugestão (Q): seleção, caixa de texto, print e envio. |
 | `server.py` | Servidor local do jogo que grava as sugestões em `feedback/` e os personagens em `saves/`. |
 | `js/rules.js` | Regras compartilhadas entre 2D e 3D (atributos, EXP, inventário, dano). |
-| `3d.html`, `js3d/` | Protótipo 3D: `world3d.js` (terreno e regiões), `critters.js` (monstros fofos em código), `main3d.js` (jogo). |
+| `index.html`, `js3d/` | Jogo 3D (principal): `world3d.js` (terreno e regiões), `critters.js` (monstros fofos em código), `bridge3d.js` (ponte com as janelas), `main3d.js` (jogo). |
+| `2d.html` | Versão clássica 2D (`js/game.js`, `world.js`, `render.js`). |
 | `assets3d/`, `lib/three/` | Modelos 3D (KayKit, CC0) e o motor three.js. |
 
 **Quer criar um monstro novo?** Adicione uma entrada em `MONSTERS` (em `data.js`) e coloque-o em `spawns` de um mapa. A carta dele é criada automaticamente.
