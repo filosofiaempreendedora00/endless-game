@@ -348,7 +348,7 @@ const UI = {
       • <b>1–9</b>: atalhos de habilidades/itens. Habilidades de alvo pedem um clique no monstro/área.<br>
       • <b>X</b>: sentar (regenera HP/SP 2× mais rápido). <b>Roda do mouse</b>: zoom.<br><br>
       <b class="gold">Janelas</b><br>
-      <b>C</b> Personagem • <b>I</b> Inventário • <b>E</b> Equipamento • <b>K</b> Habilidades • <b>T</b> Árvore de Classes • <b>N</b> Som • <b>Esc</b> fecha<br><br>
+      <b>C</b> Personagem • <b>I</b> Inventário • <b>E</b> Equipamento • <b>K</b> Habilidades • <b>T</b> Árvore de Classes • <b>N</b> Som • <b>Esc</b> fecha janelas / abre o menu (voltar ao menu principal)<br><br>
       <b class="gold">Pausa e sugestões</b><br>
       • <b>P</b>: pausa/continua o jogo.<br>
       • <b>Q</b>: modo sugestão — clique em qualquer coisa (monstro, NPC, árvore, chão, interface...) ou arraste para marcar uma área, e escreva o que quer mudar. O Claude lê depois.<br>
@@ -430,50 +430,99 @@ const UI = {
   },
 
   /* ---------- Tela título / morte ---------- */
+  /* ---------- Tela inicial: escolher personagem ---------- */
   showTitle(chars = []) {
     const o = $('overlay');
-    let hair = HAIR_COLORS[0], skin = SKIN_COLORS[0], style = 0;
+    this.stopPreview();
     chars = chars.filter(c => c && c.name && CLASSES[c.cls]);
-    const label = c => `${esc(c.name)} — Nv. ${c.baseLv} ${CLASSES[c.cls].name}`;
-    const contHtml = chars.length ? `
-        <button class="btn gold t-cont" data-i="0" style="width:100%;padding:10px;font-size:15px;margin-bottom:6px">▶ Continuar como ${label(chars[0])}</button>
-        ${chars.slice(1).map((c, i) => `<button class="btn t-cont" data-i="${i + 1}" style="width:100%;margin-bottom:4px">${label(c)}</button>`).join('')}
-        <div class="muted" style="text-align:center;margin:6px 0">— ou crie um novo personagem —</div>` : '';
+    this.titleChars = chars;
+    if (!chars.length) { this.showCreate(); return; }
+    const label = c => `<b>${esc(c.name)}</b> <span class="muted">— Nv. ${c.baseLv} ${CLASSES[c.cls].icon} ${CLASSES[c.cls].name}</span>`;
     o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">UM RPG DE CLASSES, CARTAS E AVENTURA</div>
       <div class="card">
-        ${contHtml}
+        <label style="margin-top:0">Seus personagens</label>
+        ${chars.map((c, i) => `<button class="btn ${i ? '' : 'gold'} t-cont" data-i="${i}" style="width:100%;padding:9px;font-size:14px;margin-bottom:5px;text-align:left">▶ ${label(c)}</button>`).join('')}
+        <div class="row"><button class="btn" id="t-create">＋ Criar novo personagem</button></div>
+      </div><div class="ver">v${GAME_VERSION} • clique para ativar o som</div></div>`;
+    o.classList.add('show');
+    o.onclick = () => Sound.init();
+    $('t-create').onclick = () => { Sound.init(); Sound.play('click'); this.showCreate(); };
+    o.querySelectorAll('.t-cont').forEach(b => b.onclick = async () => {
+      Sound.init();
+      try { const s = await loadCharacter(chars[+b.dataset.i]); continueGame(s); }
+      catch (e) { alert('Não consegui carregar esse personagem: ' + e.message); }
+    });
+  },
+
+  /* ---------- Tela de criação de personagem ---------- */
+  showCreate() {
+    const o = $('overlay'), chars = this.titleChars || [];
+    let hair = HAIR_COLORS[0], skin = SKIN_COLORS[0], style = 0;
+    o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">CRIAR NOVO PERSONAGEM</div>
+      <div class="card">
         <canvas id="preview" width="120" height="110"></canvas>
-        <label>Nome</label><input type="text" id="t-name" maxlength="16" placeholder="Seu nome de aventureiro">
+        <label>Nome <span style="color:#ff8a8a">*</span></label><input type="text" id="t-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?">
+        <div id="t-err" style="color:#ff8a8a;font-size:12px;min-height:16px;margin-top:3px"></div>
         <label>Cor do cabelo</label><div class="swatches" id="t-hair">${HAIR_COLORS.map((c, i) => `<div class="sw ${i ? '' : 'on'}" style="background:${c}" data-c="${c}"></div>`).join('')}</div>
         <label>Tom de pele</label><div class="swatches" id="t-skin">${SKIN_COLORS.map((c, i) => `<div class="sw ${i ? '' : 'on'}" style="background:${c}" data-c="${c}"></div>`).join('')}</div>
         <label>Penteado</label><div class="swatches" id="t-style">${[0, 1, 2].map(i => `<div class="sw ${i ? '' : 'on'}" style="background:#555;display:grid;place-items:center;font-size:11px" data-c="${i}">${i + 1}</div>`).join('')}</div>
-        <div class="row"><button class="btn ${chars.length ? '' : 'gold'}" id="t-new">${chars.length ? 'Criar novo personagem' : 'Começar aventura'}</button></div>
+        <div class="row">${chars.length ? '<button class="btn" id="t-back">← Voltar</button>' : ''}<button class="btn gold" id="t-new">Criar personagem</button></div>
       </div><div class="ver">v${GAME_VERSION} • clique para ativar o som</div></div>`;
     o.classList.add('show');
-    const prev = $('preview'), pc = prev.getContext('2d');
-    let raf;
+    const pc = $('preview').getContext('2d');
     const draw = () => {
       pc.setTransform(1, 0, 0, 1, 0, 0); pc.clearRect(0, 0, 120, 110);
       pc.setTransform(2, 0, 0, 2, 60, 100);
       drawHumanoid(pc, 0, 0, { dir: 1, body: CLASSES.aprendiz.color, accent: CLASSES.aprendiz.accent, hair, skin, hairStyle: style, weapon: 'adaga' }, performance.now() / 1000);
-      raf = requestAnimationFrame(draw);
+      this._raf = requestAnimationFrame(draw);
     };
-    draw();
+    this.stopPreview(); draw();
     const pick = (id, cb) => $(id).querySelectorAll('.sw').forEach(s => s.onclick = () => { $(id).querySelectorAll('.sw').forEach(x => x.classList.remove('on')); s.classList.add('on'); cb(s.dataset.c); Sound.init(); });
     pick('t-hair', c => hair = c); pick('t-skin', c => skin = c); pick('t-style', c => style = +c);
     o.onclick = () => Sound.init();
-    $('t-new').onclick = () => {
-      const name = $('t-name').value.trim() || 'Aventureiro';
+    const nameEl = $('t-name'), err = $('t-err');
+    const create = () => {
+      const name = nameEl.value.trim();
+      if (name.length < 2) { err.textContent = 'Dê um nome ao seu personagem (pelo menos 2 letras).'; nameEl.focus(); Sound.play('error'); return; }
       const same = chars.find(c => c.slug === saveSlug(name));
-      if (same && !confirm(`Já existe um personagem chamado ${same.name}. Criar outro com o mesmo nome substitui o antigo. Continuar?`)) return;
-      cancelAnimationFrame(raf); Sound.init(); startNewGame(name, { hair, skin, hairStyle: style });
+      if (same) { err.textContent = `Você já tem um personagem chamado ${same.name}. Escolha outro nome.`; nameEl.focus(); Sound.play('error'); return; }
+      this.stopPreview(); Sound.init(); startNewGame(name, { hair, skin, hairStyle: style });
     };
-    o.querySelectorAll('.t-cont').forEach(b => b.onclick = async () => {
-      Sound.init();
-      try { const s = await loadCharacter(chars[+b.dataset.i]); cancelAnimationFrame(raf); continueGame(s); }
-      catch (e) { alert('Não consegui carregar esse personagem: ' + e.message); }
-    });
-    setTimeout(() => $('t-name') && $('t-name').focus(), 50);
+    $('t-new').onclick = create;
+    nameEl.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') create(); err.textContent = ''; });
+    if ($('t-back')) $('t-back').onclick = () => { Sound.play('click'); this.showTitle(chars); };
+    setTimeout(() => nameEl.focus(), 50);
+  },
+  stopPreview() { if (this._raf) cancelAnimationFrame(this._raf); this._raf = null; },
+
+  /* ---------- Menu do jogo (Esc) ---------- */
+  menuOpen: false,
+  showGameMenu() {
+    if (this.menuOpen) return;
+    this.menuOpen = true;
+    this.menuWasPaused = G.paused;
+    setPaused(true);
+    const o = $('overlay');
+    o.innerHTML = `<div class="death-box" style="border-color:var(--border);min-width:300px"><h2 style="color:var(--gold)">Menu</h2>
+      <div class="muted" style="margin-bottom:14px">${esc(G.player.name)} — Nv. ${G.player.baseLv} ${CLASSES[G.player.cls].name}</div>
+      <div class="menu-btns">
+        <button class="btn gold" id="m-cont">▶ Continuar <span class="muted">(Esc)</span></button>
+        <button class="btn" id="m-help">❔ Como jogar</button>
+        <button class="btn" id="m-sound">${Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'}</button>
+        <button class="btn" id="m-title">🏠 Voltar ao menu principal</button>
+      </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente.</div></div>`;
+    o.onclick = null;
+    o.classList.add('show');
+    $('m-cont').onclick = () => this.closeGameMenu();
+    $('m-help').onclick = () => { this.closeGameMenu(); this.open('help'); };
+    $('m-sound').onclick = () => { toggleSound(); $('m-sound').textContent = Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'; };
+    $('m-title').onclick = () => { this.menuOpen = false; returnToTitle(); };
+  },
+  closeGameMenu() {
+    if (!this.menuOpen) return;
+    this.menuOpen = false;
+    this.hideOverlay();
+    setPaused(this.menuWasPaused);
   },
   showDeath(loss) {
     const o = $('overlay');

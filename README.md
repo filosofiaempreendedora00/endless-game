@@ -41,6 +41,7 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 | Pausar / Fazer sugestão / Ver sugestões | **P** / **Q** / **L** |
 | God Mode / Painel do Mestre (só no seu computador) | **Z** / **⌘ Cmd + Z** |
 | Chat / comandos | **Enter** (digite `/ajuda`) |
+| Menu do jogo / voltar ao menu principal | **Esc** |
 | Zoom | Roda do mouse |
 
 **Comandos de teste:** `/taxa 10` (EXP 10×), `/nivel 30`, `/classe 30`, `/zeny 5000`, `/item pocao_azul 10`, `/carta lobo_cinzento`, `/ir ruinas`, `/cura`, `/resetar`.

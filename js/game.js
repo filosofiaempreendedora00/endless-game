@@ -995,6 +995,7 @@ addEventListener('keydown', e => {
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (G.state !== 'play') return;
   const k = e.key.toLowerCase();
+  if (UI.menuOpen) { if (k === 'escape') UI.closeGameMenu(); return; }
   // ⌘/Ctrl + Z: Painel do Mestre
   if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (isAdmin()) UI.toggle('admin'); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1008,7 +1009,10 @@ addEventListener('keydown', e => {
   if (k >= '1' && k <= '9') { useHotbar(+k - 1); return; }
   switch (k) {
     case 'enter': document.getElementById('chatinput').focus(); e.preventDefault(); break;
-    case 'escape': if (G.targeting) G.targeting = null; else UI.closeAll(); break;
+    case 'escape': // cancela mira > fecha janelas > abre o menu do jogo
+      if (G.targeting) G.targeting = null;
+      else if (!UI.closeAll()) UI.showGameMenu();
+      break;
     case 'c': UI.toggle('char'); break;
     case 'i': UI.toggle('inv'); break;
     case 'e': UI.toggle('equip'); break;
@@ -1239,8 +1243,23 @@ function startNewGame(name, look) {
   const [sx, sy] = MAPS.vila.spawn;
   changeMap('vila', sx, sy);
   UI.log(`Bem-vindo(a) a ${GAME_TITLE}, ${name}!`, 'card');
-  UI.log('Você tem 48 pontos de atributo para distribuir (C). Os campos ficam a leste da vila. Aperte H para ajuda.', 'sys');
-  UI.open('char');
+  UI.log('Você tem 48 pontos de atributo para distribuir (C). Os campos ficam a leste da vila. Aperte H para ajuda e Esc para o menu.', 'sys');
+}
+// salva e volta para a tela inicial (lista de personagens)
+function returnToTitle() {
+  saveGame();
+  UI.closeAll(); UI.hideOverlay(); UI.menuOpen = false;
+  if (FB.picking || FB.box) FB.cancel();
+  G.paused = false; updatePauseBar();
+  G.god = false; G.moveKeys = {}; G.targeting = null;
+  G.state = 'title'; G.player = null;
+  document.getElementById('hud').classList.add('hidden');
+  G.mapToken++;
+  G.mapId = 'vila'; G.map = getMap('vila');
+  G.monsters = []; G.drops = []; G.projectiles = []; G.effects = []; G.floaters = []; G.timers = [];
+  G.npcs = (G.map.def.npcs || []).map(n => Object.assign({}, n, { x: n.x * TILE + TILE / 2, y: n.y * TILE + TILE / 2 }));
+  Sound.playSong('vila');
+  listCharacters().then(list => UI.showTitle(list));
 }
 function continueGame(s) {
   G.uid = Math.max(G.uid, s.uid || 1);
