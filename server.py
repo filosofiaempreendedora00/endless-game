@@ -2,7 +2,7 @@
 """Servidor local do jogo + caixa de sugestões.
 
 Uso:
-    python3 server.py            # abre em http://localhost:8777
+    python3 server.py            # abre em http://localhost:5577
     python3 server.py 9000       # outra porta
     python3 server.py --relatorio  # só regenera feedback/SUGESTOES.md
 
@@ -27,6 +27,7 @@ DB = os.path.join(FB_DIR, 'sugestoes.json')
 MD = os.path.join(FB_DIR, 'SUGESTOES.md')
 LOCK = threading.Lock()
 MAX_BODY = 8 * 1024 * 1024
+DEFAULT_PORT = 5577
 
 
 def load():
@@ -145,8 +146,16 @@ def main():
         print('feedback/SUGESTOES.md atualizado.')
         return
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
-    port = int(args[0]) if args else int(os.environ.get('PORT', 8777))
-    srv = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    wanted = int(args[0]) if args else int(os.environ.get('PORT', DEFAULT_PORT))
+    srv = None
+    for port in range(wanted, wanted + 20):  # se a porta estiver ocupada, tenta as próximas
+        try:
+            srv = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+            break
+        except OSError:
+            print(f'Porta {port} ocupada, tentando {port + 1}...', flush=True)
+    if not srv:
+        sys.exit(f'Nenhuma porta livre entre {wanted} e {wanted + 19}.')
     print(f'🎮 Jogo em http://localhost:{port}  (Ctrl+C para parar)', flush=True)
     try:
         srv.serve_forever()

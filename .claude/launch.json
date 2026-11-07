@@ -4,8 +4,8 @@
     {
       "name": "jogo",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 server.py ${PORT:-8777}"],
-      "port": 8777
+      "runtimeArgs": ["-c", "python3 server.py ${PORT:-5577}"],
+      "port": 5577
     }
   ]
 }

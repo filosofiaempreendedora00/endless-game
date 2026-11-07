@@ -12,7 +12,7 @@ Um RPG de ação 2D no navegador, com espírito de MMORPG clássico: **matar mon
 python3 server.py
 ```
 
-Depois acesse http://localhost:8777. O progresso é salvo automaticamente no navegador.
+Depois acesse http://localhost:5577. O progresso é salvo automaticamente no navegador.
 
 **Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas as sugestões (tecla Q) ficam guardadas no navegador até você abrir o jogo pelo `server.py`.
 
