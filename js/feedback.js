@@ -180,7 +180,7 @@ const FB = {
         <textarea id="fb-text" rows="4" placeholder="O que você quer mudar aqui?\nEx.: não gostei do visual desse monstro, deixe-o mais fofo."></textarea>
         <div class="fb-cats">${FB_CATS.map(c => `<span class="fb-cat" data-c="${c}">${c}</span>`).join('')}</div>
       </div>
-      <div class="fb-actions"><span class="muted">Ctrl+Enter envia · Esc cancela</span><span><button class="btn" id="fb-cancel">Cancelar</button> <button class="btn gold" id="fb-send">Enviar sugestão</button></span></div>`;
+      <div class="fb-actions"><span class="muted">Enter envia · Shift+Enter nova linha · Esc cancela</span><span><button class="btn" id="fb-cancel">Cancelar</button> <button class="btn gold" id="fb-send">Enviar sugestão</button></span></div>`;
     document.body.appendChild(b);
     this.box = b;
     this.anchor = { sx, sy };
@@ -196,7 +196,7 @@ const FB = {
     ta.addEventListener('keydown', e => {
       e.stopPropagation();
       if (e.key === 'Escape') this.cancel();
-      else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) this.submit(ta.value, cat);
+      else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.submit(ta.value, cat); } // Shift+Enter = nova linha
     });
     b.querySelector('#fb-cancel').onclick = () => this.cancel();
     b.querySelector('#fb-send').onclick = () => this.submit(ta.value, cat);

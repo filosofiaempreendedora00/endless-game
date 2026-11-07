@@ -112,15 +112,32 @@ const Sound = {
     this.noiseBuf = c.createBuffer(1, len, c.sampleRate);
     const d = this.noiseBuf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     setInterval(() => this.tick(), 40);
+    // aba escondida = silêncio (evita duas abas do jogo tocando ao mesmo tempo)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.ctx.suspend(); else this.ctx.resume();
+    });
   },
   setEnabled(on) {
     this.enabled = on;
     if (this.master) this.master.gain.setTargetAtTime(on ? 0.8 : 0, this.ctx.currentTime, 0.05);
   },
+  // troca de música com transição: a antiga baixa e é cortada; nunca tocam duas juntas
   playSong(id) {
     if (!this.ctx || this.songId === id || !SONGS[id]) return;
+    const c = this.ctx, now = c.currentTime;
+    if (this.bus) {
+      const old = this.bus;
+      old.gain.cancelScheduledValues(now);
+      old.gain.setValueAtTime(old.gain.value, now);
+      old.gain.linearRampToValueAtTime(0, now + 0.6);
+      setTimeout(() => { try { old.disconnect(); } catch (e) { } }, 900);
+    }
+    this.bus = c.createGain();
+    this.bus.gain.setValueAtTime(0, now);
+    this.bus.gain.linearRampToValueAtTime(1, now + 0.8);
+    this.bus.connect(this.music);
     this.songId = id; this.song = buildSong(SONGS[id]); this.step = 0;
-    this.nextTime = this.ctx.currentTime + 0.4;
+    this.nextTime = now + 0.5;
   },
   tick() {
     if (!this.song || !this.ctx) return;
@@ -133,15 +150,15 @@ const Sound = {
   },
   playEvent(e, t, s) {
     const dur = (e.len || 1) * s.stepDur;
-    const d = s.def;
+    const d = s.def, bus = this.bus;
     switch (e.inst) {
-      case 'lead': this.tone(mtof(e.midi), t, dur * 0.95, d.lead, d.leadVol, this.music); break;
-      case 'bass': this.tone(mtof(e.midi), t, dur * 0.9, d.style === 'march' ? 'triangle' : 'sine', 0.55, this.music); break;
-      case 'pad': this.tone(mtof(e.midi), t, dur, 'sine', d.style === 'dark' ? 0.09 : 0.12, this.music, 0.05); break;
-      case 'arp': this.tone(mtof(e.midi), t, dur, 'triangle', 0.13, this.music); break;
-      case 'bell': this.tone(mtof(e.midi), t, dur, 'sine', 0.12, this.music, 0.005, true); break;
-      case 'kick': this.kick(t); break;
-      case 'hat': this.noise(t, 0.04, 0.06, 7000, 'highpass', this.music); break;
+      case 'lead': this.tone(mtof(e.midi), t, dur * 0.95, d.lead, d.leadVol, bus); break;
+      case 'bass': this.tone(mtof(e.midi), t, dur * 0.9, d.style === 'march' ? 'triangle' : 'sine', 0.55, bus); break;
+      case 'pad': this.tone(mtof(e.midi), t, dur, 'sine', d.style === 'dark' ? 0.09 : 0.12, bus, 0.05); break;
+      case 'arp': this.tone(mtof(e.midi), t, dur, 'triangle', 0.13, bus); break;
+      case 'bell': this.tone(mtof(e.midi), t, dur, 'sine', 0.12, bus, 0.005, true); break;
+      case 'kick': this.kick(t, bus); break;
+      case 'hat': this.noise(t, 0.04, 0.06, 7000, 'highpass', bus); break;
     }
   },
   tone(freq, t, dur, type, vol, dest, attack = 0.01, bell = false) {
@@ -166,7 +183,7 @@ const Sound = {
     const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f); f.connect(g); g.connect(dest); src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.02);
   },
-  kick(t) { this.sweep(140, 45, t, 0.18, 'sine', 0.7, this.music); },
+  kick(t, dest = this.music) { this.sweep(140, 45, t, 0.18, 'sine', 0.7, dest); },
   arp(notes, t, gap, type, vol) { notes.forEach((n, i) => this.tone(mtof(noteToMidi(n)), t + i * gap, gap * 1.6, type, vol, this.sfx)); },
 
   play(name) {

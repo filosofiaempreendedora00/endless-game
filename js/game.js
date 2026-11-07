@@ -41,7 +41,7 @@ function newPlayer(name, look) {
     name, look, cls: 'aprendiz', baseLv: 1, jobLv: 1, baseExp: 0, jobExp: 0,
     stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, statPoints: CONFIG.STAT_START_POINTS, skillPoints: 0, skills: {},
     zeny: 150, inventory: [], equip: { arma: null, cabeca: null, armadura: null, acessorio: null }, hotbar: Array(9).fill(null),
-    hp: 1, sp: 1,
+    hp: 1, sp: 1, charId: newCharId(),
   };
   initRuntime(p);
   addItem(p, 'adaga_simples', 1); addItem(p, 'tunica_algodao', 1);
@@ -59,7 +59,7 @@ function initRuntime(p) {
     dead: false, buffs: {}, cds: {}, atkT: -9, regenHp: 0, regenSp: 0, d: {}, repathT: 0, say: null,
   });
 }
-const SAVE_FIELDS = ['name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
+const SAVE_FIELDS = ['charId', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
 function saveGame() {
   if (!G.player || G.state === 'title') return;
   const s = {}; for (const k of SAVE_FIELDS) s[k] = G.player[k];
@@ -73,9 +73,23 @@ function saveGame() {
 const HAS_SERVER = location.protocol.startsWith('http');
 function saveSlug(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32) || 'sem_nome'; }
 function saveSummary(s, local) { return { slug: saveSlug(s.name), name: s.name, cls: s.cls, baseLv: s.baseLv, jobLv: s.jobLv, savedAt: s.savedAt || 0, local }; }
+function newCharId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function syncSave(s) {
   if (!HAS_SERVER) return;
-  try { fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s), keepalive: true }).catch(() => { }); } catch (e) { }
+  try {
+    fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s), keepalive: true })
+      .then(r => r.json()).then(j => {
+        if (!j.apagado) return;
+        // esse personagem foi apagado (ou outro já usa o nome): não deixa continuar salvando
+        const p = G.player;
+        try { const loc = loadSave(); if (loc && loc.charId === s.charId) localStorage.removeItem(SAVE_KEY); } catch (e) { }
+        if (p && p.charId === s.charId) {
+          G.player = null; // impede novos saves dessa sessão
+          returnToTitle();
+          setTimeout(() => alert(`O personagem ${s.name} foi apagado. Escolha ou crie outro personagem.`), 50);
+        }
+      }).catch(() => { });
+  } catch (e) { }
 }
 async function listCharacters() {
   const local = loadSave();
@@ -1274,6 +1288,7 @@ function continueGame(s) {
   const p = { name: s.name, look: s.look };
   initRuntime(p);
   for (const k of SAVE_FIELDS) if (s[k] !== undefined) p[k] = s[k];
+  if (!p.charId) p.charId = newCharId(); // personagens antigos ganham identidade
   p.hotbar = (p.hotbar || []).concat(Array(9).fill(null)).slice(0, 9);
   G.player = p;
   recalc(p);

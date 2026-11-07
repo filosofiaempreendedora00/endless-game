@@ -42,18 +42,19 @@ def save_path(sl):
     return os.path.join(SAVES_DIR, slug(sl) + '.json')
 
 
-def deleted_at(name):
-    """savedAt mais recente de um personagem com esse nome que foi para a lixeira (0 se nunca)."""
-    best, pre = 0, slug(name) + '-'
+def deleted_ids(name):
+    """Identidades (charId) dos personagens com esse nome que foram para a lixeira.
+    Personagens antigos sem charId entram como None."""
+    ids, pre = set(), slug(name) + '-'
     if os.path.isdir(TRASH_DIR):
         for fn in os.listdir(TRASH_DIR):
             if fn.startswith(pre) and fn.endswith('.json'):
                 try:
                     with open(os.path.join(TRASH_DIR, fn), encoding='utf-8') as f:
-                        best = max(best, json.load(f).get('savedAt') or 0)
+                        ids.add(json.load(f).get('charId'))
                 except (OSError, ValueError):
                     pass
-    return best
+    return ids
 
 
 def list_saves():
@@ -174,13 +175,18 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'erro': 'save inválido'})
         p = save_path(data['name'])
         with SAVE_LOCK:
-            # personagem apagado não "ressuscita" por uma cópia antiga guardada no navegador
-            if not os.path.exists(p) and deleted_at(data['name']) >= (data.get('savedAt') or 0):
+            # personagem apagado nunca volta: nem por cópia do navegador, nem por uma aba que ficou aberta
+            cid = data.get('charId')
+            dead = deleted_ids(data['name'])
+            if dead and (cid in dead or (cid is None and not os.path.exists(p))):
                 return self.send_json(200, {'ok': True, 'apagado': True})
             os.makedirs(SAVES_DIR, exist_ok=True)
             try:
                 with open(p, encoding='utf-8') as f:
                     old = json.load(f)
+                # mesmo nome, outro personagem: não sobrescreve
+                if old.get('charId') and cid and old['charId'] != cid:
+                    return self.send_json(200, {'ok': True, 'apagado': True})
                 if (old.get('savedAt') or 0) > (data.get('savedAt') or 0):
                     return self.send_json(200, {'ok': True, 'ignorado': 'save do projeto é mais recente'})
                 os.replace(p, p + '.bak')
