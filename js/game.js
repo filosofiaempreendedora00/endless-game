@@ -117,6 +117,7 @@ function insertCard(card, target) {
 }
 function useItem(entry) {
   const p = G.player; if (p.dead) return;
+  if (G.paused) { UI.log('O jogo está pausado (P para continuar).', 'warn'); return; }
   const it = ITEMS[entry.id]; if (it.type !== 'consumivel') return;
   const u = it.use;
   if (u.warp) { removeItem(p, entry); UI.markDirty(); Sound.play('portal'); const [sx, sy] = MAPS[u.warp].spawn; changeMap(u.warp, sx, sy); return; }
@@ -212,7 +213,7 @@ function assignHotbar(kind, id, silent) {
 }
 function useHotbar(i) {
   const p = G.player, h = p.hotbar[i];
-  if (!h || G.state !== 'play') return;
+  if (!h || G.state !== 'play' || G.paused) return;
   if (h.kind === 'skill') trySkill(h.id);
   else { const e = p.inventory.find(x => x.id === h.id); if (e) useItem(e); else UI.log(`Sem ${ITEMS[h.id].name}.`, 'warn'); }
 }
@@ -797,6 +798,25 @@ function handleChat(v) {
     default: UI.log('Comando desconhecido. Digite /ajuda.', 'warn');
   }
 }
+/* ================= Pausa ================= */
+function setPaused(on) {
+  if (on && G.state !== 'play' && G.state !== 'dead') return;
+  G.paused = on;
+  G.mouse.down = false; G.mouse.holdMove = false;
+  if (Sound.music) Sound.music.gain.setTargetAtTime(on ? 0.05 : 0.16, Sound.ctx.currentTime, 0.2);
+  updatePauseBar();
+}
+function togglePause() { if (FB.picking || FB.box) return; setPaused(!G.paused); }
+function updatePauseBar() {
+  const b = document.getElementById('pausebar');
+  if (!G.paused) { b.classList.remove('show'); return; }
+  b.innerHTML = FB.picking
+    ? '💡 <b>Modo sugestão</b> — clique em algo ou arraste para marcar uma área · <b>Esc</b> cancela'
+    : FB.box ? '💡 <b>Escrevendo sugestão</b> — o jogo está pausado'
+      : '⏸ <b>Jogo pausado</b> — <b>P</b> continua · <b>Q</b> faz uma sugestão';
+  b.classList.add('show');
+}
+
 function toggleSound() {
   Sound.init(); Sound.setEnabled(!Sound.enabled);
   document.getElementById('btn-sound').firstChild.textContent = Sound.enabled ? '🔊' : '🔇';
@@ -820,14 +840,14 @@ function computeHover() {
   for (const n of G.npcs) { const d = Math.hypot(wx - n.x, wy - (n.y - 18)); if (d < 20 && d < bd) { bd = d; best = { kind: 'npc', ref: n }; } }
   for (const dr of G.drops) { const d = Math.hypot(wx - dr.x, wy - (dr.y - 8)); if (d < 14 && d < bd) { bd = d; best = { kind: 'drop', ref: dr }; } }
   G.hover = best;
-  canvas.style.cursor = G.targeting ? 'crosshair' : best ? (best.kind === 'monster' ? 'crosshair' : 'pointer') : 'default';
+  canvas.style.cursor = (G.targeting || FB.picking) ? 'crosshair' : best ? (best.kind === 'monster' ? 'crosshair' : 'pointer') : 'default';
 }
 canvas.addEventListener('mousemove', e => {
   G.mouse.sx = e.clientX; G.mouse.sy = e.clientY;
   const w = screenToWorld(e.clientX, e.clientY); G.mouse.wx = w.x; G.mouse.wy = w.y;
 });
 canvas.addEventListener('mousedown', e => {
-  if (G.state !== 'play') return;
+  if (G.state !== 'play' || G.paused || FB.picking) return;
   document.activeElement && document.activeElement.blur();
   const p = G.player;
   if (e.button === 2) { if (G.targeting) { G.targeting = null; UI.log('Cancelado.', 'sys'); } return; }
@@ -857,9 +877,15 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => { e.preventDefault(); G.cam.zoom = clamp(G.cam.zoom * (e.deltaY > 0 ? 0.9 : 1.1), 1, 3); }, { passive: false });
 
 addEventListener('keydown', e => {
-  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (G.state !== 'play') return;
   const k = e.key.toLowerCase();
+  if (k === 'p') { togglePause(); return; }
+  if (k === 'q') { FB.start(); return; }
+  if (k === 'l') { UI.toggle('sugestoes'); return; }
+  if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
+  if (G.paused && ((k >= '1' && k <= '9') || k === 'x' || k === 'z')) return;
   if (k >= '1' && k <= '9') { useHotbar(+k - 1); return; }
   switch (k) {
     case 'enter': document.getElementById('chatinput').focus(); e.preventDefault(); break;
@@ -994,6 +1020,7 @@ function render() {
     ctx.beginPath(); ctx.ellipse(G.mouse.wx, G.mouse.wy, r, r * 0.45, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 0.15; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
   }
+  if (G.state !== 'title') FB.renderWorld(ctx, t);
   // ambiente
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (G.map.def.ambient) { ctx.fillStyle = G.map.def.ambient; ctx.fillRect(0, 0, canvas.width, canvas.height); }
@@ -1062,7 +1089,8 @@ function drawMinimap() {
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (G.state === 'play' || G.state === 'dead') update(dt);
+  if ((G.state === 'play' || G.state === 'dead') && !G.paused) update(dt);
+  else if (G.paused) { computeHover(); UI.updateHud(); if (UI.dirty) UI.refreshOpen(); }
   else if (G.state === 'title' && G.map) {
     G.time += dt;
     G.cam.x = G.map.w * TILE / 2 + Math.sin(G.time * 0.08) * 220; G.cam.y = G.map.h * TILE / 2 + Math.cos(G.time * 0.06) * 80;

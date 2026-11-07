@@ -6,15 +6,23 @@ Um RPG de ação 2D no navegador, com espírito de MMORPG clássico: **matar mon
 
 ## Como jogar
 
-**Jeito mais simples:** abra o arquivo `index.html` no navegador (Chrome, Edge, Firefox ou Safari).
-
-**Com servidor local** (recomendado durante o desenvolvimento):
+**Jeito recomendado** (necessário para as sugestões irem direto para o projeto):
 
 ```bash
-python3 -m http.server 8777
+python3 server.py
 ```
 
 Depois acesse http://localhost:8777. O progresso é salvo automaticamente no navegador.
+
+**Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas as sugestões (tecla Q) ficam guardadas no navegador até você abrir o jogo pelo `server.py`.
+
+### Pausa e sugestões (seu canal direto com o Claude)
+
+- **P** pausa o jogo.
+- **Q** entra no *modo sugestão*: clique em qualquer coisa (monstro, NPC, item, árvore, chão, seu personagem, um pedaço da interface) ou **arraste** para marcar uma área, e escreva o que quer mudar.
+- Cada sugestão vai para `feedback/sugestoes.json` (e `feedback/SUGESTOES.md`), com um print em `feedback/img/` e a indicação de onde aquilo está no código.
+- **L** mostra a lista das sugestões e o que o Claude respondeu. Com o jogo pausado, um 💡 marca no mapa onde cada uma foi feita.
+- Para aplicar: peça ao Claude *"aplique minhas sugestões pendentes"*.
 
 ### Controles
 
@@ -28,6 +36,7 @@ Depois acesse http://localhost:8777. O progresso é salvo automaticamente no nav
 | Personagem / Inventário / Equipamento | **C** / **I** / **E** |
 | Habilidades / Árvore de Classes / Ajuda | **K** / **T** / **H** |
 | Som liga/desliga | **N** |
+| Pausar / Fazer sugestão / Ver sugestões | **P** / **Q** / **L** |
 | Chat / comandos | **Enter** (digite `/ajuda`) |
 | Zoom | Roda do mouse |
 
@@ -55,6 +64,8 @@ Depois acesse http://localhost:8777. O progresso é salvo automaticamente no nav
 | `js/render.js` | Visual: tudo é desenhado com código (sem imagens ainda). |
 | `js/world.js` | Geração dos mapas e pathfinding (A*). |
 | `js/audio.js` | Músicas e efeitos sonoros (Web Audio). |
+| `js/feedback.js` | Pausa + modo sugestão (Q): seleção, caixa de texto, print e envio. |
+| `server.py` | Servidor local do jogo que grava as sugestões em `feedback/`. |
 
 **Quer criar um monstro novo?** Adicione uma entrada em `MONSTERS` (em `data.js`) e coloque-o em `spawns` de um mapa. A carta dele é criada automaticamente.
 

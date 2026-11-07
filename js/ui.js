@@ -154,8 +154,8 @@ const UI = {
   },
   body(id) { return this.wins[id].querySelector('.win-body'); },
   open(id) {
-    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [innerWidth - 740, 70, 320], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 420), 60, Math.min(840, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330] };
-    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa' };
+    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [innerWidth - 740, 70, 320], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 420), 60, Math.min(840, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)] };
+    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -348,6 +348,10 @@ const UI = {
       • <b>X</b>: sentar (regenera HP/SP 2× mais rápido). <b>Roda do mouse</b>: zoom.<br><br>
       <b class="gold">Janelas</b><br>
       <b>C</b> Personagem • <b>I</b> Inventário • <b>E</b> Equipamento • <b>K</b> Habilidades • <b>T</b> Árvore de Classes • <b>N</b> Som • <b>Esc</b> fecha<br><br>
+      <b class="gold">Pausa e sugestões</b><br>
+      • <b>P</b>: pausa/continua o jogo.<br>
+      • <b>Q</b>: modo sugestão — clique em qualquer coisa (monstro, NPC, árvore, chão, interface...) ou arraste para marcar uma área, e escreva o que quer mudar. O Claude lê depois.<br>
+      • <b>L</b>: lista das suas sugestões e o que já foi feito.<br><br>
       <b class="gold">Progressão</b><br>
       • Monstros dão <b>EXP de Base</b> (atributos) e <b>EXP de Classe</b> (habilidades).<br>
       • No <b>Nv. de Classe ${CONFIG.JOB_CHANGE_1}</b>, fale com a <b>Mestra Ivra</b> e escolha sua 1ª classe. No <b>Nv. ${CONFIG.JOB_CHANGE_2}</b> da 1ª classe, escolha entre dois caminhos (carreira em Y).<br>

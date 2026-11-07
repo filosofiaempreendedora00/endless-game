@@ -4,7 +4,7 @@
     {
       "name": "jogo",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 -m http.server ${PORT:-8777} --bind 127.0.0.1"],
+      "runtimeArgs": ["-c", "python3 server.py ${PORT:-8777}"],
       "port": 8777
     }
   ]
