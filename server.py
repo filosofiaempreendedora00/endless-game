@@ -42,6 +42,20 @@ def save_path(sl):
     return os.path.join(SAVES_DIR, slug(sl) + '.json')
 
 
+def deleted_at(name):
+    """savedAt mais recente de um personagem com esse nome que foi para a lixeira (0 se nunca)."""
+    best, pre = 0, slug(name) + '-'
+    if os.path.isdir(TRASH_DIR):
+        for fn in os.listdir(TRASH_DIR):
+            if fn.startswith(pre) and fn.endswith('.json'):
+                try:
+                    with open(os.path.join(TRASH_DIR, fn), encoding='utf-8') as f:
+                        best = max(best, json.load(f).get('savedAt') or 0)
+                except (OSError, ValueError):
+                    pass
+    return best
+
+
 def list_saves():
     out = []
     if not os.path.isdir(SAVES_DIR):
@@ -160,6 +174,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'erro': 'save inválido'})
         p = save_path(data['name'])
         with SAVE_LOCK:
+            # personagem apagado não "ressuscita" por uma cópia antiga guardada no navegador
+            if not os.path.exists(p) and deleted_at(data['name']) >= (data.get('savedAt') or 0):
+                return self.send_json(200, {'ok': True, 'apagado': True})
             os.makedirs(SAVES_DIR, exist_ok=True)
             try:
                 with open(p, encoding='utf-8') as f:

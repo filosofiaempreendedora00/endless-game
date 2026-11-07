@@ -90,8 +90,16 @@ async function listCharacters() {
   if (local) {
     const srv = list.find(x => x.slug === saveSlug(local.name));
     if (!srv || (srv.savedAt || 0) < (local.savedAt || 0)) {
-      syncSave(local); // personagem que só existia neste navegador/porta vai para o projeto
-      list = list.filter(x => x.slug !== saveSlug(local.name)).concat([saveSummary(local, true)]);
+      // personagem que só existia neste navegador/porta vai para o projeto
+      let apagado = false;
+      if (HAS_SERVER) {
+        try {
+          const r = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(local) });
+          apagado = r.ok && (await r.json()).apagado === true;
+        } catch (e) { }
+      }
+      if (apagado) localStorage.removeItem(SAVE_KEY); // foi apagado de propósito: esquece a cópia local
+      else list = list.filter(x => x.slug !== saveSlug(local.name)).concat([saveSummary(local, true)]);
     }
   }
   return list.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
