@@ -34,8 +34,8 @@ const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 60, 240);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 900);
-scene.add(new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1));
-const sun = new THREE.DirectionalLight('#fff1d0', 2.4);
+const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
+const sun = new THREE.DirectionalLight('#fff1d0', 2.4); sun.layers.enable(1);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, near: 1, far: 200 });
@@ -156,7 +156,9 @@ function buildWorld() {
   scatter('campos', ['rock_A', 'rock_B', 'rock_C'], 22, 0.4, 3, { s0: 0.8, s1: 0.8, rf: 0.6 });
   scatter('floresta', ['pinedark_0', 'pinedark_1', 'pinedark_2', 'pinedark_3', 'pine_2', 'pine_3', 'pine_4', 'oakdark_0', 'oakdark_1', 'oakdark_2'], 150, 0.4, 3.4, { s0: 0.85, s1: 0.5 });
   scatter('floresta', ['rock_D', 'rock_E'], 18, 0.4, 3, { rf: 0.6 });
-  scatter('ruinas', ['rock_A', 'rock_C', 'rock_D', 'rock_E', 'stump'], 45, 0.35, 3, { s0: 0.9, s1: 1, rf: 0.6 });
+  scatter('ruinas', ['rock_A', 'rock_C', 'rock_D', 'rock_E'], 36, 0.35, 3, { s0: 0.9, s1: 1, rf: 0.6 });
+  scatter('ruinas', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 14, 0.3, 3, { s0: 0.9, s1: 0.3 });
+  scatter('floresta', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 16, 0.4, 3, { s0: 0.9, s1: 0.3 });
   // ruínas: prédios destruídos e muros quebrados
   const R = ZONES.find(q => q.id === 'ruinas');
   const ruinBits = [['destroyed', -14, -6], ['destroyed', 12, -16], ['destroyed', 20, 8], ['scaffold', -22, 12], ['destroyed', -8, -26], ['tower', 2, -30]];
@@ -819,7 +821,9 @@ function updatePlates() {
   for (const e of [...S.monsters, ...S.npcs]) {
     if (e.dead && !e.isNpc) continue;
     const d = Math.hypot(e.x - P.x, e.z - P.z);
-    if (d > 32 && e !== S.target) continue;
+    // nomes só de perto: monstros até 13 m (ou o alvo / quem está brigando com você), NPCs até 24 m
+    const near = e.isNpc ? 24 : 13, fight = e === S.target || (!e.isNpc && e.aggro);
+    if (d > near && !fight) continue;
     const s = toScreen(tmpV.set(e.x, (e.obj.position.y) + e.height + 0.45, e.z));
     if (!s.vis) continue;
     let el = plateEls.get(e);
@@ -830,7 +834,7 @@ function updatePlates() {
     const key = `${e.isNpc ? e.name : e.def.name}|${color}|${hp}|${e === S.target}`;
     if (el._k !== key) { el._k = key; el.innerHTML = `<span style="color:${color}">${escH(e.isNpc ? e.name : e.def.name)}</span>${e.isNpc ? `<small>&lt;${escH(e.title)}&gt;</small>` : ''}${hp}`; el.classList.toggle('sel', e === S.target); }
     el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
-    el.style.opacity = d > 26 ? 0.6 : 1;
+    el.style.opacity = fight ? 1 : Math.max(0, Math.min(1, (near - d) / 3)); // aparece suavemente ao se aproximar
     shown.add(e);
   }
   if (S.pet && S.p.pet) {
@@ -915,7 +919,7 @@ function changeClass3d(cls) {
   // equipa a arma de presente, se a classe puder usar
   const gift = (CLASSES[cls].gift || []).map(g => g[0]).find(id => ITEMS[id].type === 'arma');
   const en = gift && p.inventory.find(e => e.id === gift);
-  if (en && CLASSES[cls].weapons.includes(ITEMS[gift].wtype) && (ITEMS[gift].lv || 1) <= p.baseLv) { const i = p.inventory.indexOf(en); p.inventory.splice(i, 1); if (p.equip.arma) p.inventory.push(p.equip.arma); p.equip.arma = en; }
+  if (en && CLASSES[cls].weapons.includes(ITEMS[gift].wtype) && (ITEMS[gift].lv || 1) <= p.baseLv) { const i = p.inventory.indexOf(en); p.inventory.splice(i, 1); if (p.equip.arma) p.inventory.push(p.equip.arma); p.equip.arma = en; if (TWO_HANDED.includes(ITEMS[gift].wtype) && p.equip.escudo) { p.inventory.push(p.equip.escudo); p.equip.escudo = null; } }
   recalc(p); p.hp = p.d.maxHp; p.sp = p.d.maxSp;
   buildPlayerModel(); levelFx();
   banner(`${CLASSES[cls].icon} ${CLASSES[cls].name}`, 'NOVA CLASSE');
@@ -999,7 +1003,7 @@ function buildMinimap() {
   for (const o of placed) {
     const a = o.userData.asset, x = w2m(o.position.x), y = w2m(o.position.z);
     if (/^cloud|^lily|^mountain/.test(a)) continue;
-    if (/^tree|^trees|^stump|^oak|^pine/.test(a)) {
+    if (/^tree|^trees|^stump|^oak|^pine|^log/.test(a)) {
       const r = (/^oak/.test(a) ? 2.6 * o.scale.x : /^pine/.test(a) ? 2.0 * o.scale.x : /_l$/.test(a) ? 3.2 : /_m$/.test(a) ? 2.4 : 1.6) / px;
       g.fillStyle = 'rgba(20,50,22,0.35)'; g.beginPath(); g.arc(x + 1, y + 1, r, 0, 7); g.fill();
       g.fillStyle = '#2f6a30'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
@@ -1301,7 +1305,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -1360,10 +1364,39 @@ function teleport3d(x, z) {
   setTarget(null); S.casting = null; $('castbar3d').classList.add('hidden');
   ring(S.pos, 2.2, '#9fe3ff'); ring(S.pos, 1.2, '#ffd76a'); Sound.play('portal');
 }
+// retrato do personagem de frente (janela de Equipamento): renderiza só o modelo do jogador
+let portraitRT = null, portraitCache = { key: '', url: null };
+function portrait() {
+  if (!S.me || !S.p) return null;
+  const p = S.p, key = p.cls + '|' + JSON.stringify(p.look || {}) + '|' + EQUIP_SLOTS.map(s => p.equip[s] ? p.equip[s].id : '').join(',') + '|' + S.me.obj.uuid;
+  if (portraitCache.key === key && portraitCache.url) return portraitCache.url;
+  const W = 300, H = 420;
+  if (!portraitRT) { portraitRT = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); portraitRT.texture.colorSpace = THREE.SRGBColorSpace; }
+  const obj = S.me.obj, vis = obj.visible;
+  obj.visible = true; obj.updateMatrixWorld(true);
+  obj.traverse(o => o.layers.enable(1));
+  const box = new THREE.Box3().setFromObject(obj), h = Math.max(1, box.max.y - box.min.y);
+  const yaw = obj.rotation.y + 0.42; // 3/4 de frente
+  const target = new THREE.Vector3(obj.position.x, box.min.y + h * 0.5, obj.position.z);
+  const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 60);
+  const dist = h * 2.55;
+  cam.position.set(target.x + Math.sin(yaw) * dist, target.y + h * 0.18, target.z + Math.cos(yaw) * dist);
+  cam.lookAt(target); cam.layers.set(1);
+  const bg = scene.background, fog = scene.fog, cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
+  scene.background = null; scene.fog = null; renderer.setClearColor(0x000000, 0);
+  renderer.setRenderTarget(portraitRT); renderer.clear(); renderer.render(scene, cam); 
+  const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(portraitRT, 0, 0, W, H, buf);
+  renderer.setRenderTarget(null); scene.background = bg; scene.fog = fog; renderer.setClearColor(cc, ca); obj.visible = vis;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'), img = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); // vira de cabeça para cima
+  g.putImageData(img, 0, 0);
+  portraitCache = { key, url: c.toDataURL('image/png') };
+  return portraitCache.url;
+}
 function installIntegration() {
   Object.assign(H3, {
-    save: save3d, useItem: use3d, useSlot, levelFx, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
-    setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime(on ? 0.05 : 0.16, Sound.ctx.currentTime, 0.2); updatePauseBar(); },
+    save: save3d, useItem: use3d, useSlot, levelFx, portrait, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
+    setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime((on ? 0.05 : 0.16) * Sound.musicVol, Sound.ctx.currentTime, 0.2); updatePauseBar(); },
     say: txt => floatAt(S.me.obj.position, '💬 ' + txt, '#ffffff', 2.6),
   });
   // sugestões (Q): escolher no mundo 3D

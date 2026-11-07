@@ -31,6 +31,7 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Correr para frente | **os dois botões** |
 | Zoom / ângulo da câmera | **rodinha** / **Shift + rodinha** |
 | Ver o personagem de frente | **segurar botão do meio** |
+| Menu e configurações (som, volumes) | **Esc** |
 | Pular | **Espaço** |
 | Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |
 | Habilidades e itens | **1–9** |

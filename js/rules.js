@@ -73,7 +73,7 @@ function addBonus(t, b) {
 
 function recalc(p) {
   const b = {};
-  for (const s of EQUIP_TYPES) {
+  for (const s of EQUIP_SLOTS) {
     const e = p.equip[s]; if (!e) continue;
     const it = ITEMS[e.id];
     addBonus(b, { atk: it.atk || 0, matk: it.matk || 0, def: it.def || 0, mdef: it.mdef || 0 });

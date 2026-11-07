@@ -155,13 +155,14 @@ export function buildSky(top = '#4f9be8', horizon = '#cfe7ff') {
 // grama de verdade: tufos de lâminas curvas que balançam com o vento + flores + pedregulhos
 const windUniform = { value: 0 };
 export function updateNature(time) { windUniform.value = time; }
-function tuftGeometry(rng) {
+// tufos baixos e finos (3 formatos diferentes para não parecerem carimbos iguais)
+function tuftGeometry(rng, variant = 0) {
   const pos = [], col = [], idx = [];
-  const base = new THREE.Color('#5a9a3c'), tip = new THREE.Color('#cdee90');
-  const blades = 5;
+  const base = new THREE.Color('#4f8a36'), tip = new THREE.Color(['#a8d470', '#b8dc7c', '#9cc868'][variant % 3]);
+  const blades = 7 + variant * 3;
   for (let b = 0; b < blades; b++) {
-    const ang = b / blades * Math.PI * 2 + rng() * 0.6, lean = 0.12 + rng() * 0.2, h = 0.3 + rng() * 0.3, w = 0.045 + rng() * 0.025;
-    const dx = Math.cos(ang), dz = Math.sin(ang), ox = dx * 0.09, oz = dz * 0.09;
+    const ang = rng() * Math.PI * 2, lean = 0.03 + rng() * 0.12, h = 0.09 + rng() * (0.12 + variant * 0.04), w = 0.016 + rng() * 0.012;
+    const spread = 0.04 + variant * 0.05, dx = Math.cos(ang), dz = Math.sin(ang), rr = rng() * spread, ox = Math.cos(ang + 1.3) * rr, oz = Math.sin(ang + 1.3) * rr;
     const seg = 3, start = pos.length / 3;
     for (let s = 0; s <= seg; s++) {
       const k = s / seg, y = h * k, bend = lean * k * k, ww = w * (1 - k * 0.9);
@@ -213,15 +214,16 @@ function flowerGeometry() {
 }
 export function buildGrass(rng) {
   const group = new THREE.Group();
-  const tufts = new THREE.InstancedMesh(tuftGeometry(rng), windMaterial({ vertexColors: true, roughness: 0.85, side: THREE.DoubleSide }), 22000);
+  const grassMat = windMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
+  const tuftSets = [0, 1, 2].map(v => { const t = new THREE.InstancedMesh(tuftGeometry(rng, v), grassMat, 11000); t.receiveShadow = true; t._n = 0; return t; });
+  const tufts = { count: 33000 };
   const flowers = new THREE.InstancedMesh(flowerGeometry(), windMaterial({ vertexColors: true, roughness: 0.7 }), 1400);
   const rubble = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.18, 0), new THREE.MeshStandardMaterial({ color: '#8a877e', roughness: 1, flatShading: true }), 700);
-  tufts.receiveShadow = true;
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), v = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   const PETAL = ['#ffd84a', '#ff7aa8', '#ffffff', '#b48cff', '#ff9a4a', '#7ad0ff'].map(c => new THREE.Color(c));
   const tint = new THREE.Color();
   let nt = 0, nf = 0, nr = 0;
-  for (let tries = 0; tries < 140000 && (nt < tufts.count || nf < flowers.count || nr < rubble.count); tries++) {
+  for (let tries = 0; tries < 220000 && (nt < tufts.count || nf < flowers.count || nr < rubble.count); tries++) {
     const x = (rng() * 2 - 1) * 122, z = (rng() * 2 - 1) * 122;
     const rd = roadDist(x, z);
     if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12) continue;
@@ -235,16 +237,17 @@ export function buildGrass(rng) {
     }
     if (rd < 2.2) continue; // estradas limpas
     if (nf < flowers.count && rng() < 0.09 && forest < 0.5 && ruins < 0.3) {
-      s.setScalar(0.8 + rng() * 0.7); m.compose(v.set(x, y, z), q, s); flowers.setMatrixAt(nf, m); flowers.setColorAt(nf, PETAL[Math.floor(rng() * PETAL.length)]); nf++;
+      s.setScalar(0.5 + rng() * 0.45); m.compose(v.set(x, y, z), q, s); flowers.setMatrixAt(nf, m); flowers.setColorAt(nf, PETAL[Math.floor(rng() * PETAL.length)]); nf++;
     } else if (nt < tufts.count) {
-      const k = 1.0 + rng() * 0.9; s.set(k, k * (0.75 + rng() * 0.5), k); m.compose(v.set(x, y - 0.02, z), q, s); tufts.setMatrixAt(nt, m);
+      const set = tuftSets[Math.floor(rng() * 3)]; if (set._n >= set.count) continue;
+      const k = 0.8 + rng() * 0.6; s.set(k, k * (0.7 + rng() * 0.6), k); m.compose(v.set(x, y - 0.01, z), q, s); set.setMatrixAt(set._n, m);
       // tom da grama acompanha a região (bosque mais escuro, ruínas mais seco)
       tint.setRGB(1, 1, 1).lerp(new THREE.Color('#7fa07a'), forest * 0.6).lerp(new THREE.Color('#c8b98a'), ruins * 0.8).multiplyScalar(0.85 + rng() * 0.3);
-      tufts.setColorAt(nt, tint); nt++;
+      set.setColorAt(set._n++, tint); nt++;
     }
   }
-  tufts.count = nt; flowers.count = nf; rubble.count = nr;
+  tuftSets.forEach(t => { t.count = t._n; }); flowers.count = nf; rubble.count = nr;
   rubble.castShadow = true; rubble.receiveShadow = true;
-  group.add(tufts, flowers, rubble);
+  group.add(...tuftSets, flowers, rubble);
   return group;
 }

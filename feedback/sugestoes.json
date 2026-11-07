@@ -1171,9 +1171,10 @@
       "sp": "20/20"
     },
     "id": "S-025",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:19:18",
-    "imagem": "img/S-025.png"
+    "imagem": "img/S-025.png",
+    "resposta": "Os tocos do pacote (que flutuavam) foram trocados por tocos feitos em código, com raízes enterradas no chão, anéis da madeira e musgo, além de troncos caídos meio enterrados. Aparecem nas Ruínas e no Bosque."
   },
   {
     "texto": "Gostaria que esse menu de equipamentos se parece muito com o que existia do Ragnarok ou seja com o personagem no meio de frente e ter ali todos os equipamentos como a parte de cima do meio da boca acessórios botas escudo esse tipo de coisa por padrão realmente muito parecido com que existia no Ragnarok online",
@@ -1218,9 +1219,10 @@
       "sp": "20/20"
     },
     "id": "S-026",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:21:03",
-    "imagem": "img/S-026.png"
+    "imagem": "img/S-026.png",
+    "resposta": "A janela de Equipamento ficou no estilo clássico: seu personagem de frente no meio e os espaços dos dois lados (topo, meio e baixo da cabeça, armadura, arma, escudo, capa, botas e 2 acessórios). Há itens novos na loja do Bento (máscara, folha de hortelã, escudo, capa, sandálias, botas). Arco usa as duas mãos e não deixa usar escudo."
   },
   {
     "texto": "Peço que você tenha capacidade de quando eu clicar no q e selecionar algo você não pegue algo só do mundo e sim quaisquer janelas que estiverem abertas na minha tela pois há muito comum que eu queira mexer em janelas e não apenas no mundo",
@@ -1269,9 +1271,10 @@
       "sp": "20/20"
     },
     "id": "S-027",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:23:12",
-    "imagem": "img/S-027.png"
+    "imagem": "img/S-027.png",
+    "resposta": "No modo Q, o print agora inclui as janelas e a interface abertas na tela (não só o mundo). Clicar numa janela também gera um print dela."
   },
   {
     "texto": "Uma coisa que eu gostaria de fazer com a árvore de classes é melhorar o whilex de forma com que sim por padrão apareça a dos personagens mas existem um switcher na parte superior da janela tal que eu consiga mudar entre a árvore do personagem e árvore dos mascotes e outra coisa que eu não gostei foi o fato de eu entrar na tela e ter que escalar para a esquerda ou para a direita para ver todas as classes Sinto que elas poderiam ser organizadas de forma melhor",
@@ -1321,9 +1324,10 @@
       "sp": "20/20"
     },
     "id": "S-028",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:24:16",
-    "imagem": "img/S-028.png"
+    "imagem": "img/S-028.png",
+    "resposta": "A Árvore de Classes ganhou abas no topo (🧍 Personagem / 🐾 Mascotes). As classes ficam numa grade 2×2, sem precisar rolar para os lados. Clicar no mascote no painel abre direto a aba dos mascotes."
   },
   {
     "texto": "Eu gostaria que essa Esse comando de som estivesse atrelado a algo de configurações que por sua vez ficasse dentro da tela ASC e não ali no canto direito poluindo de forma desnecessária",
@@ -1364,9 +1368,10 @@
       "sp": "20/20"
     },
     "id": "S-029",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:28:16",
-    "imagem": "img/S-029.png"
+    "imagem": "img/S-029.png",
+    "resposta": "O botão de som saiu do canto. Agora fica em Esc → ⚙️ Configurações, com som ligado/desligado e volumes de música e efeitos (lembrados entre sessões). A tecla N continua funcionando."
   },
   {
     "texto": "Gostaria que os nomes dos Monstros Só aparecessem quando eu estivesse mais próximo a eles e não nessa distância toda",
@@ -1418,9 +1423,10 @@
       "sp": "20/20"
     },
     "id": "S-030",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:30:06",
-    "imagem": "img/S-030.png"
+    "imagem": "img/S-030.png",
+    "resposta": "Os nomes dos monstros só aparecem de perto (até ~13 m), surgindo suavemente. O alvo selecionado e quem está brigando com você continuam sempre com nome."
   },
   {
     "texto": "A verdade é que eu achei essas gramas muito exageradas no sentido de que é melhor você fazer algo mais minimalistas com gramas menores do que ficar enfiando essas gramas maiores em todos os lugares sabe eu gostaria de gramas mais realistas e menores linhas para que não ficasse assim tão esquisito vários tufos idênticos saindo do chão",
@@ -1461,9 +1467,10 @@
       "sp": "20/20"
     },
     "id": "S-031",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:31:07",
-    "imagem": "img/S-031.png"
+    "imagem": "img/S-031.png",
+    "resposta": "Grama mais baixa e fina, com 3 formatos diferentes de tufo (nada de carimbos iguais) e cor mais próxima do chão. As flores também ficaram menores."
   },
   {
     "texto": "sino que ta com 2 musicas simultaneas sobrepostas e isso é bug",
@@ -1507,5 +1514,152 @@
     "status": "pendente",
     "criadoEm": "2026-11-07T17:34:29",
     "imagem": "img/S-032.png"
+  },
+  {
+    "texto": "ficou aparecendo 'alvo fora do alcance' como arqueiro o tempo todo mesmo que eu tenha afastado muito do monstro. Deveria depois de certo ponto parar a posicao de combate por padrao como no wow",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (277×82 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 6,
+          "Fungolino": 4,
+          "Coelho-Chifre": 3,
+          "Abelha Rubra": 2,
+          "Gosmão": 1,
+          "Esqueleto Vigia": 4,
+          "Cavaleiro Caído": 2,
+          "Espectro Pálido": 3
+        },
+        "npcs": [],
+        "cenario": {
+          "Grupo de árvores": 3,
+          "Pinheiro": 9,
+          "Pedra": 4
+        },
+        "centro": "Pinheiro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        12,
+        15
+      ],
+      "pos": [
+        12,
+        15
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "20/20"
+    },
+    "id": "S-033",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:35:49",
+    "imagem": "img/S-033.png"
+  },
+  {
+    "texto": "este lago ficou muito artificial, muito perfeitinho, muito fake. Queria agua mais real. mas tbm quruia vitorias regias que eu pudessse pular em cima delas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (497×105 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Pedra": 1,
+          "Vitória-régia": 6
+        },
+        "centro": "Lago — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        19,
+        52
+      ],
+      "pos": [
+        19,
+        52
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "20/20"
+    },
+    "id": "S-034",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:36:30",
+    "imagem": "img/S-034.png"
+  },
+  {
+    "texto": "gostaria que ALGUMAS das cases tivessem portais tipo do ragnarok, onde a pessoa entra e vai pra outra tela. Nesse ambiente interno podem ter NPCs um npc importante que eu queria era o da montaria. Conversando com ele, ele me daria a opção de uma montaria, pra que eu subisse em cima de um bicho e pudesse andar mais rapido entre o lugares",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (82×54 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Casa": 1
+        },
+        "centro": "Casa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -91,
+        12
+      ],
+      "pos": [
+        -91,
+        12
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guardião Sagrado",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "113/113",
+      "sp": "20/20"
+    },
+    "id": "S-035",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:38:36",
+    "imagem": "img/S-035.png"
   }
 ]

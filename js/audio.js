@@ -101,8 +101,8 @@ const Sound = {
     if (!AC) return;
     const c = this.ctx = new AC();
     this.master = c.createGain(); this.master.gain.value = this.enabled ? 0.8 : 0; this.master.connect(c.destination);
-    this.music = c.createGain(); this.music.gain.value = 0.16;
-    this.sfx = c.createGain(); this.sfx.gain.value = 0.32; this.sfx.connect(this.master);
+    this.music = c.createGain(); this.music.gain.value = 0.16 * this.musicVol;
+    this.sfx = c.createGain(); this.sfx.gain.value = 0.32 * this.sfxVol; this.sfx.connect(this.master);
     // eco suave na música
     const delay = c.createDelay(); delay.delayTime.value = 0.27;
     const fb = c.createGain(); fb.gain.value = 0.22;
@@ -116,6 +116,20 @@ const Sound = {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.ctx.suspend(); else this.ctx.resume();
     });
+  },
+  musicVol: 1, sfxVol: 1,
+  // volumes de 0 a 1 (multiplicam o nível padrão de música e efeitos)
+  setVolumes(music, sfx) {
+    if (music != null) this.musicVol = music; if (sfx != null) this.sfxVol = sfx;
+    if (this.music) this.music.gain.setTargetAtTime(0.16 * this.musicVol, this.ctx.currentTime, 0.05);
+    if (this.sfx) this.sfx.gain.setTargetAtTime(0.32 * this.sfxVol, this.ctx.currentTime, 0.05);
+    try { localStorage.setItem('aethra_vol', JSON.stringify({ m: this.musicVol, s: this.sfxVol })); } catch (e) { }
+  },
+  loadPrefs() {
+    try {
+      if (localStorage.getItem('aethra_sound') === '0') this.enabled = false;
+      const v = JSON.parse(localStorage.getItem('aethra_vol') || 'null'); if (v) { this.musicVol = +v.m; this.sfxVol = +v.s; }
+    } catch (e) { }
   },
   setEnabled(on) {
     this.enabled = on;
@@ -217,3 +231,4 @@ const Sound = {
     }
   },
 };
+Sound.loadPrefs(); // lembra som ligado/desligado e volumes entre sessões

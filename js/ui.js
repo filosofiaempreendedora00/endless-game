@@ -13,7 +13,7 @@ const UI = {
 
   init() {
     document.querySelectorAll('#menubar [data-win]').forEach(b => b.onclick = () => { Sound.play('click'); this.toggle(b.dataset.win); });
-    $('btn-sound').onclick = () => toggleSound();
+    if ($('btn-sound')) $('btn-sound').onclick = () => toggleSound();
     // hotbar
     const hb = $('hotbar');
     for (let i = 0; i < 9; i++) {
@@ -56,7 +56,7 @@ const UI = {
       e.stopPropagation();
     });
     $('st-alert').onclick = e => { const w = e.target.dataset.win; if (w) this.open(w); };
-    if ($('st-pet')) $('st-pet').onclick = () => this.open('tree');
+    if ($('st-pet')) $('st-pet').onclick = () => { this.treeTab = 'pets'; if (this.wins.tree) this.render_tree(); else this.open('tree'); };
   },
 
   markDirty() { this.dirty = true; },
@@ -170,7 +170,7 @@ const UI = {
   },
   body(id) { return this.wins[id].querySelector('.win-body'); },
   open(id) {
-    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [innerWidth - 740, 70, 320], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 420), 60, Math.min(840, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
     const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
@@ -180,6 +180,7 @@ const UI = {
     const w = this.wins[id]; if (!w) return;
     w.remove(); delete this.wins[id];
     if (id === 'inv') { this.invSel = null; this.cardMode = null; }
+    if (id === 'tree') this.treeTab = null; // ao reabrir, volta para a árvore do personagem
     this.hideTip();
   },
   toggle(id) { if (this.wins[id]) this.close(id); else this.open(id); },
@@ -215,6 +216,7 @@ const UI = {
       case 'buy': buyItem(ds.id, e.shiftKey ? 10 : 1); break;
       case 'sell': { const en = invByUid(+ds.uid); if (en) sellItem(en, e.shiftKey ? en.qty : 1); break; }
       case 'treesel': this.treeSel = ds.c; this.render_tree(); break;
+      case 'treetab': this.treeTab = ds.t; this.render_tree(); break;
       case 'dlg': { const opt = this.dlg && this.dlg.options[+ds.i]; if (opt) opt.fn(); break; }
     }
   },
@@ -274,7 +276,7 @@ const UI = {
       if (card) {
         const ct = ITEMS[card.id].equip;
         const targets = [];
-        for (const s of EQUIP_TYPES) { const e = p.equip[s]; if (e && ITEMS[e.id].type === ct && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-slot="${s}">${ITEMS[e.id].icon} ${ITEMS[e.id].name} (equipado)</button>`); }
+        for (const s of EQUIP_SLOTS) { const e = p.equip[s]; if (e && ITEMS[e.id].type === ct && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-slot="${s}">${ITEMS[e.id].icon} ${ITEMS[e.id].name} (equipado)</button>`); }
         for (const e of p.inventory) if (ITEMS[e.id].type === ct && e.cards && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-uid="${e.uid}">${ITEMS[e.id].icon} ${ITEMS[e.id].name}</button>`);
         detail = `<b>${ITEMS[card.id].name}</b><div class="muted">Escolha um(a) ${SLOT_NAMES[ct]} com espaço livre:</div>
           <div class="actions">${targets.join('') || '<span class="tt-warn" style="color:#ff8a8a">Nenhum equipamento compatível com espaço livre.</span>'}<button class="btn" data-act="cancelcard">Cancelar</button></div>`;
@@ -299,17 +301,25 @@ const UI = {
   },
 
   /* ---------- Equipamento ---------- */
+  // janela no estilo clássico: personagem de frente no meio e os espaços dos dois lados
   render_equip() {
     const p = G.player;
-    this.body('equip').innerHTML = EQUIP_TYPES.map(s => {
-      const e = p.equip[s];
-      if (!e) return `<div class="eq-row"><div class="cell empty"></div><div class="info"><div class="slotname">${SLOT_NAMES[s]}</div><span class="muted">— vazio —</span></div></div>`;
-      const it = ITEMS[e.id];
-      const cs = (e.cards || []).map(c => c ? `<span class="card-slot full" data-tip="item:${c}">🃏 ${ITEMS[c].name.replace('Carta ', '')}</span>` : '<span class="card-slot">vazio</span>').join('');
-      return `<div class="eq-row"><div class="cell" data-tip="equip:${s}">${it.icon}</div>
-        <div class="info"><div class="slotname">${SLOT_NAMES[s]}</div><b>${it.name}${it.slots ? ` [${it.slots}]` : ''}</b><div class="card-slots">${cs}</div></div>
-        <button class="btn small" data-act="unequip" data-slot="${s}">Tirar</button></div>`;
-    }).join('') + '<div class="muted" style="font-size:11px">Cartas: abra o Inventário (I), selecione uma carta e insira em um equipamento com espaço [ ].</div>';
+    const L = ['cabeca', 'armadura', 'arma', 'capa', 'acessorio'], R = ['rosto', 'boca', 'escudo', 'botas', 'acessorio2'];
+    const cell = (s, side) => {
+      const e = p.equip[s], it = e && ITEMS[e.id];
+      const cards = e && it.slots ? `<div class="eq-cards">${(e.cards || []).map(c => c ? `<span class="eq-card full" data-tip="item:${c}">🃏</span>` : '<span class="eq-card"></span>').join('')}</div>` : '';
+      return `<div class="eq-slot ${side} ${e ? 'full' : ''}" ${e ? `data-tip="equip:${s}" data-act="unequip" data-slot="${s}" title="Clique para tirar"` : ''}>
+        <div class="eq-ic">${e ? it.icon : ''}</div><div class="eq-tx"><div class="eq-name">${e ? esc(it.name) + (it.slots ? ` [${it.slots}]` : '') : '<span class="muted">—</span>'}</div><div class="eq-lab">${SLOT_LABELS[s]}</div>${cards}</div></div>`;
+    };
+    const pic = typeof H3 !== 'undefined' && H3.portrait ? H3.portrait() : null;
+    const d = p.d || {};
+    this.body('equip').innerHTML = `<div class="eqro">
+        <div class="eq-col">${L.map(s => cell(s, 'l')).join('')}</div>
+        <div class="eq-mid">${pic ? `<img src="${pic}" alt="">` : `<div class="eq-ph">${CLASSES[p.cls].icon}</div>`}<div class="eq-who"><b>${esc(p.name)}</b><span>${CLASSES[p.cls].name}</span></div></div>
+        <div class="eq-col">${R.map(s => cell(s, 'r')).join('')}</div>
+      </div>
+      <div class="eq-sum"><span>ATQ <b>${d.atk ?? '-'}</b></span><span>ATQ M <b>${d.matk ?? '-'}</b></span><span>DEF <b>${d.def ?? '-'}</b></span><span>DEF M <b>${d.mdef ?? '-'}</b></span></div>
+      <div class="muted" style="font-size:11px;margin-top:6px">Clique num equipamento para tirá-lo. Cartas: no Inventário (I), selecione uma carta e insira num item com espaço [ ].</div>`;
   },
 
   /* ---------- Habilidades ---------- */
@@ -343,21 +353,25 @@ const UI = {
       const req = c.tier === 0 ? 'Início' : c.tier === 1 ? `Aprendiz Nv.Classe ${CONFIG.JOB_CHANGE_1}` : `${CLASSES[c.parent].name} Nv.Classe ${CONFIG.JOB_CHANGE_2}`;
       return `<div class="tnode ${path.includes(cid) ? 'path' : ''} ${p.cls === cid ? 'cur' : ''} ${extra}" data-act="treesel" data-c="${cid}"><div class="ti">${c.icon}</div><div class="tn">${c.name}</div><div class="tr">${req}</div></div>`;
     };
-    const cols = CLASSES.aprendiz.next.map(c1 => `<div class="tcol"><div class="tline ${path.includes(c1) ? 'on' : ''}"></div>${node(c1)}<div class="tline ${path.includes(c1) ? 'on' : ''}"></div>
-        <div class="tsplit">${CLASSES[c1].next.map(c2 => `<div class="tcol">${node(c2)}<div class="tline"></div><div class="tnode future"><div class="ti">❔</div><div class="tn">3ª Classe</div><div class="tr">em breve</div></div></div>`).join('')}</div></div>`).join('');
+    // 4 ramos em grade 2×2 (cabe na janela sem rolar para os lados)
+    const cols = CLASSES.aprendiz.next.map(c1 => `<div class="tbranch ${path.includes(c1) ? 'on' : ''}">${node(c1)}<div class="tline ${path.includes(c1) ? 'on' : ''}"></div>
+        <div class="tsplit">${CLASSES[c1].next.map(c2 => node(c2)).join('')}</div><div class="tfuture">❔ 3ª classe — em breve</div></div>`).join('');
     const sel = this.treeSel || p.cls, c = CLASSES[sel];
     const skl = c.skills.map(id => `<span class="tag" data-tip="skill:${id}" style="font-size:12px;padding:2px 6px">${SKILLS[id].icon} ${SKILLS[id].name}</span>`).join(' ');
     const ws = c.weapons.map(w => WEAPON_TYPES[w].name).join(', ');
     // evolução dos mascotes (abaixo das classes)
     const pet = p.pet;
-    const petHtml = typeof PETS === 'undefined' ? '' : `<div class="pet-evo"><h4>🐾 Evolução dos Mascotes</h4>${Object.keys(PETS).map(k => {
+    const petHtml = typeof PETS === 'undefined' ? '' : `<div class="pet-evo"><h4>🐾 Evolução dos Mascotes</h4><div class="muted" style="margin:-4px 0 8px;font-size:11px">Cada mascote evolui sozinho ao subir de nível, ganhando um novo visual e poderes mais fortes.</div>${Object.keys(PETS).map(k => {
       const sp = PETS[k], mine = pet && pet.species === k, st = mine ? petStage(pet) : -1;
       return `<div class="pet-line ${mine ? 'mine' : ''}"><div class="pet-role">${sp.roleIcon} ${sp.roleName}${mine ? ' <span class="gold">• seu mascote</span>' : ''}</div><div class="pet-chain">${sp.stages.map((s, i) =>
         `<div class="pet-st ${mine && i === st ? 'cur' : ''} ${mine && i <= st ? 'got' : ''}" title="${s.desc.replace(/"/g, '&quot;')}"><div class="pi">${s.icon}</div><div class="pn">${s.name}</div><div class="pr">${i ? 'Nv. ' + PET_EVOLVE[i] : 'Início'}</div></div>${i < sp.stages.length - 1 ? '<div class="parrow">→</div>' : ''}`).join('')}</div></div>`;
     }).join('')}${pet ? `<div class="muted" style="margin-top:6px">Seu ${petInfo(pet).name} está no <b>Nv. ${pet.lv}</b> (EXP ${pet.lv >= PET_MAX_LV ? 'máxima' : Math.floor(pet.exp / petExpNext(pet.lv) * 100) + '%'}). O mascote ganha EXP junto com você.</div>` : '<div class="muted">Você ainda não tem um mascote.</div>'}</div>`;
-    this.body('tree').innerHTML = `<div class="tree">${node('aprendiz')}<div class="tline on"></div><div class="tbar"></div><div class="trow">${cols}</div></div>
+    const tab = this.treeTab || 'classes';
+    const tabs = `<div class="tabs ttabs"><div class="tab ${tab === 'classes' ? 'on' : ''}" data-act="treetab" data-t="classes">🧍 Personagem</div><div class="tab ${tab === 'pets' ? 'on' : ''}" data-act="treetab" data-t="pets">🐾 Mascotes</div></div>`;
+    if (tab === 'pets') { this.body('tree').innerHTML = tabs + petHtml; return; }
+    this.body('tree').innerHTML = `${tabs}<div class="tree">${node('aprendiz')}<div class="tline on"></div><div class="tgrid">${cols}</div></div>
       <div class="tinfo"><b class="gold" style="font-size:14px">${c.icon} ${c.name}</b> <span class="muted">— ${c.tier === 0 ? 'Classe inicial' : c.tier + 'ª classe'}</span>
-        <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>${petHtml}`;
+        <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>`;
   },
 
   /* ---------- Ajuda ---------- */
@@ -531,17 +545,32 @@ const UI = {
       <div class="menu-btns">
         <button class="btn gold" id="m-cont">▶ Continuar <span class="muted">(Esc)</span></button>
         <button class="btn" id="m-help">❔ Como jogar</button>
-        <button class="btn" id="m-sound">${Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'}</button>
+        <button class="btn" id="m-opts">⚙️ Configurações</button>
         <button class="btn" id="m-title">🏠 Voltar ao menu principal</button>
-        <button class="btn" id="m-3d">🌍 Ir para o mundo 3D</button>
+        <button class="btn" id="m-3d">${typeof H3 !== 'undefined' ? '🗺️ Versão clássica 2D' : '🌍 Ir para o mundo 3D'}</button>
       </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente.</div></div>`;
     o.onclick = null;
     o.classList.add('show');
     $('m-cont').onclick = () => this.closeGameMenu();
     $('m-help').onclick = () => { this.closeGameMenu(); this.open('help'); };
-    $('m-sound').onclick = () => { toggleSound(); $('m-sound').textContent = Sound.enabled ? '🔊 Som: ligado' : '🔇 Som: desligado'; };
+    $('m-opts').onclick = () => this.showSettings();
     $('m-title').onclick = () => { this.menuOpen = false; returnToTitle(); };
-    $('m-3d').onclick = () => { saveGame(); location.href = 'index.html'; };
+    $('m-3d').onclick = () => { saveGame(); location.href = typeof H3 !== 'undefined' ? '2d.html' : 'index.html'; };
+  },
+  // tela de configurações (dentro do menu Esc)
+  showSettings() {
+    const o = $('overlay'), pct = v => Math.round(v * 100);
+    o.innerHTML = `<div class="death-box" style="border-color:var(--border);min-width:320px;text-align:left"><h2 style="color:var(--gold);text-align:center">⚙️ Configurações</h2>
+      <div class="opt-row"><span>Som</span><button class="btn" id="o-sound">${Sound.enabled ? '🔊 Ligado' : '🔇 Desligado'}</button></div>
+      <div class="opt-row"><span>Música</span><input type="range" id="o-music" min="0" max="100" value="${pct(Sound.musicVol)}"><b id="o-music-v">${pct(Sound.musicVol)}%</b></div>
+      <div class="opt-row"><span>Efeitos</span><input type="range" id="o-sfx" min="0" max="100" value="${pct(Sound.sfxVol)}"><b id="o-sfx-v">${pct(Sound.sfxVol)}%</b></div>
+      <div class="muted" style="font-size:11px;margin:6px 0 12px">Atalho: <b>N</b> liga/desliga o som.</div>
+      <div class="menu-btns"><button class="btn gold" id="o-back">◀ Voltar</button></div></div>`;
+    $('o-sound').onclick = () => { toggleSound(); $('o-sound').textContent = Sound.enabled ? '🔊 Ligado' : '🔇 Desligado'; try { localStorage.setItem('aethra_sound', Sound.enabled ? '1' : '0'); } catch (e) { } };
+    $('o-music').oninput = e => { Sound.init(); Sound.setVolumes(e.target.value / 100, null); $('o-music-v').textContent = e.target.value + '%'; };
+    $('o-sfx').oninput = e => { Sound.init(); Sound.setVolumes(null, e.target.value / 100); $('o-sfx-v').textContent = e.target.value + '%'; };
+    $('o-sfx').onchange = () => Sound.play('click');
+    $('o-back').onclick = () => { const was = this.menuWasPaused; this.menuOpen = false; this.showGameMenu(); this.menuWasPaused = was; };
   },
   closeGameMenu() {
     if (!this.menuOpen) return;

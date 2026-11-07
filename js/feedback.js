@@ -112,11 +112,13 @@ const FB = {
       : el.closest('#menubar') ? 'Menu lateral' : el.closest('#chat') ? 'Chat' : el.closest('#buffs') ? 'Ícones de buff' : winTitle ? 'Janela "' + winTitle + '"' : 'Interface';
     const txt = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     const tip = el.closest('[data-tip]');
+    const box = (win || el.closest('#status, #hotbar, #minimap-wrap, #menubar, #chat, #buffs, #topbar') || el).getBoundingClientRect();
+    const shot = box.width * box.height > VW * VH * 0.6 ? this.capture(e.clientX - 200, e.clientY - 150, 400, 300) : this.capture(box.left, box.top, box.width, box.height);
     this.openBox({
       kind: 'interface', id: region, name: region + (txt ? ` — "${txt}"` : ''),
       codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
       details: { elemento: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).join('.') : ''), tooltip: tip ? tip.dataset.tip : undefined },
-    }, e.clientX, e.clientY, null);
+    }, e.clientX, e.clientY, shot);
   },
 
   // partes da interface que se sobrepõem a um retângulo da tela
@@ -186,6 +188,8 @@ const FB = {
   },
 
   /* ---------- print da região marcada ---------- */
+  // print da região: o mundo (canvas) e, por cima, as janelas/HUD abertas na tela.
+  // Devolve o print do mundo na hora; a interface é desenhada por cima logo depois (assíncrono).
   capture(x, y, w, h) {
     try {
       const pad = 24;
@@ -196,11 +200,57 @@ const FB = {
       const c = document.createElement('canvas');
       c.width = Math.round(w * sc); c.height = Math.round(h * sc);
       c.getContext('2d').drawImage(canvas, x * DPR, y * DPR, w * DPR, h * DPR, 0, 0, c.width, c.height);
-      return c.toDataURL('image/png');
+      const url = c.toDataURL('image/png');
+      this.captureUi(c, x, y, w, h, url);
+      return url;
     } catch (e) { return null; }
   },
+  async captureUi(c, x, y, w, h, worldUrl) {
+    try {
+      const svg = this.uiSvg(x, y, w, h); if (!svg) return;
+      const img = new Image();
+      await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/png');
+      if (this.cur && this.cur.shot === worldUrl) { // ainda é a mesma sugestão aberta
+        this.cur.shot = url;
+        const el = this.box && this.box.querySelector('.fb-shot'); if (el) el.src = url;
+      }
+    } catch (e) { /* sem interface no print (o mundo continua lá) */ }
+  },
+  // copia as partes visíveis da interface que cruzam o retângulo para um SVG (foreignObject)
+  uiSvg(x, y, w, h) {
+    const PROPS = ['display', 'box-sizing', 'width', 'height', 'min-width', 'min-height', 'max-width', 'max-height', 'margin', 'padding', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-radius', 'background-color', 'background-image', 'color', 'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-align', 'text-transform', 'text-shadow', 'text-overflow', 'text-decoration', 'white-space', 'word-break', 'overflow', 'opacity', 'box-shadow', 'flex-direction', 'flex-wrap', 'flex', 'flex-grow', 'flex-shrink', 'flex-basis', 'align-items', 'align-self', 'justify-content', 'gap', 'grid-template-columns', 'grid-template-rows', 'grid-column', 'grid-row', 'vertical-align', 'position', 'left', 'top', 'right', 'bottom', 'transform', 'z-index', 'visibility', 'list-style', 'object-fit', 'filter', 'outline'];
+    const SEL = '#plates > *, #topbar, #minimap-wrap, #menubar, #chat, #mybars, #target3d, #windows .win, #overlay.show > *, #banner, #castbar3d';
+    const hit = r => r.width && r.height && r.left < x + w && r.right > x && r.top < y + h && r.bottom > y;
+    const tops = [...document.querySelectorAll(SEL)].filter(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed').filter(el => {
+      const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && +cs.opacity > 0.02 && hit(el.getBoundingClientRect());
+    });
+    if (!tops.length) return null;
+    const copy = (src, top) => {
+      if (src.nodeType === 3) return document.createTextNode(src.nodeValue);
+      if (src.nodeType !== 1 || /^(SCRIPT|STYLE|AUDIO|VIDEO)$/.test(src.tagName)) return null;
+      const cs = getComputedStyle(src); if (cs.display === 'none') return null;
+      let out;
+      if (src.tagName === 'CANVAS') { out = document.createElement('img'); try { out.src = src.toDataURL(); } catch (e) { } }
+      else if (src.tagName === 'IMG') { out = document.createElement('span'); }
+      else if (src.tagName === 'INPUT' || src.tagName === 'TEXTAREA') { out = document.createElement('div'); out.textContent = src.value || src.placeholder || ''; }
+      else out = document.createElement(/^(svg|path|circle|rect|g|line|polyline|polygon|text)$/i.test(src.tagName) ? 'span' : src.tagName.toLowerCase());
+      let st = '';
+      for (const p of PROPS) { const v = cs.getPropertyValue(p); if (v && !(p === 'background-image' && /url\(/.test(v))) st += `${p}:${v};`; }
+      if (top) { const r = src.getBoundingClientRect(); st += `position:absolute;left:${r.left - x}px;top:${r.top - y}px;right:auto;bottom:auto;margin:0;transform:none;width:${r.width}px;height:${r.height}px;`; }
+      out.setAttribute('style', st);
+      if (src.tagName !== 'INPUT' && src.tagName !== 'TEXTAREA' && src.tagName !== 'CANVAS') for (const ch of src.childNodes) { const k = copy(ch, false); if (k) out.appendChild(k); }
+      return out;
+    };
+    const root = document.createElement('div');
+    root.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    root.setAttribute('style', `position:relative;width:${w}px;height:${h}px;overflow:hidden;font-family:Nunito,sans-serif;`);
+    for (const el of tops) { const k = copy(el, true); if (k) root.appendChild(k); }
+    const html = new XMLSerializer().serializeToString(root);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject x="0" y="0" width="${w}" height="${h}">${html}</foreignObject></svg>`;
+  },
 
-  /* ---------- caixa de texto ---------- */
   openBox(target, sx, sy, shot) {
     this.picking = false;
     document.body.classList.remove('fb-picking');

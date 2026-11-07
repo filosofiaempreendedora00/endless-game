@@ -63,8 +63,14 @@ const WEAPON_TYPES = {
   arco: { name: 'Arco', range: 6, delay: 1.05 },
   garra: { name: 'Garras', range: 1.4, delay: 0.75 },
 };
-const SLOT_NAMES = { arma: 'Arma', cabeca: 'Cabeça', armadura: 'Armadura', acessorio: 'Acessório' };
+// tipos de equipamento (o que cada item é)
+const SLOT_NAMES = { cabeca: 'Cabeça (topo)', rosto: 'Cabeça (meio)', boca: 'Cabeça (baixo)', armadura: 'Armadura', arma: 'Arma', escudo: 'Escudo', capa: 'Capa', botas: 'Botas', acessorio: 'Acessório' };
 const EQUIP_TYPES = Object.keys(SLOT_NAMES);
+// espaços do personagem (dois acessórios). Saves antigos sem os espaços novos continuam valendo.
+const EQUIP_SLOTS = [...EQUIP_TYPES, 'acessorio2'];
+const slotType = s => (s === 'acessorio2' ? 'acessorio' : s);
+const SLOT_LABELS = { ...SLOT_NAMES, acessorio: 'Acessório 1', acessorio2: 'Acessório 2' };
+const TWO_HANDED = ['arco']; // armas de duas mãos não deixam usar escudo
 
 /* ---------------- Classes (carreira em Y) ---------------- */
 const CLASSES = {
@@ -346,6 +352,24 @@ const ITEMS = {
   coroa_de_flores: { name: 'Coroa de Flores', type: 'cabeca', icon: '💐', price: 1200, def: 1, slots: 0, lv: 1, bonuses: { luk: 3, spRegen: 3 }, desc: 'Rara! Cheira a primavera.' },
   elmo_de_ferro: { name: 'Elmo de Ferro', type: 'cabeca', icon: '⛑️', price: 2000, def: 6, slots: 1, lv: 18 },
 
+  // Cabeça (meio e baixo)
+  oculos_redondos: { name: 'Óculos Redondos', type: 'rosto', icon: '👓', price: 500, mdef: 2, slots: 0, lv: 5, bonuses: { int: 1 } },
+  mascara_folha: { name: 'Máscara de Folha', type: 'rosto', icon: '🍃', price: 350, def: 1, slots: 0, lv: 1, bonuses: { dex: 1 } },
+  folha_hortela: { name: 'Folha de Hortelã', type: 'boca', icon: '🌿', price: 300, slots: 0, lv: 1, bonuses: { spRegen: 2 }, desc: 'Mastigar dá um fôlego novo.' },
+  bigode_postico: { name: 'Bigode Postiço', type: 'boca', icon: '🥸', price: 250, slots: 0, lv: 1, bonuses: { luk: 2 }, desc: 'Ninguém vai te reconhecer.' },
+
+  // Escudos
+  escudo_madeira: { name: 'Escudo de Madeira', type: 'escudo', icon: '🛡️', price: 150, def: 3, slots: 1, lv: 1 },
+  broquel_ferro: { name: 'Broquel de Ferro', type: 'escudo', icon: '🔰', price: 1400, def: 8, slots: 1, lv: 12 },
+
+  // Capas
+  capa_viagem: { name: 'Capa de Viagem', type: 'capa', icon: '🧣', price: 100, def: 1, mdef: 1, slots: 1, lv: 1 },
+  manto_penas: { name: 'Manto de Penas', type: 'capa', icon: '🪶', price: 1300, def: 3, slots: 1, lv: 10, bonuses: { agi: 2 } },
+
+  // Botas
+  sandalias_corda: { name: 'Sandálias de Corda', type: 'botas', icon: '🩴', price: 80, def: 1, slots: 1, lv: 1 },
+  botas_couro: { name: 'Botas de Couro', type: 'botas', icon: '👢', price: 700, def: 3, slots: 1, lv: 8, bonuses: { agi: 1 } },
+
   // Acessórios
   luvas_couro: { name: 'Luvas de Couro', type: 'acessorio', icon: '🧤', price: 800, slots: 1, lv: 5, bonuses: { dex: 2 } },
   anel_de_forca: { name: 'Anel de Força', type: 'acessorio', icon: '💍', price: 1500, slots: 1, lv: 10, bonuses: { str: 2 } },
@@ -385,7 +409,7 @@ const MONSTERS = {
   coelho_chifre: {
     name: 'Coelho-Chifre', lv: 5, hp: 120, atk: [12, 18], def: 5, exp: 24, jexp: 18, element: 'neutro', shape: 'rabbit', color: '#efe4d0', size: 0.8, speed: 70,
     drops: [['chifre', 0.5], ['carne_assada', 0.05], ['bandana', 0.02]],
-    card: { equip: 'acessorio', bonuses: { agi: 2, flee: 5 } },
+    card: { equip: 'botas', bonuses: { agi: 2, flee: 5 } },
   },
   abelha_rubra: {
     name: 'Abelha Rubra', lv: 8, hp: 170, atk: [16, 24], def: 6, exp: 42, jexp: 32, element: 'vento', shape: 'bee', color: '#ff5a3c', size: 0.7, speed: 80, aggroRange: 4,
@@ -405,7 +429,7 @@ const MONSTERS = {
   espantalho: {
     name: 'Espantalho Errante', lv: 15, hp: 560, atk: [36, 50], def: 18, exp: 170, jexp: 130, element: 'terra', shape: 'scarecrow', color: '#c9a15a', size: 1, speed: 50,
     drops: [['palha', 0.6], ['chapeu_de_palha', 0.03], ['maca', 0.3]],
-    card: { equip: 'armadura', bonuses: { resist: { terra: 25 }, def: 3 } },
+    card: { equip: 'capa', bonuses: { resist: { terra: 25 }, def: 3 } },
   },
   morcego_cripta: {
     name: 'Morcego de Cripta', lv: 18, hp: 500, atk: [40, 56], def: 8, exp: 220, jexp: 165, element: 'sombra', shape: 'bat', color: '#5a3d7a', size: 0.8, speed: 110, aggressive: true, aggroRange: 7, flee: 45,
@@ -420,7 +444,7 @@ const MONSTERS = {
   esqueleto_vigia: {
     name: 'Esqueleto Vigia', lv: 24, hp: 950, atk: [60, 82], def: 25, exp: 400, jexp: 300, element: 'sombra', shape: 'skeleton', color: '#e6e2d3', size: 1, speed: 60, aggressive: true,
     drops: [['osso', 0.6], ['elmo_de_ferro', 0.02], ['espada_longa', 0.015]],
-    card: { equip: 'armadura', bonuses: { resist: { sombra: 30 }, vit: 2 } },
+    card: { equip: 'escudo', bonuses: { resist: { sombra: 30 }, vit: 2 } },
   },
   golem_musgo: {
     name: 'Golem de Musgo', lv: 28, hp: 2000, atk: [85, 115], def: 50, mdef: 5, exp: 650, jexp: 480, element: 'terra', shape: 'golem', color: '#6f7f5a', size: 1.4, speed: 35,
@@ -532,7 +556,7 @@ SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive'
 /* ---------------- Loja ---------------- */
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
   'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto',
-  'tunica_algodao', 'colete_couro', 'bandana', 'luvas_couro'];
+  'tunica_algodao', 'colete_couro', 'bandana', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
 
 /* ---------------- Rótulos de bônus ---------------- */
 const BONUS_LABELS = {

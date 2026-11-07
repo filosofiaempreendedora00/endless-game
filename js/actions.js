@@ -12,7 +12,11 @@ function equipItem(entry, p = G.player, silent = false) {
   if (!EQUIP_TYPES.includes(it.type)) return;
   if (it.type === 'arma' && !CLASSES[p.cls].weapons.includes(it.wtype)) { if (!silent) { UI.log(`${CLASSES[p.cls].name} não pode usar ${WEAPON_TYPES[it.wtype].name}.`, 'warn'); Sound.play('error'); } return; }
   if (it.lv && p.baseLv < it.lv) { if (!silent) { UI.log(`Requer nível ${it.lv}.`, 'warn'); Sound.play('error'); } return; }
-  const slot = it.type;
+  let slot = it.type;
+  if (slot === 'acessorio' && p.equip.acessorio && !p.equip.acessorio2) slot = 'acessorio2'; // dois acessórios
+  const curW = p.equip.arma && ITEMS[p.equip.arma.id];
+  if (slot === 'escudo' && curW && TWO_HANDED.includes(curW.wtype)) { if (!silent) { UI.log(`${WEAPON_TYPES[curW.wtype].name} usa as duas mãos — não dá para usar escudo junto.`, 'warn'); Sound.play('error'); } return; }
+  if (slot === 'arma' && TWO_HANDED.includes(it.wtype) && p.equip.escudo) { p.inventory.push(p.equip.escudo); p.equip.escudo = null; if (!silent) UI.log('O escudo foi guardado (arma de duas mãos).', 'item'); }
   const old = p.equip[slot];
   const i = p.inventory.indexOf(entry); if (i >= 0) p.inventory.splice(i, 1);
   if (old) p.inventory.push(old);
@@ -82,7 +86,7 @@ function createCharacter(name, look = {}, petSpecies = null) {
   const p = {
     name, look, cls: 'aprendiz', baseLv: 1, jobLv: 1, baseExp: 0, jobExp: 0,
     stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, statPoints: CONFIG.STAT_START_POINTS, skillPoints: 0, skills: {},
-    zeny: 150, inventory: [], equip: { arma: null, cabeca: null, armadura: null, acessorio: null }, hotbar: Array(9).fill(null),
+    zeny: 150, inventory: [], equip: Object.fromEntries(EQUIP_SLOTS.map(s => [s, null])), hotbar: Array(9).fill(null),
     hp: 1, sp: 1, charId: newCharId(), buffs: {}, cds: {}, pet: petSpecies ? newPet(petSpecies) : null,
   };
   addItem(p, 'adaga_simples', 1); addItem(p, 'tunica_algodao', 1);

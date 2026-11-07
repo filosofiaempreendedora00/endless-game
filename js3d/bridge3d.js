@@ -38,6 +38,7 @@ function updatePauseBar() {
 function toggleSound() {
   Sound.init(); Sound.setEnabled(!Sound.enabled);
   const b = document.getElementById('btn-sound'); if (b) b.firstChild.textContent = Sound.enabled ? '🔊' : '🔇';
+  try { localStorage.setItem('aethra_sound', Sound.enabled ? '1' : '0'); } catch (e) { }
   if (Sound.enabled && H3.zoneMusic) { Sound.songId = null; Sound.playSong(H3.zoneMusic()); }
 }
 function isAdmin() { return location.protocol === 'file:' || ['localhost', '127.0.0.1', '::1', '[::1]'].includes(location.hostname); }

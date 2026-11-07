@@ -2,49 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (8)
-
-### S-025 · Área do mapa: Área da tela (427×121 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:19:18 · **Mapa:** Ruínas de Kael (tile [-7, -42])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** troncos muito bugados e flutuantes. Alem de feitos e aleatorios, tao bugados. Aprobveite pra melhorar a estetica desses elementos se,pre que eles aparecem
-- ![print](img/S-025.png)
-
-### S-026 · Área do mapa: Área da tela (329×345 px) (sobre: Ícones de buff, Janela "Equipamento")
-- **Status:** pendente · **Quando:** 2026-11-07T17:21:03 · **Mapa:** Ruínas de Kael (tile [-7, -42])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Gostaria que esse menu de equipamentos se parece muito com o que existia do Ragnarok ou seja com o personagem no meio de frente e ter ali todos os equipamentos como a parte de cima do meio da boca acessórios botas escudo esse tipo de coisa por padrão realmente muito parecido com que existia no Ragnarok online
-- ![print](img/S-026.png)
-
-### S-027 · Área do mapa: Área da tela (895×616 px) (sobre: Janela "Árvore de Classes")
-- **Status:** pendente · **Quando:** 2026-11-07T17:23:12 · **Mapa:** Ruínas de Kael (tile [-11, -34])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Peço que você tenha capacidade de quando eu clicar no q e selecionar algo você não pegue algo só do mundo e sim quaisquer janelas que estiverem abertas na minha tela pois há muito comum que eu queira mexer em janelas e não apenas no mundo
-- ![print](img/S-027.png)
-
-### S-028 · Área do mapa: Área da tela (916×608 px) (sobre: Ícones de buff, Janela "Árvore de Classes")
-- **Status:** pendente · **Quando:** 2026-11-07T17:24:16 · **Mapa:** Ruínas de Kael (tile [-11, -34])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Uma coisa que eu gostaria de fazer com a árvore de classes é melhorar o whilex de forma com que sim por padrão apareça a dos personagens mas existem um switcher na parte superior da janela tal que eu consiga mudar entre a árvore do personagem e árvore dos mascotes e outra coisa que eu não gostei foi o fato de eu entrar na tela e ter que escalar para a esquerda ou para a direita para ver todas as classes Sinto que elas poderiam ser organizadas de forma melhor
-- ![print](img/S-028.png)
-
-### S-029 · Área do mapa: Área da tela (51×34 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:28:16 · **Mapa:** Campos de Verdelume (tile [2, 36])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu gostaria que essa Esse comando de som estivesse atrelado a algo de configurações que por sua vez ficasse dentro da tela ASC e não ali no canto direito poluindo de forma desnecessária
-- ![print](img/S-029.png)
-
-### S-030 · Área do mapa: Área da tela (770×166 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:30:06 · **Mapa:** Campos de Verdelume (tile [17, 13])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Gostaria que os nomes dos Monstros Só aparecessem quando eu estivesse mais próximo a eles e não nessa distância toda
-- ![print](img/S-030.png)
-
-### S-031 · Área do mapa: Área da tela (542×183 px)
-- **Status:** pendente · **Quando:** 2026-11-07T17:31:07 · **Mapa:** Ruínas de Kael (tile [-42, -40])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** A verdade é que eu achei essas gramas muito exageradas no sentido de que é melhor você fazer algo mais minimalistas com gramas menores do que ficar enfiando essas gramas maiores em todos os lugares sabe eu gostaria de gramas mais realistas e menores linhas para que não ficasse assim tão esquisito vários tufos idênticos saindo do chão
-- ![print](img/S-031.png)
+## Pendentes (4)
 
 ### S-032 · Área do mapa: Área da tela (234×176 px)
 - **Status:** pendente · **Quando:** 2026-11-07T17:34:29 · **Mapa:** Ruínas de Kael (tile [-23, -43])
@@ -52,7 +10,25 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** sino que ta com 2 musicas simultaneas sobrepostas e isso é bug
 - ![print](img/S-032.png)
 
-## Feitas (24)
+### S-033 · Área do mapa: Área da tela (277×82 px)
+- **Status:** pendente · **Quando:** 2026-11-07T17:35:49 · **Mapa:** Campos de Verdelume (tile [12, 15])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou aparecendo 'alvo fora do alcance' como arqueiro o tempo todo mesmo que eu tenha afastado muito do monstro. Deveria depois de certo ponto parar a posicao de combate por padrao como no wow
+- ![print](img/S-033.png)
+
+### S-034 · Área do mapa: Área da tela (497×105 px)
+- **Status:** pendente · **Quando:** 2026-11-07T17:36:30 · **Mapa:** Campos de Verdelume (tile [19, 52])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** este lago ficou muito artificial, muito perfeitinho, muito fake. Queria agua mais real. mas tbm quruia vitorias regias que eu pudessse pular em cima delas
+- ![print](img/S-034.png)
+
+### S-035 · Área do mapa: Área da tela (82×54 px)
+- **Status:** pendente · **Quando:** 2026-11-07T17:38:36 · **Mapa:** Vila de Alvorada (tile [-91, 12])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostaria que ALGUMAS das cases tivessem portais tipo do ragnarok, onde a pessoa entra e vai pra outra tela. Nesse ambiente interno podem ter NPCs um npc importante que eu queria era o da montaria. Conversando com ele, ele me daria a opção de uma montaria, pra que eu subisse em cima de um bicho e pudesse andar mais rapido entre o lugares
+- ![print](img/S-035.png)
+
+## Feitas (31)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -223,3 +199,52 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** O saqueador também de Corsa está com a mesma estética dos companheiros como o lá como o ladino e outro e eu preciso que ele de costas também seja bem diferente e Inclusive eu gostaria de uma seguinte funcionalidade eu gostaria de que ao apertar a bolinha do mouse ou melhor ao segurar a bolinha do mouse a câmera automaticamente ficasse invertida enquanto eu pressiono o botão para que eu consiga ver a parte da frente do meu personagem também e não só as costas Isso é apenas para que eu consiga fazer uma conferência melhor
 - ![print](img/S-024.png)
 - **Resposta do Claude:** Saqueador tem visual próprio (machados duplos, tricórnio, saco de saque e moedas). Segurar o botão do meio do mouse vira a câmera para ver o personagem de frente.
+
+### S-025 · Área do mapa: Área da tela (427×121 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:19:18 · **Mapa:** Ruínas de Kael (tile [-7, -42])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** troncos muito bugados e flutuantes. Alem de feitos e aleatorios, tao bugados. Aprobveite pra melhorar a estetica desses elementos se,pre que eles aparecem
+- ![print](img/S-025.png)
+- **Resposta do Claude:** Os tocos do pacote (que flutuavam) foram trocados por tocos feitos em código, com raízes enterradas no chão, anéis da madeira e musgo, além de troncos caídos meio enterrados. Aparecem nas Ruínas e no Bosque.
+
+### S-026 · Área do mapa: Área da tela (329×345 px) (sobre: Ícones de buff, Janela "Equipamento")
+- **Status:** feito · **Quando:** 2026-11-07T17:21:03 · **Mapa:** Ruínas de Kael (tile [-7, -42])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Gostaria que esse menu de equipamentos se parece muito com o que existia do Ragnarok ou seja com o personagem no meio de frente e ter ali todos os equipamentos como a parte de cima do meio da boca acessórios botas escudo esse tipo de coisa por padrão realmente muito parecido com que existia no Ragnarok online
+- ![print](img/S-026.png)
+- **Resposta do Claude:** A janela de Equipamento ficou no estilo clássico: seu personagem de frente no meio e os espaços dos dois lados (topo, meio e baixo da cabeça, armadura, arma, escudo, capa, botas e 2 acessórios). Há itens novos na loja do Bento (máscara, folha de hortelã, escudo, capa, sandálias, botas). Arco usa as duas mãos e não deixa usar escudo.
+
+### S-027 · Área do mapa: Área da tela (895×616 px) (sobre: Janela "Árvore de Classes")
+- **Status:** feito · **Quando:** 2026-11-07T17:23:12 · **Mapa:** Ruínas de Kael (tile [-11, -34])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Peço que você tenha capacidade de quando eu clicar no q e selecionar algo você não pegue algo só do mundo e sim quaisquer janelas que estiverem abertas na minha tela pois há muito comum que eu queira mexer em janelas e não apenas no mundo
+- ![print](img/S-027.png)
+- **Resposta do Claude:** No modo Q, o print agora inclui as janelas e a interface abertas na tela (não só o mundo). Clicar numa janela também gera um print dela.
+
+### S-028 · Área do mapa: Área da tela (916×608 px) (sobre: Ícones de buff, Janela "Árvore de Classes")
+- **Status:** feito · **Quando:** 2026-11-07T17:24:16 · **Mapa:** Ruínas de Kael (tile [-11, -34])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Uma coisa que eu gostaria de fazer com a árvore de classes é melhorar o whilex de forma com que sim por padrão apareça a dos personagens mas existem um switcher na parte superior da janela tal que eu consiga mudar entre a árvore do personagem e árvore dos mascotes e outra coisa que eu não gostei foi o fato de eu entrar na tela e ter que escalar para a esquerda ou para a direita para ver todas as classes Sinto que elas poderiam ser organizadas de forma melhor
+- ![print](img/S-028.png)
+- **Resposta do Claude:** A Árvore de Classes ganhou abas no topo (🧍 Personagem / 🐾 Mascotes). As classes ficam numa grade 2×2, sem precisar rolar para os lados. Clicar no mascote no painel abre direto a aba dos mascotes.
+
+### S-029 · Área do mapa: Área da tela (51×34 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:28:16 · **Mapa:** Campos de Verdelume (tile [2, 36])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostaria que essa Esse comando de som estivesse atrelado a algo de configurações que por sua vez ficasse dentro da tela ASC e não ali no canto direito poluindo de forma desnecessária
+- ![print](img/S-029.png)
+- **Resposta do Claude:** O botão de som saiu do canto. Agora fica em Esc → ⚙️ Configurações, com som ligado/desligado e volumes de música e efeitos (lembrados entre sessões). A tecla N continua funcionando.
+
+### S-030 · Área do mapa: Área da tela (770×166 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:30:06 · **Mapa:** Campos de Verdelume (tile [17, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que os nomes dos Monstros Só aparecessem quando eu estivesse mais próximo a eles e não nessa distância toda
+- ![print](img/S-030.png)
+- **Resposta do Claude:** Os nomes dos monstros só aparecem de perto (até ~13 m), surgindo suavemente. O alvo selecionado e quem está brigando com você continuam sempre com nome.
+
+### S-031 · Área do mapa: Área da tela (542×183 px)
+- **Status:** feito · **Quando:** 2026-11-07T17:31:07 · **Mapa:** Ruínas de Kael (tile [-42, -40])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A verdade é que eu achei essas gramas muito exageradas no sentido de que é melhor você fazer algo mais minimalistas com gramas menores do que ficar enfiando essas gramas maiores em todos os lugares sabe eu gostaria de gramas mais realistas e menores linhas para que não ficasse assim tão esquisito vários tufos idênticos saindo do chão
+- ![print](img/S-031.png)
+- **Resposta do Claude:** Grama mais baixa e fina, com 3 formatos diferentes de tufo (nada de carimbos iguais) e cor mais próxima do chão. As flores também ficaram menores.
