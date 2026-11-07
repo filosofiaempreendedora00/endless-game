@@ -17,7 +17,7 @@ const rng = mulberry(4242);
 const angLerp = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI; if (d < -Math.PI) d += Math.PI * 2; return a + d * k; };
 
 /* =========================== Cena =========================== */
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game3d'), antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -25,7 +25,6 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
-$('app3d').appendChild(renderer.domElement);
 const canvas = renderer.domElement;
 
 const scene = new THREE.Scene();
@@ -40,7 +39,7 @@ Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, n
 sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
 const sky = buildSky(); scene.add(sky);
-scene.add(buildTerrain());
+const terrain = buildTerrain(); scene.add(terrain);
 scene.add(buildWater());
 scene.add(buildGrass(mulberry(99)));
 
@@ -88,6 +87,7 @@ const colliders = [];
 function freeAt(x, z, r) { return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); }
 const TYPE_SCALE = { tower: 0.6, tent: 0.55, well: 0.7, windmill: 0.9, barrel: 0.55, crate_A: 0.55, crate_B: 0.55, sack: 0.55, wheelbarrow: 0.55, weaponrack: 0.55, lumber: 0.5, bucket: 0.55, target_prop: 0.55, flag_blue: 0.6, flag_red: 0.6, fence: 0.75, market: 0.85 };
 const occluders = []; // objetos que bloqueiam a câmera
+const placed = []; // todos os objetos de cenário (sugestões identificam o modelo)
 function place(name, x, z, o = {}) {
   const g = MODELS[name]; if (!g) return null;
   const obj = g.scene.clone(true);
@@ -96,6 +96,7 @@ function place(name, x, z, o = {}) {
   obj.rotation.y = o.rot ?? rng() * Math.PI * 2;
   obj.position.set(x, (o.y ?? heightAt(x, z)) - (o.sink || 0), z);
   scene.add(obj);
+  obj.userData.asset = name; placed.push(obj);
   if (o.solid !== false && !/^(fence|flag|lily|cloud)/.test(name)) occluders.push(obj);
   if (o.solid !== false) {
     const b = bbox(name);
@@ -233,6 +234,8 @@ const S = {
   monsters: [], npcs: [], projectiles: [], fx: [], timers: [], floaters: [],
   zone: null, lastMsg: {}, lastSave: 0, uid: 1,
 };
+Object.defineProperty(S, 'god', { get: () => G.god, set: v => { G.god = v; } });
+Object.defineProperty(S, 'paused', { get: () => G.paused, set: v => { G.paused = v; } });
 const later = (sec, fn) => S.timers.push({ at: S.time + sec, fn });
 const hitboxes = [];
 function hitbox(ref, r, h) {
@@ -662,6 +665,8 @@ function ring(pos, r, color) {
 }
 const selRing = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff4040', transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
 selRing.visible = false; scene.add(selRing);
+const fbRing = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false, depthTest: false }));
+fbRing.visible = false; fbRing.renderOrder = 10; scene.add(fbRing);
 
 /* textos flutuantes (dano) e placas de nome — HTML posicionado sobre a cena */
 const tmpV = new THREE.Vector3();
@@ -732,24 +737,18 @@ function interact(e, attack) {
   } else if (attack) S.autoAttack = true;
 }
 
-/* =========================== Diálogos =========================== */
-function dialog(npc, text, options) {
-  const d = $('dlg3d');
-  d.innerHTML = `<div class="dlg-name">${escH(npc.name)}</div><div class="dlg-title">${escH(npc.title)}</div><div class="dlg-text">${text}</div><div class="dlg-opts">${options.map((o, i) => `<button class="btn ${o.gold ? 'gold' : ''}" data-i="${i}">${o.label}</button>`).join('')}</div>`;
-  d.classList.remove('hidden');
-  d.querySelectorAll('button').forEach(b => b.onclick = () => options[+b.dataset.i].fn());
-}
-const closeDlg = () => $('dlg3d').classList.add('hidden');
+/* =========================== Diálogos (janela compartilhada com o 2D) =========================== */
 function talk(n) {
-  const p = S.p, bye = { label: 'Até logo.', fn: closeDlg };
+  const p = S.p, bye = { label: 'Até logo.', fn: () => UI.close('dialog') };
   n.anim.play('Interact', { once: true, restart: true }); later(1.2, () => n.anim.play('Idle'));
-  if (n.id === 'clara') { p.hp = p.d.maxHp; p.sp = p.d.maxSp; Sound.play('heal'); ring(S.me.obj.position, 1.6, '#7dff9a'); dialog(n, 'Que a luz te guarde, viajante. Suas feridas estão curadas.', [bye]); }
-  else if (n.id === 'bento') dialog(n, 'Bem-vindo! Minha barraca ainda está sendo montada neste novo mundo...\nPor enquanto, a loja completa está na <b>versão 2D</b> — seu inventário é o mesmo nas duas.', [bye]);
-  else if (n.id === 'tobias') dialog(n, 'Bem-vindo ao mundo aberto de Aethra!\n<b>W/S</b> anda, <b>A/D</b> vira, <b>botão direito segurado</b> + A/D anda de lado, <b>Espaço</b> pula.\n<b>Tab</b> escolhe um inimigo, <b>R</b> ou botão direito nele ataca, <b>1–9</b> usa habilidades.\nOs campos ficam a leste; o bosque, mais a leste; as ruínas, ao norte.', [bye]);
+  if (n.id === 'clara') { p.hp = p.d.maxHp; p.sp = p.d.maxSp; Sound.play('heal'); ring(S.me.obj.position, 1.6, '#7dff9a'); UI.dialog(n, 'Que a luz te guarde, viajante. Suas feridas estão curadas.\nVolte sempre que precisar.', [bye]); }
+  else if (n.id === 'bento') UI.dialog(n, 'Bem-vindo, bem-vindo! Poções fresquinhas, armas para toda classe... e compro qualquer tralha que você trouxer dos campos!', [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.open('shop'); } }, bye]);
+  else if (n.id === 'tobias') UI.dialog(n, 'Bem-vindo ao mundo aberto de Aethra!\n<b>W/S</b> anda, <b>A/D</b> vira, <b>botão direito segurado</b> + A/D anda de lado, <b>Espaço</b> pula.\n<b>Tab</b> escolhe um inimigo, <b>R</b> ou botão direito nele ataca, <b>1–9</b> usa habilidades.\nOs campos ficam a leste; o bosque, mais a leste; as ruínas, ao norte.', [bye]);
   else if (n.id === 'ivra') {
     const c = CLASSES[p.cls];
-    if (!canChangeClass(p)) return dialog(n, c.next.length ? `Continue treinando como ${c.name}. No <b>Nível de Classe ${c.tier === 0 ? CONFIG.JOB_CHANGE_1 : CONFIG.JOB_CHANGE_2}</b> (você está no ${p.jobLv}) eu te mostro o próximo caminho.` : 'Você trilhou seu caminho até o fim... por enquanto.', [bye]);
-    dialog(n, 'Chegou a hora. Que caminho você escolhe?\n<span class="muted">A escolha é para sempre.</span>', [...c.next.map(k => ({ label: `${CLASSES[k].icon} Tornar-me ${CLASSES[k].name}`, gold: true, fn: () => { closeDlg(); changeClass3d(k); } })), bye]);
+    const tree = { label: '🌳 Ver a Árvore de Classes', fn: () => { UI.close('dialog'); UI.open('tree'); } };
+    if (!canChangeClass(p)) return UI.dialog(n, c.next.length ? `Continue treinando como ${c.name}. No <b>Nível de Classe ${c.tier === 0 ? CONFIG.JOB_CHANGE_1 : CONFIG.JOB_CHANGE_2}</b> (você está no ${p.jobLv}) eu te mostro o próximo caminho.` : 'Você trilhou seu caminho até o fim... por enquanto.', [tree, bye]);
+    UI.dialog(n, 'Chegou a hora. Que caminho você escolhe?\n<span class="muted">A escolha é para sempre.</span>', [...c.next.map(k => ({ label: `${CLASSES[k].icon} Tornar-me ${CLASSES[k].name}`, gold: true, fn: () => { UI.close('dialog'); changeClass3d(k); } })), tree, bye]);
   }
 }
 function changeClass3d(cls) {
@@ -769,10 +768,7 @@ function changeClass3d(cls) {
 
 /* =========================== HUD =========================== */
 let hudDirty = true;
-function log(text, cls = 'sys') {
-  const l = $('log'); const d = document.createElement('div'); d.className = cls; d.textContent = text; l.appendChild(d);
-  while (l.children.length > 80) l.removeChild(l.firstChild); l.scrollTop = l.scrollHeight;
-}
+function log(text, cls = 'sys') { UI.log(text, cls); }
 // aviso vermelho passageiro no centro da tela (como no WoW), sem encher o chat
 function msgOnce(key, text) {
   if ((S.lastMsg[key] || 0) + 1.2 > S.time) return;
@@ -780,58 +776,23 @@ function msgOnce(key, text) {
   const el = $('err3d'); el.textContent = text; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
 }
 function banner(t, sub) { const b = $('banner'); b.innerHTML = `<div class="b1">${escH(t)}</div><div class="b2">${escH(sub || '')}</div>`; b.classList.add('show'); clearTimeout(banner._t); banner._t = setTimeout(() => b.classList.remove('show'), 2600); }
-function buildHotbar() {
-  const hb = $('hotbar'); hb.innerHTML = '';
-  for (let i = 0; i < 9; i++) {
-    const s = document.createElement('div'); s.className = 'hslot';
-    s.innerHTML = `<span class="key">${i + 1}</span><span class="ic"></span><span class="qty"></span><div class="cd"></div>`;
-    s.onclick = () => useSlot(i); hb.appendChild(s);
-  }
-}
 function useSlot(i) {
-  const p = S.p, h = p.hotbar[i]; if (!h || p.dead || S.paused) return;
+  const p = S.p, h = p && p.hotbar[i]; if (!h || p.dead || S.paused) return;
   if (h.kind === 'skill') trySkill(h.id);
-  else {
-    const e = p.inventory.find(x => x.id === h.id); if (!e) return log(`Sem ${ITEMS[h.id].name}.`, 'warn');
-    const u = ITEMS[h.id].use; if (!u) return;
-    if (u.warp) { Object.assign(S.pos, { x: VILLAGE.x + 4, z: VILLAGE.z + 3, ground: true }); Sound.play('portal'); }
-    if (u.hp) { p.hp = Math.min(p.d.maxHp, p.hp + u.hp); floatAt(S.me.obj.position, '+' + u.hp, '#5fe08a', 2.2); }
-    if (u.sp) p.sp = Math.min(p.d.maxSp, p.sp + u.sp);
-    removeItem(p, e); Sound.play('heal'); hudDirty = true;
-  }
+  else { const e = p.inventory.find(x => x.id === h.id); if (e) use3d(e); else msgOnce('item', `Sem ${ITEMS[h.id].name}.`); }
+}
+function use3d(entry) {
+  const p = S.p; if (!p || p.dead) return;
+  if (S.paused) return msgOnce('pause', 'O jogo está pausado (P para continuar).');
+  const it = ITEMS[entry.id]; if (it.type !== 'consumivel') return;
+  const u = it.use;
+  if (u.warp) { Object.assign(S.pos, { x: VILLAGE.x + 4, z: VILLAGE.z + 3, ground: true, vy: 0 }); Sound.play('portal'); ring(S.pos, 2, '#9fe3ff'); }
+  if (u.hp) { p.hp = Math.min(p.d.maxHp, p.hp + u.hp); floatAt(S.me.obj.position, '+' + u.hp, '#5fe08a', 2.2); }
+  if (u.sp) { p.sp = Math.min(p.d.maxSp, p.sp + u.sp); floatAt(S.me.obj.position, '+' + u.sp + ' SP', '#7ab0ff', 2.5); }
+  removeItem(p, entry); Sound.play('heal'); hudDirty = true;
 }
 function updateHud() {
-  const p = S.p, d = p.d;
-  $('st-name').textContent = p.name; $('st-class').textContent = CLASSES[p.cls].icon + ' ' + CLASSES[p.cls].name;
-  $('st-blv').textContent = p.baseLv; $('st-jlv').textContent = p.jobLv;
-  $('bar-hp').style.width = (p.hp / d.maxHp * 100) + '%'; $('txt-hp').textContent = `HP ${p.hp} / ${d.maxHp}`;
-  $('bar-sp').style.width = (p.sp / d.maxSp * 100) + '%'; $('txt-sp').textContent = `SP ${p.sp} / ${d.maxSp}`;
-  const bp = p.baseExp / baseExpNext(p.baseLv) * 100, jp = p.jobLv >= maxJobLv(p) ? 100 : p.jobExp / jobExpNext(p.jobLv, CLASSES[p.cls].tier) * 100;
-  $('bar-bxp').style.width = bp + '%'; $('txt-bxp').textContent = `EXP Base ${bp.toFixed(1)}%`;
-  $('bar-jxp').style.width = jp + '%'; $('txt-jxp').textContent = `EXP Classe ${jp.toFixed(1)}%`;
-  $('st-zeny').textContent = p.zeny.toLocaleString('pt-BR');
-  $('st-god').classList.toggle('hidden', !S.god);
-  const slots = $('hotbar').children;
-  for (let i = 0; i < 9; i++) {
-    const h = p.hotbar[i], s = slots[i];
-    if (hudDirty) {
-      let ic = '', q = '';
-      if (h && h.kind === 'skill' && SKILLS[h.id]) { ic = SKILLS[h.id].icon; q = p.skills[h.id] ? 'Nv' + p.skills[h.id] : ''; }
-      else if (h && h.kind === 'item' && ITEMS[h.id]) { ic = ITEMS[h.id].icon; q = countItem(p, h.id); }
-      s.querySelector('.ic').textContent = ic; s.querySelector('.qty').textContent = q;
-      s.style.opacity = h && h.kind === 'item' && !countItem(p, h.id) ? 0.4 : 1;
-    }
-    const cd = s.querySelector('.cd');
-    cd.style.height = h && h.kind === 'skill' && p.cds[h.id] > S.time ? Math.min(100, (p.cds[h.id] - S.time) / (SKILLS[h.id].cd / 1000) * 100) + '%' : '0';
-  }
-  if (hudDirty) {
-    const al = [];
-    if (p.statPoints > 0) al.push(`▲ ${p.statPoints} pontos de atributo (distribua na versão 2D)`);
-    if (canChangeClass(p)) al.push('★ Você pode mudar de classe! Fale com a Mestra Ivra.');
-    $('st-alert').innerHTML = al.map(a => `<div>${a}</div>`).join('');
-    $('buffs').innerHTML = Object.keys(p.buffs).map(id => `<div class="buff">${SKILLS[id].icon}</div>`).join('');
-  }
-  // alvo
+  UI.updateHud();
   const t = S.target, tf = $('target3d');
   if (t && !(t.dead && !t.isNpc)) {
     tf.classList.remove('hidden');
@@ -842,11 +803,10 @@ function updateHud() {
     $('tg-info').textContent = t.isNpc ? '' : `${ELEMENTS[t.def.element].name}${t.def.aggressive ? ' • Agressivo' : ' • Passivo'}${S.autoAttack ? ' • ⚔️ atacando' : ''}`;
     tf.classList.toggle('hostile', !t.isNpc);
   } else tf.classList.add('hidden');
-  // barra de conjuração
   if (S.casting) $('castbar3d').querySelector('.fill').style.width = ((S.time - S.casting.start) / (S.casting.end - S.casting.start) * 100) + '%';
-  hudDirty = false;
+  if (hudDirty) { UI.markDirty(); hudDirty = false; }
+  if (UI.dirty) UI.refreshOpen();
 }
-/* minimapa: terreno pré-desenhado + pontos */
 const MM = 170, mmBase = document.createElement('canvas'); mmBase.width = mmBase.height = MM;
 function buildMinimap() {
   const g = mmBase.getContext('2d'), img = g.createImageData(MM, MM);
@@ -876,24 +836,31 @@ function typing() { const t = document.activeElement && document.activeElement.t
 addEventListener('keydown', e => {
   if (!S.started || typing()) return;
   const k = e.key.toLowerCase();
-  if (k === 'escape') { if (!$('dlg3d').classList.contains('hidden')) closeDlg(); else if (!$('help3d').classList.contains('hidden')) $('help3d').classList.add('hidden'); else if (S.target) setTarget(null); else toggleMenu(); return; }
+  if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (isAdmin()) UI.toggle('admin'); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
+  if (k === 'escape') { if (UI.closeAll()) return; if (S.target) setTarget(null); else toggleMenu(); return; }
   if (S.menuOpen) return;
-  if (k === 'tab') { e.preventDefault(); tabTarget(); return; }
-  if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead && !S.paused) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
+  if (k === 'q') { FB.start(); return; }
+  if (k === 'p') { H3.setPaused(!G.paused); return; }
+  if (k === 'enter') { UI.setChatMin(false); $('chatinput').focus(); e.preventDefault(); return; }
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); return; }
+  const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes' }[k];
+  if (win) { UI.toggle(win); return; }
+  if (k === 'n') { toggleSound(); return; }
+  if (k === 'z') { if (isAdmin()) toggleGod(); return; }
+  if (S.paused) return;
+  if (k === 'tab') { e.preventDefault(); tabTarget(); return; }
+  if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
   if (k >= '1' && k <= '9') { useSlot(+k - 1); return; }
-  if (k === 'r') { if (S.target && !S.target.isNpc && !S.target.dead) { S.autoAttack = !S.autoAttack; log(S.autoAttack ? 'Ataque automático ligado.' : 'Ataque automático desligado.'); } else log('Selecione um inimigo (Tab).', 'warn'); return; }
+  if (k === 'r') { if (S.target && !S.target.isNpc && !S.target.dead) { S.autoAttack = !S.autoAttack; log(S.autoAttack ? 'Ataque automático ligado.' : 'Ataque automático desligado.'); } else msgOnce('sel', 'Selecione um inimigo (Tab).'); return; }
   if (k === 'x') { if (!S.p.dead) { S.sitting = !S.sitting; S.autoAttack = false; } return; }
-  if (k === 'p') { S.paused = !S.paused; $('pausebar').innerHTML = '⏸ <b>Jogo pausado</b> — <b>P</b> continua'; $('pausebar').classList.toggle('show', S.paused); return; }
-  if (k === 'h') { $('help3d').classList.toggle('hidden'); return; }
-  if (k === 'n') { Sound.init(); Sound.setEnabled(!Sound.enabled); if (Sound.enabled) { Sound.songId = null; Sound.playSong(S.zone.music); } return; }
-  if (k === 'z' && ['localhost', '127.0.0.1'].includes(location.hostname)) { S.god = !S.god; log(S.god ? '⚡ God Mode ligado (imortal, SP infinito, mais rápido).' : 'God Mode desligado.', S.god ? 'card' : 'sys'); hudDirty = true; return; }
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.left = mouse.right = false; });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
-  if (!S.started || S.menuOpen) return;
+  if (!S.started || S.menuOpen || FB.picking || FB.box) return;
   if (e.button === 0) mouse.left = true; else if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
 });
@@ -912,7 +879,7 @@ addEventListener('mouseup', e => {
   const wasClick = mouse.moved <= 4 && (e.button === 0 ? mouse.left : mouse.right);
   if (e.button === 0) mouse.left = false; else if (e.button === 2) mouse.right = false;
   if (!mouse.left && !mouse.right && document.pointerLockElement) document.exitPointerLock();
-  if (wasClick && S.started && e.target === canvas) {
+  if (wasClick && S.started && e.target === canvas && !FB.picking && !FB.box) {
     const hit = pick(e.clientX, e.clientY);
     if (hit) interact(hit, e.button === 2);
     else if (e.button === 0) setTarget(null);
@@ -935,7 +902,7 @@ function toggleMenu() {
     </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente. Seu personagem é o mesmo no 2D e no 3D.</div></div>`;
   o.classList.add('show');
   $('m-cont').onclick = toggleMenu;
-  $('m-help').onclick = () => { toggleMenu(); $('help3d').classList.remove('hidden'); };
+  $('m-help').onclick = () => { toggleMenu(); UI.open('help'); };
   $('m-2d').onclick = () => { save3d(); location.href = 'index.html'; };
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
@@ -961,7 +928,13 @@ function frame() {
   step(dt); draw(dt);
   requestAnimationFrame(frame);
 }
+function syncG() {
+  G.player = S.p; G.time = S.time;
+  G.state = !S.started ? 'title' : S.p.dead ? 'dead' : 'play';
+  if (S.zone) { G.mapId = 'mundo3d:' + S.zone.id; G.map.def.name = S.zone.name; }
+}
 function step(dt) {
+  syncG();
   if (S.started && !S.paused && !S.menuOpen) {
     S.time += dt;
     for (let i = S.timers.length - 1; i >= 0; i--) if (S.timers[i].at <= S.time) { const t = S.timers.splice(i, 1)[0]; t.fn(); }
@@ -1003,6 +976,9 @@ function draw(dt) {
     const t = S.target;
     if (t && !(t.dead && !t.isNpc)) { selRing.visible = true; selRing.position.set(t.x, t.obj.position.y + 0.06, t.z); selRing.scale.setScalar(Math.max(0.7, t.radius + 0.35)); selRing.material.color.set(t.isNpc ? '#7dff9a' : (t.def.aggressive || t.aggro) ? '#ff4040' : '#ffe36a'); }
     else selRing.visible = false;
+    const hp = FB.picking && FB.hoverPick;
+    if (hp && hp.wpos) { fbRing.visible = true; fbRing.position.set(hp.wpos.x, hp.wpos.y + 0.08, hp.wpos.z); fbRing.scale.setScalar(hp.r || 1); fbRing.material.opacity = 0.6 + Math.sin(performance.now() / 150) * 0.3; }
+    else fbRing.visible = false;
     updateHud(); updatePlates(); drawMinimap();
   } else {
     // tela inicial: câmera passeando pela vila
@@ -1041,19 +1017,158 @@ function startWith(s) {
   Object.assign(p, { buffs: {}, cds: {}, dead: false });
   recalc(p); if (p.hp <= 0) p.hp = Math.floor(p.d.maxHp / 2);
   S.p = p; S.orig = s;
+  let maxUid = s.uid || 1;
+  for (const e of [...(p.inventory || []), ...Object.values(p.equip || {})]) if (e && e.uid > maxUid) maxUid = e.uid;
+  G.uid = maxUid + 1; G.player = p;
   const pos = s.pos3d;
   if (pos && Math.abs(pos.x) < PLAY_LIMIT && Math.abs(pos.z) < PLAY_LIMIT) Object.assign(S.pos, { x: pos.x, z: pos.z, yaw: pos.yaw || 0 });
   S.pos.y = heightAt(S.pos.x, S.pos.z); S.cam.yaw = S.pos.yaw;
-  buildPlayerModel(); buildHotbar();
+  buildPlayerModel();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
-  S.started = true; hudDirty = true;
+  S.started = true; hudDirty = true; syncG(); UI.refreshOpen();
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
-  if (!localStorage.getItem('aethra3d_help')) { $('help3d').classList.remove('hidden'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
+  if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
 }
-// chat minimizável
-$('chat-min').onclick = () => { const c = $('chat'); c.classList.toggle('min'); $('chat-min').textContent = c.classList.contains('min') ? '▲' : '—'; };
-$('help-close').onclick = () => $('help3d').classList.add('hidden');
+
+
+/* =========================== Integração com as janelas do 2D =========================== */
+const ASSET_NAMES = { home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const tileOf = (x, z) => [Math.round(x), Math.round(z)];
+function describeMonster(m) {
+  const d = m.def;
+  const visual = m.vis.kind === 'skel' ? `js3d/main3d.js → monsterVisual (esqueleto KayKit, forma '${d.shape}')` : `js3d/critters.js → forma '${d.shape}' (monstro feito em código)`;
+  return { kind: 'monstro', id: m.type, name: d.name, ref: m, wpos: { x: m.x, y: m.obj.position.y, z: m.z }, r: m.radius + 0.4, x: m.x, y: m.z, tile: tileOf(m.x, m.z),
+    codigo: `js/data.js → MONSTERS.${m.type} (status, drops, carta) · ${visual}`,
+    details: { nivel: d.lv, elemento: ELEMENTS[d.element].name, forma: d.shape, cor: d.color, tamanho: d.size, hp: `${Math.max(0, Math.round(m.hp))}/${m.maxHp}`, agressivo: !!d.aggressive, versao: '3D' } };
+}
+// o que está embaixo do cursor no mundo 3D (para as sugestões)
+function fbPick(sx, sy) {
+  raycaster.setFromCamera(new THREE.Vector2(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1), camera);
+  const cands = [];
+  const eh = raycaster.intersectObjects(hitboxes, false).find(h => { const r = h.object.userData.ref; return r && !(r.dead && !r.isNpc); });
+  if (eh) cands.push({ d: eh.distance, ent: eh.object.userData.ref });
+  if (S.me) { const mh = raycaster.intersectObject(S.me.obj, true)[0]; if (mh) cands.push({ d: mh.distance, me: true }); }
+  const near = placed.filter(o => Math.hypot(o.position.x - S.pos.x, o.position.z - S.pos.z) < 120);
+  const oh = raycaster.intersectObjects([...near, terrain], true)[0];
+  if (oh) cands.push({ d: oh.distance, hit: oh });
+  cands.sort((a, b) => a.d - b.d);
+  const c = cands[0];
+  if (!c) return { kind: 'terreno', id: 'ceu', name: 'Céu', x: S.pos.x, y: S.pos.z, tile: tileOf(S.pos.x, S.pos.z), codigo: 'js3d/world3d.js → buildSky (céu) · js3d/main3d.js → névoa por região', details: { versao: '3D' } };
+  if (c.me) { const look = S.me.look; return { kind: 'jogador', id: S.p.cls, name: `${S.p.name} (${CLASSES[S.p.cls].name})`, wpos: { x: S.pos.x, y: S.pos.y, z: S.pos.z }, r: 0.9, x: S.pos.x, y: S.pos.z, tile: tileOf(S.pos.x, S.pos.z), codigo: 'js3d/main3d.js → classLook (modelo e acessórios por classe) · assets3d/characters/', details: { modelo: look.model, acessorios: look.show, versao: '3D' } }; }
+  if (c.ent) {
+    const e = c.ent;
+    if (e.isNpc) return { kind: 'npc', id: e.id, name: e.name, wpos: { x: e.x, y: e.obj.position.y, z: e.z }, r: 0.9, x: e.x, y: e.z, tile: tileOf(e.x, e.z), codigo: `js3d/main3d.js → NPC3D ('${e.id}', modelo ${e.model}) e talk() (falas)`, details: { titulo: e.title, modelo: e.model, versao: '3D' } };
+    return describeMonster(e);
+  }
+  const h = c.hit, pt = h.point;
+  let o = h.object; while (o && !o.userData.asset && o.parent) o = o.parent;
+  if (o && o.userData.asset) {
+    const a = o.userData.asset;
+    return { kind: 'cenario', id: a, name: ASSET_NAMES[a] || a, wpos: { x: o.position.x, y: o.position.y, z: o.position.z }, r: 2, x: o.position.x, y: o.position.z, tile: tileOf(o.position.x, o.position.z), codigo: `${ASSETS[a]} (modelo KayKit) · js3d/main3d.js → buildWorld (posição/escala) e TYPE_SCALE`, details: { modelo: a, versao: '3D' } };
+  }
+  const zn = zoneAt(pt.x, pt.z), rd = roadDist(pt.x, pt.z), lake = Math.hypot(pt.x - LAKE.x, pt.z - LAKE.z) < LAKE.r;
+  const what = lake ? 'Lago' : rd < 3 ? 'Estrada de terra' : pt.y > 6 ? 'Encosta / montanha' : 'Chão';
+  return { kind: 'terreno', id: lake ? 'lago' : rd < 3 ? 'estrada' : 'chao', name: `${what} — ${zn.name}`, wpos: { x: pt.x, y: pt.y, z: pt.z }, r: 1.2, x: pt.x, y: pt.z, tile: tileOf(pt.x, pt.z), codigo: 'js3d/world3d.js → heightAt (relevo), groundColor (cores), ROADS/LAKE/ZONES', details: { regiao: zn.id, altura: +pt.y.toFixed(1), versao: '3D' } };
+}
+// área arrastada na tela: o que aparece dentro dela
+function fbArea(x0, y0, x1, y1) {
+  const ax = Math.min(x0, x1), bx = Math.max(x0, x1), ay = Math.min(y0, y1), by = Math.max(y0, y1);
+  const inRect = (x, y, z) => { const s = toScreen(new THREE.Vector3(x, y, z)); return s.vis && s.x >= ax && s.x <= bx && s.y >= ay && s.y <= by; };
+  const count = arr => arr.reduce((o, k) => (o[k] = (o[k] || 0) + 1, o), {});
+  const mons = count(S.monsters.filter(m => !m.dead && inRect(m.x, m.obj.position.y + 0.5, m.z)).map(m => m.def.name));
+  const npcs = S.npcs.filter(n => inRect(n.x, n.obj.position.y + 1, n.z)).map(n => n.name);
+  const objs = count(placed.filter(o => Math.hypot(o.position.x - S.pos.x, o.position.z - S.pos.z) < 90 && inRect(o.position.x, o.position.y + 1, o.position.z)).map(o => ASSET_NAMES[o.userData.asset] || o.userData.asset));
+  const center = fbPick((ax + bx) / 2, (ay + by) / 2);
+  return { kind: 'area', id: 'area3d', name: `Área da tela (${Math.round(bx - ax)}×${Math.round(by - ay)} px)`, x: center.x, y: center.y, tile: center.tile,
+    codigo: 'js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)', details: { monstros: mons, npcs, cenario: objs, centro: center.name, versao: '3D' } };
+}
+// teleporte do Painel do Mestre
+function teleport3d(x, z) {
+  const r = resolve(x, z, 0.5);
+  Object.assign(S.pos, { x: r.x, z: r.z, y: heightAt(r.x, r.z), vy: 0, ground: true });
+  setTarget(null); S.casting = null; $('castbar3d').classList.add('hidden');
+  ring(S.pos, 2.2, '#9fe3ff'); ring(S.pos, 1.2, '#ffd76a'); Sound.play('portal');
+}
+function installIntegration() {
+  Object.assign(H3, {
+    save: save3d, useItem: use3d, useSlot, levelFx, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
+    setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime(on ? 0.05 : 0.16, Sound.ctx.currentTime, 0.2); updatePauseBar(); },
+    say: txt => floatAt(S.me.obj.position, '💬 ' + txt, '#ffffff', 2.6),
+  });
+  // sugestões (Q): escolher no mundo 3D
+  FB.pickAt = (sx, sy) => fbPick(sx, sy);
+  FB.pickArea = (x0, y0, x1, y1) => fbArea(x0, y0, x1, y1);
+  FB.renderWorld = () => { };
+  // Painel do Mestre: trocar de classe reconstrói o modelo 3D; teleporte usa o mapa do mundo 3D
+  const setClass2d = ADMIN.setClass.bind(ADMIN);
+  ADMIN.setClass = cls => { setClass2d(cls); buildPlayerModel(); };
+  ADMIN.render = adminRender;
+  // janela de ajuda com os controles do 3D
+  UI.render_help = () => {
+    UI.body('help').innerHTML = `<div style="line-height:1.7">
+      <b class="gold">Movimento (estilo WoW)</b><br>
+      <b>W / S</b> anda para frente / trás • <b>A / D</b> vira • <b>Espaço</b> pula<br>
+      <b>Botão direito (segurar)</b> gira a câmera <i>e</i> o personagem — aí A/D andam de lado<br>
+      <b>Botão esquerdo (segurar)</b> só olha em volta • <b>os dois botões</b> correm • <b>roda</b> zoom<br><br>
+      <b class="gold">Combate</b><br>
+      <b>Tab</b> próximo inimigo à frente • <b>clique</b> seleciona • <b>R</b> ou <b>botão direito no alvo</b> ataca • <b>1–9</b> habilidades/itens • <b>X</b> sentar<br><br>
+      <b class="gold">Janelas</b> (as mesmas do 2D)<br>
+      <b>C</b> Personagem • <b>I</b> Inventário • <b>E</b> Equipamento • <b>K</b> Habilidades • <b>T</b> Árvore de Classes • <b>L</b> Sugestões • <b>N</b> Som • <b>Enter</b> chat<br><br>
+      <b class="gold">Pausa, sugestões e mestre</b><br>
+      <b>P</b> pausa • <b>Q</b> sugestão: clique em qualquer coisa do mundo (monstro, NPC, casa, árvore, chão, você) ou arraste uma área<br>
+      <b>Z</b> God Mode • <b>⌘ Cmd + Z</b> Painel do Mestre (classe, teleporte e atalhos) • <b>Esc</b> fecha janelas / menu<br><br>
+      <span class="muted">Mapa: Vila a oeste • Campos no centro • Bosque a leste • Ruínas ao norte.</span></div>`;
+  };
+  UI.init();
+}
+// Painel do Mestre na versão 3D
+let admHover = null;
+function admPois() {
+  const out = ZONES.map(z => ({ label: `📍 ${z.name}`, x: z.x, z: z.z + (z.id === 'vila' ? 4 : 0) }));
+  for (const n of S.npcs) out.push({ label: `🧑 ${n.name}`, x: n.x + 2, z: n.z + 1 });
+  for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
+  return out;
+}
+function adminRender() {
+  const p = S.p; if (!p) return;
+  const body = UI.body('admin'), pois = admPois();
+  body.innerHTML = `
+    <div class="adm-top"><button class="btn ${G.god ? 'gold' : ''}" id="adm-god">${G.god ? '⚡ God Mode: LIGADO' : '⚡ God Mode: desligado'}</button><span class="muted">Atalho: <b>Z</b></span></div>
+    <h4 class="adm-h">🎭 Classe — clique para virar qualquer classe na hora</h4>
+    <div class="adm-classes">${[0, 1, 2].map(tier => `<div class="adm-crow">${Object.keys(CLASSES).filter(c => CLASSES[c].tier === tier).map(c => `<button class="btn small ${p.cls === c ? 'gold' : ''}" data-cls="${c}">${CLASSES[c].icon} ${CLASSES[c].name}</button>`).join('')}</div>`).join('')}
+      <div class="adm-crow"><button class="btn small" data-cmd="skills">📚 Todas as habilidades da classe no máximo</button></div></div>
+    <h4 class="adm-h">🌍 Teleporte — clique no mapa do mundo onde quer aparecer</h4>
+    <canvas id="adm-map3d" width="400" height="400"></canvas>
+    <div id="adm-info" class="muted">Passe o mouse no mapa e clique para ir</div>
+    <div class="adm-poi"><span class="muted">Ir direto para:</span> ${pois.map((o, i) => `<button class="btn small" data-poi="${i}">${o.label}</button>`).join('')}</div>
+    <h4 class="adm-h">🛠️ Atalhos de mestre</h4>
+    <div class="adm-btns">
+      <button class="btn small" data-cmd="cura">❤️ Curar tudo</button><button class="btn small" data-cmd="lv1">⭐ +1 Nível Base</button><button class="btn small" data-cmd="lv5">⭐ +5 Níveis Base</button>
+      <button class="btn small" data-cmd="job1">✦ +1 Nível Classe</button><button class="btn small" data-cmd="job10">✦ +10 Níveis Classe</button><button class="btn small" data-cmd="zeny">💰 +10.000 z</button>
+      <button class="btn small" data-cmd="rate">📈 EXP ${CONFIG.EXP_RATE}× (trocar)</button></div>`;
+  body.querySelector('#adm-god').onclick = () => toggleGod();
+  body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => ADMIN.setClass(el.dataset.cls));
+  body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
+  body.querySelectorAll('[data-poi]').forEach(el => el.onclick = () => { const o = pois[+el.dataset.poi]; UI.close('admin'); teleport3d(o.x, o.z); log(`Teleportado: ${o.label}`); });
+  const cv = body.querySelector('#adm-map3d');
+  const toWorld = e => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width * 2 - 1) * 150, z: ((e.clientY - r.top) / r.height * 2 - 1) * 150 }; };
+  cv.onmousemove = e => { admHover = toWorld(e); drawAdmMap(cv); const zn = zoneAt(admHover.x, admHover.z), lim = Math.abs(admHover.x) > PLAY_LIMIT || Math.abs(admHover.z) > PLAY_LIMIT; $('adm-info').innerHTML = `${zn.name} · (${Math.round(admHover.x)}, ${Math.round(admHover.z)})${lim ? ' · <span style="color:#ffb070">fora da área jogável — você aparece na borda</span>' : ''}`; };
+  cv.onmouseleave = () => { admHover = null; drawAdmMap(cv); };
+  cv.onclick = e => { const w = toWorld(e); UI.close('admin'); teleport3d(w.x, w.z); log(`Teleportado para (${Math.round(w.x)}, ${Math.round(w.z)}).`); };
+  drawAdmMap(cv);
+}
+function drawAdmMap(cv) {
+  const c = cv.getContext('2d'), W = cv.width, pt = (x, z) => [(x / 150 + 1) / 2 * W, (z / 150 + 1) / 2 * W];
+  c.imageSmoothingEnabled = true; c.drawImage(mmBase, 0, 0, W, W);
+  c.font = 'bold 12px Nunito'; c.textAlign = 'center';
+  for (const z of ZONES) { const [x, y] = pt(z.x, z.z); c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.7)'; c.strokeText(z.name, x, y - 14); c.fillStyle = '#ffe9a8'; c.fillText(z.name, x, y - 14); }
+  for (const m of S.monsters) if (!m.dead) { const [x, y] = pt(m.x, m.z); c.fillStyle = m.def.mini || m.def.boss ? '#ffb84a' : m.def.aggressive ? '#ff6a6a' : '#ffe0a0'; c.fillRect(x - 1.5, y - 1.5, m.def.mini ? 5 : 3, m.def.mini ? 5 : 3); }
+  for (const n of S.npcs) { const [x, y] = pt(n.x, n.z); c.fillStyle = '#ffe36a'; c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill(); }
+  const [px, py] = pt(S.pos.x, S.pos.z); c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, 5, 0, 7); c.fill(); c.fillStyle = '#3a8cff'; c.beginPath(); c.arc(px, py, 3.5, 0, 7); c.fill();
+  c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.7)'; c.strokeText('Você', px, py - 9); c.fillStyle = '#cfe8ff'; c.fillText('Você', px, py - 9);
+  if (admHover) { const [hx, hy] = pt(admHover.x, admHover.z); c.strokeStyle = '#ffd76a'; c.lineWidth = 2; c.beginPath(); c.arc(hx, hy, 8, 0, 7); c.stroke(); c.beginPath(); c.moveTo(hx - 12, hy); c.lineTo(hx + 12, hy); c.moveTo(hx, hy - 12); c.lineTo(hx, hy + 12); c.stroke(); }
+}
 
 (async function boot() {
   requestAnimationFrame(frame);
@@ -1062,7 +1177,8 @@ $('help-close').onclick = () => $('help3d').classList.add('hidden');
   spawnNpcs();
   for (const [zone, type, n] of SPAWNS) for (let i = 0; i < n; i++) spawnMonster(zone, type);
   buildMinimap();
+  installIntegration();
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { talk, interact, trySkill, tabTarget, pick, toScreen }; // para testes
+  window.__S3 = S; window.__api = { talk, interact, trySkill, tabTarget, pick, toScreen, fbPick, fbArea, teleport3d, useSlot }; // para testes
   chooseCharacter();
 })();

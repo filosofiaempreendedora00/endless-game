@@ -11,7 +11,7 @@
   <script type="importmap">{ "imports": { "three": "./lib/three/three.module.min.js", "three/addons/": "./lib/three/" } }</script>
 </head>
 <body class="g3d">
-  <div id="app3d"></div>
+  <canvas id="game3d"></canvas>
   <div id="plates"></div>
 
   <div id="hud" class="hidden">
@@ -25,7 +25,7 @@
         <div class="bar jxp"><div class="fill" id="bar-jxp"></div><span id="txt-jxp"></span></div>
         <div class="st-zeny">💰 <span id="st-zeny"></span> z</div>
         <div id="st-alert"></div>
-        <div id="st-god" class="hidden">⚡ GOD MODE <span>(Z desliga)</span></div>
+        <div id="st-god" class="hidden">⚡ GOD MODE <span>(Z desliga · ⌘Z painel)</span></div>
       </div>
       <div id="topcol">
         <div id="hotbar"></div>
@@ -41,37 +41,27 @@
       <div id="mapname"></div>
       <canvas id="minimap" width="170" height="170"></canvas>
     </div>
+    <div id="menubar">
+      <button data-win="char" title="Personagem (C)">🧍<span>C</span></button>
+      <button data-win="inv" title="Inventário (I)">🎒<span>I</span></button>
+      <button data-win="equip" title="Equipamento (E)">🛡️<span>E</span></button>
+      <button data-win="skills" title="Habilidades (K)">📜<span>K</span></button>
+      <button data-win="tree" title="Árvore de Classes (T)">🌳<span>T</span></button>
+      <button data-win="sugestoes" title="Minhas sugestões (L) — Q para fazer uma">💡<span>L</span></button>
+      <button data-win="help" title="Controles (H)">❔<span>H</span></button>
+      <button id="btn-sound" title="Som (N)">🔊<span>N</span></button>
+    </div>
     <div id="chat" class="panel">
-      <div class="chat-head"><span>💬 Chat</span><button id="chat-min" title="Minimizar / abrir o chat">—</button></div>
+      <div class="chat-head"><span>💬 Chat <span id="chat-unread"></span></span><button id="chat-min" title="Minimizar / abrir o chat">—</button></div>
       <div id="log"></div>
+      <input id="chatinput" maxlength="120" placeholder="Enter para falar • /ajuda para comandos" autocomplete="off">
     </div>
     <div id="err3d"></div>
     <div id="castbar3d" class="hidden"><div class="fill"></div><span></span></div>
-    <div id="dlg3d" class="panel hidden"></div>
-    <div id="help3d" class="panel hidden">
-      <h3>🎮 Controles do mundo 3D</h3>
-      <div class="help-grid">
-        <b>W / S</b><span>andar para frente / para trás</span>
-        <b>A / D</b><span>virar o personagem</span>
-        <b>Botão direito (segurar)</b><span>gira a câmera <i>e</i> o personagem — aí A/D andam de lado</span>
-        <b>Botão esquerdo (segurar)</b><span>gira só a câmera, para olhar em volta</span>
-        <b>Os dois botões</b><span>correr para frente</span>
-        <b>Roda do mouse</b><span>aproximar / afastar a câmera</span>
-        <b>Espaço</b><span>pular</span>
-        <b>Tab</b><span>escolher o próximo inimigo à frente</span>
-        <b>Clique</b><span>selecionar monstro ou NPC</span>
-        <b>Botão direito no alvo / R</b><span>atacar (ataque automático)</span>
-        <b>1 – 9</b><span>habilidades e itens da barra</span>
-        <b>X</b><span>sentar (recupera HP/SP mais rápido)</span>
-        <b>P</b> <span>pausar</span>
-        <b>Esc</b><span>menu (voltar para o 2D, trocar de personagem)</span>
-        <b>N</b><span>som liga/desliga</span>
-      </div>
-      <div class="muted" style="margin:8px 0">Dica: os campos ficam a leste da vila, o bosque mais a leste e as ruínas ao norte.</div>
-      <button class="btn gold" id="help-close">Entendi! (H abre de novo)</button>
-    </div>
   </div>
 
+  <div id="windows"></div>
+  <div id="tooltip"></div>
   <div id="banner"></div>
   <div id="pausebar"></div>
   <div id="overlay"></div>
@@ -80,6 +70,11 @@
   <script src="js/data.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/rules.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js3d/bridge3d.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/feedback.js"></script>
+  <script src="js/admin.js"></script>
   <script type="module" src="js3d/main3d.js"></script>
 </body>
 </html>

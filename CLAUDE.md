@@ -24,10 +24,11 @@ Quando ele pedir para aplicar as sugestões:
 
 ## Versão 3D (protótipo, estilo WoW)
 - `3d.html` + `js3d/` (ES modules com import map para `lib/three/`, three.js r160). Reusa `js/data.js`, `js/rules.js` e `js/audio.js` (scripts clássicos, globais).
-- Regras de jogo ficam em `js/rules.js` — mudanças de fórmula valem para 2D e 3D. Não duplique regras no 3D.
+- Regras de jogo ficam em `js/rules.js` e ações do personagem (equipar, cartas, loja, atributos, habilidades, atalhos) em `js/actions.js` — valem para 2D e 3D. Não duplique no 3D.
+- O 3D reaproveita `js/ui.js`, `js/feedback.js` e `js/admin.js` através de `js3d/bridge3d.js` (define `G`, `saveGame`, `useItem`, `handleChat`... e repassa para `H3`, preenchido em `main3d.js`). Para o 3D, `FB.pickAt/pickArea` e `ADMIN.render` são substituídos em `installIntegration()`.
 - Save compartilhado: o 3D grava os mesmos campos + `pos3d` e preserva `mapId/x/y` do 2D.
 - Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
-- Próxima fase combinada: levar loja, janelas (atributos/inventário/equip/habilidades), sugestões (Q) e Painel do Mestre para o 3D; depois o 3D vira o jogo principal.
+- Fase 2 feita (loja, janelas, sugestões Q, Painel do Mestre no 3D). Próximo passo combinado: o 3D virar o jogo principal (e o 2D, legado).
 
 ## Testar
 - `python3 server.py` e abrir http://localhost:5577 (há um `.claude/launch.json`). O servidor serve o jogo e recebe as sugestões.

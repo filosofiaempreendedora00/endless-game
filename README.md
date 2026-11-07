@@ -35,7 +35,7 @@ Com o servidor ligado, abra **http://localhost:5577/3d.html** (ou o botão "Joga
 | Zoom | roda do mouse |
 | Menu (voltar ao 2D) / ajuda | **Esc** / **H** |
 
-O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mundo contínuo; heróis e esqueletos animados; monstros fofos; combate com alvo; habilidades; troca de classe com a Mestra Ivra; cura com a Irmã Clara; saque de itens e cartas. Ainda só no 2D: loja, janelas de atributos/inventário/equipamento, sugestões (Q) e Painel do Mestre.
+O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mundo contínuo; heróis e esqueletos animados; monstros fofos; combate com alvo; habilidades; troca de classe com a Mestra Ivra; cura com a Irmã Clara; **loja do Bento**; saque de itens e cartas; **as mesmas janelas do 2D** (C, I, E, K, T, L, H); **sugestões com Q** (clique em qualquer coisa do mundo 3D); **God Mode (Z)** e **Painel do Mestre (⌘Z)** com troca de classe e teleporte pelo mapa do mundo.
 
 ### Pausa e sugestões (seu canal direto com o Claude)
 
