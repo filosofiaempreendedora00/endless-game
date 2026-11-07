@@ -3,6 +3,7 @@
    makePet(species, stage) devolve { root, animate(t, {speed, turn}, dt) }.
    ========================================================================= */
 import * as THREE from 'three';
+import { vlight } from './lights3d.js';
 
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: true, ...extra });
 const glow = (color, intensity = 1.2) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: intensity, roughness: 0.4 });
@@ -65,7 +66,7 @@ function fireFox(stage) {
   let light = null;
   if (stage === 2) { // asas solares
     for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 4), glow('#ffd84a', 0.9)); w.position.set(s * 0.25, 0.55, -0.05); w.rotation.z = s * 1.1; body.add(w); }
-    light = new THREE.PointLight('#ffb04a', 1.2, 5); light.position.y = 0.8; root.add(light);
+    light = vlight('#ffb04a', 1.2, 5); light.position.y = 0.8; root.add(light);
   }
   shadows(root);
   let ph = 0, look = 0;

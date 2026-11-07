@@ -5,13 +5,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
 import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
+import { makeLightPool } from './lights3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -36,6 +37,7 @@ const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 900);
+const lightPool = makeLightPool(scene, 3); // poucas luzes reais, levadas às fontes mais próximas
 const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#fff1d0', 2.4); sun.layers.enable(1);
 sun.castShadow = true;
@@ -1405,7 +1407,7 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > 170) c.position.x = -170; }
-    updateNature(S.time); updatePads(dt); updatePortals(dt);
+    updateNature(S.time); updatePads(dt); updatePortals(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
 }
@@ -1783,7 +1785,7 @@ function drawAdmMap(cv) {
   installIntegration();
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  window.__S3 = S; window.__api = { renderer, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();

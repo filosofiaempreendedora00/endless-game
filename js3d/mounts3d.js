@@ -4,6 +4,7 @@
    makeMount(kind) devolve { obj, animate(t, {speed, turn}, dt), saddleY }.
    ========================================================================= */
 import * as THREE from 'three';
+import { vlight } from './lights3d.js';
 
 export const MOUNTS = {
   lanudo: { name: 'Corcel Lanudo', desc: 'Lã creme, calmo e confiável.', wool: '#efe3c8', skin: '#8a6a4a', horn: '#d8c9a8', mane: '#c9b48a', blanket: '#b8403a' },
@@ -59,7 +60,7 @@ export function makeMount(kind = 'lanudo') {
   const tail = new THREE.Group(); tail.position.set(0, 1.08, -0.8); body.add(tail);
   const tl = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), MANE); tl.scale.set(0.8, 1.2, 1); tl.position.set(0, -0.1, -0.08); tail.add(tl);
   let light = null;
-  if (D.glow) { light = new THREE.PointLight(D.mane, 0.8, 4); light.position.set(0, 1.9, 0.6); obj.add(light); }
+  if (D.glow) { light = vlight(D.mane, 0.8, 4); light.position.set(0, 1.9, 0.6); obj.add(light); }
   obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   let ph = 0, gait = 0, look = 0;
   return {

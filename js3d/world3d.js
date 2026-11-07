@@ -291,7 +291,7 @@ function tuftGeometry(rng, variant = 0) {
   for (let b = 0; b < blades; b++) {
     const ang = rng() * Math.PI * 2, lean = 0.03 + rng() * 0.12, h = 0.09 + rng() * (0.12 + variant * 0.04), w = 0.016 + rng() * 0.012;
     const spread = 0.04 + variant * 0.05, dx = Math.cos(ang), dz = Math.sin(ang), rr = rng() * spread, ox = Math.cos(ang + 1.3) * rr, oz = Math.sin(ang + 1.3) * rr;
-    const seg = 3, start = pos.length / 3;
+    const seg = 2, start = pos.length / 3; // 2 segmentos bastam para lâminas tão curtas
     for (let s = 0; s <= seg; s++) {
       const k = s / seg, y = h * k, bend = lean * k * k, ww = w * (1 - k * 0.9);
       const cx = ox + dx * bend, cz = oz + dz * bend;
@@ -340,10 +340,15 @@ function flowerGeometry() {
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(idx); g.computeVertexNormals(); return g;
 }
+const grassChunks = [];
+// esconde os blocos de grama longe da câmera (a mais de ~95 m os tufos nem aparecem)
+export function cullGrass(x, z) { for (const g of grassChunks) g.visible = Math.hypot(g.userData.cx - x, g.userData.cz - z) < 95 + 36; }
 export function buildGrass(rng) {
   const group = new THREE.Group();
   const grassMat = windMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
-  const tuftSets = [0, 1, 2].map(v => { const t = new THREE.InstancedMesh(tuftGeometry(rng, v), grassMat, 11000); t.receiveShadow = true; t._n = 0; return t; });
+  // grama dividida em blocos de 50 m: o que está longe (tufos minúsculos) não é desenhado
+  const CH = 50, NC = 6, tuftGeos = [0, 1, 2].map(v => tuftGeometry(rng, v));
+  const buckets = Array.from({ length: NC * NC * 3 }, () => []);
   const tufts = { count: 33000 };
   const flowers = new THREE.InstancedMesh(flowerGeometry(), windMaterial({ vertexColors: true, roughness: 0.7 }), 1400);
   const rubble = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.18, 0), new THREE.MeshStandardMaterial({ color: '#8a877e', roughness: 1, flatShading: true }), 700);
@@ -367,15 +372,24 @@ export function buildGrass(rng) {
     if (nf < flowers.count && rng() < 0.09 && forest < 0.5 && ruins < 0.3) {
       s.setScalar(0.5 + rng() * 0.45); m.compose(v.set(x, y, z), q, s); flowers.setMatrixAt(nf, m); flowers.setColorAt(nf, PETAL[Math.floor(rng() * PETAL.length)]); nf++;
     } else if (nt < tufts.count) {
-      const set = tuftSets[Math.floor(rng() * 3)]; if (set._n >= set.count) continue;
-      const k = 0.8 + rng() * 0.6; s.set(k, k * (0.7 + rng() * 0.6), k); m.compose(v.set(x, y - 0.01, z), q, s); set.setMatrixAt(set._n, m);
+      const vi = Math.floor(rng() * 3), cx = Math.min(NC - 1, Math.floor((x + 150) / CH)), cz = Math.min(NC - 1, Math.floor((z + 150) / CH));
+      const k = 0.8 + rng() * 0.6; s.set(k, k * (0.7 + rng() * 0.6), k); m.compose(v.set(x, y - 0.01, z), q, s);
       // tom da grama acompanha a região (bosque mais escuro, ruínas mais seco)
       tint.setRGB(1, 1, 1).lerp(new THREE.Color('#7fa07a'), forest * 0.6).lerp(new THREE.Color('#c8b98a'), ruins * 0.8).multiplyScalar(0.85 + rng() * 0.3);
-      set.setColorAt(set._n++, tint); nt++;
+      buckets[(cz * NC + cx) * 3 + vi].push(m.clone(), tint.clone()); nt++;
     }
   }
-  tuftSets.forEach(t => { t.count = t._n; }); flowers.count = nf; rubble.count = nr;
+  grassChunks.length = 0;
+  buckets.forEach((b, i) => {
+    const n = b.length / 2; if (!n) return;
+    const mesh = new THREE.InstancedMesh(tuftGeos[i % 3], grassMat, n); mesh.receiveShadow = true;
+    for (let j = 0; j < n; j++) { mesh.setMatrixAt(j, b[j * 2]); mesh.setColorAt(j, b[j * 2 + 1]); }
+    mesh.computeBoundingSphere(); // permite o descarte do que está fora da tela
+    const c = Math.floor(i / 3); mesh.userData.cx = -150 + (c % NC + 0.5) * CH; mesh.userData.cz = -150 + (Math.floor(c / NC) + 0.5) * CH;
+    grassChunks.push(mesh); group.add(mesh);
+  });
+  flowers.count = nf; rubble.count = nr;
   rubble.castShadow = true; rubble.receiveShadow = true;
-  group.add(...tuftSets, flowers, rubble);
+  group.add(flowers, rubble);
   return group;
 }

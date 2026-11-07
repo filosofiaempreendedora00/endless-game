@@ -31,6 +31,7 @@ Quando ele pedir para aplicar as sugestões:
 - Equipamento: tipos de item em `SLOT_NAMES`/`EQUIP_TYPES`; espaços do personagem em `EQUIP_SLOTS` (inclui `acessorio2`; use `slotType(s)`). Saves antigos sem os espaços novos funcionam (espaço ausente = vazio). `TWO_HANDED` bloqueia escudo.
 - Interiores: `INTERIORS` em `js3d/interiors3d.js` (salas em x ≥ 600, chão y = 0; `S.interior` ativo → `groundAt`/`resolve` usam a sala). Portais nas portas via `addDoorPortal` no `buildWorld`. Montarias: `js3d/mounts3d.js`, salvas em `p.mount`.
 - Raças (`RACES`/`applyRace`, só visual por enquanto), skins (`SKINS`/`applySkin`) e `friendlyFaces` ficam em `js3d/looks3d.js`. Cosméticos do jogador em `p.cosmetics` ({auroras, skins, skin, mounts}); a compra com dinheiro real ainda não existe. Teste visual: `__api.shot([x,y,z],[alvo])` devolve uma imagem de qualquer ângulo.
+- **Desempenho**: nunca use `new THREE.PointLight` direto no 3D — use `vlight(...)` de `js3d/lights3d.js` (pool de 3 luzes reais levadas às fontes mais próximas). Cada PointLight real pesa em todos os pixels do mundo (com 22 luzes o quadro ia de 6 ms para 45 ms). A grama é dividida em blocos de 50 m (`cullGrass`).
 - Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 

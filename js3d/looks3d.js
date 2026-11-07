@@ -4,6 +4,7 @@
    As 2ª classes (evoluções) ganham brilho, auras e peças extras.
    ========================================================================= */
 import * as THREE from 'three';
+import { vlight } from './lights3d.js';
 
 export const HEADS = { Knight: 'Knight_Head', Mage: 'Mage_Head', Barbarian: 'Barbarian_Head', Rogue: 'Rogue_Head', Rogue_Hooded: 'Rogue_Head_Hooded' };
 export const ACCESSORIES = {
@@ -362,7 +363,7 @@ export function applySkin(ch, id) {
   const geo = S.aura.kind === 'flocos' || S.aura.kind === 'estrelas' ? new THREE.OctahedronGeometry(0.05, 0) : S.aura.kind === 'petalas' ? new THREE.SphereGeometry(0.045, 6, 4) : new THREE.SphereGeometry(0.04, 6, 4);
   const ps = []; for (let i = 0; i < N; i++) { const p = new THREE.Mesh(geo, m); g.add(p); ps.push({ p, o: i / N }); }
   let halo = null; if (S.aura.kind === 'luz') { halo = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.025, 6, 24), m); halo.rotation.x = Math.PI / 2; halo.position.y = 2.05; g.add(halo); }
-  if (S.aura.light) { const l = new THREE.PointLight(c, 1.2, 4); l.position.y = 1.2; g.add(l); }
+  if (S.aura.light) { const l = vlight(c, 1.2, 4); l.position.y = 1.2; g.add(l); }
   const k = S.aura.kind;
   return t => ps.forEach(({ p, o }) => {
     const ph = (t * (k === 'fumaça' ? 0.35 : 0.5) + o) % 1, a = o * Math.PI * 2 + t * (k === 'estrelas' ? 0.9 : 1.6);

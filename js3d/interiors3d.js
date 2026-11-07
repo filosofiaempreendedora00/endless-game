@@ -5,6 +5,7 @@
    feitos em código; os NPCs e as caixas/barris são colocados no main3d.
    ========================================================================= */
 import * as THREE from 'three';
+import { vlight } from './lights3d.js';
 
 export const INTERIORS = {
   estabulo: { name: 'Estábulo do Tomé', x: 600, z: 0, w: 16, d: 13, h: 5.2, wall: '#b39570', floor: '#8a6a44', beam: '#5a3d24' },
@@ -47,14 +48,14 @@ export function buildRoomShell(def) {
   for (const sx of [-1, 1]) for (const z of [-d / 4, d / 4]) {
     const win = box(0.08, 1.3, 1.1, glass, sx * (w / 2 - 0.17), 2.4, z); win.castShadow = false; g.add(win);
     g.add(box(0.12, 0.1, 1.3, BM, sx * (w / 2 - 0.2), 3.1, z)); g.add(box(0.12, 0.1, 1.3, BM, sx * (w / 2 - 0.2), 1.7, z)); g.add(box(0.12, 1.3, 0.08, BM, sx * (w / 2 - 0.2), 2.4, z));
-    const sunbeam = new THREE.PointLight('#fff2d8', 6, 7, 1.6); sunbeam.position.set(sx * (w / 2 - 1.2), 2.6, z); g.add(sunbeam);
+    if (z > 0) { const sunbeam = vlight('#fff2d8', 6, 9, 1.6); sunbeam.position.set(sx * (w / 2 - 1.2), 2.6, 0); g.add(sunbeam); } // uma luz por janela-par
   }
   // batente da porta e um tapete na entrada
   g.add(box(0.25, 2.9, 0.4, BM, -dw / 2 - 0.12, 1.45, d / 2)); g.add(box(0.25, 2.9, 0.4, BM, dw / 2 + 0.12, 1.45, d / 2)); g.add(box(dw + 0.5, 0.25, 0.4, BM, 0, 2.9, d / 2));
   const rug = box(2.6, 0.03, 1.8, mat('#8a2f2a'), 0, 0.02, d / 2 - 1.6); rug.castShadow = false; g.add(rug);
   // fora da porta: claridade (dá a sensação de dia lá fora)
   const out = new THREE.Mesh(new THREE.PlaneGeometry(dw, 2.8), new THREE.MeshBasicMaterial({ color: '#e9f4ff' })); out.position.set(0, 1.4, d / 2 + 0.2); out.rotation.y = Math.PI; g.add(out);
-  const amb = new THREE.PointLight('#ffe2b8', 10, Math.max(w, d) * 1.2, 1.4); amb.position.set(0, h - 0.6, 0); g.add(amb);
+  const amb = vlight('#ffe2b8', 10, Math.max(w, d) * 1.2, 1.4); amb.position.set(0, h - 0.6, 0); g.add(amb);
   g.position.set(def.x, 0, def.z);
   return { group: g, walls };
 }
@@ -88,7 +89,7 @@ export function fireplace() {
   const fire = new THREE.Group(); fire.position.set(0, 0.25, 0.35); g.add(fire);
   const fm = new THREE.MeshStandardMaterial({ color: '#ff9a3a', emissive: '#ff7a1a', emissiveIntensity: 2, roughness: 0.4 });
   const flames = []; for (let i = 0; i < 5; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 6), fm); f.position.set((i - 2) * 0.13, 0.22, (i % 2) * 0.08); fire.add(f); flames.push(f); }
-  const light = new THREE.PointLight('#ff9a4a', 8, 9, 1.5); light.position.set(0, 0.8, 0.9); g.add(light);
+  const light = vlight('#ff9a4a', 8, 9, 1.5); light.position.set(0, 0.8, 0.9); g.add(light);
   g.userData.update = t => { flames.forEach((f, i) => { f.scale.y = 0.8 + Math.sin(t * 9 + i * 1.7) * 0.25; f.scale.x = 1 + Math.sin(t * 7 + i) * 0.1; }); light.intensity = 7 + Math.sin(t * 11) * 1.2 + Math.sin(t * 17) * 0.6; };
   return g;
 }
@@ -110,7 +111,7 @@ export function lantern() {
   g.add(box(0.04, 0.8, 0.04, mat('#2a2a2a'), 0, 0.4, 0));
   const glassM = new THREE.MeshStandardMaterial({ color: '#ffd27a', emissive: '#ffb84a', emissiveIntensity: 1.6 });
   const l = box(0.2, 0.26, 0.2, glassM, 0, -0.1, 0); l.castShadow = false; g.add(l);
-  const pl = new THREE.PointLight('#ffc070', 3, 6, 1.6); pl.position.y = -0.2; g.add(pl);
+  const pl = vlight('#ffc070', 3, 6, 1.6); pl.position.y = -0.2; g.add(pl);
   return g;
 }
 
@@ -128,7 +129,7 @@ export function makePortal(color = '#7fd4ff') {
   // faíscas em espiral
   const sparkM = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
   const sparks = []; for (let i = 0; i < 18; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), sparkM); g.add(s); sparks.push({ s, o: i / 18 }); }
-  const light = new THREE.PointLight(c, 2.5, 5, 1.6); light.position.y = 1; g.add(light);
+  const light = vlight(c, 2.5, 5, 1.6); light.position.y = 1; g.add(light);
   g.userData.update = t => {
     rings.forEach((r, i) => { r.rotation.z = t * (1.2 + i * 0.7) * (i % 2 ? -1 : 1); r.scale.setScalar(1 + Math.sin(t * 2 + i) * 0.05); });
     disc.material.opacity = 0.28 + Math.sin(t * 3) * 0.08; beam.material.opacity = 0.12 + Math.sin(t * 2.2) * 0.05;
