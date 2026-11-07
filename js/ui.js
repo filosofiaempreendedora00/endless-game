@@ -86,6 +86,7 @@ const UI = {
     $('bar-bxp').style.width = bp + '%'; $('txt-bxp').textContent = `EXP Base ${bp.toFixed(1)}%`;
     $('bar-jxp').style.width = jp + '%'; $('txt-jxp').textContent = `EXP Classe ${jp.toFixed(1)}%`;
     $('st-zeny').textContent = p.zeny.toLocaleString('pt-BR');
+    $('st-god').classList.toggle('hidden', !G.god);
     // cooldowns da hotbar
     const slots = $('hotbar').children;
     for (let i = 0; i < 9; i++) {
@@ -154,8 +155,8 @@ const UI = {
   },
   body(id) { return this.wins[id].querySelector('.win-body'); },
   open(id) {
-    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [innerWidth - 740, 70, 320], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 420), 60, Math.min(840, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)] };
-    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões' };
+    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [innerWidth - 740, 70, 320], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 420), 60, Math.min(840, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -341,9 +342,9 @@ const UI = {
   render_help() {
     this.body('help').innerHTML = `<div style="line-height:1.6">
       <b class="gold">Movimento e combate</b><br>
-      • <b>Clique no chão</b> para andar (segure para continuar andando).<br>
+      • <b>W A S D</b> (ou as setas) para andar, ou <b>clique no chão</b> (segure para continuar andando).<br>
       • <b>Clique num monstro</b> para atacar automaticamente.<br>
-      • <b>Clique em itens no chão</b> para pegar (ou aperte <b>Z</b>).<br>
+      • <b>Clique em itens no chão</b> para pegar (ou aperte <b>F</b>).<br>
       • <b>1–9</b>: atalhos de habilidades/itens. Habilidades de alvo pedem um clique no monstro/área.<br>
       • <b>X</b>: sentar (regenera HP/SP 2× mais rápido). <b>Roda do mouse</b>: zoom.<br><br>
       <b class="gold">Janelas</b><br>
@@ -352,6 +353,9 @@ const UI = {
       • <b>P</b>: pausa/continua o jogo.<br>
       • <b>Q</b>: modo sugestão — clique em qualquer coisa (monstro, NPC, árvore, chão, interface...) ou arraste para marcar uma área, e escreva o que quer mudar. O Claude lê depois.<br>
       • <b>L</b>: lista das suas sugestões e o que já foi feito.<br><br>
+      <b class="gold">Modo Mestre (só no seu computador)</b><br>
+      • <b>Z</b>: God Mode — imortal, SP infinito, sem recarga, mais rápido; <b>botão direito</b> no mapa teleporta.<br>
+      • <b>⌘ Cmd + Z</b> (Ctrl+Z no Windows): Painel do Mestre — teleporte para qualquer ponto de qualquer mapa e atalhos.<br><br>
       <b class="gold">Progressão</b><br>
       • Monstros dão <b>EXP de Base</b> (atributos) e <b>EXP de Classe</b> (habilidades).<br>
       • No <b>Nv. de Classe ${CONFIG.JOB_CHANGE_1}</b>, fale com a <b>Mestra Ivra</b> e escolha sua 1ª classe. No <b>Nv. ${CONFIG.JOB_CHANGE_2}</b> da 1ª classe, escolha entre dois caminhos (carreira em Y).<br>

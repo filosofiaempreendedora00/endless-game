@@ -30,15 +30,16 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 
 | Ação | Comando |
 |---|---|
-| Andar | Clique no chão (segure para continuar andando) |
+| Andar | **W A S D** / setas, ou clique no chão (segure para continuar andando) |
 | Atacar | Clique no monstro |
-| Pegar item | Clique no item ou aperte **Z** |
+| Pegar item | Clique no item ou aperte **F** |
 | Habilidades/itens | Teclas **1–9** |
 | Sentar (regenera 2× mais rápido) | **X** |
 | Personagem / Inventário / Equipamento | **C** / **I** / **E** |
 | Habilidades / Árvore de Classes / Ajuda | **K** / **T** / **H** |
 | Som liga/desliga | **N** |
 | Pausar / Fazer sugestão / Ver sugestões | **P** / **Q** / **L** |
+| God Mode / Painel do Mestre (só no seu computador) | **Z** / **⌘ Cmd + Z** |
 | Chat / comandos | **Enter** (digite `/ajuda`) |
 | Zoom | Roda do mouse |
 

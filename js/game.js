@@ -419,6 +419,7 @@ function monsterHit(m) {
 }
 function damagePlayer(m, raw, ignoreDef) {
   const p = G.player;
+  if (G.god) { floater(p, 'Imune', '#ffd76a'); return; }
   let dmg = ignoreDef ? raw : raw * 100 / (100 + p.d.def);
   dmg *= 1 - Math.min(80, p.d.resist[m.def.element] || 0) / 100;
   dmg = Math.max(1, Math.round(dmg));
@@ -514,8 +515,8 @@ function trySkill(id) {
   if (!lv) { UI.log('Você ainda não aprendeu essa habilidade.', 'warn'); return; }
   if (sk.type === 'passive') { UI.log(`${sk.name} é passiva — já está ativa.`, 'sys'); return; }
   if (p.casting) return;
-  if (p.cds[id] > G.time) { UI.log('Habilidade em recarga.', 'warn'); return; }
-  if (p.sp < sk.sp(lv)) { UI.log('SP insuficiente.', 'warn'); Sound.play('error'); return; }
+  if (p.cds[id] > G.time && !G.god) { UI.log('Habilidade em recarga.', 'warn'); return; }
+  if (p.sp < sk.sp(lv) && !G.god) { UI.log('SP insuficiente.', 'warn'); Sound.play('error'); return; }
   p.sitting = false;
   if (sk.target === 'enemy') {
     const hm = G.hover && G.hover.kind === 'monster' ? G.hover.ref : null;
@@ -535,8 +536,8 @@ function queueSkill(id, lv, t) {
 }
 function startCast(a) {
   const p = G.player, sk = SKILLS[a.id];
-  if (p.sp < sk.sp(a.lv)) { UI.log('SP insuficiente.', 'warn'); p.action = null; return; }
-  const ct = (sk.cast ? sk.cast(a.lv) : 0) * p.d.castMult / 1000;
+  if (p.sp < sk.sp(a.lv) && !G.god) { UI.log('SP insuficiente.', 'warn'); p.action = null; return; }
+  const ct = G.god ? 0 : (sk.cast ? sk.cast(a.lv) : 0) * p.d.castMult / 1000;
   p.action = a.resume && a.m ? { type: 'attack', m: a.m } : null;
   if (ct > 0.05) { p.casting = { ...a, start: G.time, end: G.time + ct }; p.path = null; if (sk.effect.dmg === 'magic') Sound.play('magic'); }
   else executeSkill(a);
@@ -544,8 +545,7 @@ function startCast(a) {
 function executeSkill(a) {
   const p = G.player, sk = SKILLS[a.id], lv = a.lv, eff = sk.effect;
   if (sk.target === 'enemy' && !monsterAlive(a.m)) return;
-  p.sp -= sk.sp(lv);
-  p.cds[a.id] = G.time + (sk.cd || 0) / 1000;
+  if (!G.god) { p.sp -= sk.sp(lv); p.cds[a.id] = G.time + (sk.cd || 0) / 1000; }
   p.atkT = G.time;
   if (a.m && Math.abs(a.m.x - p.x) > 2) p.dir = a.m.x > p.x ? 1 : -1;
   if (a.pt && Math.abs(a.pt.x - p.x) > 2) p.dir = a.pt.x > p.x ? 1 : -1;
@@ -654,6 +654,16 @@ function moveEntity(e, speed, dt) {
   if (Math.abs(dx) > 0.5) e.dir = dx > 0 ? 1 : -1;
   e.moving = true; e.walkT += dt;
 }
+// movimento livre (teclado) com colisão por eixo: desliza encostado nas paredes
+function stepFree(e, dx, dy) {
+  const solidAt = (x, y) => G.map.isSolid(Math.floor(x / TILE), Math.floor(y / TILE));
+  const box = r => (x, y) => solidAt(x - r, y - r / 2) || solidAt(x + r, y - r / 2) || solidAt(x - r, y + r / 2) || solidAt(x + r, y + r / 2);
+  // se já está encostado demais numa parede (ex.: clicou na beirada), usa só o ponto central
+  const blocked = box(box(7)(e.x, e.y) ? 0 : 7);
+  if (dx && !blocked(e.x + dx, e.y)) e.x += dx;
+  if (dy && !blocked(e.x, e.y + dy)) e.y += dy;
+}
+
 // coloca a entidade no tile alcançável mais próximo (salva-vidas contra ficar preso)
 function unstick(e) {
   const m = G.map, cx = Math.floor(e.x / TILE), cy = Math.floor(e.y / TILE);
@@ -692,6 +702,19 @@ function updatePlayer(dt) {
   const hpI = p.sitting ? 3 : 6, spI = p.sitting ? 4 : 8;
   if (p.regenHp >= hpI) { p.regenHp = 0; if (p.hp < p.d.maxHp) p.hp = Math.min(p.d.maxHp, p.hp + Math.max(1, Math.floor(p.d.maxHp / 60 + p.d.vit / 4)) + p.d.hpRegen); }
   if (p.regenSp >= spI) { p.regenSp = 0; if (p.sp < p.d.maxSp) p.sp = Math.min(p.d.maxSp, p.sp + Math.max(1, Math.floor(p.d.maxSp / 50 + p.d.int / 5)) + p.d.spRegen); }
+  if (G.god) { p.hp = p.d.maxHp; p.sp = p.d.maxSp; }
+  // movimento pelo teclado (WASD / setas)
+  const kd = keyDir();
+  if (kd) {
+    if (p.casting) { p.casting = null; UI.log('Conjuração cancelada.', 'warn'); }
+    p.action = null; p.path = null; p.finalPt = null; p.sitting = false;
+    const step = p.d.speed * (G.god ? 1.8 : 1) * dt;
+    stepFree(p, kd.x * step, kd.y * step);
+    p.moving = true; p.walkT += dt;
+    if (kd.x) p.dir = kd.x > 0 ? 1 : -1;
+    checkPortals();
+    return;
+  }
   // conjuração
   if (p.casting) {
     p.moving = false;
@@ -727,7 +750,7 @@ function updatePlayer(dt) {
       }
     }
   }
-  moveEntity(p, p.d.speed, dt);
+  moveEntity(p, p.d.speed * (G.god ? 1.8 : 1), dt);
   if (p.moving) p.sitting = false;
   checkPortals();
 }
@@ -839,6 +862,39 @@ function handleChat(v) {
     default: UI.log('Comando desconhecido. Digite /ajuda.', 'warn');
   }
 }
+/* ================= Modo Mestre (God Mode + teleporte) =================
+   Só existe "na conta de administrador": por enquanto, isso significa o jogo
+   rodando no seu próprio computador (localhost / arquivo local). */
+function isAdmin() {
+  return location.protocol === 'file:' || ['localhost', '127.0.0.1', '::1', '[::1]'].includes(location.hostname);
+}
+function toggleGod(force) {
+  const p = G.player; if (!p) return;
+  G.god = force === undefined ? !G.god : !!force;
+  if (G.god) {
+    if (p.dead) { p.dead = false; G.state = 'play'; UI.hideOverlay(); }
+    p.hp = p.d.maxHp; p.sp = p.d.maxSp;
+    fx('levelup', p.x, p.y, 1.4, { text: 'GOD MODE' }); Sound.play('holy');
+    UI.log('⚡ God Mode ATIVADO: imortal, SP infinito, sem recarga, mais rápido. Botão direito no mapa = teleporte. ⌘+Z abre o Painel do Mestre.', 'card');
+  } else { Sound.play('click'); UI.log('God Mode desativado.', 'sys'); }
+  for (const m of G.monsters) if (G.god) m.target = null;
+  UI.markDirty();
+}
+// teleporte instantâneo para (tx,ty) do mapa; px/py opcionais para posição exata
+function godTeleport(mapId, tx, ty, px, py) {
+  const p = G.player; if (!p || !MAPS[mapId]) return;
+  const m = getMap(mapId);
+  tx = clamp(tx, 0, m.w - 1); ty = clamp(ty, 0, m.h - 1);
+  if (mapId !== G.mapId) changeMap(mapId, tx, ty);
+  else { p.x = tx * TILE + TILE / 2; p.y = ty * TILE + TILE / 2; }
+  if (px !== undefined && !m.isSolid(tx, ty)) { p.x = px; p.y = py; }
+  unstick(p);
+  p.path = null; p.action = null; p.casting = null; p.sitting = false;
+  G.cam.x = p.x; G.cam.y = p.y;
+  fx('aura', p.x, p.y, 0.8, { color: '#ffd76a' }); fx('ring', p.x, p.y, 0.5, { r: 40, color: '#9fe3ff' });
+  Sound.play('portal');
+}
+
 /* ================= Pausa ================= */
 function setPaused(on) {
   if (on && G.state !== 'play' && G.state !== 'dead') return;
@@ -891,7 +947,11 @@ canvas.addEventListener('mousedown', e => {
   if (G.state !== 'play' || G.paused || FB.picking) return;
   document.activeElement && document.activeElement.blur();
   const p = G.player;
-  if (e.button === 2) { if (G.targeting) { G.targeting = null; UI.log('Cancelado.', 'sys'); } return; }
+  if (e.button === 2) {
+    if (G.targeting) { G.targeting = null; UI.log('Cancelado.', 'sys'); }
+    else if (G.god) godTeleport(G.mapId, Math.floor(G.mouse.wx / TILE), Math.floor(G.mouse.wy / TILE), G.mouse.wx, G.mouse.wy);
+    return;
+  }
   if (e.button !== 0) return;
   computeHover();
   const h = G.hover;
@@ -917,16 +977,34 @@ addEventListener('mouseup', () => { G.mouse.down = false; G.mouse.holdMove = fal
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => { e.preventDefault(); G.cam.zoom = clamp(G.cam.zoom * (e.deltaY > 0 ? 0.9 : 1.1), 1, 3); }, { passive: false });
 
+/* teclas de movimento (WASD + setas) */
+const MOVE_KEYS = { w: 'up', arrowup: 'up', s: 'down', arrowdown: 'down', a: 'left', arrowleft: 'left', d: 'right', arrowright: 'right' };
+G.moveKeys = {};
+function keyDir() {
+  const m = G.moveKeys;
+  const x = (m.right ? 1 : 0) - (m.left ? 1 : 0), y = (m.down ? 1 : 0) - (m.up ? 1 : 0);
+  if (!x && !y) return null;
+  const l = Math.hypot(x, y);
+  return { x: x / l, y: y / l };
+}
+addEventListener('keyup', e => { const d = MOVE_KEYS[e.key.toLowerCase()]; if (d) G.moveKeys[d] = false; });
+addEventListener('blur', () => { G.moveKeys = {}; });
+
 addEventListener('keydown', e => {
   const tag = document.activeElement && document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (G.state !== 'play') return;
   const k = e.key.toLowerCase();
+  // ⌘/Ctrl + Z: Painel do Mestre
+  if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (isAdmin()) UI.toggle('admin'); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (MOVE_KEYS[k]) { e.preventDefault(); if (!FB.picking && !FB.box) G.moveKeys[MOVE_KEYS[k]] = true; return; }
   if (k === 'p') { togglePause(); return; }
   if (k === 'q') { FB.start(); return; }
   if (k === 'l') { UI.toggle('sugestoes'); return; }
   if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
-  if (G.paused && ((k >= '1' && k <= '9') || k === 'x' || k === 'z')) return;
+  if (k === 'z') { if (isAdmin()) toggleGod(); return; }
+  if (G.paused && ((k >= '1' && k <= '9') || k === 'x' || k === 'f')) return;
   if (k >= '1' && k <= '9') { useHotbar(+k - 1); return; }
   switch (k) {
     case 'enter': document.getElementById('chatinput').focus(); e.preventDefault(); break;
@@ -939,7 +1017,7 @@ addEventListener('keydown', e => {
     case 'h': UI.toggle('help'); break;
     case 'n': toggleSound(); break;
     case 'x': { const p = G.player; if (!p.dead && !p.casting) { p.sitting = !p.sitting; p.path = null; p.action = null; } break; }
-    case 'z': {
+    case 'f': {
       const p = G.player; let best = null, bd = 3 * TILE;
       for (const d of G.drops) { const dd = Math.hypot(d.x - p.x, d.y - p.y); if (dd < bd) { bd = dd; best = d; } }
       if (best) p.action = { type: 'pick', drop: best };
@@ -1078,6 +1156,13 @@ function occludes(o, p) {
 }
 function drawPlayer(c, p, t) {
   const cls = CLASSES[p.cls];
+  if (G.god) { // aura dourada do God Mode
+    const pulse = 0.5 + Math.sin(t * 4) * 0.2;
+    ell(c, p.x, p.y, 18, 7, `rgba(255,215,106,${pulse * 0.45})`);
+    c.strokeStyle = `rgba(255,230,140,${pulse})`; c.lineWidth = 1.5;
+    c.beginPath(); c.ellipse(p.x, p.y, 20, 8, 0, 0, Math.PI * 2); c.stroke();
+    for (let i = 0; i < 4; i++) { const k = (t * 0.8 + i / 4) % 1; circ(c, p.x + Math.sin(i * 2.4 + t) * 12, p.y - k * 40, 1.8 * (1 - k), `rgba(255,240,170,${1 - k})`); }
+  }
   const atkK = clamp((G.time - p.atkT) / 0.25, 0, 1);
   drawHumanoid(c, p.x, p.y, {
     dir: p.dir, walk: p.moving, walkT: p.walkT, sit: p.sitting, body: cls.color, accent: cls.accent, hair: p.look.hair, skin: p.look.skin,

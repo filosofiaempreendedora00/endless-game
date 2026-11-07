@@ -239,3 +239,12 @@ body.fb-picking #hud:hover, body.fb-picking .win:hover { outline: 1px dashed rgb
 .fb-resp { margin-top: 4px; color: #9fe3ff; font-size: 11.5px; }
 .fb-badge { font-size: 10px; padding: 0 6px; border-radius: 8px; background: rgba(255, 138, 138, 0.25); color: #ffb0b0; }
 .fb-badge.ok { background: rgba(143, 240, 176, 0.2); color: #8ff0b0; }
+
+/* ---- Modo Mestre ---- */
+#st-god { margin-top: 4px; padding: 3px 7px; border-radius: 6px; background: linear-gradient(90deg, rgba(255, 215, 106, 0.35), rgba(255, 215, 106, 0.08)); color: #ffe9a8; font-weight: 800; font-size: 12px; }
+#st-god span { font-weight: 400; font-size: 10px; color: var(--muted); }
+.adm-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.adm-h { margin: 10px 0 6px; font-family: Cinzel, serif; color: var(--gold); font-size: 12px; }
+#adm-map { display: block; margin: 0 auto; border-radius: 8px; border: 1px solid var(--border-soft); cursor: crosshair; }
+#adm-info { text-align: center; margin: 5px 0; font-size: 12px; min-height: 16px; }
+.adm-poi, .adm-btns { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }

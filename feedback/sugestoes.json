@@ -1,0 +1,53 @@
+[
+  {
+    "texto": "isso é so um teste mesmo",
+    "categoria": null,
+    "versao": "0.1.0 (MVP)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "29,11-34,14",
+      "nome": "Área de 6×4 tiles",
+      "codigo": "js/world.js (geração de vila) · js/data.js → MAPS.vila",
+      "detalhes": {
+        "tiles": {
+          "de": [
+            29,
+            11
+          ],
+          "ate": [
+            34,
+            14
+          ]
+        },
+        "monstros": {},
+        "npcs": [],
+        "cenario": {}
+      }
+    },
+    "mapa": {
+      "id": "vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        29,
+        11
+      ],
+      "pos": [
+        1012,
+        416
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 2,
+      "nivelClasse": 5,
+      "hp": "62/62",
+      "sp": "17/17"
+    },
+    "id": "S-001",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T15:20:32",
+    "imagem": "img/S-001.png"
+  }
+]
