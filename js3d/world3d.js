@@ -3,6 +3,7 @@
    1 unidade = 1 metro. Norte = -Z, Leste = +X.
    ========================================================================= */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 
 export const HALF = 150; // o mundo vai de -150 a +150 nos dois eixos
 export const PLAY_LIMIT = 128; // até onde o jogador consegue ir (depois disso, montanhas)
@@ -44,12 +45,16 @@ export function roadDist(x, z) {
 }
 
 /* ---------- altura do terreno ---------- */
+/* ---------- lago com margem irregular (não é um círculo perfeito) ---------- */
+export function lakeShape(x, z) { const a = Math.atan2(z - LAKE.z, x - LAKE.x); return 1 + 0.16 * Math.sin(3 * a + 1.1) + 0.09 * Math.sin(5 * a + 2.4) + 0.05 * Math.sin(8 * a + 0.3); }
+// distância até o centro "corrigida" pela forma da margem: comparar com LAKE.r
+export function lakeDist(x, z) { return Math.hypot(x - LAKE.x, z - LAKE.z) / lakeShape(x, z); }
 export function heightAt(x, z) {
   let h = (fbm(x * 0.032, z * 0.032) - 0.45) * 8;
   h *= smooth(16, 34, Math.hypot(x - VILLAGE.x, z - VILLAGE.z)); // vila plana
   h *= 0.3 + 0.7 * smooth(2.5, 8, roadDist(x, z)); // estradas suaves
-  const dl = Math.hypot(x - LAKE.x, z - LAKE.z);
-  if (dl < LAKE.r + 6) { const k = smooth(LAKE.r + 6, LAKE.r - 4, dl); h = h * (1 - k) + (LAKE.level - 1.6) * k; }
+  const dl = lakeDist(x, z);
+  if (dl < LAKE.r + 6) { const k = smooth(LAKE.r + 6, LAKE.r - 4, dl); h = h * (1 - k) + (LAKE.level - 1.3 - 1.5 * smooth(LAKE.r - 3, LAKE.r * 0.25, dl) + (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.4) * k; } // fundo mais fundo no meio
   const e = Math.max(Math.abs(x), Math.abs(z));
   h += Math.pow(Math.max(0, e - 118) / 22, 2) * 22; // montanhas na borda
   return h;
@@ -83,8 +88,9 @@ export function groundColor(x, z, h) {
   if (rd < 3.2) c.lerp(new THREE.Color('#b08c5a'), smooth(3.2, 1.6, rd));
   const dv = Math.hypot(x - VILLAGE.x, z - VILLAGE.z);
   if (dv < 13) c.lerp(new THREE.Color('#c2b9a6'), smooth(13, 10, dv)); // praça de pedra
-  const dl = Math.hypot(x - LAKE.x, z - LAKE.z);
-  if (dl < LAKE.r + 2.5) c.lerp(new THREE.Color('#d8c48a'), smooth(LAKE.r + 2.5, LAKE.r, dl)); // areia
+  const dl = lakeDist(x, z);
+  if (dl < LAKE.r + 2.5) c.lerp(new THREE.Color('#c9b98a'), smooth(LAKE.r + 2.5, LAKE.r, dl) * (0.75 + vnoise(x * 0.5, z * 0.5) * 0.25)); // areia
+  if (dl < LAKE.r - 0.5) c.lerp(new THREE.Color('#6d6a4a'), smooth(LAKE.r - 0.5, LAKE.r - 4, dl) * 0.7); // lodo no fundo
   const wr = zoneWeight('ruinas', x, z);
   if (wr > 0.3) { // lajes de pedra antigas no chão das ruínas
     const cell = (Math.floor(x / 3) + Math.floor(z / 3)) & 1, crack = vnoise(x * 0.7, z * 0.7);
@@ -131,13 +137,93 @@ export function buildTerrain() {
   return mesh;
 }
 
+// água com ondas, brilho do sol, cor rasa perto da margem, espuma na beira e reflexo do céu
 export function buildWater() {
-  const geo = new THREE.CircleGeometry(LAKE.r + 1.5, 48);
-  geo.rotateX(-Math.PI / 2);
-  const mat = new THREE.MeshStandardMaterial({ color: '#3a86c8', roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.85 });
+  const R = LAKE.r * 1.3 + 3, seg = 110;
+  const geo = new THREE.PlaneGeometry(R * 2, R * 2, seg, seg); geo.rotateX(-Math.PI / 2);
+  const p = geo.attributes.position, depth = new Float32Array(p.count);
+  for (let i = 0; i < p.count; i++) depth[i] = LAKE.level - heightAt(LAKE.x + p.getX(i), LAKE.z + p.getZ(i));
+  geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
+  const mat = new THREE.MeshStandardMaterial({ color: '#2a6f9e', roughness: 0.18, metalness: 0.0, transparent: true, depthWrite: false });
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uTime = windUniform;
+    sh.vertexShader = 'attribute float aDepth;\nvarying float vDepth;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vDepth = aDepth;
+      vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
+    sh.fragmentShader = 'uniform float uTime;\nvarying float vDepth;\nvarying vec3 vWPos;\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        if (vDepth < -0.05) discard;
+        float dk = smoothstep(0.0, 1.8, vDepth);
+        diffuseColor.rgb = mix(vec3(0.20, 0.45, 0.42), vec3(0.04, 0.20, 0.34), dk);
+        diffuseColor.a = mix(0.45, 0.93, smoothstep(0.0, 1.0, vDepth));
+        float fo = smoothstep(0.12, 0.0, vDepth + 0.04 * sin(uTime * 1.7 + vWPos.x * 1.9 + vWPos.z * 1.4));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85, 0.92, 0.9), fo * 0.55);
+        diffuseColor.a = max(diffuseColor.a, fo * 0.8);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { float t = uTime; vec2 q = vWPos.xz;
+          float a1 = q.x * 1.3 + t * 1.6, a2 = q.x * 2.9 + q.y * 1.7 + t * 2.3, a3 = q.x * 5.3 - q.y * 4.1 - t * 3.1, a4 = q.y * 1.1 - t * 1.3;
+          float dx = 0.13 * cos(a1) + 0.17 * cos(a2) + 0.18 * cos(a3);
+          float dz = 0.09 * cos(a4) + 0.10 * cos(a2) - 0.14 * cos(a3);
+          vec3 wn = normalize(vec3(-dx * 0.35, 1.0, -dz * 0.35));
+          normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz); }`)
+      .replace('#include <opaque_fragment>', `#include <opaque_fragment>
+        { float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 4.0);
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.52, 0.70, 0.86), fr * 0.4);
+          gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5); }`);
+  };
   const m = new THREE.Mesh(geo, mat);
-  m.position.set(LAKE.x, LAKE.level, LAKE.z);
+  m.position.set(LAKE.x, LAKE.level, LAKE.z); m.receiveShadow = true; m.renderOrder = 2;
   return m;
+}
+// juncos e taboas na margem
+export function buildReeds(rng) {
+  const parts = [];
+  for (let i = 0; i < 4; i++) {
+    const h = 0.9 + i * 0.25, st = new THREE.CylinderGeometry(0.012, 0.02, h, 4); st.translate((i - 1.5) * 0.08, h / 2, (i % 2) * 0.07);
+    st.rotateZ((i - 1.5) * 0.08); parts.push([st, '#5d7f3a']);
+    if (i % 2 === 0) { const hd = new THREE.CapsuleGeometry(0.035, 0.16, 2, 6); hd.translate((i - 1.5) * 0.08 + (i - 1.5) * 0.08 * h, h + 0.05, (i % 2) * 0.07); parts.push([hd, '#6b4428']); }
+  }
+  for (let i = 0; i < 5; i++) { const lf = new THREE.PlaneGeometry(0.05, 0.8 + i * 0.12); lf.translate(0, 0.4 + i * 0.06, 0); lf.rotateZ((i - 2) * 0.25); lf.rotateY(i * 1.3); parts.push([lf, '#7a9a48']); }
+  const geos = parts.map(([g, col]) => { const ng = g.index ? g.toNonIndexed() : g, c = new THREE.Color(col), n = ng.attributes.position.count, arr = new Float32Array(n * 3); for (let k = 0; k < n; k++) { arr[k * 3] = c.r; arr[k * 3 + 1] = c.g; arr[k * 3 + 2] = c.b; } ng.setAttribute('color', new THREE.BufferAttribute(arr, 3)); ng.deleteAttribute('uv'); if (ng.attributes.normal) ng.deleteAttribute('normal'); return ng; });
+  const merged = mergeGeometries(geos); merged.computeVertexNormals();
+  const inst = new THREE.InstancedMesh(merged, windMaterial({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }), 80);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), v = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  let n = 0;
+  for (let tries = 0; tries < 6000 && n < inst.count; tries++) {
+    const a = rng() * Math.PI * 2, rr = LAKE.r * lakeShape(LAKE.x + Math.cos(a), LAKE.z + Math.sin(a)) * (0.95 + rng() * 0.12);
+    const x = LAKE.x + Math.cos(a) * rr, z = LAKE.z + Math.sin(a) * rr;
+    if (Math.sin(a * 3 + 0.7) < 0.2 || rng() < 0.3) continue; // em moitas, não um anel contínuo
+    q.setFromAxisAngle(up, rng() * 6.28); const k = 0.55 + rng() * 0.4; s.set(k, k * (0.8 + rng() * 0.4), k);
+    m.compose(v.set(x, Math.max(heightAt(x, z), LAKE.level - 0.5), z), q, s); inst.setMatrixAt(n++, m);
+  }
+  inst.count = n; inst.castShadow = true;
+  return inst;
+}
+// vitórias-régias grandes (dá para pular em cima delas)
+export function lilyPadGeometry(seed, r) {
+  let a = seed; const rng = () => ((a = (a * 16807) % 2147483647) / 2147483647);
+  const parts = [];
+  const notch = 0.35 + rng() * 0.2;
+  const pad = new THREE.CylinderGeometry(r, r * 0.97, 0.06, 28, 1, false, notch / 2, Math.PI * 2 - notch); pad.translate(0, 0.03, 0);
+  parts.push([pad, null]);
+  const rim = new THREE.TorusGeometry(r * 0.98, 0.035, 4, 28, Math.PI * 2 - notch); rim.rotateX(Math.PI / 2); rim.rotateY(-notch / 2 - Math.PI / 2 + Math.PI / 2); rim.translate(0, 0.05, 0);
+  parts.push([rim, '#3f6e2a']);
+  if (rng() < 0.45) { // flor
+    for (let i = 0; i < 8; i++) { const pt = new THREE.ConeGeometry(0.08, 0.28, 5); pt.translate(0, 0.14, 0); pt.rotateX(0.7); pt.rotateY(i / 8 * Math.PI * 2); pt.translate(r * 0.25, 0.08, r * 0.2); parts.push([pt, i % 2 ? '#ffb6d2' : '#ffd6e6']); }
+    const c = new THREE.SphereGeometry(0.07, 6, 5); c.translate(r * 0.25, 0.16, r * 0.2); parts.push([c, '#ffd23a']);
+  }
+  const light = new THREE.Color('#5f9e3a'), dark = new THREE.Color('#3d7426');
+  const geos = parts.map(([g, col]) => {
+    const ng = g.index ? g.toNonIndexed() : g, P = ng.attributes.position, arr = new Float32Array(P.count * 3), c = new THREE.Color();
+    for (let k = 0; k < P.count; k++) {
+      if (col) c.set(col); else { const x = P.getX(k), z = P.getZ(k), ang = Math.atan2(z, x), d = Math.hypot(x, z) / r; c.copy(light).lerp(dark, Math.max(0, Math.cos(ang * 9)) * 0.35 * d + (1 - d) * 0.15); }
+      arr[k * 3] = c.r; arr[k * 3 + 1] = c.g; arr[k * 3 + 2] = c.b;
+    }
+    ng.setAttribute('color', new THREE.BufferAttribute(arr, 3)); ng.deleteAttribute('uv'); if (ng.attributes.normal) ng.deleteAttribute('normal');
+    return ng;
+  });
+  const g = mergeGeometries(geos); g.computeVertexNormals();
+  return g;
 }
 
 // céu com gradiente (cúpula)
@@ -226,7 +312,7 @@ export function buildGrass(rng) {
   for (let tries = 0; tries < 220000 && (nt < tufts.count || nf < flowers.count || nr < rubble.count); tries++) {
     const x = (rng() * 2 - 1) * 122, z = (rng() * 2 - 1) * 122;
     const rd = roadDist(x, z);
-    if (Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12) continue;
+    if (lakeDist(x, z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12) continue;
     const y = heightAt(x, z);
     if (y > 7) continue;
     const ruins = zoneWeight('ruinas', x, z), forest = zoneWeight('floresta', x, z);

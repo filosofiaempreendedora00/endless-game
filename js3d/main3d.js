@@ -5,11 +5,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature } from './world3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, groundColor, updateNature, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
 import { dress, CLASS_LOOKS } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
+import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal } from './interiors3d.js';
+import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -45,6 +47,7 @@ const sky = buildSky(); scene.add(sky);
 const terrain = buildTerrain(); scene.add(terrain);
 scene.add(buildWater());
 scene.add(buildGrass(mulberry(99)));
+scene.add(buildReeds(mulberry(77)));
 
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
 
@@ -111,6 +114,142 @@ function place(name, x, z, o = {}) {
   return obj;
 }
 
+/* ---------- vitórias-régias: plataformas que boiam (dá para pular de uma para outra) ---------- */
+const padMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55 });
+function buildLilyPads() {
+  S.pads = [];
+  const add = (x, z, r) => {
+    if (lakeDist(x, z) > LAKE.r - 1.2 || S.pads.some(o => Math.hypot(o.x - x, o.z - z) < o.r + r + 0.25)) return;
+    const mesh = new THREE.Mesh(lilyPadGeometry(S.pads.length * 7919 + 13, r), padMat);
+    mesh.position.set(x, LAKE.level, z); mesh.rotation.y = rng() * Math.PI * 2; mesh.receiveShadow = true; mesh.castShadow = true;
+    mesh.userData.asset = 'lilypad'; placed.push(mesh); scene.add(mesh);
+    S.pads.push({ x, z, r, mesh, ph: rng() * 6.28, load: 0 });
+  };
+  // uma trilha de folhas da margem até o meio do lago
+  const a0 = 2.3, edge = LAKE.r * lakeShape(LAKE.x + Math.cos(a0), LAKE.z + Math.sin(a0));
+  for (let i = 0; i < 7; i++) { const rr = edge - 2.2 - i * 2.05, a = a0 + Math.sin(i * 1.7) * 0.18; add(LAKE.x + Math.cos(a) * rr, LAKE.z + Math.sin(a) * rr, 0.95 + (i % 3) * 0.18); }
+  for (let k = 0; k < 40 && S.pads.length < 16; k++) { const a = rng() * 6.28, rr = rng() * LAKE.r * 0.85; add(LAKE.x + Math.cos(a) * rr, LAKE.z + Math.sin(a) * rr, 0.7 + rng() * 0.7); }
+}
+function padUnder(x, z, y) { // folha embaixo do ponto (só conta se você está acima dela)
+  let best = null;
+  for (const pd of S.pads || []) if (Math.hypot(x - pd.x, z - pd.z) < pd.r * 0.95 && y >= LAKE.level - 0.3 && (!best || pd.r > best.r)) best = pd;
+  return best;
+}
+function updatePads(dt) {
+  for (const pd of S.pads || []) {
+    pd.load += ((pd === S.onPad ? 1 : 0) - pd.load) * Math.min(1, dt * 8);
+    pd.mesh.position.y = LAKE.level + Math.sin(S.time * 1.3 + pd.ph) * 0.02 - pd.load * 0.07; // afunda um pouquinho quando você pisa
+    pd.mesh.rotation.z = Math.sin(S.time * 0.9 + pd.ph) * 0.015;
+  }
+}
+
+/* ---------- chão: terreno lá fora, piso dentro das casas ---------- */
+function groundAt(x, z) { return S.interior ? 0 : heightAt(x, z); }
+
+/* ---------- portais nas portas e salas internas ---------- */
+const portals = [];
+function addDoorPortal(id, x, z, faceYaw) {
+  const mesh = makePortal('#8fdcff'); mesh.position.set(x, heightAt(x, z), z); scene.add(mesh);
+  portals.push({ kind: 'door', to: id, x, z, mesh, out: { x: x + Math.sin(faceYaw) * 2.2, z: z + Math.cos(faceYaw) * 2.2, yaw: faceYaw } });
+  INTERIORS[id].door = { x, z };
+}
+function buildInteriors() {
+  for (const [id, I] of Object.entries(INTERIORS)) {
+    const { group, walls } = buildRoomShell(I); scene.add(group); group.updateMatrixWorld(true);
+    for (const w of walls) { scene.attach(w); occluders.push(w); }
+    const F = (obj, x, z, rot = 0, r = 0) => { obj.position.set(I.x + x, 0, I.z + z); obj.rotation.y = rot; obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(obj); if (r) colliders.push({ x: I.x + x, z: I.z + z, r }); if (obj.userData.update) roomAnims.push(obj); return obj; };
+    const P = (name, x, z, o = {}) => place(name, I.x + x, I.z + z, { y: 0, rf: 0.6, ...o });
+    for (const [x, z] of [[-I.w / 4, -1], [I.w / 4, -1], [0, I.d / 4]]) { const l = F(lantern(), x, z); l.position.y = I.h - 0.9; }
+    if (id === 'estabulo') {
+      // três baias com as montarias em exposição
+      Object.keys(MOUNTS).forEach((k, i) => {
+        const sx = (i - 1) * 4.2;
+        F(stall(3.4, 3.2), sx, -I.d / 2 + 2.1);
+        const mt = makeMount(k); mt.obj.scale.setScalar(0.92); F(mt.obj, sx, -I.d / 2 + 2.2, 0.25 * (i - 1), 1.4); roomMounts.push(mt);
+      });
+      F(hayBale(), -I.w / 2 + 1.3, 1.2, 0.3, 0.8); F(hayBale(), -I.w / 2 + 1.3, 2.2, -0.2, 0.8); const hb = F(hayBale(), -I.w / 2 + 1.35, 1.7, 0.1); hb.position.y = 0.6;
+      F(hayBale(), I.w / 2 - 1.4, 2.4, 1.4, 0.8);
+      P('bucket', I.w / 2 - 1.2, 0.6); P('wheelbarrow', I.w / 2 - 2.0, -0.6, { rot: 2.2 }); P('sack', -I.w / 2 + 1.0, 3.6); P('lumber', I.w / 2 - 1.2, 4.0, { rot: 1.6 });
+      roomNpc({ id: 'tome', name: 'Tomé', title: 'Tratador de Montarias', model: 'Barbarian', show: ['Barbarian_Hat'] }, I.x - 2.2, I.z + 0.6, 0.4);
+    } else if (id === 'taverna') {
+      F(counter(5.2), -1.2, -I.d / 2 + 2.0, 0, 0); colliders.push({ x: I.x - 3.2, z: I.z - I.d / 2 + 2, r: 1.2 }, { x: I.x - 1.2, z: I.z - I.d / 2 + 2, r: 1.2 }, { x: I.x + 0.8, z: I.z - I.d / 2 + 2, r: 1.2 });
+      F(fireplace(), -I.w / 2 + 0.6, 0.5, Math.PI / 2, 1.2);
+      for (const [x, z] of [[1.2, 0.8], [3.6, 3.0], [-1.6, 3.2]]) { F(table(2.0), x, z, 0, 1.0); F(bench(2.0), x, z - 0.9); F(bench(2.0), x, z + 0.9); }
+      P('barrel', I.w / 2 - 0.9, -I.d / 2 + 0.9); P('barrel', I.w / 2 - 1.8, -I.d / 2 + 0.9); P('barrel', I.w / 2 - 0.9, -I.d / 2 + 1.8); P('crate_A', I.w / 2 - 1.0, I.d / 2 - 1.2);
+      roomNpc({ id: 'rosa', name: 'Dona Rosa', title: 'Taverneira', model: 'Rogue', show: ['Mug'] }, I.x - 1.2, I.z - I.d / 2 + 1.0, 0);
+      roomNpc({ id: 'gui', name: 'Velho Gui', title: 'Contador de Histórias', model: 'Knight', show: ['Mug'] }, I.x + 3.6, I.z + 1.9, Math.PI, 'Sit_Chair_Idle');
+    }
+    // saída: portal junto à porta
+    const ex = makePortal('#ffd27a'); ex.position.set(I.x, 0, I.z + I.d / 2 - 0.9); scene.add(ex);
+    portals.push({ kind: 'exit', from: id, x: I.x, z: I.z + I.d / 2 - 0.9, mesh: ex });
+  }
+}
+const roomAnims = [], roomMounts = [];
+function roomNpc(n, x, z, yaw, anim = 'Idle') {
+  const ch = makeChar(n.model, n.show);
+  ch.obj.position.set(x, 0, z); ch.obj.rotation.y = yaw; ch.anim.play(anim, { speed: 0.9 });
+  if (anim === 'Sit_Chair_Idle') ch.obj.position.y = -0.05;
+  const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.9, radius: 0.5 };
+  ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x, z, r: 0.6 }); S.npcs.push(npc);
+}
+function fadeTo(fn) {
+  let f = $('fade3d'); if (!f) { f = document.createElement('div'); f.id = 'fade3d'; document.body.appendChild(f); }
+  f.classList.add('on'); setTimeout(() => { fn(); setTimeout(() => f.classList.remove('on'), 120); }, 260);
+}
+function enterInterior(id, from) {
+  const I = INTERIORS[id];
+  fadeTo(() => {
+    S.interior = { id, ...I, back: from.out };
+    Object.assign(S.pos, { x: I.x, z: I.z + I.d / 2 - 2.8, y: 0, vy: 0, ground: true, yaw: Math.PI });
+    S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = Math.PI; S.cam.distT = Math.min(S.cam.distT, 6);
+    setTarget(null); S.casting = null;
+    if (S.pet) { S.pet.x = S.pos.x + 1.2; S.pet.z = S.pos.z + 0.8; S.pet.vx = S.pet.vz = 0; }
+    if (S.riding) dismount(true);
+    $('mapname').innerHTML = `${I.name} <small>Interior</small>`; banner(I.name, 'Vila de Alvorada');
+    S.portalCd = S.time + 1.2; Sound.play('portal');
+  });
+}
+function leaveInterior(instant) {
+  const back = S.interior && S.interior.back; if (!back) return;
+  const go = () => {
+    S.interior = null; S.zone = null;
+    Object.assign(S.pos, { x: back.x, z: back.z, y: heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw });
+    S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = back.yaw;
+    if (S.pet) { S.pet.x = back.x - Math.sin(back.yaw) * 1.5; S.pet.z = back.z - Math.cos(back.yaw) * 1.5; S.pet.vx = S.pet.vz = 0; }
+    S.portalCd = S.time + 1.2;
+  };
+  if (instant) go(); else { fadeTo(go); Sound.play('portal'); }
+}
+function updatePortals(dt) {
+  for (const o of roomAnims) o.userData.update(S.time);
+  for (const m of roomMounts) if (S.interior) m.animate(S.time, { speed: 0, turn: 0 }, dt);
+  const P = S.pos;
+  for (const pt of portals) {
+    if (Math.abs(pt.x - P.x) > 60 || Math.abs(pt.z - P.z) > 60) continue;
+    pt.mesh.userData.update(S.time);
+    if (S.p.dead || S.time < (S.portalCd || 0) || Math.hypot(pt.x - P.x, pt.z - P.z) > 1.0) continue;
+    if (pt.kind === 'door' && !S.interior) enterInterior(pt.to, pt);
+    else if (pt.kind === 'exit' && S.interior && S.interior.id === pt.from) leaveInterior(false);
+    S.portalCd = S.time + 2;
+  }
+}
+
+/* ---------- montaria (tecla M) ---------- */
+function mount() {
+  const p = S.p; if (!p.mount) { log('Você ainda não tem montaria. Fale com o Tomé, no estábulo da vila.', 'warn'); Sound.play('error'); return; }
+  if (S.interior) { log('Aqui dentro não dá para montar.', 'warn'); return; }
+  if (p.dead || S.casting) return;
+  const R = makeMount(p.mount.kind); R.obj.position.set(S.pos.x, S.pos.y, S.pos.z); R.obj.rotation.y = S.pos.yaw; scene.add(R.obj);
+  S.riding = R; S.sitting = false; S.autoAttack = false;
+  ring(S.pos, 1.8, '#ffe08a'); Sound.play('portal'); log(`🐎 Você montou no ${MOUNTS[p.mount.kind].name}. (M desmonta)`, 'sys');
+}
+function dismount(silent) {
+  if (!S.riding) return;
+  scene.remove(S.riding.obj); S.riding = null;
+  if (!silent) { ring(S.pos, 1.4, '#ffe08a'); Sound.play('click'); }
+}
+function toggleMount() { if (S.riding) dismount(); else mount(); }
+
 /* =========================== Montagem do mundo =========================== */
 const clouds = [];
 function buildWorld() {
@@ -122,7 +261,13 @@ function buildWorld() {
   for (const [n, deg, r] of ring) {
     const a = deg * Math.PI / 180, x = V.x + Math.cos(a) * r, z = V.z + Math.sin(a) * r;
     place(n, x, z, { rot: Math.atan2(V.x - x, V.z - z), rf: 0.62 });
+    const inside = { tavern: 'taverna', home_B_red: 'estabulo' }[n];
+    if (inside) { // porta com portal: entra na casa
+      const hr = colliders[colliders.length - 1].r, dr = r - hr - 1.3;
+      addDoorPortal(inside, V.x + Math.cos(a) * dr, V.z + Math.sin(a) * dr, Math.atan2(V.x - x, V.z - z));
+    }
   }
+  buildInteriors();
   place('windmill', V.x - 34, V.z - 26, { rf: 0.4 });
   place('tower', V.x + 22, V.z - 9, { rf: 0.5 }); place('tower', V.x + 22, V.z + 14, { rf: 0.5 });
   place('flag_blue', V.x + 18, V.z - 6, { solid: false }); place('flag_blue', V.x + 18, V.z + 11, { solid: false });
@@ -143,7 +288,7 @@ function buildWorld() {
       const x = zn.x + (rng() * 2 - 1) * zn.r * 1.25, z = zn.z + (rng() * 2 - 1) * zn.r * 1.25;
       if (Math.abs(x) > PLAY_LIMIT - 4 || Math.abs(z) > PLAY_LIMIT - 4) continue;
       if (zoneWeight(zoneId, x, z) < minW) continue;
-      if (roadDist(x, z) < 5 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36) continue;
+      if (roadDist(x, z) < 5 || lakeDist(x, z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36) continue;
       if (!freeAt(x, z, gap)) continue;
       const name = list[Math.floor(rng() * list.length)];
       place(name, x, z, { scale: (extra.s0 || 0.9) + rng() * (extra.s1 || 0.4), rf: extra.rf || 0.35 });
@@ -170,7 +315,7 @@ function buildWorld() {
     place(i % 4 === 0 ? 'wall_corner' : 'wall', x, z, { rot: -a + Math.PI / 2, rf: 0.45, sink: rng() * 0.8 });
   }
   // lago: vitórias-régias
-  for (let i = 0; i < 8; i++) { const a = rng() * 6.28, r = rng() * LAKE.r * 0.8; place('lily', LAKE.x + Math.cos(a) * r, LAKE.z + Math.sin(a) * r, { y: LAKE.level + 0.02, solid: false, scale: 1.5 }); }
+  buildLilyPads();
   // montanhas na borda do mundo
   for (let t = -140; t <= 140; t += 18) for (const [x, z] of [[t, -140], [t, 140], [-140, t], [140, t]]) {
     const n = ['mountain_A', 'mountain_B', 'mountain_C'][Math.floor(rng() * 3)];
@@ -262,7 +407,7 @@ function spawnPoint(zoneId) {
   for (let k = 0; k < 60; k++) {
     const x = zn.x + (rng() * 2 - 1) * zn.r, z = zn.z + (rng() * 2 - 1) * zn.r;
     if (Math.abs(x) > PLAY_LIMIT - 6 || Math.abs(z) > PLAY_LIMIT - 6) continue;
-    if (zoneWeight(zoneId, x, z) < 0.5 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 2 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 40) continue;
+    if (zoneWeight(zoneId, x, z) < 0.5 || lakeDist(x, z) < LAKE.r + 2 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 40) continue;
     if (!freeAt(x, z, 1.2)) continue;
     return { x, z };
   }
@@ -454,7 +599,8 @@ function resolve(x, z, r) {
     const dx = x - c.x, dz = z - c.z, d = Math.hypot(dx, dz), min = c.r + r;
     if (d < min && d > 0.0001) { x = c.x + dx / d * min; z = c.z + dz / d * min; }
   }
-  x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT);
+  if (S.interior) { const I = S.interior; x = clamp(x, I.x - I.w / 2 + 0.6, I.x + I.w / 2 - 0.6); z = clamp(z, I.z - I.d / 2 + 0.6, I.z + I.d / 2 - 0.3); }
+  else { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); }
   return { x, z };
 }
 function updatePlayer(dt) {
@@ -475,8 +621,8 @@ function updatePlayer(dt) {
   else if (mi.any && !mouse.left && !mouse.right) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 3));
   if ((mi.any || mi.turn) && S.sitting) S.sitting = false;
   if (mi.any && S.casting) { S.casting = null; log('Conjuração cancelada.', 'warn'); $('castbar3d').classList.add('hidden'); }
-  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 1.8 : 1);
-  const inLake = Math.hypot(P.x - LAKE.x, P.z - LAKE.z) < LAKE.r - 1;
+  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 1.8 : 1) * (S.riding ? MOUNT_SPEED : 1);
+  const inLake = !S.interior && lakeDist(P.x, P.z) < LAKE.r + 1;
   let vx = 0, vz = 0;
   if (mi.any && !S.casting) {
     const fx = Math.sin(P.yaw), fz = Math.cos(P.yaw), rx = -Math.cos(P.yaw), rz = Math.sin(P.yaw);
@@ -493,19 +639,31 @@ function updatePlayer(dt) {
   const r = resolve(P.x + S.vel.x * dt, P.z + S.vel.z * dt, 0.45);
   P.x = r.x; P.z = r.z;
   const coast = !mi.any ? Math.hypot(S.vel.x, S.vel.z) : 0;
-  let gy = heightAt(P.x, P.z); if (inLake) gy = Math.max(gy, LAKE.level - 1.05);
+  let gy = groundAt(P.x, P.z); if (inLake) gy = Math.max(gy, LAKE.level - 0.6); // na água: afundado até a cintura
+  const pad = padUnder(P.x, P.z, P.y); S.onPad = pad && P.ground ? pad : null;
+  if (pad) gy = Math.max(gy, pad.mesh.position.y + 0.06);
+  if (P.ground && gy < P.y - 0.3) { P.ground = false; P.vy = 0; } // saiu da beirada (ex.: da folha): cai
   if (P.ground) P.y = gy;
   else {
     P.vy -= 22 * dt; P.y += P.vy * dt;
     if (P.y <= gy) { P.y = gy; P.ground = true; me.anim.play('Jump_Land', { once: true, restart: true, fade: 0.05 }); S.lockAnim = t + 0.25; }
   }
   me.obj.position.set(P.x, P.y, P.z);
+  if (S.riding) { // montado: o bicho anda, você vai sentado na sela
+    const R = S.riding, spd = Math.hypot(S.vel.x, S.vel.z);
+    R.obj.position.set(P.x, P.y, P.z); R.obj.rotation.y = P.yaw;
+    let dy = P.yaw - (R.lastYaw ?? P.yaw); while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; R.lastYaw = P.yaw;
+    R.turn = (R.turn || 0) + ((dt > 0 ? dy / dt : 0) - (R.turn || 0)) * Math.min(1, dt * 6);
+    R.animate(t, { speed: spd / (base / MOUNT_SPEED * 1.2), turn: Math.max(-4, Math.min(4, R.turn)) }, dt);
+    me.obj.position.y = P.y + R.saddleY + R.bodyY - 0.62;
+  }
   // de frente para o alvo quando parado atacando
   if (S.autoAttack && S.target && !mi.any && !mi.turn && !mouse.right) P.yaw = angLerp(P.yaw, Math.atan2(S.target.x - P.x, S.target.z - P.z), Math.min(1, dt * 8));
   me.obj.rotation.y = P.yaw;
   // animação
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
+  else if (S.riding) me.anim.play('Sit_Chair_Idle', { fade: 0.2 });
   else if (!P.ground) { if (me.anim.name !== 'Jump_Start') me.anim.play('Jump_Idle'); }
   else if (S.sitting) { if (me.anim.name !== 'Sit_Floor_Idle' && me.anim.name !== 'Sit_Floor_Down') { me.anim.play('Sit_Floor_Down', { once: true }); later(0.9, () => { if (S.sitting) me.anim.play('Sit_Floor_Idle'); }); } }
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.4 : 1 });
@@ -523,13 +681,23 @@ function updatePlayer(dt) {
     else if (!S.casting && t >= S.nextAttack && t >= S.lockAnim - 0.1) {
       const d = Math.hypot(m.x - P.x, m.z - P.z), range = p.d.rangeTiles * TM + m.radius + 0.9;
       const facing = Math.cos(Math.atan2(m.x - P.x, m.z - P.z) - P.yaw) > 0.3;
-      if (d > range) msgOnce('range', 'Alvo fora de alcance.');
+      if (d > Math.max(range * 2.5, range + 12)) { // longe demais: sai do modo de combate (como no WoW)
+        S.autoAttack = false; log('Você se afastou do alvo e saiu do combate.', 'sys');
+        if (d > 40) { S.target = null; hudDirty = true; }
+      }
+      else if (d > range) msgOnce('range', 'Alvo fora de alcance.');
       else if (!facing) msgOnce('face', 'Você precisa estar de frente para o alvo.');
       else { S.nextAttack = t + p.d.aspd / 1000; playerAttack(m); }
     }
   }
   // zona
-  const zn = zoneAt(P.x, P.z);
+  // zona (com margem: na divisa entre duas regiões não fica trocando de música sem parar)
+  if (S.interior) return;
+  let zn = zoneAt(P.x, P.z);
+  if (S.zone && zn !== S.zone) {
+    const nd = q => Math.hypot(P.x - q.x, P.z - q.z) / q.r;
+    if (nd(zn) > nd(S.zone) - 0.08) zn = S.zone;
+  }
   if (zn !== S.zone) {
     S.zone = zn; banner(zn.name, zn.lvl); Sound.playSong(zn.music);
     $('mapname').innerHTML = `${zn.name} <small>${zn.lvl}</small>`;
@@ -537,6 +705,7 @@ function updatePlayer(dt) {
   }
 }
 function playerAttack(m) {
+  if (S.riding) dismount(true);
   const p = S.p, me = S.me, st = me.look.style;
   const list = ATTACK_ANIM[st]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) });
   S.lockAnim = S.time + Math.min(0.6, p.d.aspd / 1000 * 0.8);
@@ -562,6 +731,7 @@ function playerDie() {
     $('d-ok').onclick = () => {
       $('overlay').classList.remove('show');
       p.dead = false; p.hp = Math.max(1, Math.floor(p.d.maxHp / 2)); p.sp = Math.floor(p.d.maxSp / 2);
+      S.interior = null; S.zone = null; dismount(true);
       Object.assign(S.pos, { x: VILLAGE.x + 4, z: VILLAGE.z + 3, ground: true, vy: 0 }); S.me.anim.play('Idle', { restart: true }); save3d();
     };
   }, 1200);
@@ -574,7 +744,7 @@ function buildPet() {
   const st = petStage(data), m = makePet(data.species, st);
   const P = S.pos;
   S.pet = { ...m, stage: st, x: P.x - 1.5, z: P.z - 1.5, yaw: P.yaw, next: S.time + 2, buffNext: S.time + 8, moving: false };
-  m.obj.position.set(S.pet.x, heightAt(S.pet.x, S.pet.z), S.pet.z);
+  m.obj.position.set(S.pet.x, groundAt(S.pet.x, S.pet.z), S.pet.z);
   scene.add(m.obj);
 }
 function petNear() { const pe = S.pet; return pe && Math.hypot(pe.x - S.pos.x, pe.z - S.pos.z) < 14; }
@@ -649,9 +819,10 @@ function updatePet(dt) {
   const r = resolve(pe.x, pe.z, 0.3); pe.x = r.x; pe.z = r.z;
   // acompanha a inclinação do terreno
   const fx = Math.sin(pe.yaw) * 0.3, fz = Math.cos(pe.yaw) * 0.3;
-  const slope = Math.atan2(heightAt(pe.x + fx, pe.z + fz) - heightAt(pe.x - fx, pe.z - fz), 0.6);
+  const slope = Math.atan2(groundAt(pe.x + fx, pe.z + fz) - groundAt(pe.x - fx, pe.z - fz), 0.6);
   pe.pitch = (pe.pitch || 0) + (-slope - (pe.pitch || 0)) * (1 - Math.exp(-dt * 8));
-  pe.obj.position.set(pe.x, heightAt(pe.x, pe.z), pe.z); pe.obj.rotation.set(pe.pitch, pe.yaw, 0, 'YXZ');
+  pe.obj.position.set(pe.x, !S.interior && lakeDist(pe.x, pe.z) < LAKE.r - 0.5 ? Math.max(heightAt(pe.x, pe.z), LAKE.level - 0.3) : groundAt(pe.x, pe.z), pe.z); // na água o mascote nada na superfície
+  pe.obj.rotation.set(pe.pitch, pe.yaw, 0, 'YXZ');
   pe.animate(t, { speed: spd / Math.max(1, maxSp), turn: Math.max(-4, Math.min(4, pe.turn)) }, dt);
 }
 function petExpGain(baseExp) {
@@ -712,6 +883,7 @@ function levelFx() {
 
 /* =========================== Habilidades =========================== */
 function trySkill(id) {
+  if (S.riding) dismount(true);
   const p = S.p; if (p.dead || S.casting) return;
   const sk = SKILLS[id], lv = p.skills[id] || 0;
   if (!lv) return log('Você ainda não aprendeu essa habilidade.', 'warn');
@@ -904,6 +1076,19 @@ function talk(n) {
   n.anim.play('Interact', { once: true, restart: true }); later(1.2, () => n.anim.play('Idle'));
   if (n.id === 'clara') { p.hp = p.d.maxHp; p.sp = p.d.maxSp; Sound.play('heal'); ring(S.me.obj.position, 1.6, '#7dff9a'); UI.dialog(n, 'Que a luz te guarde, viajante. Suas feridas estão curadas.\nVolte sempre que precisar.', [bye]); }
   else if (n.id === 'bento') UI.dialog(n, 'Bem-vindo, bem-vindo! Poções fresquinhas, armas para toda classe... e compro qualquer tralha que você trouxer dos campos!', [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.open('shop'); } }, bye]);
+  else if (n.id === 'tome') {
+    const cur = p.mount && MOUNTS[p.mount.kind];
+    const opts = Object.entries(MOUNTS).map(([k, m]) => ({ label: `${p.mount && p.mount.kind === k ? '✔ ' : '🐎 '}${m.name} <span class="muted">— ${m.desc}</span>`, gold: !p.mount, fn: () => {
+      p.mount = { kind: k }; UI.close('dialog'); Sound.play('levelup'); banner('Nova montaria!', m.name);
+      log(`🐎 ${m.name} agora é seu! Aperte M lá fora para montar e andar bem mais rápido.`, 'sys'); save3d();
+    } }));
+    UI.dialog(n, cur ? `E aí, como vai o ${cur.name}? Se quiser trocar de bicho, é só escolher.\n<span class="muted">Lá fora, aperte <b>M</b> para montar ou desmontar.</span>` : 'Opa! Andar a pé por esses campos cansa, né? Escolha um dos meus corcéis — é por conta da casa para quem está começando.\n<span class="muted">Lá fora, aperte <b>M</b> para montar ou desmontar.</span>', [...opts, bye]);
+  }
+  else if (n.id === 'rosa') UI.dialog(n, 'Seja bem-vindo à Caneca Alegre! Senta, descansa... Quer um suco de frutinhas? Recupera o fôlego.', [{ label: '🍹 Suco de frutinhas (10 z) — recupera todo o SP', gold: true, fn: () => {
+      if (p.zeny < 10) { log('Zeny insuficiente.', 'warn'); Sound.play('error'); return; }
+      p.zeny -= 10; p.sp = p.d.maxSp; Sound.play('heal'); hudDirty = true; UI.close('dialog'); log('🍹 Delícia! SP recuperado.', 'item');
+    } }, bye]);
+  else if (n.id === 'gui') UI.dialog(n, 'Dizem que nas Ruínas de Kael dorme um Guardião Ancestral, feito de raiz e pedra...\nQuem o derrota leva uma carta que faz o coração bater mais forte. Mas cuidado: ele bate o chão e tudo treme!', [bye]);
   else if (n.id === 'tobias') UI.dialog(n, 'Bem-vindo ao mundo aberto de Aethra!\n<b>W/S</b> anda, <b>A/D</b> vira, <b>botão direito segurado</b> + A/D anda de lado, <b>Espaço</b> pula.\n<b>Tab</b> escolhe um inimigo, <b>R</b> ou botão direito nele ataca, <b>1–9</b> usa habilidades.\nOs campos ficam a leste; o bosque, mais a leste; as ruínas, ao norte.', [bye]);
   else if (n.id === 'ivra') {
     const c = CLASSES[p.cls];
@@ -985,7 +1170,7 @@ function buildMinimap() {
   for (let j = 0; j <= WM; j++) for (let i = 0; i <= WM; i++) H[j * (WM + 1) + i] = heightAt(-150 + i * step, -150 + j * step);
   for (let j = 0; j < WM; j++) for (let i = 0; i < WM; i++) {
     const x = -150 + i * step, z = -150 + j * step, h = H[j * (WM + 1) + i];
-    const dl = Math.hypot(x - LAKE.x, z - LAKE.z);
+    const dl = lakeDist(x, z);
     let c;
     if (dl < LAKE.r) { c = new THREE.Color('#2f7fc8').lerp(new THREE.Color('#5ab0ee'), Math.max(0, 1 - dl / LAKE.r) * 0.6); }
     else c = groundColor(x, z, h);
@@ -997,7 +1182,9 @@ function buildMinimap() {
   }
   g.putImageData(img, 0, 0);
   // margem do lago
-  g.strokeStyle = 'rgba(232,214,160,0.9)'; g.lineWidth = 2.5; g.beginPath(); g.arc(w2m(LAKE.x), w2m(LAKE.z), LAKE.r / 300 * WM, 0, 7); g.stroke();
+  g.strokeStyle = 'rgba(232,214,160,0.9)'; g.lineWidth = 2.5; g.beginPath();
+  for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2, rr = LAKE.r * lakeShape(LAKE.x + Math.cos(a), LAKE.z + Math.sin(a)); const X = w2m(LAKE.x + Math.cos(a) * rr), Y = w2m(LAKE.z + Math.sin(a) * rr); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+  g.stroke();
   // cenário: árvores, pedras e prédios
   const px = 300 / WM;
   for (const o of placed) {
@@ -1028,7 +1215,8 @@ function drawMinimap() {
   c.save(); c.beginPath(); c.arc(R, R, R - 7, 0, 7); c.clip();
   const sizePx = mmRange * 2 / 300 * WM;
   c.fillStyle = '#1a2a1a'; c.fillRect(0, 0, W, W);
-  c.drawImage(worldMap, w2m(S.pos.x) - sizePx / 2, w2m(S.pos.z) - sizePx / 2, sizePx, sizePx, 0, 0, W, W);
+  const MP = S.interior ? S.interior.back : S.pos; // dentro de casa: mostra a porta
+  c.drawImage(worldMap, w2m(MP.x) - sizePx / 2, w2m(MP.z) - sizePx / 2, sizePx, sizePx, 0, 0, W, W);
   const pt = (x, z) => [R + (x - S.pos.x) / mmRange * R, R + (z - S.pos.z) / mmRange * R];
   const inside = (x, y) => Math.hypot(x - R, y - R) < R - 9;
   for (const m of S.monsters) if (!m.dead) {
@@ -1074,10 +1262,11 @@ addEventListener('keydown', e => {
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
   if (S.paused) return;
   if (k === 'tab') { e.preventDefault(); tabTarget(); return; }
-  if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
+  if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; if (!S.riding) S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
   if (k >= '1' && k <= '9') { useSlot(+k - 1); return; }
   if (k === 'r') { if (S.target && !S.target.isNpc && !S.target.dead) { S.autoAttack = !S.autoAttack; log(S.autoAttack ? 'Ataque automático ligado.' : 'Ataque automático desligado.'); } else msgOnce('sel', 'Selecione um inimigo (Tab).'); return; }
-  if (k === 'x') { if (!S.p.dead) { S.sitting = !S.sitting; S.autoAttack = false; } return; }
+  if (k === 'x') { if (!S.p.dead) { if (S.riding) dismount(); S.sitting = !S.sitting; S.autoAttack = false; } return; }
+  if (k === 'm') { toggleMount(); return; }
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.left = mouse.right = false; });
@@ -1137,13 +1326,13 @@ function toggleMenu() {
   $('m-2d').onclick = () => { save3d(); location.href = '2d.html'; };
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
-const SAVE_FIELDS3 = ['charId', 'pet', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
+const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
 function save3d() {
   if (!S.p || !HAS_SRV) return;
   const s = {}; for (const k of SAVE_FIELDS3) s[k] = S.p[k];
   // a posição do 2D é preservada; a do 3D vai em pos3d
   s.mapId = S.orig.mapId || 'vila'; s.x = S.orig.x; s.y = S.orig.y; s.uid = Math.max(S.orig.uid || 1, 1000 + S.uid);
-  s.pos3d = { x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw };
+  s.pos3d = S.interior ? { x: S.interior.back.x, z: S.interior.back.z, yaw: S.interior.back.yaw } : { x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw };
   s.savedAt = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) { }
   fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s), keepalive: true })
@@ -1180,7 +1369,7 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > 170) c.position.x = -170; }
-    updateNature(S.time);
+    updateNature(S.time); updatePads(dt); updatePortals(dt);
     if (S.time - S.lastSave > 30) save3d();
   }
 }
@@ -1194,7 +1383,7 @@ function draw(dt) {
     const head = new THREE.Vector3(P.x, P.y + 1.4 - Math.max(0, 1.6 - cam.dist) * 0.3, P.z);
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     let cx = P.x - Math.sin(cam.viewYaw) * cp * cam.dist, cz = P.z - Math.cos(cam.viewYaw) * cp * cam.dist, cy = head.y + sp * cam.dist;
-    const gy = heightAt(cx, cz) + 0.5; if (cy < gy) cy = gy;
+    const gy = groundAt(cx, cz) + 0.5; if (cy < gy) cy = gy;
     const camPos = new THREE.Vector3(cx, cy, cz), dir = camPos.clone().sub(head), len = dir.length();
     camRay.set(head, dir.normalize()); camRay.far = len;
     const near = occluders.filter(o => Math.abs(o.position.x - P.x) < 30 && Math.abs(o.position.z - P.z) < 30);
@@ -1305,7 +1494,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -1341,7 +1530,7 @@ function fbPick(sx, sy) {
     const a = o.userData.asset;
     return { kind: 'cenario', id: a, name: ASSET_NAMES[a] || a, wpos: { x: o.position.x, y: o.position.y, z: o.position.z }, r: 2, x: o.position.x, y: o.position.z, tile: tileOf(o.position.x, o.position.z), codigo: ASSETS[a] ? `${ASSETS[a]} (modelo KayKit) · js3d/main3d.js → buildWorld (posição/escala) e TYPE_SCALE` : `js3d/trees3d.js → árvore feita em código ('${a}') · js3d/main3d.js → buildWorld (onde nasce)`, details: { modelo: a, versao: '3D' } };
   }
-  const zn = zoneAt(pt.x, pt.z), rd = roadDist(pt.x, pt.z), lake = Math.hypot(pt.x - LAKE.x, pt.z - LAKE.z) < LAKE.r;
+  const zn = zoneAt(pt.x, pt.z), rd = roadDist(pt.x, pt.z), lake = lakeDist(pt.x, pt.z) < LAKE.r;
   const what = lake ? 'Lago' : rd < 3 ? 'Estrada de terra' : pt.y > 6 ? 'Encosta / montanha' : 'Chão';
   return { kind: 'terreno', id: lake ? 'lago' : rd < 3 ? 'estrada' : 'chao', name: `${what} — ${zn.name}`, wpos: { x: pt.x, y: pt.y, z: pt.z }, r: 1.2, x: pt.x, y: pt.z, tile: tileOf(pt.x, pt.z), codigo: 'js3d/world3d.js → heightAt (relevo), groundColor (cores), ROADS/LAKE/ZONES', details: { regiao: zn.id, altura: +pt.y.toFixed(1), versao: '3D' } };
 }
@@ -1360,6 +1549,7 @@ function fbArea(x0, y0, x1, y1) {
 // teleporte do Painel do Mestre
 function teleport3d(x, z) {
   const r = resolve(x, z, 0.5);
+  if (S.interior) leaveInterior(true);
   Object.assign(S.pos, { x: r.x, z: r.z, y: heightAt(r.x, r.z), vy: 0, ground: true });
   setTarget(null); S.casting = null; $('castbar3d').classList.add('hidden');
   ring(S.pos, 2.2, '#9fe3ff'); ring(S.pos, 1.2, '#ffd76a'); Sound.play('portal');

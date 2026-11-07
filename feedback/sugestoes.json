@@ -1511,9 +1511,10 @@
       "sp": "20/20"
     },
     "id": "S-032",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:34:29",
-    "imagem": "img/S-032.png"
+    "imagem": "img/S-032.png",
+    "resposta": "Corrigido: na divisa entre duas regiões a música ficava trocando sem parar e as duas tocavam juntas. Agora há uma margem antes de trocar. Se houver duas janelas do jogo abertas, só a última que você usou toca som."
   },
   {
     "texto": "ficou aparecendo 'alvo fora do alcance' como arqueiro o tempo todo mesmo que eu tenha afastado muito do monstro. Deveria depois de certo ponto parar a posicao de combate por padrao como no wow",
@@ -1567,9 +1568,10 @@
       "sp": "20/20"
     },
     "id": "S-033",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:35:49",
-    "imagem": "img/S-033.png"
+    "imagem": "img/S-033.png",
+    "resposta": "Se você se afastar bastante do alvo (como no WoW), o personagem sai do modo de combate e a mensagem \"Alvo fora de alcance\" para. Muito longe, o alvo também é desmarcado."
   },
   {
     "texto": "este lago ficou muito artificial, muito perfeitinho, muito fake. Queria agua mais real. mas tbm quruia vitorias regias que eu pudessse pular em cima delas",
@@ -1613,9 +1615,10 @@
       "sp": "20/20"
     },
     "id": "S-034",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:36:30",
-    "imagem": "img/S-034.png"
+    "imagem": "img/S-034.png",
+    "resposta": "O lago ficou com margem irregular, fundo mais fundo no meio, água com ondas, brilho, cor rasa perto da beira, espuma e juncos nas margens. As vitórias-régias agora são grandes e boiam: dá para pular de uma para outra, até o meio do lago."
   },
   {
     "texto": "gostaria que ALGUMAS das cases tivessem portais tipo do ragnarok, onde a pessoa entra e vai pra outra tela. Nesse ambiente interno podem ter NPCs um npc importante que eu queria era o da montaria. Conversando com ele, ele me daria a opção de uma montaria, pra que eu subisse em cima de um bicho e pudesse andar mais rapido entre o lugares",
@@ -1658,8 +1661,273 @@
       "sp": "20/20"
     },
     "id": "S-035",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T17:38:36",
-    "imagem": "img/S-035.png"
+    "imagem": "img/S-035.png",
+    "resposta": "Duas casas da vila agora têm portal na porta: a Taverna Caneca Alegre (Dona Rosa vende suco que recupera SP, e o Velho Gui conta histórias) e o Estábulo do Tomé. O Tomé te dá uma montaria à escolha (Corcel Lanudo, da Noite ou Ruivo). Lá fora, aperte M para montar ou desmontar (≈70% mais rápido; atacar desmonta)."
+  },
+  {
+    "texto": "quero criar a feature de \"skin\". Preciso criar um local de skins pagas e quero usar como referencia o que existe hoje no CS Go e no league of legends, pois sei que ambos jogos tem um mercdo infinito de skin. Porem serão uma moeda que nao será o zenny e sim terá outro nome tipo gemas mas nao pode ser gemas e sim algo interessante.Essas moedas especiais seriam compradas com dinheiro real, mas so coisas esteticas, nada que dê vantagem pra pessoa. Outra coisa que ela poderia comprar era montaria com cash",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (220×151 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -68,
+        17
+      ],
+      "pos": [
+        -68,
+        17
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guardião Sagrado",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "113/113",
+      "sp": "20/20"
+    },
+    "id": "S-036",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:44:48",
+    "imagem": "img/S-036.png"
+  },
+  {
+    "texto": "montanhas muito feias e irreais . Melhore esse mundo aberto por favor esteticamente. Se inspire em skyrim. Nao obviamente com os graficos foda, mas da pra ser bem melhor, especialmente que nao faz sentido arvores em cima de montanha, elas nascem da terra",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (588×337 px) (sobre: Barra de atalhos, Ícones de buff)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Montanha",
+        "versao": "3D",
+        "interface": [
+          "Barra de atalhos",
+          "Ícones de buff"
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -138,
+        7
+      ],
+      "pos": [
+        -138,
+        7
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-037",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:49:36",
+    "imagem": "img/S-037.png"
+  },
+  {
+    "texto": "Eu gostaria que no onboard ao criar um novo personagem ele fosse um pouco mais guiado e mais Óbvio o que precisava o que precisaria ser feito escolhido até o personagem ser criado então eu gostaria inclusive de um onboard inspirado em MMO rpgs e eu gostaria que antes de escolher outras coisas eu tivesse que escolher uma raça e pudesse escolher entre três humano elfo e anão as raças elas proporcionariam alguns atributos diferentes sendo que não são muito expressivamente diferentes e sim dão uma leve vantagem entre uma raça e outra e também Eles teriam fins mais estéticos do que qualquer coisa aliás por enquanto eu quero que eles sejam apenas estéticos",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (102×95 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -45,
+        25
+      ],
+      "pos": [
+        -45,
+        25
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-038",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:52:20",
+    "imagem": "img/S-038.png"
+  },
+  {
+    "texto": "Esse lobo ficou muito Quadradão muito horrível muito com cara de Minecraft Assim como as pedras ficaram muito quadradonas eu quero que você leve a essência desse meu feedback sobre as coisas serem muito quadradonas ou muito artificiais e leve para tudo de forma com que a gente consiga Ir melhorando continuamente os monstros e os gráficos eu não quero algo que seja tão escancaradamente com o formato geométrico",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (66×49 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Cinzento": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Cinzento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        60,
+        -29
+      ],
+      "pos": [
+        60,
+        -29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-039",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:53:14",
+    "imagem": "img/S-039.png"
+  },
+  {
+    "texto": "Eu preciso que um dos menus à direita seja uma verdadeira Wiki a respeito dos Monstros onde eu consiga consultar facilmente todos os monstros como um grande Pokédex digamos assim e eu consiga ver todas as informações sobre eles como os drops as possibilidades de drops no quesito chances o que a carta deles faz e tudo o que é pertinente sobre eles desde habilidades desde HP desde tudo de nível Ou seja todos os portos que são pertinentes aos Monstros raça e etc eu preciso que esteja tudo em uma Wiki e ela seja facilmente encontrada por um dos Comandos do canto direito da tela",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (303×178 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -9,
+        -27
+      ],
+      "pos": [
+        -9,
+        -27
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-040",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:54:29",
+    "imagem": "img/S-040.png"
+  },
+  {
+    "texto": "todos os bonecos ficaram com rosto muuuito feio de cu e nao quero essa careta tao feia assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (245×204 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -6,
+        -23
+      ],
+      "pos": [
+        -6,
+        -23
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-041",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T17:54:49",
+    "imagem": "img/S-041.png"
   }
 ]

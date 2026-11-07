@@ -81,3 +81,7 @@ body.g3d { background: #9fd3ff; }
 .adm-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .adm-chip { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-soft); background: rgba(0, 0, 0, 0.3); color: var(--text); font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .adm-chip:hover { border-color: var(--gold); background: rgba(201, 162, 74, 0.18); }
+
+/* escurece a tela ao passar por um portal */
+#fade3d { position: fixed; inset: 0; background: #05070c; opacity: 0; pointer-events: none; z-index: 400; transition: opacity 0.25s; }
+#fade3d.on { opacity: 1; }

@@ -114,8 +114,17 @@ const Sound = {
     setInterval(() => this.tick(), 40);
     // aba escondida = silêncio (evita duas abas do jogo tocando ao mesmo tempo)
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) this.ctx.suspend(); else this.ctx.resume();
+      if (document.hidden) this.ctx.suspend(); else if (!this.muted) this.ctx.resume();
     });
+    // duas janelas do jogo visíveis: só a última que você usou toca som
+    try {
+      const ch = this.channel = new BroadcastChannel('aethra-audio'), me = Math.random().toString(36).slice(2);
+      let last = 0;
+      const claim = () => { const now = Date.now(); if (!this.muted && now - last < 2000) return; last = now; if (this.muted) { this.muted = false; if (!document.hidden) this.ctx.resume(); } ch.postMessage(me); };
+      ch.onmessage = e => { if (e.data !== me) { this.muted = true; this.ctx.suspend(); } };
+      addEventListener('focus', claim); addEventListener('pointerdown', claim, true); addEventListener('keydown', claim, true);
+      claim();
+    } catch (e) { }
   },
   musicVol: 1, sfxVol: 1,
   // volumes de 0 a 1 (multiplicam o nível padrão de música e efeitos)
