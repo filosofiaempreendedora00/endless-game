@@ -1,0 +1,18 @@
+# Crônicas de Aethra — guia para sessões de desenvolvimento
+
+Projeto pessoal de longo prazo do Roberto: um RPG 2D no navegador, inspirado no *estilo* de MMORPGs clássicos (classes em Y, cartas de monstros, Nível de Base/Classe, drops, trilha sonora). A ideia é evoluir em iterações pequenas até ficar bom para publicar.
+
+## Regras do projeto
+- **Tudo original**: nomes, monstros, mapas, arte e música próprios. Inspiração em sistemas, nunca cópia de conteúdo de jogos existentes.
+- **Interface e textos em português (pt-BR).**
+- **Sem build e sem dependências**: JS puro com scripts globais carregados por `index.html` (ordem: data → audio → world → render → ui → game). Precisa funcionar abrindo o `index.html` direto (file://), então não use ES modules nem fetch de arquivos locais.
+- **Conteúdo é guiado por dados**: classes, habilidades, itens, monstros e mapas ficam em `js/data.js`. Prefira adicionar dados a escrever casos especiais na lógica.
+- O save fica no `localStorage` (`SAVE_KEY`). Se mudar o formato, mantenha compatibilidade ou troque a versão da chave.
+
+## Testar
+- `python3 -m http.server 8777` e abrir http://localhost:8777 (há um `.claude/launch.json`).
+- Comandos de teste no chat do jogo: `/taxa`, `/nivel`, `/classe`, `/zeny`, `/item`, `/carta`, `/ir`, `/cura`, `/resetar`.
+- Com o painel do navegador oculto, o `requestAnimationFrame` pausa; para testes por script, avance o jogo chamando `update(1/60)` em loop.
+
+## Repositório
+- GitHub: https://github.com/filosofiaempreendedora00/endless-game — o Roberto pediu para ir salvando o progresso lá (commit + push após cada etapa concluída).
