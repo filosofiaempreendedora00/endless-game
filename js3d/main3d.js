@@ -698,6 +698,17 @@ function updatePlates() {
     shown.add(e);
   }
   for (const [e, el] of plateEls) if (!shown.has(e)) { el.remove(); plateEls.delete(e); }
+  // barras de HP e SP logo abaixo dos pés do personagem (como no 2D)
+  let pb = $('mybars');
+  if (!pb) { pb = document.createElement('div'); pb.id = 'mybars'; pb.innerHTML = '<div class="hp"><div></div></div><div class="sp"><div></div></div>'; $('plates').appendChild(pb); }
+  const ps = toScreen(tmpV.set(P.x, S.pos.y, P.z));
+  if (ps.vis && S.p) {
+    pb.style.display = '';
+    pb.style.transform = `translate(${ps.x}px, ${ps.y + 6}px) translate(-50%, 0)`;
+    pb.children[0].firstChild.style.width = (S.p.hp / S.p.d.maxHp * 100) + '%';
+    pb.children[1].firstChild.style.width = (S.p.sp / S.p.d.maxSp * 100) + '%';
+    pb.classList.toggle('low', S.p.hp / S.p.d.maxHp < 0.3);
+  } else pb.style.display = 'none';
   for (let i = S.floaters.length - 1; i >= 0; i--) {
     const f = S.floaters[i], k = (S.time - f.t0) / 1.1;
     if (k >= 1) { f.el.remove(); S.floaters.splice(i, 1); continue; }

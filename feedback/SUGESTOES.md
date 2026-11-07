@@ -2,15 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (1)
+## Pendentes (0)
 
-### S-006 · Área do mapa: Área da tela (108×45 px)
-- **Status:** pendente · **Quando:** 2026-11-07T16:32:01 · **Mapa:** Campos de Verdelume (tile [12, 22])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** quero que meu hp tbm apareça abaixo do personagem. SP também
-- ![print](img/S-006.png)
+_Nenhuma._
 
-## Feitas (5)
+## Feitas (6)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -48,3 +44,10 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** gostaria que o god mode permitisse que eu fosse qualquer classe. EU pudesse facilmente escolher ali a minha classe quando entrasse no menu do god mode
 - ![print](img/S-005.png)
 - **Resposta do Claude:** No Painel do Mestre (⌘+Z) há a seção "Classe": clique em qualquer uma das 13 classes para virar ela na hora (recebe a arma típica da classe). O botão "Todas as habilidades da classe no máximo" libera tudo para testar.
+
+### S-006 · Área do mapa: Área da tela (108×45 px)
+- **Status:** feito · **Quando:** 2026-11-07T16:32:01 · **Mapa:** Campos de Verdelume (tile [12, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quero que meu hp tbm apareça abaixo do personagem. SP também
+- ![print](img/S-006.png)
+- **Resposta do Claude:** No 3D agora há barras de HP (verde, fica vermelha abaixo de 30%) e SP (azul) logo abaixo dos pés do seu personagem, acompanhando ele. Obs.: o retângulo de seleção do Q também passou a aparecer enquanto você arrasta.

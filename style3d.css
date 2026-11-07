@@ -38,3 +38,10 @@ body.g3d { background: #9fd3ff; }
 #err3d { position: fixed; top: 22%; left: 50%; transform: translateX(-50%); z-index: 30; color: #ff4a4a; font-weight: 800; font-size: 17px; text-shadow: 0 2px 3px #000; pointer-events: none; opacity: 0; }
 #err3d.show { animation: errfade 1.6s ease-out forwards; }
 @keyframes errfade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+#mybars { position: absolute; left: 0; top: 0; width: 64px; }
+#mybars > div { height: 6px; background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(0, 0, 0, 0.85); border-radius: 3px; overflow: hidden; margin-top: 1px; }
+#mybars > div > div { height: 100%; }
+#mybars .hp > div { background: linear-gradient(#7dff8a, #3cc85a); }
+#mybars.low .hp > div { background: linear-gradient(#ff7a7a, #d83a3a); }
+#mybars .sp { height: 4px; }
+#mybars .sp > div { background: linear-gradient(#8ab8ff, #3a7aff); }

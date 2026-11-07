@@ -304,8 +304,9 @@
       "sp": "20/20"
     },
     "id": "S-006",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T16:32:01",
-    "imagem": "img/S-006.png"
+    "imagem": "img/S-006.png",
+    "resposta": "No 3D agora há barras de HP (verde, fica vermelha abaixo de 30%) e SP (azul) logo abaixo dos pés do seu personagem, acompanhando ele. Obs.: o retângulo de seleção do Q também passou a aparecer enquanto você arrasta."
   }
 ]
