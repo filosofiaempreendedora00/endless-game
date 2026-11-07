@@ -27,6 +27,7 @@ const FB = {
     document.addEventListener('mousedown', e => this.onUiDown(e), true);
     document.addEventListener('click', e => { if (this.picking && this.isUi(e.target)) { e.preventDefault(); e.stopPropagation(); } }, true);
     UI.render_sugestoes = () => this.renderList();
+    addEventListener('resize', () => this.placeBox());
     this.refresh().then(() => this.flushQueue());
   },
 
@@ -171,17 +172,21 @@ const FB = {
     const b = document.createElement('div');
     b.id = 'fbbox';
     const tl = target.tile ? ` · tile (${target.tile[0]}, ${target.tile[1]})` : '';
+    // estrutura: cabeçalho + miolo rolável + botões sempre visíveis embaixo
     b.innerHTML = `<div class="fb-head">💡 Sugestão sobre <b>${FB_KIND[target.kind]}</b>: ${esc(target.name)}</div>
       <div class="fb-meta">${esc(G.map.def.name)}${tl}</div>
-      ${shot ? `<img class="fb-shot" src="${shot}" alt="">` : ''}
-      <textarea id="fb-text" rows="4" placeholder="O que você quer mudar aqui?\nEx.: não gostei do visual desse monstro, deixe-o mais fofo."></textarea>
-      <div class="fb-cats">${FB_CATS.map(c => `<span class="fb-cat" data-c="${c}">${c}</span>`).join('')}</div>
+      <div class="fb-scroll">
+        ${shot ? `<img class="fb-shot" src="${shot}" alt="">` : ''}
+        <textarea id="fb-text" rows="4" placeholder="O que você quer mudar aqui?\nEx.: não gostei do visual desse monstro, deixe-o mais fofo."></textarea>
+        <div class="fb-cats">${FB_CATS.map(c => `<span class="fb-cat" data-c="${c}">${c}</span>`).join('')}</div>
+      </div>
       <div class="fb-actions"><span class="muted">Ctrl+Enter envia · Esc cancela</span><span><button class="btn" id="fb-cancel">Cancelar</button> <button class="btn gold" id="fb-send">Enviar sugestão</button></span></div>`;
     document.body.appendChild(b);
     this.box = b;
-    const bw = 360, bh = b.offsetHeight;
-    b.style.left = Math.max(8, Math.min(VW - bw - 8, sx + 14)) + 'px';
-    b.style.top = Math.max(8, Math.min(VH - bh - 8, sy - 40)) + 'px';
+    this.anchor = { sx, sy };
+    this.placeBox();
+    const img = b.querySelector('.fb-shot');
+    if (img && !img.complete) img.onload = () => this.placeBox(); // o print aumenta a caixa: reposiciona
     let cat = null;
     b.querySelectorAll('.fb-cat').forEach(el => el.onclick = () => {
       b.querySelectorAll('.fb-cat').forEach(x => x.classList.remove('on'));
@@ -197,6 +202,18 @@ const FB = {
     b.querySelector('#fb-send').onclick = () => this.submit(ta.value, cat);
     ta.focus();
     updatePauseBar();
+  },
+  // mantém a caixa inteira dentro da tela; clique na metade de baixo abre acima do ponto
+  placeBox() {
+    const b = this.box; if (!b || !this.anchor) return;
+    const { sx, sy } = this.anchor, m = 8;
+    const bw = b.offsetWidth, bh = b.offsetHeight;
+    let left = sx + 14;
+    if (left + bw > VW - m) left = sx - bw - 14;
+    left = Math.max(m, Math.min(VW - bw - m, left));
+    let top = sy > VH / 2 ? sy - bh - 10 : sy - 40;
+    top = Math.max(m, Math.min(VH - bh - m, top));
+    b.style.left = left + 'px'; b.style.top = top + 'px';
   },
   closeBox() { if (this.box) { this.box.remove(); this.box = null; } this.cur = null; },
 
