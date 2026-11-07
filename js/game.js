@@ -1030,7 +1030,7 @@ addEventListener('keydown', e => {
   if (G.paused && ((k >= '1' && k <= '9') || k === 'x' || k === 'f')) return;
   if (k >= '1' && k <= '9') { useHotbar(+k - 1); return; }
   switch (k) {
-    case 'enter': document.getElementById('chatinput').focus(); e.preventDefault(); break;
+    case 'enter': UI.setChatMin(false); document.getElementById('chatinput').focus(); e.preventDefault(); break;
     case 'escape': // cancela mira > fecha janelas > abre o menu do jogo
       if (G.targeting) G.targeting = null;
       else if (!UI.closeAll()) UI.showGameMenu();

@@ -18,6 +18,11 @@ const ADMIN = {
         <button class="btn ${G.god ? 'gold' : ''}" id="adm-god">${G.god ? '⚡ God Mode: LIGADO' : '⚡ God Mode: desligado'}</button>
         <span class="muted">Atalho: <b>Z</b> · com God Mode, <b>botão direito</b> no mapa do jogo teleporta</span>
       </div>
+      <h4 class="adm-h">🎭 Classe — clique para virar qualquer classe na hora</h4>
+      <div class="adm-classes">${[0, 1, 2].map(tier => `<div class="adm-crow">${Object.keys(CLASSES).filter(c => CLASSES[c].tier === tier).map(c =>
+        `<button class="btn small ${p.cls === c ? 'gold' : ''}" data-cls="${c}" title="${esc(CLASSES[c].desc)}">${CLASSES[c].icon} ${CLASSES[c].name}</button>`).join('')}</div>`).join('')}
+        <div class="adm-crow"><button class="btn small" data-cmd="skills">📚 Todas as habilidades da classe no máximo</button></div>
+      </div>
       <h4 class="adm-h">🌍 Teleporte — escolha o mapa e clique onde quer aparecer</h4>
       <div class="tabs">${Object.keys(MAPS).map(id => `<div class="tab ${id === this.sel ? 'on' : ''}" data-map="${id}">${MAPS[id].name}</div>`).join('')}</div>
       <canvas id="adm-map"></canvas>
@@ -38,6 +43,7 @@ const ADMIN = {
     const pl = this.pois(this.sel);
     body.querySelectorAll('[data-poi]').forEach(el => el.onclick = () => this.go(pl[+el.dataset.poi]));
     body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => this.cmd(el.dataset.cmd));
+    body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => this.setClass(el.dataset.cls));
     const cv = body.querySelector('#adm-map');
     cv.onmousemove = e => { this.hover = this.tileAt(e); this.draw(); this.info(); };
     cv.onmouseleave = () => { this.hover = null; this.draw(); this.info(); };
@@ -77,9 +83,47 @@ const ADMIN = {
     UI.log(`Teleportado: ${MAPS[o.map].name} (${tx}, ${ty}).`, 'sys');
   },
 
+  // vira qualquer classe na hora (sem requisito), ajustando habilidades, atalhos e arma
+  setClass(cls) {
+    const p = G.player; if (!p || !CLASSES[cls] || p.cls === cls) return;
+    const c = CLASSES[cls];
+    p.cls = cls;
+    p.jobLv = Math.min(p.jobLv, CONFIG.MAX_JOB_LV[c.tier]); p.jobExp = 0;
+    const allowed = new Set(lineage(cls).flatMap(k => CLASSES[k].skills));
+    for (const id in p.skills) if (!allowed.has(id)) { p.skillPoints += p.skills[id]; delete p.skills[id]; }
+    p.hotbar = p.hotbar.map(h => h && h.kind === 'skill' && !allowed.has(h.id) ? null : h);
+    const w = p.equip.arma;
+    // arma típica da classe (a que a 1ª classe da linhagem ganha de presente)
+    const tier1 = lineage(cls).find(k => CLASSES[k].tier === 1);
+    const sig = tier1 && (CLASSES[tier1].gift || []).map(g => g[0]).find(id => ITEMS[id].type === 'arma');
+    if (w && (!c.weapons.includes(ITEMS[w.id].wtype) || (sig && ITEMS[w.id].wtype !== ITEMS[sig].wtype))) unequip('arma');
+    if (sig && !p.equip.arma && !p.inventory.some(e => ITEMS[e.id].type === 'arma' && ITEMS[e.id].wtype === ITEMS[sig].wtype)) addItem(p, sig, 1);
+    if (sig && !p.equip.arma) { const en = p.inventory.find(e => ITEMS[e.id].type === 'arma' && ITEMS[e.id].wtype === ITEMS[sig].wtype && (ITEMS[e.id].lv || 1) <= p.baseLv); if (en) equipItem(en, p, true); }
+    if (!p.equip.arma) { // arma que a classe pode usar: do inventário ou o presente da classe
+      let en = p.inventory.find(e => ITEMS[e.id].type === 'arma' && c.weapons.includes(ITEMS[e.id].wtype) && (ITEMS[e.id].lv || 1) <= p.baseLv);
+      if (!en) {
+        const gift = lineage(cls).reverse().flatMap(k => CLASSES[k].gift || []).map(g => g[0]).find(id => ITEMS[id].type === 'arma' && (ITEMS[id].lv || 1) <= p.baseLv)
+          || Object.keys(ITEMS).find(id => ITEMS[id].type === 'arma' && c.weapons.includes(ITEMS[id].wtype) && (ITEMS[id].lv || 1) <= 1);
+        if (gift) { addItem(p, gift, 1); en = p.inventory.find(e => e.id === gift); }
+      }
+      if (en) equipItem(en, p, true);
+    }
+    recalc(p); p.hp = p.d.maxHp; p.sp = p.d.maxSp;
+    fx('levelup', p.x, p.y, 1.6, { text: c.name + '!' }); Sound.play('levelup');
+    UI.log(`👑 Mestre: agora você é ${c.icon} ${c.name}.`, 'card');
+    saveGame(); UI.markDirty();
+  },
+
   cmd(c) {
     const p = G.player;
-    if (c === 'cura') handleChat('/cura');
+    if (c === 'skills') {
+      for (const k of lineage(p.cls)) for (const id of CLASSES[k].skills) {
+        p.skills[id] = SKILLS[id].maxLv;
+        if (SKILLS[id].type === 'active') assignHotbar('skill', id, true);
+      }
+      recalc(p); UI.log('📚 Todas as habilidades da classe no nível máximo.', 'card');
+    }
+    else if (c === 'cura') handleChat('/cura');
     else if (c === 'lv1') handleChat('/nivel ' + (p.baseLv + 1));
     else if (c === 'lv5') handleChat('/nivel ' + (p.baseLv + 5));
     else if (c === 'job1') handleChat('/classe ' + (p.jobLv + 1));

@@ -40,7 +40,7 @@ Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa 
 | Som liga/desliga | **N** |
 | Pausar / Fazer sugestão / Ver sugestões | **P** / **Q** / **L** |
 | God Mode / Painel do Mestre (só no seu computador) | **Z** / **⌘ Cmd + Z** |
-| Chat / comandos | **Enter** (digite `/ajuda`) |
+| Chat / comandos | **Enter** (digite `/ajuda`) · botão — minimiza o chat |
 | Menu do jogo / voltar ao menu principal | **Esc** |
 | Zoom | Roda do mouse |
 

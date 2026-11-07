@@ -102,5 +102,167 @@
     "criadoEm": "2026-11-07T15:35:55",
     "imagem": "img/S-002.png",
     "resposta": "Música: ao trocar de mapa a música anterior agora baixa e é cortada em 0,6s, então só toca a do mapa atual; e o jogo silencia quando a aba não está visível (evita duas abas tocando juntas). Sugestão: Enter agora envia direto; Shift+Enter pula linha."
+  },
+  {
+    "texto": "gostaria de ter alguma forma de minimizar esse chat pra ele nao me atrapalhar quando eu nao o quisesse",
+    "categoria": null,
+    "versao": "0.1.0 (MVP)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "10,29-17,33",
+      "nome": "Área de 8×5 tiles",
+      "codigo": "js/world.js (geração de campos) · js/data.js → MAPS.campos",
+      "detalhes": {
+        "tiles": {
+          "de": [
+            10,
+            29
+          ],
+          "ate": [
+            17,
+            33
+          ]
+        },
+        "monstros": {},
+        "npcs": [],
+        "cenario": {}
+      }
+    },
+    "mapa": {
+      "id": "campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        10,
+        29
+      ],
+      "pos": [
+        462,
+        999
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 2,
+      "nivelClasse": 5,
+      "hp": "62/62",
+      "sp": "17/17"
+    },
+    "id": "S-003",
+    "status": "feito",
+    "criadoEm": "2026-11-07T15:42:56",
+    "imagem": "img/S-003.png",
+    "resposta": "Chat agora tem botão \"—\" para minimizar: vira um botãozinho \"💬 Chat\" que mostra quantas mensagens novas chegaram. Clique nele ou aperte Enter para abrir. A escolha fica lembrada."
+  },
+  {
+    "texto": "gostaria que isso aqui ficasse la em cima ao lado do card pricipal do meu nome e não aqui embaixo",
+    "categoria": null,
+    "versao": "0.1.0 (MVP)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "19,31-27,33",
+      "nome": "Área de 9×3 tiles",
+      "codigo": "js/world.js (geração de campos) · js/data.js → MAPS.campos",
+      "detalhes": {
+        "tiles": {
+          "de": [
+            19,
+            31
+          ],
+          "ate": [
+            27,
+            33
+          ]
+        },
+        "monstros": {},
+        "npcs": [],
+        "cenario": {}
+      }
+    },
+    "mapa": {
+      "id": "campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        19,
+        31
+      ],
+      "pos": [
+        753,
+        1041
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 2,
+      "nivelClasse": 5,
+      "hp": "62/62",
+      "sp": "17/17"
+    },
+    "id": "S-004",
+    "status": "feito",
+    "criadoEm": "2026-11-07T15:43:41",
+    "imagem": "img/S-004.png",
+    "resposta": "A barra de atalhos (1–9) foi para o topo, ao lado do card com seu nome; os ícones de buff ficam logo abaixo dela. Obs.: ao marcar uma área por cima da interface, a sugestão agora também registra quais partes da interface estavam dentro."
+  },
+  {
+    "texto": "gostaria que o god mode permitisse que eu fosse qualquer classe. EU pudesse facilmente escolher ali a minha classe quando entrasse no menu do god mode",
+    "categoria": null,
+    "versao": "0.1.0 (MVP)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "13,13-33,33",
+      "nome": "Área de 21×21 tiles",
+      "codigo": "js/world.js (geração de campos) · js/data.js → MAPS.campos",
+      "detalhes": {
+        "tiles": {
+          "de": [
+            13,
+            13
+          ],
+          "ate": [
+            33,
+            33
+          ]
+        },
+        "monstros": {
+          "Gotinha": 3,
+          "Coelho-Chifre": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Árvore": 15,
+          "Pedra": 2
+        }
+      }
+    },
+    "mapa": {
+      "id": "campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        13,
+        13
+      ],
+      "pos": [
+        751,
+        756
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 2,
+      "nivelClasse": 5,
+      "hp": "62/62",
+      "sp": "17/17"
+    },
+    "id": "S-005",
+    "status": "feito",
+    "criadoEm": "2026-11-07T15:44:52",
+    "imagem": "img/S-005.png",
+    "resposta": "No Painel do Mestre (⌘+Z) há a seção \"Classe\": clique em qualquer uma das 13 classes para virar ela na hora (recebe a arma típica da classe). O botão \"Todas as habilidades da classe no máximo\" libera tudo para testar."
   }
 ]

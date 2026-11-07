@@ -12,6 +12,7 @@
   <canvas id="game"></canvas>
 
   <div id="hud" class="hidden">
+    <div id="topbar">
     <div id="status" class="panel">
       <div class="st-top"><span id="st-name"></span><span id="st-class"></span></div>
       <div class="st-lv"><span>Nv. Base <b id="st-blv"></b></span><span>Nv. Classe <b id="st-jlv"></b></span></div>
@@ -23,7 +24,11 @@
       <div id="st-alert"></div>
       <div id="st-god" class="hidden">⚡ GOD MODE <span>(Z desliga · ⌘Z painel)</span></div>
     </div>
-    <div id="buffs"></div>
+    <div id="topcol">
+      <div id="hotbar"></div>
+      <div id="buffs"></div>
+    </div>
+    </div>
     <div id="minimap-wrap" class="panel">
       <div id="mapname"></div>
       <canvas id="minimap" width="168" height="126"></canvas>
@@ -38,8 +43,8 @@
       <button data-win="help" title="Ajuda (H)">❔<span>H</span></button>
       <button id="btn-sound" title="Som (N)">🔊<span>N</span></button>
     </div>
-    <div id="hotbar"></div>
     <div id="chat" class="panel">
+      <div class="chat-head"><span>💬 Chat <span id="chat-unread"></span></span><button id="chat-min" title="Minimizar / abrir o chat">—</button></div>
       <div id="log"></div>
       <input id="chatinput" maxlength="120" placeholder="Enter para falar • /ajuda para comandos" autocomplete="off">
     </div>

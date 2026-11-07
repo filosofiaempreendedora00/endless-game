@@ -69,6 +69,13 @@ const FB = {
     let target, shot;
     if (Math.hypot(d.ex - d.sx, d.ey - d.sy) > 12) {
       target = this.pickArea(d.wx, d.wy, d.ewx, d.ewy);
+      // a área também pode cobrir partes da interface (que não aparecem no print)
+      const ui = this.uiInRect(Math.min(d.sx, d.ex), Math.min(d.sy, d.ey), Math.max(d.sx, d.ex), Math.max(d.sy, d.ey));
+      if (ui.length) {
+        target.details.interface = ui;
+        target.name += ` (sobre: ${ui.join(', ')})`;
+        target.codigo += ' · interface: js/ui.js, style.css, index.html';
+      }
       shot = this.capture(Math.min(d.sx, d.ex), Math.min(d.sy, d.ey), Math.abs(d.ex - d.sx), Math.abs(d.ey - d.sy));
     } else {
       target = this.pickAt(d.wx, d.wy);
@@ -91,6 +98,16 @@ const FB = {
       codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
       details: { elemento: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).join('.') : ''), tooltip: tip ? tip.dataset.tip : undefined },
     }, e.clientX, e.clientY, null);
+  },
+
+  // partes da interface que se sobrepõem a um retângulo da tela
+  uiInRect(x0, y0, x1, y1) {
+    const parts = [['#status', 'Painel de status'], ['#hotbar', 'Barra de atalhos'], ['#buffs', 'Ícones de buff'], ['#minimap-wrap', 'Minimapa'], ['#menubar', 'Menu lateral'], ['#chat', 'Chat']];
+    const out = [];
+    const hit = el => { const r = el.getBoundingClientRect(); return r.width && r.left < x1 && r.right > x0 && r.top < y1 && r.bottom > y0; };
+    for (const [sel, name] of parts) { const el = document.querySelector(sel); if (el && el.offsetParent !== null && hit(el)) out.push(name); }
+    document.querySelectorAll('#windows .win').forEach(w => { if (hit(w)) out.push('Janela "' + w.querySelector('.win-head .t').textContent + '"'); });
+    return out;
   },
 
   /* ---------- o que está embaixo do clique ---------- */

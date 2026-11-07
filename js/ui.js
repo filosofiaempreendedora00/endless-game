@@ -42,6 +42,10 @@ const UI = {
       tip.style.left = x + 'px'; tip.style.top = y + 'px';
     });
     // chat
+    // chat minimizável (lembra a escolha)
+    $('chat-min').onclick = e => { e.stopPropagation(); this.setChatMin(!this.chatMin); };
+    $('chat').addEventListener('click', () => { if (this.chatMin) this.setChatMin(false); });
+    try { this.setChatMin(localStorage.getItem('aethra_chat_min') === '1'); } catch (e) { }
     const ci = $('chatinput');
     ci.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
@@ -55,12 +59,22 @@ const UI = {
   },
 
   markDirty() { this.dirty = true; },
+  chatMin: false, unread: 0,
+  setChatMin(on) {
+    this.chatMin = on;
+    $('chat').classList.toggle('min', on);
+    $('chat-min').textContent = on ? '▲' : '—';
+    $('chat-min').title = on ? 'Abrir o chat' : 'Minimizar o chat';
+    if (!on) { this.unread = 0; $('chat-unread').textContent = ''; $('log').scrollTop = $('log').scrollHeight; }
+    try { localStorage.setItem('aethra_chat_min', on ? '1' : '0'); } catch (e) { }
+  },
   log(text, cls = 'sys') {
     const l = $('log');
     const d = document.createElement('div'); d.className = cls; d.textContent = text;
     l.appendChild(d);
     while (l.children.length > 100) l.removeChild(l.firstChild);
     l.scrollTop = l.scrollHeight;
+    if (this.chatMin && cls !== 'dev') { this.unread++; $('chat-unread').textContent = `(${this.unread})`; }
   },
   hideTip() { $('tooltip').style.display = 'none'; },
 
