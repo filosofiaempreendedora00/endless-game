@@ -2,111 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (17)
+## Pendentes (0)
 
-### S-042 · Área do mapa: Área da tela (275×234 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:21:17 · **Mapa:** Campos de Verdelume (tile [3, -28])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostaria que as 3 montarias oferecidas tivessem gráficos muuuuit melhores, pq ta muito feio
-- ![print](img/S-042.png)
+_Nenhuma._
 
-### S-043 · Área do mapa: Área da tela (266×271 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:21:52 · **Mapa:** Campos de Verdelume (tile [27, 23])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** quando eu pulo com a montaria, meus bracos ficam pra cima e pra baixo mto bugado e isso nao é legal
-- ![print](img/S-043.png)
-
-### S-044 · Área do mapa: Área da tela (213×217 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:22:49 · **Mapa:** Bosque Sussurrante (tile [77, 35])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o ataque dos monstros tem que ter algum tipo de animacao e nao o bicho ficando tudo parado. Eles tem que ser 3ds tbm,. Esse lobo melhorou mas ainda ta feio
-- ![print](img/S-044.png)
-
-### S-045 · Interface: Janela "Equipamento" — "—Cabeça (meio) —Cabeça (baixo) —Escudo —Botas —Acessório 2"
-- **Status:** pendente · **Quando:** 2026-11-07T18:24:52 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** quero ser capaz de, dentro de uma janela, eu conseguir tbm selecionar a parte exata que eu quero selecionar e nao ter meio que uma autoselecao. Tbm quero poder mexer o meu personagem do centro com o botao esquerdo do mouse e mexendo nele pra dar voltinha e nesse caso do meu ficou com arma cortando pro lado de fora e isso nao é legal ter pedeçao dele prro lado de fora. E ja falei que esse rosto é horrendo, precisa melhorar muito pra parecer mais humano
-- ![print](img/S-045.png)
-
-### S-046 · Área do mapa: Área da tela (289×220 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:34:52 · **Mapa:** Campos de Verdelume (tile [4, -24])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Gostaria que o mago mesmo sem nenhum spell tivesse uma alta ataque que fosse ranged ranged melhor dizendo porém Claro com um Range menor do que o do arqueiro eu quero que você inspire o auto ataque dele inclusive bem como as demais habilidades em Skyrim e quando eu digo habilidade de uma água não só de uma água e sim como das evoluções do Mago você se inspire com um bom senso no Skyrim
-- ![print](img/S-046.png)
-
-### S-047 · Interface: Janela "Habilidades" — "Pontos de habilidade: 4 (1 por Nv. de Classe)🌱 Aprendiz🩹 P"
-- **Status:** pendente · **Quando:** 2026-11-07T18:35:47 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** as habilidades tem que vir de forma analoga, tanto as habilidades do personagem quanto do mascote
-- ![print](img/S-047.png)
-
-### S-048 · Interface: Janela "Árvore de Classes" — "Árvore de Classes✕"
-- **Status:** pendente · **Quando:** 2026-11-07T18:36:40 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** enquanto estou com o god mode ativado eu posso escolher quais quer masxoscotes e evolucoes e vai mudando na hora. So nao pode fazer isso o usuario comum
-- ![print](img/S-048.png)
-
-### S-049 · Interface: Janela "📖 Bestiário" — "💧GotinhaNv. 1🍄FungolinoNv. 3🐇Coelho-ChifreNv. 5🐝Abelha R"
-- **Status:** pendente · **Quando:** 2026-11-07T18:38:21 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** preciso queaqui no bestiario nao apareça emoji e sim carregasse o proprio monstro na miniatura e aqui do lado. Na miniatura do lado esquerdo fica como imagem e ali do lado do nome , maior, seria o monstro se mexendo, mesmo que parado
-- ![print](img/S-049.png)
-
-### S-050 · Área do mapa: Área da tela (288×253 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:39:34 · **Mapa:** Campos de Verdelume (tile [-10, -18])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o mago ainda ficou gigantesco, nao sei se vc mudou o tamanho dos personagems padronizando
-- ![print](img/S-050.png)
-
-### S-051 · Interface: Janela "Como Jogar" — "Como Jogar✕"
-- **Status:** pendente · **Quando:** 2026-11-07T18:40:28 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** esse help tbm tem que ficar dentro de algum lugar como confgiguracoes
-- ![print](img/S-051.png)
-
-### S-052 · Interface: Janela "Personagem" — "Personagem✕"
-- **Status:** pendente · **Quando:** 2026-11-07T18:41:18 · **Mapa:** Campos de Verdelume (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** essa tela de atributos pode ser unificada à de equipamentos, fazendo parte de um unico comando, uma unica janela organizada. Pode ser aba de equipamentos e atributos como switcher pra uma boa ui/ux
-- ![print](img/S-052.png)
-
-### S-053 · Área do mapa: Área da tela (58×67 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:41:49 · **Mapa:** Campos de Verdelume (tile [-22, -7])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** coelho ficou mtt feio , muito falso, gosto de bichos mais realistas em geral. Melhores os monstros que tao mais fakes
-- ![print](img/S-053.png)
-
-### S-054 · Área do mapa: Área da tela (320×62 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:42:15 · **Mapa:** Vila de Alvorada (tile [-119, -47])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** parecem meio flutuando. Melhore isso e outros elementos que parecem flutuar no jogo
-- ![print](img/S-054.png)
-
-### S-055 · Área do mapa: Área da tela (69×39 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:44:00 · **Mapa:** Campos de Verdelume (tile [17, 30])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** efeito de morte dos monstros tem que ser mais real e nao so sumir igual a abelha ficou pequena e sumiu. Todos tem que ter animacoes de morte. Uma default e outra mais rara
-- ![print](img/S-055.png)
-
-### S-056 · Área do mapa: Área da tela (357×111 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:45:04 · **Mapa:** Campos de Verdelume (tile [22, 71])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** agua meio bugada aqui. evite bugs de aguas nas extremidades
-- ![print](img/S-056.png)
-
-### S-057 · Área do mapa: Área da tela (130×111 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:45:55 · **Mapa:** Campos de Verdelume (tile [39, -66])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o afegao medio sem ser o master tbm preisa conseguir ver o mapa geral, muito importante. Com algum comando, pra que ele saiba onde está indo
-- ![print](img/S-057.png)
-
-### S-058 · Área do mapa: Área da tela (150×93 px)
-- **Status:** pendente · **Quando:** 2026-11-07T18:46:18 · **Mapa:** Campos de Verdelume (tile [7, -25])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** importante eu como master tbm possa trocar de raça em algum local, de alguma forma, mesmo depois de ja ter o personagem criado
-- ![print](img/S-058.png)
-
-## Feitas (41)
+## Feitas (58)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -396,3 +296,122 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** todos os bonecos ficaram com rosto muuuito feio de cu e nao quero essa careta tao feia assim
 - ![print](img/S-041.png)
 - **Resposta do Claude:** Rostos refeitos em todos os bonecos (jogador e NPCs): as sobrancelhas franzidas viraram retas e simpáticas, e o nariz ficou menor. Acabou a cara de bravo.
+
+### S-042 · Área do mapa: Área da tela (275×234 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:21:17 · **Mapa:** Campos de Verdelume (tile [3, -28])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostaria que as 3 montarias oferecidas tivessem gráficos muuuuit melhores, pq ta muito feio
+- ![print](img/S-042.png)
+- **Resposta do Claude:** Os 3 corcéis foram refeitos com corpo de cavalo: pescoço comprido, cabeça alongada com orelhas e chifrinhos, pernas longas com joelho e casco, crina e rabo esvoaçantes, sela de couro com estribos e manta caída nos lados. A lã continua como marca, na gola e acima dos cascos. Também pulam com as patas recolhidas.
+
+### S-043 · Área do mapa: Área da tela (266×271 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:21:52 · **Mapa:** Campos de Verdelume (tile [27, 23])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quando eu pulo com a montaria, meus bracos ficam pra cima e pra baixo mto bugado e isso nao é legal
+- ![print](img/S-043.png)
+- **Resposta do Claude:** Corrigido: montado, você fica sempre sentado na sela, também no pulo (os braços não sobem e descem mais).
+
+### S-044 · Área do mapa: Área da tela (213×217 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:22:49 · **Mapa:** Bosque Sussurrante (tile [77, 35])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o ataque dos monstros tem que ter algum tipo de animacao e nao o bicho ficando tudo parado. Eles tem que ser 3ds tbm,. Esse lobo melhorou mas ainda ta feio
+- ![print](img/S-044.png)
+- **Resposta do Claude:** Os monstros agora têm animação de ataque: o lobo prepara, dá o bote e abre a boca para morder; o coelho dá cabeçada com o chifre; a abelha mergulha e ferroa; a gosma se estica; o cogumelo dá cabeçada. O lobo foi refeito mais realista (costas escuras, peito profundo, focinho com mandíbula, rabo felpudo).
+
+### S-045 · Interface: Janela "Equipamento" — "—Cabeça (meio) —Cabeça (baixo) —Escudo —Botas —Acessório 2"
+- **Status:** feito · **Quando:** 2026-11-07T18:24:52 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** quero ser capaz de, dentro de uma janela, eu conseguir tbm selecionar a parte exata que eu quero selecionar e nao ter meio que uma autoselecao. Tbm quero poder mexer o meu personagem do centro com o botao esquerdo do mouse e mexendo nele pra dar voltinha e nesse caso do meu ficou com arma cortando pro lado de fora e isso nao é legal ter pedeçao dele prro lado de fora. E ja falei que esse rosto é horrendo, precisa melhorar muito pra parecer mais humano
+- ![print](img/S-045.png)
+- **Resposta do Claude:** No modo Q, dentro das janelas, o clique pega o elemento exato e arrastar marca exatamente a área que você quer (com print). Na janela do personagem, arraste o boneco do centro para girá-lo, e ele cabe inteiro (a arma não sai mais pra fora). Os rostos ganharam olhos humanos, com parte branca, íris redonda e brilho.
+
+### S-046 · Área do mapa: Área da tela (289×220 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:34:52 · **Mapa:** Campos de Verdelume (tile [4, -24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que o mago mesmo sem nenhum spell tivesse uma alta ataque que fosse ranged ranged melhor dizendo porém Claro com um Range menor do que o do arqueiro eu quero que você inspire o auto ataque dele inclusive bem como as demais habilidades em Skyrim e quando eu digo habilidade de uma água não só de uma água e sim como das evoluções do Mago você se inspire com um bom senso no Skyrim
+- ![print](img/S-046.png)
+- **Resposta do Claude:** Mago com cajado agora ataca à distância com um projétil arcano (alcance 4,5 m, menor que o do arqueiro, 6 m). Magias inspiradas em Skyrim: Mago tem Rajada de Fogo, Estilhaço de Gelo, Relâmpago e Barreira Arcana (novo escudo). Arquimago tem Bola de Fogo (explode em área, nova), Chuva de Meteoros, Nevasca (nova, congela) e Tempestade de Raios. Sábio tem Pilar de Terra, Runa de Fogo (nova, armadilha no chão) e Cura Maior.
+
+### S-047 · Interface: Janela "Habilidades" — "Pontos de habilidade: 4 (1 por Nv. de Classe)🌱 Aprendiz🩹 P"
+- **Status:** feito · **Quando:** 2026-11-07T18:35:47 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** as habilidades tem que vir de forma analoga, tanto as habilidades do personagem quanto do mascote
+- ![print](img/S-047.png)
+- **Resposta do Claude:** A janela de Habilidades ganhou abas 🧍 Personagem / 🐾 Mascote, no mesmo formato: o mascote mostra suas habilidades por estágio de evolução (liberadas ou com o nível em que liberam).
+
+### S-048 · Interface: Janela "Árvore de Classes" — "Árvore de Classes✕"
+- **Status:** feito · **Quando:** 2026-11-07T18:36:40 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** enquanto estou com o god mode ativado eu posso escolher quais quer masxoscotes e evolucoes e vai mudando na hora. So nao pode fazer isso o usuario comum
+- ![print](img/S-048.png)
+- **Resposta do Claude:** Com God Mode ligado, na Árvore de Classes → aba Mascotes, clique em qualquer mascote ou estágio para trocar na hora. Jogadores comuns não veem essa opção.
+
+### S-049 · Interface: Janela "📖 Bestiário" — "💧GotinhaNv. 1🍄FungolinoNv. 3🐇Coelho-ChifreNv. 5🐝Abelha R"
+- **Status:** feito · **Quando:** 2026-11-07T18:38:21 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** preciso queaqui no bestiario nao apareça emoji e sim carregasse o proprio monstro na miniatura e aqui do lado. Na miniatura do lado esquerdo fica como imagem e ali do lado do nome , maior, seria o monstro se mexendo, mesmo que parado
+- ![print](img/S-049.png)
+- **Resposta do Claude:** O Bestiário agora mostra o monstro de verdade: miniatura 3D na lista e, ao lado do nome, o monstro se mexendo (respira, gira devagar e de vez em quando ataca).
+
+### S-050 · Área do mapa: Área da tela (288×253 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:39:34 · **Mapa:** Campos de Verdelume (tile [-10, -18])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o mago ainda ficou gigantesco, nao sei se vc mudou o tamanho dos personagems padronizando
+- ![print](img/S-050.png)
+- **Resposta do Claude:** Medi: todas as classes tinham a mesma altura, mas 1,8 m com cabeça grande parecia gigante perto do mundo. Agora os personagens têm 1,5 m e as árvores ficaram maiores, deixando a proporção bem mais natural.
+
+### S-051 · Interface: Janela "Como Jogar" — "Como Jogar✕"
+- **Status:** feito · **Quando:** 2026-11-07T18:40:28 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** esse help tbm tem que ficar dentro de algum lugar como confgiguracoes
+- ![print](img/S-051.png)
+- **Resposta do Claude:** O botão de ajuda saiu do menu da direita. "Como jogar" fica no menu do Esc, junto de Configurações (a tecla H continua funcionando).
+
+### S-052 · Interface: Janela "Personagem" — "Personagem✕"
+- **Status:** feito · **Quando:** 2026-11-07T18:41:18 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** essa tela de atributos pode ser unificada à de equipamentos, fazendo parte de um unico comando, uma unica janela organizada. Pode ser aba de equipamentos e atributos como switcher pra uma boa ui/ux
+- ![print](img/S-052.png)
+- **Resposta do Claude:** Atributos e Equipamento viraram uma janela só, "Personagem", com abas 🛡️ Equipamento e 📊 Atributos (tecla C abre em Atributos e E em Equipamento; um único botão no menu).
+
+### S-053 · Área do mapa: Área da tela (58×67 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:41:49 · **Mapa:** Campos de Verdelume (tile [-22, -7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** coelho ficou mtt feio , muito falso, gosto de bichos mais realistas em geral. Melhores os monstros que tao mais fakes
+- ![print](img/S-053.png)
+- **Resposta do Claude:** O coelho foi refeito com proporções reais: anca grande, patas traseiras longas, orelhas compridas, olhos nas laterais, focinho que fuça e bigodes. O lobo e a abelha (tórax peludo, listras, olhos compostos, antenas, 6 patas e 4 asas) também ficaram mais realistas.
+
+### S-054 · Área do mapa: Área da tela (320×62 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:42:15 · **Mapa:** Vila de Alvorada (tile [-119, -47])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** parecem meio flutuando. Melhore isso e outros elementos que parecem flutuar no jogo
+- ![print](img/S-054.png)
+- **Resposta do Claude:** As árvores não flutuam mais: os troncos continuam para dentro da terra e, em encostas, assentam no ponto mais baixo do chão.
+
+### S-055 · Área do mapa: Área da tela (69×39 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:44:00 · **Mapa:** Campos de Verdelume (tile [17, 30])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** efeito de morte dos monstros tem que ser mais real e nao so sumir igual a abelha ficou pequena e sumiu. Todos tem que ter animacoes de morte. Uma default e outra mais rara
+- ![print](img/S-055.png)
+- **Resposta do Claude:** Os monstros agora morrem com animação: na morte comum, caem de lado (as abelhas despencam) e depois afundam devagar no chão. Na morte rara (~15%), brilham e se desfazem em faíscas de luz que sobem.
+
+### S-056 · Área do mapa: Área da tela (357×111 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:45:04 · **Mapa:** Campos de Verdelume (tile [22, 71])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** agua meio bugada aqui. evite bugs de aguas nas extremidades
+- ![print](img/S-056.png)
+- **Resposta do Claude:** Corrigido: a água só existe dentro do lago e some suavemente na margem (nada de "poças" de água em buracos do terreno fora dele).
+
+### S-057 · Área do mapa: Área da tela (130×111 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:45:55 · **Mapa:** Campos de Verdelume (tile [39, -66])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o afegao medio sem ser o master tbm preisa conseguir ver o mapa geral, muito importante. Com algum comando, pra que ele saiba onde está indo
+- ![print](img/S-057.png)
+- **Resposta do Claude:** Novo mapa para todos os jogadores: tecla G, botão 🗺️ no menu ou clique no minimapa. Mostra regiões, NPCs, chefes e onde você está (atualiza enquanto você anda).
+
+### S-058 · Área do mapa: Área da tela (150×93 px)
+- **Status:** feito · **Quando:** 2026-11-07T18:46:18 · **Mapa:** Campos de Verdelume (tile [7, -25])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** importante eu como master tbm possa trocar de raça em algum local, de alguma forma, mesmo depois de ja ter o personagem criado
+- ![print](img/S-058.png)
+- **Resposta do Claude:** No Painel do Mestre (⌘Z) há um cartão "Raça e aparência" para trocar raça (Humano, Elfo, Anão) e rosto/cabelo a qualquer momento.

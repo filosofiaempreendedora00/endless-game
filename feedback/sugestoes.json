@@ -1975,9 +1975,10 @@
       "sp": "27/27"
     },
     "id": "S-042",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:21:17",
-    "imagem": "img/S-042.png"
+    "imagem": "img/S-042.png",
+    "resposta": "Os 3 corcéis foram refeitos com corpo de cavalo: pescoço comprido, cabeça alongada com orelhas e chifrinhos, pernas longas com joelho e casco, crina e rabo esvoaçantes, sela de couro com estribos e manta caída nos lados. A lã continua como marca, na gola e acima dos cascos. Também pulam com as patas recolhidas."
   },
   {
     "texto": "quando eu pulo com a montaria, meus bracos ficam pra cima e pra baixo mto bugado e isso nao é legal",
@@ -2018,9 +2019,10 @@
       "sp": "27/27"
     },
     "id": "S-043",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:21:52",
-    "imagem": "img/S-043.png"
+    "imagem": "img/S-043.png",
+    "resposta": "Corrigido: montado, você fica sempre sentado na sela, também no pulo (os braços não sobem e descem mais)."
   },
   {
     "texto": "o ataque dos monstros tem que ter algum tipo de animacao e nao o bicho ficando tudo parado. Eles tem que ser 3ds tbm,. Esse lobo melhorou mas ainda ta feio",
@@ -2063,9 +2065,10 @@
       "sp": "27/27"
     },
     "id": "S-044",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:22:49",
-    "imagem": "img/S-044.png"
+    "imagem": "img/S-044.png",
+    "resposta": "Os monstros agora têm animação de ataque: o lobo prepara, dá o bote e abre a boca para morder; o coelho dá cabeçada com o chifre; a abelha mergulha e ferroa; a gosma se estica; o cogumelo dá cabeçada. O lobo foi refeito mais realista (costas escuras, peito profundo, focinho com mandíbula, rabo felpudo)."
   },
   {
     "texto": "quero ser capaz de, dentro de uma janela, eu conseguir tbm selecionar a parte exata que eu quero selecionar e nao ter meio que uma autoselecao. Tbm quero poder mexer o meu personagem do centro com o botao esquerdo do mouse e mexendo nele pra dar voltinha e nesse caso do meu ficou com arma cortando pro lado de fora e isso nao é legal ter pedeçao dele prro lado de fora. E ja falei que esse rosto é horrendo, precisa melhorar muito pra parecer mais humano",
@@ -2099,9 +2102,10 @@
       "sp": "27/27"
     },
     "id": "S-045",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:24:52",
-    "imagem": "img/S-045.png"
+    "imagem": "img/S-045.png",
+    "resposta": "No modo Q, dentro das janelas, o clique pega o elemento exato e arrastar marca exatamente a área que você quer (com print). Na janela do personagem, arraste o boneco do centro para girá-lo, e ele cabe inteiro (a arma não sai mais pra fora). Os rostos ganharam olhos humanos, com parte branca, íris redonda e brilho."
   },
   {
     "texto": "Gostaria que o mago mesmo sem nenhum spell tivesse uma alta ataque que fosse ranged ranged melhor dizendo porém Claro com um Range menor do que o do arqueiro eu quero que você inspire o auto ataque dele inclusive bem como as demais habilidades em Skyrim e quando eu digo habilidade de uma água não só de uma água e sim como das evoluções do Mago você se inspire com um bom senso no Skyrim",
@@ -2142,9 +2146,10 @@
       "sp": "32/32"
     },
     "id": "S-046",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:34:52",
-    "imagem": "img/S-046.png"
+    "imagem": "img/S-046.png",
+    "resposta": "Mago com cajado agora ataca à distância com um projétil arcano (alcance 4,5 m, menor que o do arqueiro, 6 m). Magias inspiradas em Skyrim: Mago tem Rajada de Fogo, Estilhaço de Gelo, Relâmpago e Barreira Arcana (novo escudo). Arquimago tem Bola de Fogo (explode em área, nova), Chuva de Meteoros, Nevasca (nova, congela) e Tempestade de Raios. Sábio tem Pilar de Terra, Runa de Fogo (nova, armadilha no chão) e Cura Maior."
   },
   {
     "texto": "as habilidades tem que vir de forma analoga, tanto as habilidades do personagem quanto do mascote",
@@ -2178,9 +2183,10 @@
       "sp": "32/32"
     },
     "id": "S-047",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:35:47",
-    "imagem": "img/S-047.png"
+    "imagem": "img/S-047.png",
+    "resposta": "A janela de Habilidades ganhou abas 🧍 Personagem / 🐾 Mascote, no mesmo formato: o mascote mostra suas habilidades por estágio de evolução (liberadas ou com o nível em que liberam)."
   },
   {
     "texto": "enquanto estou com o god mode ativado eu posso escolher quais quer masxoscotes e evolucoes e vai mudando na hora. So nao pode fazer isso o usuario comum",
@@ -2214,9 +2220,10 @@
       "sp": "32/32"
     },
     "id": "S-048",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:36:40",
-    "imagem": "img/S-048.png"
+    "imagem": "img/S-048.png",
+    "resposta": "Com God Mode ligado, na Árvore de Classes → aba Mascotes, clique em qualquer mascote ou estágio para trocar na hora. Jogadores comuns não veem essa opção."
   },
   {
     "texto": "preciso queaqui no bestiario nao apareça emoji e sim carregasse o proprio monstro na miniatura e aqui do lado. Na miniatura do lado esquerdo fica como imagem e ali do lado do nome , maior, seria o monstro se mexendo, mesmo que parado",
@@ -2250,9 +2257,10 @@
       "sp": "32/32"
     },
     "id": "S-049",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:38:21",
-    "imagem": "img/S-049.png"
+    "imagem": "img/S-049.png",
+    "resposta": "O Bestiário agora mostra o monstro de verdade: miniatura 3D na lista e, ao lado do nome, o monstro se mexendo (respira, gira devagar e de vez em quando ataca)."
   },
   {
     "texto": "o mago ainda ficou gigantesco, nao sei se vc mudou o tamanho dos personagems padronizando",
@@ -2293,9 +2301,10 @@
       "sp": "32/32"
     },
     "id": "S-050",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:39:34",
-    "imagem": "img/S-050.png"
+    "imagem": "img/S-050.png",
+    "resposta": "Medi: todas as classes tinham a mesma altura, mas 1,8 m com cabeça grande parecia gigante perto do mundo. Agora os personagens têm 1,5 m e as árvores ficaram maiores, deixando a proporção bem mais natural."
   },
   {
     "texto": "esse help tbm tem que ficar dentro de algum lugar como confgiguracoes",
@@ -2329,9 +2338,10 @@
       "sp": "32/32"
     },
     "id": "S-051",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:40:28",
-    "imagem": "img/S-051.png"
+    "imagem": "img/S-051.png",
+    "resposta": "O botão de ajuda saiu do menu da direita. \"Como jogar\" fica no menu do Esc, junto de Configurações (a tecla H continua funcionando)."
   },
   {
     "texto": "essa tela de atributos pode ser unificada à de equipamentos, fazendo parte de um unico comando, uma unica janela organizada. Pode ser aba de equipamentos e atributos como switcher pra uma boa ui/ux",
@@ -2365,9 +2375,10 @@
       "sp": "32/32"
     },
     "id": "S-052",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:41:18",
-    "imagem": "img/S-052.png"
+    "imagem": "img/S-052.png",
+    "resposta": "Atributos e Equipamento viraram uma janela só, \"Personagem\", com abas 🛡️ Equipamento e 📊 Atributos (tecla C abre em Atributos e E em Equipamento; um único botão no menu)."
   },
   {
     "texto": "coelho ficou mtt feio , muito falso, gosto de bichos mais realistas em geral. Melhores os monstros que tao mais fakes",
@@ -2410,9 +2421,10 @@
       "sp": "32/32"
     },
     "id": "S-053",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:41:49",
-    "imagem": "img/S-053.png"
+    "imagem": "img/S-053.png",
+    "resposta": "O coelho foi refeito com proporções reais: anca grande, patas traseiras longas, orelhas compridas, olhos nas laterais, focinho que fuça e bigodes. O lobo e a abelha (tórax peludo, listras, olhos compostos, antenas, 6 patas e 4 asas) também ficaram mais realistas."
   },
   {
     "texto": "parecem meio flutuando. Melhore isso e outros elementos que parecem flutuar no jogo",
@@ -2456,9 +2468,10 @@
       "sp": "32/32"
     },
     "id": "S-054",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:42:15",
-    "imagem": "img/S-054.png"
+    "imagem": "img/S-054.png",
+    "resposta": "As árvores não flutuam mais: os troncos continuam para dentro da terra e, em encostas, assentam no ponto mais baixo do chão."
   },
   {
     "texto": "efeito de morte dos monstros tem que ser mais real e nao so sumir igual a abelha ficou pequena e sumiu. Todos tem que ter animacoes de morte. Uma default e outra mais rara",
@@ -2499,9 +2512,10 @@
       "sp": "23/23"
     },
     "id": "S-055",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:44:00",
-    "imagem": "img/S-055.png"
+    "imagem": "img/S-055.png",
+    "resposta": "Os monstros agora morrem com animação: na morte comum, caem de lado (as abelhas despencam) e depois afundam devagar no chão. Na morte rara (~15%), brilham e se desfazem em faíscas de luz que sobem."
   },
   {
     "texto": "agua meio bugada aqui. evite bugs de aguas nas extremidades",
@@ -2542,9 +2556,10 @@
       "sp": "23/23"
     },
     "id": "S-056",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:45:04",
-    "imagem": "img/S-056.png"
+    "imagem": "img/S-056.png",
+    "resposta": "Corrigido: a água só existe dentro do lago e some suavemente na margem (nada de \"poças\" de água em buracos do terreno fora dele)."
   },
   {
     "texto": "o afegao medio sem ser o master tbm preisa conseguir ver o mapa geral, muito importante. Com algum comando, pra que ele saiba onde está indo",
@@ -2585,9 +2600,10 @@
       "sp": "23/23"
     },
     "id": "S-057",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:45:55",
-    "imagem": "img/S-057.png"
+    "imagem": "img/S-057.png",
+    "resposta": "Novo mapa para todos os jogadores: tecla G, botão 🗺️ no menu ou clique no minimapa. Mostra regiões, NPCs, chefes e onde você está (atualiza enquanto você anda)."
   },
   {
     "texto": "importante eu como master tbm possa trocar de raça em algum local, de alguma forma, mesmo depois de ja ter o personagem criado",
@@ -2628,8 +2644,9 @@
       "sp": "23/23"
     },
     "id": "S-058",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-07T18:46:18",
-    "imagem": "img/S-058.png"
+    "imagem": "img/S-058.png",
+    "resposta": "No Painel do Mestre (⌘Z) há um cartão \"Raça e aparência\" para trocar raça (Humano, Elfo, Anão) e rosto/cabelo a qualquer momento."
   }
 ]

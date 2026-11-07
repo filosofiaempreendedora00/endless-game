@@ -4,6 +4,7 @@
    As 2ª classes (evoluções) ganham brilho, auras e peças extras.
    ========================================================================= */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 
 export const HEADS = { Knight: 'Knight_Head', Mage: 'Mage_Head', Barbarian: 'Barbarian_Head', Rogue: 'Rogue_Head', Rogue_Hooded: 'Rogue_Head_Hooded' };
@@ -263,7 +264,42 @@ export function friendlyFaces(MODELS) {
       }
     }
     P.needsUpdate = true; g.computeVertexNormals(); g.computeBoundingSphere();
+    // olhos mais humanos: esclera branca, íris menor e um brilho (tudo dentro da malha da cabeça)
+    if (right.length >= 1) {
+      const eyeY = right[0].cy, eyes = face.filter(c => Math.abs(c.cx) > 0.05 && Math.abs(c.cy - eyeY) < 0.03);
+      const white = paletteUV(head, c => c[0] > 232 && c[1] > 232 && c[2] > 228);
+      if (white && eyes.length) {
+        const extra = [];
+        for (const e of eyes) {
+          const cx = e.cx, cy = e.cy, rx = (e.x1 - e.x0) / 2, ry = (e.y1 - e.y0) / 2, zf = e.z1;
+          const ir = Math.min(rx, ry) * 0.72; for (const i of e.vs) P.setXYZ(i, cx + (P.getX(i) - cx) * ir / rx, cy + (P.getY(i) - cy) * ir / ry - ry * 0.04, P.getZ(i) + 0.004); // íris redonda
+          const sc = new THREE.SphereGeometry(1, 18, 12); sc.scale(rx * 1.02, ry * 0.92, Math.min(rx, ry) * 0.55); sc.translate(cx, cy, zf - Math.min(rx, ry) * 0.5); extra.push(sc);
+          const hl = new THREE.SphereGeometry(1, 8, 6); hl.scale(rx * 0.17, rx * 0.17, rx * 0.1); hl.translate(cx + rx * 0.22, cy + ry * 0.12, zf + 0.02); extra.push(hl);
+        }
+        const si = g.attributes.skinIndex, sw = g.attributes.skinWeight, i0 = eyes[0].vs[0];
+        const parts = extra.map(x => {
+          const n = x.attributes.position.count;
+          x.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(n * 2).map((_, k) => k % 2 ? white[1] : white[0]), 2));
+          const a = new (si.array.constructor)(n * 4), b = new Float32Array(n * 4);
+          for (let v = 0; v < n; v++) for (let k = 0; k < 4; k++) { a[v * 4 + k] = si.getComponent(i0, k); b[v * 4 + k] = sw.getComponent(i0, k); }
+          x.setAttribute('skinIndex', new THREE.BufferAttribute(a, 4)); x.setAttribute('skinWeight', new THREE.BufferAttribute(b, 4));
+          return x;
+        });
+        P.needsUpdate = true;
+        const merged = mergeGeometries([g, ...parts]);
+        if (merged) { merged.computeBoundingSphere(); head.geometry = merged; }
+      }
+    }
   }
+}
+// acha na textura (paleta de cores) um pixel que passe no teste e devolve o UV dele
+function paletteUV(mesh, test) {
+  try {
+    const img = mesh.material.map.image, c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data;
+    for (let py = 2; py < c.height; py += 4) for (let px = 2; px < c.width; px += 4) { const k = (py * c.width + px) * 4; if (test([d[k], d[k + 1], d[k + 2]])) return [(px + 0.5) / c.width, mesh.material.map.flipY ? 1 - (py + 0.5) / c.height : (py + 0.5) / c.height]; }
+  } catch (e) { }
+  return null;
 }
 
 /* ---------- raças (por enquanto só visual) ---------- */

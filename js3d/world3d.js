@@ -184,17 +184,22 @@ export function buildWater() {
   const R = LAKE.r * 1.3 + 3, seg = 110;
   const geo = new THREE.PlaneGeometry(R * 2, R * 2, seg, seg); geo.rotateX(-Math.PI / 2);
   const p = geo.attributes.position, depth = new Float32Array(p.count);
-  for (let i = 0; i < p.count; i++) depth[i] = LAKE.level - heightAt(LAKE.x + p.getX(i), LAKE.z + p.getZ(i));
-  geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1));
+  const mask = new Float32Array(p.count);
+  for (let i = 0; i < p.count; i++) {
+    const x = LAKE.x + p.getX(i), z = LAKE.z + p.getZ(i);
+    depth[i] = LAKE.level - heightAt(x, z);
+    mask[i] = 1 - smooth(LAKE.r - 0.5, LAKE.r + 1.2, lakeDist(x, z)); // só existe água dentro do lago (nada de poças em buracos fora dele)
+  }
+  geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1)); geo.setAttribute('aMask', new THREE.BufferAttribute(mask, 1));
   const mat = new THREE.MeshStandardMaterial({ color: '#2a6f9e', roughness: 0.18, metalness: 0.0, transparent: true, depthWrite: false });
   mat.onBeforeCompile = sh => {
     sh.uniforms.uTime = windUniform;
-    sh.vertexShader = 'attribute float aDepth;\nvarying float vDepth;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-      vDepth = aDepth;
+    sh.vertexShader = 'attribute float aDepth;\nattribute float aMask;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vDepth = aDepth; vMask = aMask;
       vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying float vDepth;\nvarying vec3 vWPos;\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uTime;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
-        if (vDepth < -0.05) discard;
+        if (vDepth < -0.05 || vMask < 0.02) discard;
         float dk = smoothstep(0.0, 1.8, vDepth);
         diffuseColor.rgb = mix(vec3(0.20, 0.45, 0.42), vec3(0.04, 0.20, 0.34), dk);
         diffuseColor.a = mix(0.45, 0.93, smoothstep(0.0, 1.0, vDepth));
@@ -211,7 +216,7 @@ export function buildWater() {
       .replace('#include <opaque_fragment>', `#include <opaque_fragment>
         { float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 4.0);
           gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.52, 0.70, 0.86), fr * 0.4);
-          gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5); }`);
+          gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5) * smoothstep(0.02, 0.6, vMask); }`);
   };
   const m = new THREE.Mesh(geo, mat);
   m.position.set(LAKE.x, LAKE.level, LAKE.z); m.receiveShadow = true; m.renderOrder = 2;

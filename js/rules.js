@@ -102,7 +102,8 @@ function recalc(p) {
   d.aspd = Math.max(260, (1500 - d.agi * 9 - d.dex * 2.5) * wm.delay * (1 - Math.min(60, b.aspdPct || 0) / 100));
   d.rangeTiles = wm.range + (ranged ? (b.range || 0) : 0);
   d.range = d.rangeTiles * CONFIG.TILE;
-  d.ranged = ranged; d.wtype = wt;
+  d.magicAuto = !!wm.magic; // cajado: ataque básico é um projétil mágico (usa ATQM)
+  d.ranged = ranged || d.magicAuto; d.wtype = wt;
   d.speed = 125 * (1 + (b.moveSpeedPct || 0) / 100);
   d.castMult = Math.max(0.2, 1 - d.dex / 150);
   d.lifesteal = b.lifesteal || 0; d.doubleAttack = b.doubleAttack || 0; d.falcon = b.falcon || 0;

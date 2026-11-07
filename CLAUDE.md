@@ -20,7 +20,7 @@ Quando ele pedir para aplicar as sugestões:
 
 ## Modo Mestre
 - `js/admin.js` = Painel do Mestre (⌘/Ctrl+Z); `toggleGod`/`godTeleport`/`isAdmin` em `js/game.js`. Só ativo na conta de administrador (hoje: jogo rodando localmente). Novas ferramentas de admin pedidas pelo Roberto entram no painel.
-- Teclas ocupadas: WASD/setas (mover), 1–9, B C I E K T H M N O X F P Q L Z, Enter, Esc. Confira antes de criar atalho novo.
+- Teclas ocupadas: WASD/setas (mover), 1–9, B C G I E K T H M N O X F P Q L Z, Enter, Esc. Confira antes de criar atalho novo.
 
 ## Versão 3D (jogo principal, estilo WoW)
 - `index.html` + `js3d/` (a versão clássica 2D é `2d.html` + `js/game.js`, `world.js`, `render.js`) (ES modules com import map para `lib/three/`, three.js r160). Reusa `js/data.js`, `js/rules.js` e `js/audio.js` (scripts clássicos, globais).
@@ -32,6 +32,7 @@ Quando ele pedir para aplicar as sugestões:
 - Interiores: `INTERIORS` em `js3d/interiors3d.js` (salas em x ≥ 600, chão y = 0; `S.interior` ativo → `groundAt`/`resolve` usam a sala). Portais nas portas via `addDoorPortal` no `buildWorld`. Montarias: `js3d/mounts3d.js`, salvas em `p.mount`.
 - Raças (`RACES`/`applyRace`, só visual por enquanto), skins (`SKINS`/`applySkin`) e `friendlyFaces` ficam em `js3d/looks3d.js`. Cosméticos do jogador em `p.cosmetics` ({auroras, skins, skin, mounts}); a compra com dinheiro real ainda não existe. Teste visual: `__api.shot([x,y,z],[alvo])` devolve uma imagem de qualquer ângulo.
 - **Desempenho**: nunca use `new THREE.PointLight` direto no 3D — use `vlight(...)` de `js3d/lights3d.js` (pool de 3 luzes reais levadas às fontes mais próximas). Cada PointLight real pesa em todos os pixels do mundo (com 22 luzes o quadro ia de 6 ms para 45 ms). A grama é dividida em blocos de 50 m (`cullGrass`).
+- Personagens têm 1,5 m (`HERO_H` em main3d). Janela Personagem = abas Equipamento/Atributos (C/E). Monstros: `critters.js` expõe `attack()` (animação de bote) e a morte é tratada em `updateMonster` (`deathStyle` normal/raro).
 - Modelos: `assets3d/` (KayKit, CC0 — créditos no README e na tela do 3D). Teste por script com `__sim(segundos)` e `__api` (o rAF pausa com o painel oculto).
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 

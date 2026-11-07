@@ -34,6 +34,7 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Menu e configurações (som, volumes) | **Esc** |
 | Montar / desmontar (montaria do Tomé, no estábulo) | **M** |
 | Bestiário (todos os monstros) | **B** |
+| Mapa de Aethra | **G** ou clique no minimapa |
 | Loja de Auroras (skins e montarias) | **O** |
 | Pular | **Espaço** |
 | Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |

@@ -28,7 +28,7 @@ function lumpy(geo, rng, amt) {
 }
 const toNonIndexed = g => (g.index ? g.toNonIndexed() : g);
 function trunkGeo(rng, h, r0, r1, barkA, barkB) {
-  const g = new THREE.CylinderGeometry(r1, r0, h, 8, 4); g.translate(0, h / 2, 0);
+  const g = new THREE.CylinderGeometry(r1, r0 * 1.15, h + 0.9, 10, 5); g.translate(0, (h + 0.9) / 2 - 0.9, 0); // continua 90 cm para dentro da terra (não flutua em encostas)
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) { const y = p.getY(i) / h; p.setX(i, p.getX(i) + Math.sin(y * 3 + 1) * 0.08 * y); } // leve curva
   g.computeVertexNormals();
@@ -39,8 +39,8 @@ function trunkGeo(rng, h, r0, r1, barkA, barkB) {
 /* ---------- Carvalho / árvore de folhas ---------- */
 export function oakGeometry(seed, opts = {}) {
   const rng = rngOf(seed);
-  const h = 2.6 + rng() * 1.2, R = 1.9 + rng() * 0.9;
-  const parts = [trunkGeo(rng, h + 0.6, 0.32, 0.2, '#5a3d26', '#7a5536')];
+  const h = 3.4 + rng() * 1.6, R = 2.3 + rng() * 1.1; // carvalhos maiores (proporção com os personagens)
+  const parts = [trunkGeo(rng, h + 0.6, 0.4, 0.24, '#5a3d26', '#7a5536')];
   // galhos
   for (let i = 0; i < 3; i++) {
     const br = new THREE.CylinderGeometry(0.06, 0.12, 1.3, 6); br.translate(0, 0.65, 0);
@@ -67,7 +67,7 @@ export function oakGeometry(seed, opts = {}) {
 /* ---------- Pinheiro com camadas recortadas ---------- */
 export function pineGeometry(seed, opts = {}) {
   const rng = rngOf(seed);
-  const H = 6 + rng() * 3, base = 1.8 + rng() * 0.6;
+  const H = 7.5 + rng() * 4, base = 2.1 + rng() * 0.7;
   const parts = [trunkGeo(rng, H * 0.35, 0.26, 0.16, '#4a3020', '#6a4630')];
   const dark = new THREE.Color(opts.dark ? '#16361f' : '#1f4a2a'), light = new THREE.Color(opts.dark ? '#2f6a3c' : '#4a8a4a');
   const layers = 5 + Math.floor(rng() * 2);

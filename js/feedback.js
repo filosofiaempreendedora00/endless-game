@@ -86,6 +86,11 @@ const FB = {
     const d = this.drag; this.drag = null;
     this.hideRect();
     let target, shot;
+    if (d.ui) {
+      if (Math.hypot(d.ex - d.sx, d.ey - d.sy) <= 8) return this.pickUiElement(d.el, d.ex, d.ey);
+      const x0 = Math.min(d.sx, d.ex), y0 = Math.min(d.sy, d.ey), x1 = Math.max(d.sx, d.ex), y1 = Math.max(d.sy, d.ey);
+      return this.openBox(this.pickUiArea(x0, y0, x1, y1), d.ex, d.ey, this.capture(x0, y0, x1 - x0, y1 - y0));
+    }
     if (Math.hypot(d.ex - d.sx, d.ey - d.sy) > 12) {
       target = this.pickArea(d.wx, d.wy, d.ewx, d.ewy);
       // a área também pode cobrir partes da interface (que não aparecem no print)
@@ -105,7 +110,11 @@ const FB = {
   onUiDown(e) {
     if (!this.picking || !this.isUi(e.target)) return;
     e.preventDefault(); e.stopPropagation();
-    const el = e.target;
+    if (e.button !== 0) return;
+    // começa uma seleção: clique = o elemento exato; arrastar = a área exata dentro da janela
+    this.drag = { sx: e.clientX, sy: e.clientY, ex: e.clientX, ey: e.clientY, wx: 0, wy: 0, ewx: 0, ewy: 0, ui: true, el: e.target };
+  },
+  pickUiElement(el, cx, cy) {
     const win = el.closest('.win');
     const winTitle = win ? win.querySelector('.win-head .t').textContent : null;
     const region = el.closest('#status') ? 'Painel de status' : el.closest('#hotbar') ? 'Barra de atalhos' : el.closest('#minimap-wrap') ? 'Minimapa'
@@ -113,12 +122,29 @@ const FB = {
     const txt = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     const tip = el.closest('[data-tip]');
     const box = (win || el.closest('#status, #hotbar, #minimap-wrap, #menubar, #chat, #buffs, #topbar') || el).getBoundingClientRect();
-    const shot = box.width * box.height > VW * VH * 0.6 ? this.capture(e.clientX - 200, e.clientY - 150, 400, 300) : this.capture(box.left, box.top, box.width, box.height);
+    const shot = box.width * box.height > VW * VH * 0.6 ? this.capture(cx - 200, cy - 150, 400, 300) : this.capture(box.left, box.top, box.width, box.height);
     this.openBox({
       kind: 'interface', id: region, name: region + (txt ? ` — "${txt}"` : ''),
       codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
       details: { elemento: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).join('.') : ''), tooltip: tip ? tip.dataset.tip : undefined },
-    }, e.clientX, e.clientY, shot);
+    }, cx, cy, shot);
+  },
+  // área arrastada sobre janelas/HUD: lista o que ficou dentro do retângulo
+  pickUiArea(x0, y0, x1, y1) {
+    const inside = r => r.width && r.left >= x0 - 2 && r.right <= x1 + 2 && r.top >= y0 - 2 && r.bottom <= y1 + 2;
+    const texts = [];
+    document.querySelectorAll('#hud *, #windows *').forEach(el => {
+      if (el.closest('#fbbox') || texts.length >= 10) return;
+      const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue.trim()).join(' ').trim();
+      if (own && inside(el.getBoundingClientRect()) && !texts.includes(own)) texts.push(own.slice(0, 40));
+    });
+    const ui = this.uiInRect(x0, y0, x1, y1);
+    const region = ui[0] || 'Interface';
+    return {
+      kind: 'interface', id: region, name: `Área de ${Math.round(x1 - x0)}×${Math.round(y1 - y0)} px em ${ui.join(', ') || 'Interface'}${texts.length ? ` — "${texts.join(' · ').slice(0, 120)}"` : ''}`,
+      codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
+      details: { interface: ui, textos: texts, area: [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)] },
+    };
   },
 
   // partes da interface que se sobrepõem a um retângulo da tela

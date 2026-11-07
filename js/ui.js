@@ -170,8 +170,10 @@ const UI = {
   },
   body(id) { return this.wins[id].querySelector('.win-body'); },
   open(id) {
-    const pos = { char: [280, 70, 470], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 390), 60, Math.min(780, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
-    const titles = { char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
+    if (id === 'equip') { this.charTab = 'equip'; id = 'char'; } else if (id === 'char' && !this.charTab) this.charTab = 'stats';
+    if (id === 'char' && this.wins.char) { this.render_char(); return; }
+    const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 390), 60, Math.min(780, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 360), 40, Math.min(720, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -183,7 +185,10 @@ const UI = {
     if (id === 'tree') this.treeTab = null; // ao reabrir, volta para a árvore do personagem
     this.hideTip();
   },
-  toggle(id) { if (this.wins[id]) this.close(id); else this.open(id); },
+  toggle(id) {
+    if (id === 'equip' || id === 'char') { const t = id === 'equip' ? 'equip' : 'stats'; if (this.wins.char && this.charTab === t) this.close('char'); else { this.charTab = t; if (this.wins.char) this.render_char(); else this.open(id); } return; }
+    if (this.wins[id]) this.close(id); else this.open(id);
+  },
   closeAll() { let any = false; for (const id in this.wins) { this.close(id); any = true; } return any; },
 
   act(a, ds, e) {
@@ -217,13 +222,33 @@ const UI = {
       case 'sell': { const en = invByUid(+ds.uid); if (en) sellItem(en, e.shiftKey ? en.qty : 1); break; }
       case 'treesel': this.treeSel = ds.c; this.render_tree(); break;
       case 'treetab': this.treeTab = ds.t; this.render_tree(); break;
+      case 'chartab': this.charTab = ds.t; this.render_char(); break;
+      case 'skilltab': this.skillTab = ds.t; this.render_skills(); break;
+      case 'petset': if (typeof H3 !== 'undefined' && H3.setPet) { H3.setPet(ds.k, +ds.st); this.render_tree(); } break;
       case 'bestsel': this.bestSel = ds.id; this.render_bestiario(); break;
       case 'dlg': { const opt = this.dlg && this.dlg.options[+ds.i]; if (opt) opt.fn(); break; }
     }
   },
 
   /* ---------- Personagem ---------- */
+  // Personagem: uma janela só, com abas Equipamento / Atributos
   render_char() {
+    const tab = this.charTab || 'equip';
+    const tabs = `<div class="tabs"><div class="tab ${tab === 'equip' ? 'on' : ''}" data-act="chartab" data-t="equip">🛡️ Equipamento</div><div class="tab ${tab === 'stats' ? 'on' : ''}" data-act="chartab" data-t="stats">📊 Atributos${G.player.statPoints > 0 ? ` <span class="gold">(${G.player.statPoints})</span>` : ''}</div></div>`;
+    this.body('char').innerHTML = tabs + (tab === 'equip' ? this.equipHtml() : this.statsHtml());
+    const mid = this.body('char').querySelector('.eq-mid'), img = mid && mid.querySelector('img');
+    if (img && typeof H3 !== 'undefined' && H3.portrait) { // arraste para girar o personagem
+      img.draggable = false; mid.style.cursor = 'grab';
+      mid.onmousedown = e => {
+        e.preventDefault(); let x0 = e.clientX, t = 0; mid.style.cursor = 'grabbing';
+        const mv = ev => { const now = performance.now(); this.eqYaw = (this.eqYaw ?? 0.42) + (ev.clientX - x0) * 0.012; x0 = ev.clientX; if (now - t > 33) { t = now; img.src = H3.portrait(this.eqYaw); } };
+        const up = () => { removeEventListener('mousemove', mv); removeEventListener('mouseup', up); mid.style.cursor = 'grab'; img.src = H3.portrait(this.eqYaw); };
+        addEventListener('mousemove', mv); addEventListener('mouseup', up);
+      };
+    }
+  },
+  render_equip() { this.render_char(); },
+  statsHtml() {
     const p = G.player, d = p.d;
     const rows = STAT_KEYS.map(s => {
       const bonus = d[s] - p.stats[s];
@@ -232,7 +257,7 @@ const UI = {
         <button class="btn small" data-act="stat" data-s="${s}" ${p.statPoints < cost || p.stats[s] >= 99 ? 'disabled' : ''}>+</button><span class="c">${cost}</span></div>`;
     }).join('');
     const w = WEAPON_TYPES[d.wtype];
-    this.body('char').innerHTML = `
+    return `
       <div class="stat-grid">
         <div>${rows}
           <div style="margin-top:8px">Pontos: <b class="gold">${p.statPoints}</b> <span class="muted" style="font-size:11px">(custo à direita)</span></div>
@@ -303,7 +328,7 @@ const UI = {
 
   /* ---------- Equipamento ---------- */
   // janela no estilo clássico: personagem de frente no meio e os espaços dos dois lados
-  render_equip() {
+  equipHtml() {
     const p = G.player;
     const L = ['cabeca', 'armadura', 'arma', 'capa', 'acessorio'], R = ['rosto', 'boca', 'escudo', 'botas', 'acessorio2'];
     const cell = (s, side) => {
@@ -312,15 +337,15 @@ const UI = {
       return `<div class="eq-slot ${side} ${e ? 'full' : ''}" ${e ? `data-tip="equip:${s}" data-act="unequip" data-slot="${s}" title="Clique para tirar"` : ''}>
         <div class="eq-ic">${e ? it.icon : ''}</div><div class="eq-tx"><div class="eq-name">${e ? esc(it.name) + (it.slots ? ` [${it.slots}]` : '') : '<span class="muted">—</span>'}</div><div class="eq-lab">${SLOT_LABELS[s]}</div>${cards}</div></div>`;
     };
-    const pic = typeof H3 !== 'undefined' && H3.portrait ? H3.portrait() : null;
+    const pic = typeof H3 !== 'undefined' && H3.portrait ? H3.portrait(this.eqYaw ?? 0.42) : null;
     const d = p.d || {};
-    this.body('equip').innerHTML = `<div class="eqro">
+    return `<div class="eqro">
         <div class="eq-col">${L.map(s => cell(s, 'l')).join('')}</div>
         <div class="eq-mid">${pic ? `<img src="${pic}" alt="">` : `<div class="eq-ph">${CLASSES[p.cls].icon}</div>`}<div class="eq-who"><b>${esc(p.name)}</b><span>${CLASSES[p.cls].name}</span></div></div>
         <div class="eq-col">${R.map(s => cell(s, 'r')).join('')}</div>
       </div>
       <div class="eq-sum"><span>ATQ <b>${d.atk ?? '-'}</b></span><span>ATQ M <b>${d.matk ?? '-'}</b></span><span>DEF <b>${d.def ?? '-'}</b></span><span>DEF M <b>${d.mdef ?? '-'}</b></span></div>
-      <div class="muted" style="font-size:11px;margin-top:6px">Clique num equipamento para tirá-lo. Cartas: no Inventário (I), selecione uma carta e insira num item com espaço [ ].</div>`;
+      <div class="muted" style="font-size:11px;margin-top:6px">Clique num equipamento para tirá-lo · arraste o personagem para girá-lo. Cartas: no Inventário (I), selecione uma carta e insira num item com espaço [ ].</div>`;
   },
 
   /* ---------- Habilidades ---------- */
@@ -341,7 +366,17 @@ const UI = {
       }).join('');
       return `<div class="sk-group"><h4>${c.icon} ${c.name}</h4>${items}</div>`;
     }).join('');
-    this.body('skills').innerHTML = `<div style="margin-bottom:8px">Pontos de habilidade: <b class="gold">${p.skillPoints}</b> <span class="muted" style="font-size:11px">(1 por Nv. de Classe)</span></div>${groups}
+    const stab = this.skillTab || 'char', pet = p.pet;
+    const stabs = `<div class="tabs"><div class="tab ${stab === 'char' ? 'on' : ''}" data-act="skilltab" data-t="char">🧍 Personagem</div><div class="tab ${stab === 'pet' ? 'on' : ''}" data-act="skilltab" data-t="pet">🐾 Mascote</div></div>`;
+    if (stab === 'pet') {
+      if (!pet || typeof PETS === 'undefined') { this.body('skills').innerHTML = stabs + '<div class="muted">Você ainda não tem um mascote.</div>'; return; }
+      const sp = PETS[pet.species], st = petStage(pet);
+      const pg = sp.stages.map((sg, i) => `<div class="sk-group"><h4>${sg.icon} ${sg.name} <span class="muted" style="font-size:11px">${i ? 'evolui no Nv. ' + PET_EVOLVE[i] : 'estágio inicial'}${i === st ? ' · <span class="gold">atual</span>' : ''}</span></h4>${(sp.skills || []).filter(k => k.stage === i).map(k =>
+        `<div class="sk ${i <= st ? '' : 'locked'}"><div class="ic">${k.icon}</div><div class="info"><div class="nm">${k.name} <span class="tag">${i <= st ? 'Automática' : '🔒 Nv. ' + PET_EVOLVE[i]}</span></div><div class="ds">${k.desc}</div></div></div>`).join('')}</div>`).join('');
+      this.body('skills').innerHTML = stabs + `<div style="margin-bottom:8px">${petInfo(pet).icon} <b>${petInfo(pet).name}</b> · Nv. ${pet.lv} <span class="muted" style="font-size:11px">(${sp.roleIcon} ${sp.roleName} — as habilidades do mascote são automáticas e melhoram quando ele evolui)</span></div>${pg}`;
+      return;
+    }
+    this.body('skills').innerHTML = stabs + `<div style="margin-bottom:8px">Pontos de habilidade: <b class="gold">${p.skillPoints}</b> <span class="muted" style="font-size:11px">(1 por Nv. de Classe)</span></div>${groups}
       <div class="muted" style="font-size:11px">Use as teclas 1–9 para ativar atalhos. Clique com o botão direito num atalho para limpá-lo.</div>`;
   },
 
@@ -362,10 +397,11 @@ const UI = {
     const ws = c.weapons.map(w => WEAPON_TYPES[w].name).join(', ');
     // evolução dos mascotes (abaixo das classes)
     const pet = p.pet;
-    const petHtml = typeof PETS === 'undefined' ? '' : `<div class="pet-evo"><h4>🐾 Evolução dos Mascotes</h4><div class="muted" style="margin:-4px 0 8px;font-size:11px">Cada mascote evolui sozinho ao subir de nível, ganhando um novo visual e poderes mais fortes.</div>${Object.keys(PETS).map(k => {
+    const godPick = typeof isAdmin === 'function' && isAdmin() && G.god;
+    const petHtml = typeof PETS === 'undefined' ? '' : `<div class="pet-evo"><h4>🐾 Evolução dos Mascotes</h4>${godPick ? '<div class="gold" style="font-size:11px;margin:-4px 0 8px">⚡ God Mode: clique em qualquer mascote/estágio para trocar na hora.</div>' : ''}<div class="muted" style="margin:-4px 0 8px;font-size:11px">Cada mascote evolui sozinho ao subir de nível, ganhando um novo visual e poderes mais fortes.</div>${Object.keys(PETS).map(k => {
       const sp = PETS[k], mine = pet && pet.species === k, st = mine ? petStage(pet) : -1;
       return `<div class="pet-line ${mine ? 'mine' : ''}"><div class="pet-role">${sp.roleIcon} ${sp.roleName}${mine ? ' <span class="gold">• seu mascote</span>' : ''}</div><div class="pet-chain">${sp.stages.map((s, i) =>
-        `<div class="pet-st ${mine && i === st ? 'cur' : ''} ${mine && i <= st ? 'got' : ''}" title="${s.desc.replace(/"/g, '&quot;')}"><div class="pi">${s.icon}</div><div class="pn">${s.name}</div><div class="pr">${i ? 'Nv. ' + PET_EVOLVE[i] : 'Início'}</div></div>${i < sp.stages.length - 1 ? '<div class="parrow">→</div>' : ''}`).join('')}</div></div>`;
+        `<div class="pet-st ${mine && i === st ? 'cur' : ''} ${mine && i <= st ? 'got' : ''} ${godPick ? 'pick' : ''}" ${godPick ? `data-act="petset" data-k="${k}" data-st="${i}"` : ''} title="${s.desc.replace(/"/g, '&quot;')}"><div class="pi">${s.icon}</div><div class="pn">${s.name}</div><div class="pr">${i ? 'Nv. ' + PET_EVOLVE[i] : 'Início'}</div></div>${i < sp.stages.length - 1 ? '<div class="parrow">→</div>' : ''}`).join('')}</div></div>`;
     }).join('')}${pet ? `<div class="muted" style="margin-top:6px">Seu ${petInfo(pet).name} está no <b>Nv. ${pet.lv}</b> (EXP ${pet.lv >= PET_MAX_LV ? 'máxima' : Math.floor(pet.exp / petExpNext(pet.lv) * 100) + '%'}). O mascote ganha EXP junto com você.</div>` : '<div class="muted">Você ainda não tem um mascote.</div>'}</div>`;
     const tab = this.treeTab || 'classes';
     const tabs = `<div class="tabs ttabs"><div class="tab ${tab === 'classes' ? 'on' : ''}" data-act="treetab" data-t="classes">🧍 Personagem</div><div class="tab ${tab === 'pets' ? 'on' : ''}" data-act="treetab" data-t="pets">🐾 Mascotes</div></div>`;
@@ -383,7 +419,8 @@ const UI = {
     const q = (this.bestQ || '').toLowerCase();
     const list = ids.filter(id => !q || MONSTERS[id].name.toLowerCase().includes(q) || MONSTERS[id].race.toLowerCase().includes(q) || ELEMENTS[MONSTERS[id].element].name.toLowerCase().includes(q)).map(id => {
       const x = MONSTERS[id], tag = x.boss ? '<span class="bs-tag boss">Chefe</span>' : x.mini ? '<span class="bs-tag mini">Mini</span>' : '';
-      return `<div class="bs-item ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${x.icon}</span><span class="bs-nm">${esc(x.name)}${tag}</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
+      const th = typeof H3 !== 'undefined' && H3.monsterThumb ? H3.monsterThumb(id) : null;
+      return `<div class="bs-item ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${th ? `<img src="${th}" alt="">` : x.icon}</span><span class="bs-nm">${esc(x.name)}${tag}</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
     }).join('') || '<div class="muted" style="padding:8px">Nada encontrado.</div>';
     const weak = Object.keys(ELEMENT_STRONG).filter(e => ELEMENT_STRONG[e] === m.element).map(e => `<span style="color:${ELEMENTS[e].color}">${ELEMENTS[e].name}</span>`).join(', ') || '—';
     const strongVs = ELEMENT_STRONG[m.element] ? `<span style="color:${ELEMENTS[ELEMENT_STRONG[m.element]].color}">${ELEMENTS[ELEMENT_STRONG[m.element]].name}</span>` : '—';
@@ -397,7 +434,7 @@ const UI = {
     this.body('bestiario').innerHTML = `<div class="bs">
       <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-list">${list}</div></div>
       <div class="bs-right">
-        <div class="bs-head"><div class="bs-big">${m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
+        <div class="bs-head"><div class="bs-big">${typeof H3 !== 'undefined' && H3.monsterLive ? '<canvas id="bs-live" width="200" height="200"></canvas>' : m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
         <div class="bs-stats">${stat('HP', m.hp.toLocaleString('pt-BR'))}${stat('Ataque', m.atk[0] + '–' + m.atk[1])}${stat('Defesa', m.def)}${stat('Def. Mágica', m.mdef)}${stat('Precisão', m.hit)}${stat('Esquiva', m.flee)}${stat('EXP Base', m.exp.toLocaleString('pt-BR'))}${stat('EXP Classe', m.jexp.toLocaleString('pt-BR'))}</div>
         <h4>Elemento</h4><div class="bs-p">Leva <b>+50%</b> de dano de: ${weak} · causa +50% em: ${strongVs}</div>
         <h4>Comportamento</h4><div class="bs-p">${traits.join('<br>')}</div>
@@ -405,6 +442,8 @@ const UI = {
         <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>🃏 ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
         ${card ? `<h4>Carta</h4><div class="bs-p">Encaixe em: <b>${SLOT_NAMES[card.equip]}</b><br>${fmtBonuses(card.bonuses).join(' · ')}</div>` : ''}
       </div></div>`;
+    if (this._bsStop) this._bsStop();
+    if ($('bs-live')) this._bsStop = H3.monsterLive(sel, $('bs-live'));
     const inp = $('bs-q');
     inp.oninput = () => { this.bestQ = inp.value; const pos = inp.selectionStart; this.render_bestiario(); const n = $('bs-q'); n.focus(); n.setSelectionRange(pos, pos); };
   },

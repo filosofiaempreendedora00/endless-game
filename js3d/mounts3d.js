@@ -15,73 +15,105 @@ export const MOUNTS = {
 };
 export const MOUNT_SPEED = 1.7; // multiplicador de velocidade montado
 
-const M = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
+const M = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...extra });
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+// tubo afinando ao longo de uma curva (pescoço, rabo, mechas)
+function taper(points, r0, r1, seg = 20, radial = 12) {
+  const curve = new THREE.CatmullRomCurve3(points), g = new THREE.TubeGeometry(curve, seg, 1, radial, false);
+  const P = g.attributes.position, N = g.attributes.normal, frames = curve.computeFrenetFrames(seg, false);
+  for (let i = 0; i <= seg; i++) {
+    const u = i / seg, r = r0 + (r1 - r0) * u, c = curve.getPointAt(u);
+    for (let j = 0; j <= radial; j++) { const k = i * (radial + 1) + j; P.setXYZ(k, c.x + N.getX(k) * r, c.y + N.getY(k) * r, c.z + N.getZ(k) * r); }
+  }
+  g.computeVertexNormals(); return g;
+}
+const blob = (r, sx, sy, sz, m, x, y, z, seg = 18) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)), m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); return o; };
 
 export function makeMount(kind = 'lanudo') {
   const D = MOUNTS[kind] || MOUNTS.lanudo;
   const obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
-  const WOOL = M(D.wool), SKIN = M(D.skin), HORN = M(D.horn, { roughness: 0.5 });
-  const MANE = D.glow ? new THREE.MeshStandardMaterial({ color: D.mane, emissive: D.mane, emissiveIntensity: 0.9, roughness: 0.5 }) : M(D.mane);
-  // tronco de lã (vários tufos)
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.75, 6, 12), WOOL); torso.rotation.x = Math.PI / 2; torso.position.y = 1.0; body.add(torso);
-  const tufts = new THREE.IcosahedronGeometry(0.2, 1);
-  for (let i = 0; i < 16; i++) { const a = i * 2.4, k = (i % 8) / 7; const t = new THREE.Mesh(tufts, WOOL); t.position.set(Math.cos(a) * 0.34, 1.0 + Math.sin(a) * 0.3, -0.5 + k * 1.0); t.scale.setScalar(0.8 + (i % 3) * 0.15); body.add(t); }
-  // manta e sela
-  const blanket = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.05, 0.75), M(D.blanket)); blanket.position.set(0, 1.42, -0.02); body.add(blanket);
-  for (const s of [-1, 1]) { const flap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.38, 0.7), M(D.blanket)); flap.position.set(s * 0.5, 1.25, -0.02); body.add(flap); }
-  const saddle = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.14, 12), M('#5a3a22', { roughness: 0.6 })); saddle.scale.z = 1.3; saddle.position.set(0, 1.5, 0); body.add(saddle);
-  const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.18, 8), M('#4a2e1a')); horn.position.set(0, 1.62, 0.3); body.add(horn);
-  // pescoço e cabeça
-  const neck = new THREE.Group(); neck.position.set(0, 1.25, 0.62); body.add(neck);
-  const nk = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.45, 4, 10), WOOL); nk.rotation.x = -0.6; nk.position.set(0, 0.25, 0.12); neck.add(nk);
-  const head = new THREE.Group(); head.position.set(0, 0.6, 0.32); neck.add(head);
-  const skull = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.32, 4, 10), SKIN); skull.rotation.x = Math.PI / 2 - 0.35; skull.position.z = 0.12; head.add(skull);
-  const fluff = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 1), WOOL); fluff.position.set(0, 0.14, -0.02); head.add(fluff);
+  const coatC = new THREE.Color(D.wool);
+  const COAT = M(coatC, { roughness: 0.65 }), BELLY = M(coatC.clone().offsetHSL(0, -0.05, 0.06), { roughness: 0.7 });
+  const WOOL = M(coatC.clone().offsetHSL(0, -0.05, 0.1), { roughness: 0.95 }), SKIN = M(D.skin, { roughness: 0.55 }), HORN = M(D.horn, { roughness: 0.4 });
+  const MANE = D.glow ? new THREE.MeshStandardMaterial({ color: D.mane, emissive: D.mane, emissiveIntensity: 0.7, roughness: 0.5 }) : M(D.mane, { roughness: 0.75 });
+  const LEATHER = M('#5a3a22', { roughness: 0.55 }), DARK = M('#2a1e16', { roughness: 0.5 }), METAL = M('#c9b07a', { roughness: 0.3, metalness: 0.6 });
+  // tronco: peito, barril e garupa formam um corpo de cavalo
+  body.add(blob(0.36, 1, 1.05, 1.55, COAT, 0, 1.12, 0, 24));
+  body.add(blob(0.38, 1, 1.08, 1, COAT, 0, 1.12, 0.52));
+  body.add(blob(0.4, 1.05, 1.05, 1, COAT, 0, 1.17, -0.5));
+  body.add(blob(0.3, 1, 0.7, 1.6, BELLY, 0, 0.92, 0));
+  // pescoço comprido e arqueado + gola de lã (a marca dos Corcéis Lanudos)
+  const neck = new THREE.Group(); neck.position.set(0, 1.3, 0.72); body.add(neck);
+  neck.add(new THREE.Mesh(taper([V(0, 0, -0.05), V(0, 0.28, 0.14), V(0, 0.58, 0.27), V(0, 0.78, 0.33)], 0.27, 0.15), COAT));
+  const wool = new THREE.IcosahedronGeometry(0.11, 2);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; const t = new THREE.Mesh(wool, WOOL); t.position.set(Math.cos(a) * 0.2, 0.1 + Math.sin(a) * 0.1, Math.sin(a) * 0.08 + 0.04); t.scale.setScalar(0.7 + (i % 3) * 0.12); neck.add(t); }
+  // cabeça alongada com focinho, narinas, olhos, orelhas e chifrinhos
+  const head = new THREE.Group(); head.position.set(0, 0.8, 0.36); neck.add(head);
+  head.add(blob(0.17, 1, 1.05, 1.25, COAT, 0, 0.02, 0));
+  const muzzle = new THREE.Mesh(taper([V(0, 0, 0.05), V(0, -0.1, 0.25), V(0, -0.2, 0.42)], 0.15, 0.11, 10, 14), COAT); head.add(muzzle);
+  head.add(blob(0.12, 1.05, 0.85, 0.9, SKIN, 0, -0.21, 0.43));
   for (const s of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), M('#1a1410', { roughness: 0.3 })); eye.position.set(s * 0.13, 0.07, 0.16); head.add(eye);
-    // chifre enrolado (espiral)
-    const pts = []; for (let i = 0; i <= 14; i++) { const u = i / 14, a = u * Math.PI * 1.6; pts.push(new THREE.Vector3(s * (0.12 + Math.sin(a) * 0.14 * (1 - u * 0.4)), 0.15 + Math.cos(a) * 0.14 * (1 - u * 0.4) - u * 0.05, -0.05 - u * 0.12)); }
-    const hn = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.035, 6), HORN); head.add(hn);
-    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), SKIN); ear.scale.set(1.6, 0.5, 0.8); ear.position.set(s * 0.2, 0.04, 0.02); head.add(ear);
+    head.add(blob(0.022, 1.2, 1, 0.6, DARK, s * 0.055, -0.19, 0.53, 8));
+    head.add(blob(0.042, 1, 1.15, 0.6, DARK, s * 0.13, 0.05, 0.1, 12));
+    head.add(blob(0.013, 1, 1, 0.6, M('#ffffff', { roughness: 0.2 }), s * 0.145, 0.07, 0.125, 6));
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 12), COAT); ear.position.set(s * 0.09, 0.2, -0.05); ear.rotation.set(-0.2, 0, -s * 0.2); head.add(ear);
+    const pts = []; for (let i = 0; i <= 10; i++) { const u = i / 10, a = u * Math.PI * 1.3; pts.push(V(s * (0.12 + Math.sin(a) * 0.09), 0.15 + Math.cos(a) * 0.09 - u * 0.03, -0.08 - u * 0.08)); }
+    head.add(new THREE.Mesh(taper(pts, 0.035, 0.012, 14, 8), HORN));
   }
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), M(D.skin, { roughness: 0.5 })); nose.scale.set(1, 0.8, 0.9); nose.position.set(0, -0.06, 0.3); head.add(nose);
-  // crina
-  for (let i = 0; i < 5; i++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 5), MANE); c.position.set(0, 0.42 - i * 0.1, 0.04 - i * 0.07); c.rotation.x = -0.9; neck.add(c); }
-  // patas com cascos (pivô no ombro/quadril)
-  const legs = [[-0.24, 0.42], [0.24, 0.42], [-0.24, -0.42], [0.24, -0.42]].map(([x, z], i) => {
-    const pv = new THREE.Group(); pv.position.set(x, 0.85, z); body.add(pv);
-    const up = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.32, 4, 8), WOOL); up.position.y = -0.2; pv.add(up);
-    const knee = new THREE.Group(); knee.position.y = -0.42; pv.add(knee);
-    const low = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.28, 4, 8), SKIN); low.position.y = -0.17; knee.add(low);
-    const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.08, 8), M('#2a2018', { roughness: 0.5 })); hoof.position.y = -0.38; knee.add(hoof);
-    return { pv, knee, front: i < 2, side: x > 0 ? 1 : -1 };
+  // crina em mechas ao longo do pescoço + topete
+  const maneParts = [];
+  for (let i = 0; i < 8; i++) { const u = i / 7, y = 0.05 + u * 0.78, z = -0.08 + u * 0.4; const m = new THREE.Mesh(taper([V(0, 0, 0), V(0.04, -0.08, -0.1), V(0.07, -0.2, -0.12)], 0.06, 0.012, 8, 8), MANE); m.position.set(0, y + 0.06, z - 0.08); neck.add(m); maneParts.push(m); }
+  const forelock = new THREE.Mesh(taper([V(0, 0, 0), V(0, -0.05, 0.08), V(0, -0.14, 0.12)], 0.05, 0.012, 8, 8), MANE); forelock.position.set(0, 0.2, 0.02); head.add(forelock);
+  // patas: coxa, joelho, canela, tufo de lã e casco
+  const legs = [[-0.2, 0.55, true], [0.2, 0.55, true], [-0.21, -0.55, false], [0.21, -0.55, false]].map(([x, z, front]) => {
+    const pv = new THREE.Group(); pv.position.set(x, 1.0, z); body.add(pv);
+    pv.add(new THREE.Mesh(taper([V(0, 0.1, 0), V(0, -0.2, front ? 0.02 : -0.04), V(0, -0.46, 0)], front ? 0.14 : 0.16, 0.08, 10, 12), COAT));
+    const knee = new THREE.Group(); knee.position.y = -0.46; pv.add(knee);
+    knee.add(new THREE.Mesh(taper([V(0, 0, 0), V(0, -0.22, 0), V(0, -0.4, 0.01)], 0.065, 0.05, 8, 10), COAT));
+    const tuft = blob(0.085, 1.1, 0.8, 1.1, WOOL, 0, -0.38, 0.01, 12); knee.add(tuft);
+    const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.075, 0.1, 14), DARK); hoof.position.y = -0.49; knee.add(hoof);
+    return { pv, knee, front, side: x > 0 ? 1 : -1 };
   });
-  // rabo
-  const tail = new THREE.Group(); tail.position.set(0, 1.08, -0.8); body.add(tail);
-  const tl = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), MANE); tl.scale.set(0.8, 1.2, 1); tl.position.set(0, -0.1, -0.08); tail.add(tl);
+  // rabo esvoaçante em mechas
+  const tail = new THREE.Group(); tail.position.set(0, 1.3, -0.9); body.add(tail);
+  for (let i = 0; i < 5; i++) { const sx = (i - 2) * 0.03; tail.add(new THREE.Mesh(taper([V(0, 0, 0), V(sx, -0.15, -0.15), V(sx * 2, -0.45, -0.22), V(sx * 3, -0.75, -0.18)], 0.07 - i * 0.004, 0.015, 14, 8), MANE)); }
+  // sela, manta caída nos lados, estribos
+  const blanketC = new THREE.Color(D.blanket);
+  const blanket = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.78, 28, 1, true, -Math.PI * 0.42, Math.PI * 0.84), new THREE.MeshStandardMaterial({ color: blanketC, roughness: 0.8, side: THREE.DoubleSide }));
+  blanket.rotation.x = Math.PI / 2; blanket.rotation.y = Math.PI; blanket.scale.set(1, 1, 1); blanket.position.set(0, 1.12, -0.02); body.add(blanket);
+  const trim = new THREE.MeshStandardMaterial({ color: '#e8c35a', roughness: 0.4, metalness: 0.3, side: THREE.DoubleSide });
+  for (const zz of [-0.4, 0.36]) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.425, 0.012, 6, 28, Math.PI * 0.84), trim); t.rotation.z = Math.PI / 2 - Math.PI * 0.42 + Math.PI; t.rotation.y = 0; t.position.set(0, 1.12, zz); body.add(t); }
+  const seat = new THREE.Mesh(taper([V(0, 0, -0.3), V(0, -0.04, -0.05), V(0, -0.02, 0.15), V(0, 0.06, 0.28)], 0.2, 0.13, 12, 14), LEATHER); seat.scale.set(1.15, 0.45, 1); seat.position.set(0, 1.52, 0); body.add(seat);
+  body.add(blob(0.08, 1, 1.3, 0.8, LEATHER, 0, 1.6, 0.3, 12));
+  body.add(blob(0.13, 1.4, 0.7, 0.6, LEATHER, 0, 1.56, -0.28, 12));
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.04), LEATHER); strap.position.set(s * 0.38, 1.25, 0.04); strap.rotation.z = s * 0.12; body.add(strap);
+    const st = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.012, 6, 14), METAL); st.position.set(s * 0.42, 0.98, 0.04); body.add(st);
+  }
   let light = null;
   if (D.glow) { light = vlight(D.mane, 0.8, 4); light.position.set(0, 1.9, 0.6); obj.add(light); }
   obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  let ph = 0, gait = 0, look = 0;
+  let ph = 0, gait = 0, look = 0, air = 0;
   return {
     obj, saddleY: 1.52, name: D.name,
     animate(t, m, dt) {
       const s = m.speed;
       gait += (Math.min(1, s * 1.3) - gait) * (1 - Math.exp(-dt * 6));
+      air += ((m.air ? 1 : 0) - air) * (1 - Math.exp(-dt * 10));
       ph += dt * (2 + s * 9);
-      // trote: patas diagonais juntas, joelho dobra na volta
       legs.forEach(({ pv, knee, front, side }) => {
-        const p = ph + (front ? 0 : Math.PI) + (side > 0 ? Math.PI : 0); // diagonais juntas (dianteira esq. + traseira dir.)
-        pv.rotation.x = Math.sin(p) * 0.55 * gait;
-        knee.rotation.x = -Math.max(0, Math.cos(p)) * 0.9 * gait; // dobra o joelho quando a pata volta à frente
+        const p = ph + (front ? 0 : Math.PI) + (side > 0 ? Math.PI : 0); // trote: diagonais juntas
+        pv.rotation.x = Math.sin(p) * 0.5 * gait * (1 - air) + (front ? -0.6 : 0.5) * air;
+        knee.rotation.x = (front ? 1 : -1) * Math.max(0, Math.cos(p)) * 0.9 * gait * (1 - air) + (front ? 1.3 : -1.1) * air;
       });
-      body.position.y = Math.abs(Math.sin(ph)) * 0.07 * gait + Math.sin(t * 1.6) * 0.008 * (1 - gait);
-      body.rotation.x = Math.sin(ph * 2) * 0.03 * gait;
+      body.position.y = Math.abs(Math.sin(ph)) * 0.06 * gait * (1 - air) + Math.sin(t * 1.6) * 0.008 * (1 - gait);
+      body.rotation.x = Math.sin(ph * 2) * 0.025 * gait - air * 0.08;
       body.rotation.z = -m.turn * 0.05 * gait;
-      look += ((gait > 0.2 ? -m.turn * 0.12 : Math.sin(t * 0.5) * 0.25) - look) * (1 - Math.exp(-dt * 4));
-      neck.rotation.y = look; neck.rotation.x = Math.sin(ph * 2) * 0.06 * gait - 0.05 * gait;
-      head.rotation.x = Math.sin(t * 1.1) * 0.04;
-      tail.rotation.y = Math.sin(t * (2 + s * 4)) * 0.3; tail.rotation.x = 0.4 * gait;
+      look += ((gait > 0.2 ? -m.turn * 0.12 : Math.sin(t * 0.45) * 0.3) - look) * (1 - Math.exp(-dt * 4));
+      neck.rotation.y = look; neck.rotation.x = Math.sin(ph * 2) * 0.05 * gait + (1 - gait) * Math.sin(t * 0.7) * 0.04 + air * 0.15;
+      head.rotation.x = -Math.sin(ph * 2) * 0.04 * gait;
+      maneParts.forEach((mp, i) => { mp.rotation.z = Math.sin(t * 3 + i * 0.6) * 0.15 * (0.3 + gait); mp.rotation.x = 0.3 * gait; });
+      tail.rotation.y = Math.sin(t * (1.5 + s * 4)) * 0.25; tail.rotation.x = 0.5 * gait + air * 0.4;
       if (light) light.intensity = 0.7 + Math.sin(t * 3) * 0.15;
     },
     get bodyY() { return body.position.y; },

@@ -59,7 +59,7 @@ const WEAPON_TYPES = {
   adaga: { name: 'Adaga', range: 1.5, delay: 0.85 },
   espada: { name: 'Espada', range: 1.6, delay: 1.0 },
   lanca: { name: 'Lança', range: 2.3, delay: 1.1 },
-  cajado: { name: 'Cajado', range: 1.5, delay: 1.15 },
+  cajado: { name: 'Cajado', range: 4.5, delay: 1.15, magic: true }, // dispara um projétil arcano (alcance menor que o arco)
   arco: { name: 'Arco', range: 6, delay: 1.05 },
   garra: { name: 'Garras', range: 1.4, delay: 0.75 },
 };
@@ -88,7 +88,7 @@ const CLASSES = {
   },
   mago: {
     name: 'Mago', tier: 1, parent: 'aprendiz', icon: '🔮', color: '#4a4fb8', accent: '#9fd0ff', hat: 'wizard', robe: true,
-    hpMod: 0.8, spMod: 1.9, weapons: ['adaga', 'cajado'], skills: ['seta_de_fogo', 'lanca_de_gelo', 'faisca', 'meditacao'],
+    hpMod: 0.8, spMod: 1.9, weapons: ['adaga', 'cajado'], skills: ['seta_de_fogo', 'lanca_de_gelo', 'faisca', 'barreira_arcana', 'meditacao'],
     next: ['arquimago', 'sabio_elemental'], gift: [['cajado_de_salgueiro', 1], ['frutinha_azul', 8]],
     desc: 'Domina os elementos. Dano mágico alto à distância, mas frágil. Explore as fraquezas elementais.',
   },
@@ -116,12 +116,12 @@ const CLASSES = {
   },
   arquimago: {
     name: 'Arquimago', tier: 2, parent: 'mago', icon: '☄️', color: '#5b2a8a', accent: '#ff9a3d', hat: 'wizard', robe: true, cape: true,
-    hpMod: 0.9, spMod: 2.4, skills: ['meteoro', 'tempestade'], next: [], gift: [['cajado_arcano', 1]],
+    hpMod: 0.9, spMod: 2.4, skills: ['bola_de_fogo', 'meteoro', 'nevasca', 'tempestade'], next: [], gift: [['cajado_arcano', 1]],
     desc: 'Mestre da destruição em área. Conjurações longas, efeitos colossais.',
   },
   sabio_elemental: {
     name: 'Sábio Elemental', tier: 2, parent: 'mago', icon: '📖', color: '#2f6b6b', accent: '#9be3c8', hat: 'wizard', robe: true,
-    hpMod: 1.0, spMod: 2.2, skills: ['pilar_de_terra', 'cura_maior'], next: [], gift: [['manto_arcano', 1]],
+    hpMod: 1.0, spMod: 2.2, skills: ['pilar_de_terra', 'runa_de_fogo', 'cura_maior'], next: [], gift: [['manto_arcano', 1]],
     desc: 'Estudioso equilibrado: magia de Terra que atordoa e cura poderosa. Sobrevive sozinho.',
   },
   cacador: {
@@ -180,19 +180,24 @@ const SKILLS = {
   },
   // Mago
   seta_de_fogo: {
-    name: 'Seta de Fogo', icon: '🔥', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 10 + lv * 2, cast: lv => 400 + lv * 250, cd: 500, fx: 'bolt',
-    effect: { kind: 'damage', dmg: 'magic', element: 'fogo', mult: () => 1, hits: lv => lv },
-    desc: lv => `${lv} seta(s) de fogo, 100% ATQM cada.`,
+    name: 'Rajada de Fogo', icon: '🔥', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 10 + lv * 2, cast: lv => 500 + lv * 60, cd: 600, fx: 'bolt',
+    effect: { kind: 'damage', dmg: 'magic', element: 'fogo', mult: lv => 1.4 + lv * 0.3, hits: () => 1 },
+    desc: lv => `Uma bola de fogo certeira: ${Math.round((1.4 + lv * 0.3) * 100)}% ATQM de Fogo.`,
   },
   lanca_de_gelo: {
-    name: 'Lança de Gelo', icon: '❄️', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 10 + lv, cast: () => 700, cd: 1000, fx: 'bolt',
+    name: 'Estilhaço de Gelo', icon: '❄️', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 10 + lv, cast: () => 700, cd: 1000, fx: 'bolt',
     effect: { kind: 'damage', dmg: 'magic', element: 'agua', mult: lv => 1 + lv * 0.25, status: { type: 'freeze', chance: lv => 0.25 + lv * 0.04, dur: 3000 } },
     desc: lv => `${Math.round((1 + lv * 0.25) * 100)}% ATQM de Água, ${25 + lv * 4}% de congelar.`,
   },
   faisca: {
-    name: 'Faísca Elétrica', icon: '⚡', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 12 + lv, cast: lv => 500 + lv * 150, cd: 600, fx: 'lightning',
-    effect: { kind: 'damage', dmg: 'magic', element: 'vento', mult: lv => 0.8 + lv * 0.2, hits: lv => Math.ceil(lv / 2) + 1 },
-    desc: lv => `${Math.ceil(lv / 2) + 1} raios de Vento com ${Math.round((0.8 + lv * 0.2) * 100)}% ATQM.`,
+    name: 'Relâmpago', icon: '⚡', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 12 + lv, cast: () => 300, cd: 900, fx: 'lightning',
+    effect: { kind: 'damage', dmg: 'magic', element: 'vento', mult: lv => 0.7 + lv * 0.15, hits: lv => 2 + Math.floor(lv / 3) },
+    desc: lv => `Conjuração rápida: ${2 + Math.floor(lv / 3)} raios seguidos, ${Math.round((0.7 + lv * 0.15) * 100)}% ATQM de Vento cada.`,
+  },
+  barreira_arcana: {
+    name: 'Barreira Arcana', icon: '🔮', type: 'active', target: 'self', maxLv: 5, sp: lv => 20 + lv * 4, cast: () => 300, cd: 2000, fx: 'aura', fxColor: '#8fb8ff',
+    effect: { kind: 'buff', dur: 40000, bonuses: lv => ({ mdef: lv * 6, def: lv * 4 }) },
+    desc: lv => `Escudo mágico por 40 s: +${lv * 6} DEF Mágica e +${lv * 4} DEF.`,
   },
   meditacao: {
     name: 'Meditação', icon: '🧘', type: 'passive', maxLv: 10,
@@ -255,8 +260,18 @@ const SKILLS = {
     effect: { kind: 'damage', dmg: 'magic', element: 'fogo', mult: lv => 1.5 + lv * 0.4, hits: () => 3, radius: 2.5 },
     desc: lv => `3 meteoros numa área: ${Math.round((1.5 + lv * 0.4) * 100)}% ATQM de Fogo cada.`,
   },
+  bola_de_fogo: {
+    name: 'Bola de Fogo', icon: '💥', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 30 + lv * 3, cast: () => 1400, cd: 1500, fx: 'bolt',
+    effect: { kind: 'damage', dmg: 'magic', element: 'fogo', mult: lv => 2 + lv * 0.45, hits: () => 1, splash: 2 },
+    desc: lv => `Explode no alvo e ao redor: ${Math.round((2 + lv * 0.45) * 100)}% ATQM de Fogo em área.`,
+  },
+  nevasca: {
+    name: 'Nevasca', icon: '🌨️', type: 'active', target: 'ground', maxLv: 10, range: 9, sp: lv => 38 + lv * 4, cast: () => 2000, cd: 3000, fx: 'storm',
+    effect: { kind: 'damage', dmg: 'magic', element: 'agua', mult: lv => 0.55 + lv * 0.15, hits: () => 6, radius: 3.5, status: { type: 'freeze', chance: lv => 0.08 + lv * 0.02, dur: 2500 } },
+    desc: lv => `6 rajadas de gelo numa área grande: ${Math.round((0.55 + lv * 0.15) * 100)}% ATQM de Água cada, chance de congelar.`,
+  },
   tempestade: {
-    name: 'Tempestade', icon: '🌩️', type: 'active', target: 'ground', maxLv: 10, range: 9, sp: lv => 35 + lv * 4, cast: () => 2200, cd: 2500, fx: 'storm',
+    name: 'Tempestade de Raios', icon: '🌩️', type: 'active', target: 'ground', maxLv: 10, range: 9, sp: lv => 35 + lv * 4, cast: () => 2200, cd: 2500, fx: 'storm',
     effect: { kind: 'damage', dmg: 'magic', element: 'vento', mult: lv => 0.6 + lv * 0.2, hits: () => 5, radius: 3 },
     desc: lv => `5 descargas numa área: ${Math.round((0.6 + lv * 0.2) * 100)}% ATQM de Vento cada.`,
   },
@@ -265,6 +280,11 @@ const SKILLS = {
     name: 'Pilar de Terra', icon: '🪨', type: 'active', target: 'enemy', maxLv: 10, range: 9, sp: lv => 20 + lv * 2, cast: () => 1000, cd: 1000, fx: 'pillar',
     effect: { kind: 'damage', dmg: 'magic', element: 'terra', mult: lv => 2.2 + lv * 0.5, status: { type: 'stun', chance: () => 0.3, dur: 2000 } },
     desc: lv => `${Math.round((2.2 + lv * 0.5) * 100)}% ATQM de Terra, 30% de atordoar.`,
+  },
+  runa_de_fogo: {
+    name: 'Runa de Fogo', icon: '🔶', type: 'active', target: 'ground', maxLv: 10, range: 9, sp: lv => 25 + lv * 3, cast: () => 800, cd: 2000, fx: 'meteor',
+    effect: { kind: 'damage', dmg: 'magic', element: 'fogo', mult: lv => 3 + lv * 0.6, hits: () => 1, radius: 2 },
+    desc: lv => `Grava uma runa no chão que explode: ${Math.round((3 + lv * 0.6) * 100)}% ATQM de Fogo na área.`,
   },
   cura_maior: {
     name: 'Cura Maior', icon: '💚', type: 'active', target: 'self', maxLv: 10, sp: lv => 15 + lv * 3, cast: () => 500, cd: 1500, fx: 'heal',
@@ -529,6 +549,11 @@ const PETS = {
   fogo: {
     role: 'ataque', roleName: 'Ataque', roleIcon: '⚔️', element: 'fogo', color: '#ff7a3a',
     desc: 'Corre até os inimigos e cospe fogo neles. Para quem quer derrotar monstros mais rápido.',
+    skills: [
+      { stage: 0, name: 'Cuspe de Fogo', icon: '🔥', desc: 'Fica a uns 5 m do seu alvo e cospe uma bola de fogo a cada ~2,4 s.' },
+      { stage: 1, name: 'Fôlego de Brasa', icon: '💨', desc: 'Cospe fogo mais rápido (a cada ~1,9 s) e corre 20% mais.' },
+      { stage: 2, name: 'Explosão Solar', icon: '☀️', desc: 'Cada bola de fogo explode e atinge os inimigos ao redor do alvo (metade do dano).' },
+    ],
     stages: [
       { name: 'Faísca', icon: '🦊', desc: 'Raposinha curiosa com a ponta do rabo em chamas.' },
       { name: 'Labareda', icon: '🔥', desc: 'Dois rabos flamejantes e uma juba de brasas. Ataca mais rápido.' },
@@ -538,6 +563,12 @@ const PETS = {
   agua: {
     role: 'suporte', roleName: 'Suporte', roleIcon: '💚', element: 'agua', color: '#4ab0ff',
     desc: 'Cuida de você: cura quando você se machuca e de tempos em tempos te dá um escudo de água (mais DEF e regeneração).',
+    skills: [
+      { stage: 0, name: 'Gota Curativa', icon: '💧', desc: 'Quando seu HP cai abaixo de 90%, cura você a cada 6 s.' },
+      { stage: 0, name: 'Bênção da Maré', icon: '🌊', desc: 'Em combate, a cada 30 s: +DEF e regeneração de HP por 20 s.' },
+      { stage: 1, name: 'Maré Cheia', icon: '🫧', desc: 'Curas maiores e uma Bênção 50% mais forte.' },
+      { stage: 2, name: 'Coroa de Cristal', icon: '💠', desc: 'A Bênção da Maré dobra de força.' },
+    ],
     stages: [
       { name: 'Bolhinha', icon: '🫧', desc: 'Criaturinha de água que solta bolhas quando está feliz.' },
       { name: 'Maré', icon: '🌊', desc: 'Nadadeiras maiores e três bolhas mágicas orbitando. Cura mais.' },
@@ -547,6 +578,11 @@ const PETS = {
   terra: {
     role: 'guardiao', roleName: 'Guardião', roleIcon: '🛡️', element: 'terra', color: '#b08a5a',
     desc: 'Protege você: enquanto estiver por perto, você recebe menos dano, e ele atordoa seu alvo com pancadas de pedra.',
+    skills: [
+      { stage: 0, name: 'Pancada Sísmica', icon: '🪨', desc: 'Vai até seu alvo e bate no chão a cada 6 s, atordoando-o por 1 s.' },
+      { stage: 1, name: 'Casco de Cristal', icon: '💎', desc: 'O atordoamento dura 1,5 s e o mascote corre 20% mais.' },
+      { stage: 2, name: 'Terremoto', icon: '🗿', desc: 'O atordoamento dura 2 s.' },
+    ],
     stages: [
       { name: 'Pedrinho', icon: '🪨', desc: 'Tatuzinho de pedra que adora rolar.' },
       { name: 'Rochedo', icon: '⛰️', desc: 'Casco com cristais. Protege ainda mais.' },
