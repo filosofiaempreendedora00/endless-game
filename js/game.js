@@ -606,10 +606,27 @@ function moveEntity(e, speed, dt) {
   let gx = tx * TILE + TILE / 2, gy = ty * TILE + TILE / 2;
   if (e.path.length === 1 && e.finalPt) { gx = e.finalPt.x; gy = e.finalPt.y; }
   const dx = gx - e.x, dy = gy - e.y, d = Math.hypot(dx, dy), step = speed * dt;
+  const ox = e.x, oy = e.y;
   if (d <= step) { e.x = gx; e.y = gy; e.path.shift(); if (!e.path.length) { e.path = null; e.finalPt = null; } }
   else { e.x += dx / d * step; e.y += dy / d * step; }
+  // nunca entrar num tile sólido cortando um canto: volta ao centro do tile atual e segue de lá
+  if (G.map.isSolid(Math.floor(e.x / TILE), Math.floor(e.y / TILE))) {
+    e.x = Math.floor(ox / TILE) * TILE + TILE / 2; e.y = Math.floor(oy / TILE) * TILE + TILE / 2;
+    if (G.map.isSolid(Math.floor(e.x / TILE), Math.floor(e.y / TILE))) unstick(e);
+  }
   if (Math.abs(dx) > 0.5) e.dir = dx > 0 ? 1 : -1;
   e.moving = true; e.walkT += dt;
+}
+// coloca a entidade no tile alcançável mais próximo (salva-vidas contra ficar preso)
+function unstick(e) {
+  const m = G.map, cx = Math.floor(e.x / TILE), cy = Math.floor(e.y / TILE);
+  if (m.inb(cx, cy) && !m.isSolid(cx, cy) && m.reach[m.i(cx, cy)]) return false;
+  for (let r = 1; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const nx = cx + dx, ny = cy + dy;
+    if (m.inb(nx, ny) && !m.isSolid(nx, ny) && m.reach[m.i(nx, ny)]) { e.x = nx * TILE + TILE / 2; e.y = ny * TILE + TILE / 2; e.path = null; return true; }
+  }
+  const [sx, sy] = m.def.spawn; e.x = sx * TILE + TILE / 2; e.y = sy * TILE + TILE / 2; e.path = null;
+  return true;
 }
 function setPathTo(e, x, y, fine) {
   const sx = Math.floor(e.x / TILE), sy = Math.floor(e.y / TILE), tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
@@ -764,7 +781,7 @@ function handleChat(v) {
   const n = parseInt(args[0]);
   const dev = t => UI.log('[dev] ' + t, 'dev');
   switch (cmd.toLowerCase()) {
-    case 'ajuda': UI.log('Comandos: /onde • /salvar • /resetar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /ir mapa, /carta monstro', 'sys'); break;
+    case 'ajuda': UI.log('Comandos: /onde • /destravar (se ficar preso) • /salvar • /resetar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /ir mapa, /carta monstro', 'sys'); break;
     case 'onde': UI.log(`${G.map.def.name} (${Math.floor(p.x / TILE)}, ${Math.floor(p.y / TILE)})`, 'sys'); break;
     case 'salvar': saveGame(); UI.log('Jogo salvo.', 'sys'); break;
     case 'resetar': if (confirm('Apagar seu personagem e recomeçar do zero?')) { localStorage.removeItem(SAVE_KEY); location.reload(); } break;
@@ -774,6 +791,7 @@ function handleChat(v) {
     case 'zeny': if (n > 0) { p.zeny += n; dev(`+${n} z.`); UI.markDirty(); } break;
     case 'item': if (ITEMS[args[0]]) { addItem(p, args[0], parseInt(args[1]) || 1); dev(`Item ${ITEMS[args[0]].name} criado.`); UI.markDirty(); } else dev('Item não existe. Ids: ' + Object.keys(ITEMS).slice(0, 12).join(', ') + '...'); break;
     case 'carta': if (ITEMS['carta_' + args[0]]) { addItem(p, 'carta_' + args[0], 1); dev('Carta criada.'); UI.markDirty(); } else dev('Monstros: ' + Object.keys(MONSTERS).join(', ')); break;
+    case 'destravar': if (!unstick(p)) { const [sx, sy] = G.map.def.spawn; p.x = sx * TILE + TILE / 2; p.y = sy * TILE + TILE / 2; p.path = null; } UI.log('Você foi levado a um lugar seguro.', 'sys'); break;
     case 'cura': p.hp = p.d.maxHp; p.sp = p.d.maxSp; dev('Curado.'); break;
     case 'ir': if (MAPS[args[0]]) { const [sx, sy] = MAPS[args[0]].spawn; changeMap(args[0], sx, sy); } else dev('Mapas: ' + Object.keys(MAPS).join(', ')); break;
     default: UI.log('Comando desconhecido. Digite /ajuda.', 'warn');
@@ -924,7 +942,13 @@ function render() {
   if (p && G.state !== 'title') list.push([p.y, 4, p]);
   list.sort((a, b) => a[0] - b[0]);
   for (const [, kind, e] of list) {
-    if (kind === 0) drawObject(ctx, e, t);
+    if (kind === 0) {
+      // objeto na frente do personagem fica translúcido para ele nunca sumir
+      const fade = p && G.state !== 'title' && occludes(e, p);
+      if (fade) ctx.globalAlpha = 0.45;
+      drawObject(ctx, e, t);
+      ctx.globalAlpha = 1;
+    }
     else if (kind === 1) drawDrop(ctx, e, t);
     else if (kind === 2) drawMonster(ctx, e, t);
     else if (kind === 3) drawHumanoid(ctx, e.x, e.y, Object.assign({ dir: e.x > G.cam.x + 200 ? -1 : 1, seed: e.x }, e.look), t);
@@ -977,6 +1001,12 @@ function render() {
   g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
   ctx.fillStyle = g; ctx.fillRect(0, 0, canvas.width, canvas.height);
   if (G.state !== 'title') drawMinimap();
+}
+const OCCLUDE_BOX = { house: [96, 160], tree: [20, 48], pine: [16, 56], pillar: [14, 52], wall: [16, 38], deadtree: [12, 36], fountain: [36, 50] };
+function occludes(o, p) {
+  const b = OCCLUDE_BOX[o.type];
+  if (!b || o.y <= p.y) return false;
+  return Math.abs(p.x - o.x) < b[0] && p.y > o.y - b[1];
 }
 function drawPlayer(c, p, t) {
   const cls = CLASSES[p.cls];
@@ -1074,7 +1104,7 @@ function continueGame(s) {
   if (!gm.inb(tx, ty) || gm.isSolid(tx, ty) || !gm.reach[gm.i(tx, ty)]) [tx, ty] = def.spawn;
   changeMap(mapId, tx, ty);
   G.player.x = clamp(s.x, 0, gm.w * TILE); G.player.y = clamp(s.y, 0, gm.h * TILE);
-  if (gm.isSolid(Math.floor(p.x / TILE), Math.floor(p.y / TILE))) { p.x = def.spawn[0] * TILE + 16; p.y = def.spawn[1] * TILE + 16; }
+  unstick(p);
   if (p.hp <= 0) p.hp = Math.floor(p.d.maxHp / 2);
   UI.log(`Bem-vindo(a) de volta, ${p.name}!`, 'card');
 }

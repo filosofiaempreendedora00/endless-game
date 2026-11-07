@@ -161,7 +161,8 @@ function genTown(m, rng) {
   // casas (5x3)
   const houses = [[3, 3, '#b5523b'], [10, 2, '#3b6fb5'], [24, 2, '#7a4fa0'], [31, 4, '#b5523b'], [3, 21, '#3b8a5a'], [11, 24, '#b5893b'], [30, 21, '#3b6fb5'], [24, 24, '#8a3b5a']];
   for (const [hx, hy, roof] of houses) {
-    for (let y = hy; y < hy + 3; y++) for (let x = hx; x < hx + 5; x++) { m.solid[m.i(x, y)] = 1; reserved[m.i(x, y)] = 1; }
+    // a área atrás da casa (coberta pelo telhado) também é bloqueada, para ninguém sumir atrás dela
+    for (let y = Math.max(0, hy - 2); y < hy + 3; y++) for (let x = hx; x < hx + 5; x++) { m.solid[m.i(x, y)] = 1; reserved[m.i(x, y)] = 1; }
     for (let x = hx; x < hx + 5; x++) reserved[m.i(x, hy + 3)] = 1;
     m.set(hx + 2, hy + 3, TT.DIRT);
     m.objects.push({ type: 'house', x: (hx + 2.5) * TILE, y: (hy + 3) * TILE, tx: hx, ty: hy, w: 5, h: 3, roof });
