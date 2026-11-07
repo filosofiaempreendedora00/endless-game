@@ -1935,5 +1935,701 @@
     "criadoEm": "2026-11-07T17:54:49",
     "imagem": "img/S-041.png",
     "resposta": "Rostos refeitos em todos os bonecos (jogador e NPCs): as sobrancelhas franzidas viraram retas e simpáticas, e o nariz ficou menor. Acabou a cara de bravo."
+  },
+  {
+    "texto": "gostaria que as 3 montarias oferecidas tivessem gráficos muuuuit melhores, pq ta muito feio",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (275×234 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Mago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        3,
+        -28
+      ],
+      "pos": [
+        3,
+        -28
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-042",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:21:17",
+    "imagem": "img/S-042.png"
+  },
+  {
+    "texto": "quando eu pulo com a montaria, meus bracos ficam pra cima e pra baixo mto bugado e isso nao é legal",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (266×271 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Mago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        27,
+        23
+      ],
+      "pos": [
+        27,
+        23
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-043",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:21:52",
+    "imagem": "img/S-043.png"
+  },
+  {
+    "texto": "o ataque dos monstros tem que ter algum tipo de animacao e nao o bicho ficando tudo parado. Eles tem que ser 3ds tbm,. Esse lobo melhorou mas ainda ta feio",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (213×217 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Cinzento": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Cinzento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        77,
+        35
+      ],
+      "pos": [
+        77,
+        35
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-044",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:22:49",
+    "imagem": "img/S-044.png"
+  },
+  {
+    "texto": "quero ser capaz de, dentro de uma janela, eu conseguir tbm selecionar a parte exata que eu quero selecionar e nao ter meio que uma autoselecao. Tbm quero poder mexer o meu personagem do centro com o botao esquerdo do mouse e mexendo nele pra dar voltinha e nesse caso do meu ficou com arma cortando pro lado de fora e isso nao é legal ter pedeçao dele prro lado de fora. E ja falei que esse rosto é horrendo, precisa melhorar muito pra parecer mais humano",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Equipamento\"",
+      "nome": "Janela \"Equipamento\" — \"—Cabeça (meio) —Cabeça (baixo) —Escudo —Botas —Acessório 2\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.eq-col"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "67/67",
+      "sp": "27/27"
+    },
+    "id": "S-045",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:24:52",
+    "imagem": "img/S-045.png"
+  },
+  {
+    "texto": "Gostaria que o mago mesmo sem nenhum spell tivesse uma alta ataque que fosse ranged ranged melhor dizendo porém Claro com um Range menor do que o do arqueiro eu quero que você inspire o auto ataque dele inclusive bem como as demais habilidades em Skyrim e quando eu digo habilidade de uma água não só de uma água e sim como das evoluções do Mago você se inspire com um bom senso no Skyrim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (289×220 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Mago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        4,
+        -24
+      ],
+      "pos": [
+        4,
+        -24
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-046",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:34:52",
+    "imagem": "img/S-046.png"
+  },
+  {
+    "texto": "as habilidades tem que vir de forma analoga, tanto as habilidades do personagem quanto do mascote",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Habilidades\"",
+      "nome": "Janela \"Habilidades\" — \"Pontos de habilidade: 4 (1 por Nv. de Classe)🌱 Aprendiz🩹 P\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.win-body"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-047",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:35:47",
+    "imagem": "img/S-047.png"
+  },
+  {
+    "texto": "enquanto estou com o god mode ativado eu posso escolher quais quer masxoscotes e evolucoes e vai mudando na hora. So nao pode fazer isso o usuario comum",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Árvore de Classes\"",
+      "nome": "Janela \"Árvore de Classes\" — \"Árvore de Classes✕\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.win-head"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-048",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:36:40",
+    "imagem": "img/S-048.png"
+  },
+  {
+    "texto": "preciso queaqui no bestiario nao apareça emoji e sim carregasse o proprio monstro na miniatura e aqui do lado. Na miniatura do lado esquerdo fica como imagem e ali do lado do nome , maior, seria o monstro se mexendo, mesmo que parado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"📖 Bestiário\"",
+      "nome": "Janela \"📖 Bestiário\" — \"💧GotinhaNv. 1🍄FungolinoNv. 3🐇Coelho-ChifreNv. 5🐝Abelha R\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.win-body"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-049",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:38:21",
+    "imagem": "img/S-049.png"
+  },
+  {
+    "texto": "o mago ainda ficou gigantesco, nao sei se vc mudou o tamanho dos personagems padronizando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (288×253 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Mago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -10,
+        -18
+      ],
+      "pos": [
+        -10,
+        -18
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-050",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:39:34",
+    "imagem": "img/S-050.png"
+  },
+  {
+    "texto": "esse help tbm tem que ficar dentro de algum lugar como confgiguracoes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Como Jogar\"",
+      "nome": "Janela \"Como Jogar\" — \"Como Jogar✕\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.win-head"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-051",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:40:28",
+    "imagem": "img/S-051.png"
+  },
+  {
+    "texto": "essa tela de atributos pode ser unificada à de equipamentos, fazendo parte de um unico comando, uma unica janela organizada. Pode ser aba de equipamentos e atributos como switcher pra uma boa ui/ux",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Personagem\"",
+      "nome": "Janela \"Personagem\" — \"Personagem✕\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "elemento": "div.win-head"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-052",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:41:18",
+    "imagem": "img/S-052.png"
+  },
+  {
+    "texto": "coelho ficou mtt feio , muito falso, gosto de bichos mais realistas em geral. Melhores os monstros que tao mais fakes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (58×67 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Coelho-Chifre": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Coelho-Chifre",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -22,
+        -7
+      ],
+      "pos": [
+        -22,
+        -7
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-053",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:41:49",
+    "imagem": "img/S-053.png"
+  },
+  {
+    "texto": "parecem meio flutuando. Melhore isso e outros elementos que parecem flutuar no jogo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (320×62 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Pinheiro": 3,
+          "Pinheiro escuro": 1
+        },
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -119,
+        -47
+      ],
+      "pos": [
+        -119,
+        -47
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "77/77",
+      "sp": "32/32"
+    },
+    "id": "S-054",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:42:15",
+    "imagem": "img/S-054.png"
+  },
+  {
+    "texto": "efeito de morte dos monstros tem que ser mais real e nao so sumir igual a abelha ficou pequena e sumiu. Todos tem que ter animacoes de morte. Uma default e outra mais rara",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (69×39 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        17,
+        30
+      ],
+      "pos": [
+        17,
+        30
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-055",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:44:00",
+    "imagem": "img/S-055.png"
+  },
+  {
+    "texto": "agua meio bugada aqui. evite bugs de aguas nas extremidades",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (357×111 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        22,
+        71
+      ],
+      "pos": [
+        22,
+        71
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-056",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:45:04",
+    "imagem": "img/S-056.png"
+  },
+  {
+    "texto": "o afegao medio sem ser o master tbm preisa conseguir ver o mapa geral, muito importante. Com algum comando, pra que ele saiba onde está indo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (130×111 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas de Kael",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        39,
+        -66
+      ],
+      "pos": [
+        39,
+        -66
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-057",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:45:55",
+    "imagem": "img/S-057.png"
+  },
+  {
+    "texto": "importante eu como master tbm possa trocar de raça em algum local, de alguma forma, mesmo depois de ja ter o personagem criado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (150×93 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        7,
+        -25
+      ],
+      "pos": [
+        7,
+        -25
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-058",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T18:46:18",
+    "imagem": "img/S-058.png"
   }
 ]
