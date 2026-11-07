@@ -265,3 +265,8 @@ body.fb-picking #hud:hover, body.fb-picking .win:hover { outline: 1px dashed rgb
 .menu-btns .btn { padding: 9px 14px; font-size: 14px; }
 .adm-classes { display: flex; flex-direction: column; gap: 4px; }
 .adm-crow { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ---- Seleção retangular do modo sugestão (2D e 3D) ---- */
+body.fb-picking canvas { cursor: crosshair !important; }
+#fb-rect { position: fixed; z-index: 140; display: none; pointer-events: none; border: 2px dashed #ffd76a; background: rgba(255, 215, 106, 0.12); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25); border-radius: 3px; }
+#fb-rect span { position: absolute; left: 0; top: -24px; white-space: nowrap; font-size: 12px; font-weight: 800; color: #ffe9a8; background: rgba(18, 22, 38, 0.9); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border-soft); }

@@ -43,7 +43,7 @@ const FB = {
     Sound.play('click');
   },
   cancel() {
-    this.picking = false; this.drag = null; this.hoverPick = null;
+    this.picking = false; this.drag = null; this.hoverPick = null; this.hideRect();
     this.closeBox();
     document.body.classList.remove('fb-picking');
     setPaused(this.wasPaused);
@@ -60,12 +60,31 @@ const FB = {
   onMove(e) {
     if (!this.picking) return;
     const w = screenToWorld(e.clientX, e.clientY);
-    if (this.drag) { this.drag.ex = e.clientX; this.drag.ey = e.clientY; this.drag.ewx = w.x; this.drag.ewy = w.y; }
+    if (this.drag) {
+      this.drag.ex = e.clientX; this.drag.ey = e.clientY; this.drag.ewx = w.x; this.drag.ewy = w.y;
+      this.showRect(this.drag);
+      if (Math.hypot(this.drag.ex - this.drag.sx, this.drag.ey - this.drag.sy) > 12) { this.hoverPick = null; return; }
+    }
+    // destaque do que está sob o mouse (no máximo ~20x por segundo)
+    const now = performance.now();
+    if (now - (this._hoverT || 0) < 50) return;
+    this._hoverT = now;
     this.hoverPick = e.target === canvas ? this.pickAt(w.x, w.y) : null;
   },
+  // retângulo de seleção sobre a tela, com o tamanho escrito
+  showRect(d) {
+    let r = document.getElementById('fb-rect');
+    if (!r) { r = document.createElement('div'); r.id = 'fb-rect'; r.innerHTML = '<span></span>'; document.body.appendChild(r); }
+    const x = Math.min(d.sx, d.ex), y = Math.min(d.sy, d.ey), w = Math.abs(d.ex - d.sx), h = Math.abs(d.ey - d.sy);
+    if (Math.hypot(w, h) <= 12) { r.style.display = 'none'; return; }
+    Object.assign(r.style, { display: 'block', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+    r.firstChild.textContent = `Área selecionada · solte para escrever a sugestão`;
+  },
+  hideRect() { const r = document.getElementById('fb-rect'); if (r) r.style.display = 'none'; },
   onUp(e) {
     if (!this.picking || !this.drag) return;
     const d = this.drag; this.drag = null;
+    this.hideRect();
     let target, shot;
     if (Math.hypot(d.ex - d.sx, d.ey - d.sy) > 12) {
       target = this.pickArea(d.wx, d.wy, d.ewx, d.ewy);
@@ -310,14 +329,7 @@ const FB = {
       }
     }
     if (!this.picking) return;
-    if (this.drag && Math.hypot(this.drag.ex - this.drag.sx, this.drag.ey - this.drag.sy) > 12) {
-      const d = this.drag;
-      c.strokeStyle = '#ffd76a'; c.lineWidth = 1.5; c.setLineDash([6, 4]);
-      c.strokeRect(Math.min(d.wx, d.ewx), Math.min(d.wy, d.ewy), Math.abs(d.ewx - d.wx), Math.abs(d.ewy - d.wy));
-      c.setLineDash([]); c.fillStyle = 'rgba(255,215,106,0.12)';
-      c.fillRect(Math.min(d.wx, d.ewx), Math.min(d.wy, d.ewy), Math.abs(d.ewx - d.wx), Math.abs(d.ewy - d.wy));
-      return;
-    }
+    if (this.drag && Math.hypot(this.drag.ex - this.drag.sx, this.drag.ey - this.drag.sy) > 12) return; // o retângulo é desenhado por cima da tela
     const h = this.hoverPick;
     if (!h) return;
     c.strokeStyle = `rgba(255,215,106,${0.7 + Math.sin(performance.now() / 150) * 0.3})`; c.lineWidth = 2;

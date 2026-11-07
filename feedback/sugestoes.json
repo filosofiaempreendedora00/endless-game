@@ -264,5 +264,48 @@
     "criadoEm": "2026-11-07T15:44:52",
     "imagem": "img/S-005.png",
     "resposta": "No Painel do Mestre (⌘+Z) há a seção \"Classe\": clique em qualquer uma das 13 classes para virar ela na hora (recebe a arma típica da classe). O botão \"Todas as habilidades da classe no máximo\" libera tudo para testar."
+  },
+  {
+    "texto": "quero que meu hp tbm apareça abaixo do personagem. SP também",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (108×45 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        12,
+        22
+      ],
+      "pos": [
+        12,
+        22
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Aprendiz",
+      "nivelBase": 3,
+      "nivelClasse": 7,
+      "hp": "74/74",
+      "sp": "20/20"
+    },
+    "id": "S-006",
+    "status": "pendente",
+    "criadoEm": "2026-11-07T16:32:01",
+    "imagem": "img/S-006.png"
   }
 ]

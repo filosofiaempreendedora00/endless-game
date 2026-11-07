@@ -2,9 +2,13 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (1)
 
-_Nenhuma._
+### S-006 · Área do mapa: Área da tela (108×45 px)
+- **Status:** pendente · **Quando:** 2026-11-07T16:32:01 · **Mapa:** Campos de Verdelume (tile [12, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quero que meu hp tbm apareça abaixo do personagem. SP também
+- ![print](img/S-006.png)
 
 ## Feitas (5)
 
