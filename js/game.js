@@ -65,7 +65,43 @@ function saveGame() {
   const s = {}; for (const k of SAVE_FIELDS) s[k] = G.player[k];
   s.mapId = G.mapId; s.x = G.player.x; s.y = G.player.y; s.uid = G.uid; s.savedAt = Date.now();
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) { /* armazenamento indisponível */ }
+  syncSave(s);
   G.lastSave = G.time;
+}
+/* Saves também vão para a pasta saves/ do projeto (via server.py), para não
+   dependerem da porta nem do navegador. O localStorage continua como reserva. */
+const HAS_SERVER = location.protocol.startsWith('http');
+function saveSlug(name) { return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32) || 'sem_nome'; }
+function saveSummary(s, local) { return { slug: saveSlug(s.name), name: s.name, cls: s.cls, baseLv: s.baseLv, jobLv: s.jobLv, savedAt: s.savedAt || 0, local }; }
+function syncSave(s) {
+  if (!HAS_SERVER) return;
+  try { fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s), keepalive: true }).catch(() => { }); } catch (e) { }
+}
+async function listCharacters() {
+  const local = loadSave();
+  let list = [];
+  if (HAS_SERVER) {
+    try {
+      const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 2500);
+      const r = await fetch('/api/saves', { signal: ctl.signal }); clearTimeout(tm);
+      if (r.ok) list = await r.json();
+    } catch (e) { /* servidor sem suporte a saves: usa só o navegador */ }
+  }
+  if (local) {
+    const srv = list.find(x => x.slug === saveSlug(local.name));
+    if (!srv || (srv.savedAt || 0) < (local.savedAt || 0)) {
+      syncSave(local); // personagem que só existia neste navegador/porta vai para o projeto
+      list = list.filter(x => x.slug !== saveSlug(local.name)).concat([saveSummary(local, true)]);
+    }
+  }
+  return list.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+}
+async function loadCharacter(entry) {
+  const local = loadSave();
+  if (local && saveSlug(local.name) === entry.slug && (local.savedAt || 0) >= (entry.savedAt || 0)) return local;
+  const r = await fetch('/api/save/' + entry.slug);
+  if (!r.ok) throw new Error('personagem não encontrado');
+  return r.json();
 }
 function loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && s.name && CLASSES[s.cls] ? s : null; } catch (e) { return null; } }
 
@@ -785,7 +821,12 @@ function handleChat(v) {
     case 'ajuda': UI.log('Comandos: /onde • /destravar (se ficar preso) • /salvar • /resetar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /ir mapa, /carta monstro', 'sys'); break;
     case 'onde': UI.log(`${G.map.def.name} (${Math.floor(p.x / TILE)}, ${Math.floor(p.y / TILE)})`, 'sys'); break;
     case 'salvar': saveGame(); UI.log('Jogo salvo.', 'sys'); break;
-    case 'resetar': if (confirm('Apagar seu personagem e recomeçar do zero?')) { localStorage.removeItem(SAVE_KEY); location.reload(); } break;
+    case 'resetar': if (confirm(`Apagar ${p.name} e recomeçar do zero?\n(Uma cópia fica em saves/lixeira, caso mude de ideia.)`)) {
+      removeEventListener('beforeunload', saveGame); G.state = 'title';
+      localStorage.removeItem(SAVE_KEY);
+      const go = () => location.reload();
+      if (HAS_SERVER) fetch('/api/save/' + saveSlug(p.name), { method: 'DELETE' }).finally(go); else go();
+    } break;
     case 'taxa': if (n > 0) { CONFIG.EXP_RATE = n; dev(`Taxa de EXP agora é ${n}x (até recarregar a página).`); } break;
     case 'nivel': if (n > 0) { while (p.baseLv < Math.min(n, CONFIG.MAX_BASE_LV)) { p.baseLv++; p.statPoints += Math.floor(p.baseLv / 5) + 3; } recalc(p); p.hp = p.d.maxHp; dev(`Nível de Base ${p.baseLv}.`); UI.markDirty(); } break;
     case 'classe': if (n > 0) { while (p.jobLv < Math.min(n, maxJobLv(p))) { p.jobLv++; p.skillPoints++; } dev(`Nível de Classe ${p.jobLv}.`); UI.markDirty(); } break;
@@ -1140,6 +1181,6 @@ function continueGame(s) {
 UI.init();
 G.map = getMap('vila');
 G.npcs = (G.map.def.npcs || []).map(n => Object.assign({}, n, { x: n.x * TILE + TILE / 2, y: n.y * TILE + TILE / 2 }));
-UI.showTitle(loadSave());
+listCharacters().then(list => UI.showTitle(list));
 addEventListener('beforeunload', saveGame);
 requestAnimationFrame(frame);

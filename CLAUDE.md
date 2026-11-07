@@ -7,7 +7,8 @@ Projeto pessoal de longo prazo do Roberto: um RPG 2D no navegador, inspirado no 
 - **Interface e textos em português (pt-BR).**
 - **Sem build e sem dependências**: JS puro com scripts globais carregados por `index.html` (ordem: data → audio → world → render → ui → game). Precisa funcionar abrindo o `index.html` direto (file://), então não use ES modules nem fetch de arquivos locais.
 - **Conteúdo é guiado por dados**: classes, habilidades, itens, monstros e mapas ficam em `js/data.js`. Prefira adicionar dados a escrever casos especiais na lógica.
-- O save fica no `localStorage` (`SAVE_KEY`). Se mudar o formato, mantenha compatibilidade ou troque a versão da chave.
+- Saves: `saves/<slug do nome>.json` via `server.py` (fonte principal, fora do git) + `localStorage` (`SAVE_KEY`) como reserva. Ao abrir o jogo, um save local mais novo é enviado ao projeto. Se mudar o formato, mantenha compatibilidade. Nunca apague `saves/`; o personagem do Roberto se chama Vidro.
+- Em testes, não carregue o personagem dele: uma sessão aberta salva por cima (o mais recente vence).
 
 ## Sugestões do Roberto (tecla Q no jogo)
 Quando ele pedir para aplicar as sugestões:

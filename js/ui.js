@@ -426,18 +426,24 @@ const UI = {
   },
 
   /* ---------- Tela título / morte ---------- */
-  showTitle(hasSave) {
+  showTitle(chars = []) {
     const o = $('overlay');
     let hair = HAIR_COLORS[0], skin = SKIN_COLORS[0], style = 0;
+    chars = chars.filter(c => c && c.name && CLASSES[c.cls]);
+    const label = c => `${esc(c.name)} — Nv. ${c.baseLv} ${CLASSES[c.cls].name}`;
+    const contHtml = chars.length ? `
+        <button class="btn gold t-cont" data-i="0" style="width:100%;padding:10px;font-size:15px;margin-bottom:6px">▶ Continuar como ${label(chars[0])}</button>
+        ${chars.slice(1).map((c, i) => `<button class="btn t-cont" data-i="${i + 1}" style="width:100%;margin-bottom:4px">${label(c)}</button>`).join('')}
+        <div class="muted" style="text-align:center;margin:6px 0">— ou crie um novo personagem —</div>` : '';
     o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">UM RPG DE CLASSES, CARTAS E AVENTURA</div>
       <div class="card">
-        ${hasSave ? `<button class="btn gold" id="t-cont" style="width:100%;padding:10px;font-size:15px;margin-bottom:12px">▶ Continuar como ${esc(hasSave.name)} (Nv. ${hasSave.baseLv} ${CLASSES[hasSave.cls].name})</button><div class="muted" style="text-align:center;margin-bottom:6px">— ou crie um novo personagem —</div>` : ''}
+        ${contHtml}
         <canvas id="preview" width="120" height="110"></canvas>
         <label>Nome</label><input type="text" id="t-name" maxlength="16" placeholder="Seu nome de aventureiro">
         <label>Cor do cabelo</label><div class="swatches" id="t-hair">${HAIR_COLORS.map((c, i) => `<div class="sw ${i ? '' : 'on'}" style="background:${c}" data-c="${c}"></div>`).join('')}</div>
         <label>Tom de pele</label><div class="swatches" id="t-skin">${SKIN_COLORS.map((c, i) => `<div class="sw ${i ? '' : 'on'}" style="background:${c}" data-c="${c}"></div>`).join('')}</div>
         <label>Penteado</label><div class="swatches" id="t-style">${[0, 1, 2].map(i => `<div class="sw ${i ? '' : 'on'}" style="background:#555;display:grid;place-items:center;font-size:11px" data-c="${i}">${i + 1}</div>`).join('')}</div>
-        <div class="row"><button class="btn gold" id="t-new">${hasSave ? 'Criar novo (apaga o atual)' : 'Começar aventura'}</button></div>
+        <div class="row"><button class="btn ${chars.length ? '' : 'gold'}" id="t-new">${chars.length ? 'Criar novo personagem' : 'Começar aventura'}</button></div>
       </div><div class="ver">v${GAME_VERSION} • clique para ativar o som</div></div>`;
     o.classList.add('show');
     const prev = $('preview'), pc = prev.getContext('2d');
@@ -454,10 +460,15 @@ const UI = {
     o.onclick = () => Sound.init();
     $('t-new').onclick = () => {
       const name = $('t-name').value.trim() || 'Aventureiro';
-      if (hasSave && !confirm('Isso vai apagar o personagem salvo. Continuar?')) return;
+      const same = chars.find(c => c.slug === saveSlug(name));
+      if (same && !confirm(`Já existe um personagem chamado ${same.name}. Criar outro com o mesmo nome substitui o antigo. Continuar?`)) return;
       cancelAnimationFrame(raf); Sound.init(); startNewGame(name, { hair, skin, hairStyle: style });
     };
-    if (hasSave) $('t-cont').onclick = () => { cancelAnimationFrame(raf); Sound.init(); continueGame(hasSave); };
+    o.querySelectorAll('.t-cont').forEach(b => b.onclick = async () => {
+      Sound.init();
+      try { const s = await loadCharacter(chars[+b.dataset.i]); cancelAnimationFrame(raf); continueGame(s); }
+      catch (e) { alert('Não consegui carregar esse personagem: ' + e.message); }
+    });
     setTimeout(() => $('t-name') && $('t-name').focus(), 50);
   },
   showDeath(loss) {

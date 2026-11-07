@@ -12,9 +12,11 @@ Um RPG de ação 2D no navegador, com espírito de MMORPG clássico: **matar mon
 python3 server.py
 ```
 
-Depois acesse http://localhost:5577. O progresso é salvo automaticamente no navegador.
+Depois acesse http://localhost:5577 (se a porta estiver ocupada, o servidor usa a próxima livre e mostra o endereço).
 
-**Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas as sugestões (tecla Q) ficam guardadas no navegador até você abrir o jogo pelo `server.py`.
+**Onde fica o progresso:** cada personagem é salvo em `saves/<nome>.json`, na pasta do projeto. Por isso ele aparece em qualquer porta ou navegador, e você pode ter vários personagens (todos aparecem na tela inicial). O navegador guarda uma cópia reserva. O save anterior fica em `.bak` e o comando `/resetar` move o personagem para `saves/lixeira/` em vez de apagar.
+
+**Jeito mais simples:** abra o arquivo `index.html` no navegador. Tudo funciona, mas o progresso e as sugestões (tecla Q) ficam só no navegador até você abrir o jogo pelo `server.py`. Quando abrir, eles são enviados para o projeto automaticamente.
 
 ### Pausa e sugestões (seu canal direto com o Claude)
 

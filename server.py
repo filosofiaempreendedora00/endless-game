@@ -28,6 +28,35 @@ MD = os.path.join(FB_DIR, 'SUGESTOES.md')
 LOCK = threading.Lock()
 MAX_BODY = 8 * 1024 * 1024
 DEFAULT_PORT = 5577
+SAVES_DIR = os.path.join(ROOT, 'saves')
+TRASH_DIR = os.path.join(SAVES_DIR, 'lixeira')
+SAVE_LOCK = threading.Lock()
+
+
+def slug(name):
+    s = re.sub(r'[^a-z0-9]+', '_', str(name).lower()).strip('_')
+    return s[:32] or 'sem_nome'
+
+
+def save_path(sl):
+    return os.path.join(SAVES_DIR, slug(sl) + '.json')
+
+
+def list_saves():
+    out = []
+    if not os.path.isdir(SAVES_DIR):
+        return out
+    for fn in os.listdir(SAVES_DIR):
+        if not fn.endswith('.json'):
+            continue
+        try:
+            with open(os.path.join(SAVES_DIR, fn), encoding='utf-8') as f:
+                s = json.load(f)
+            out.append({'slug': fn[:-5], 'name': s.get('name'), 'cls': s.get('cls'), 'baseLv': s.get('baseLv'),
+                        'jobLv': s.get('jobLv'), 'mapId': s.get('mapId'), 'savedAt': s.get('savedAt', 0)})
+        except (OSError, ValueError):
+            continue
+    return sorted(out, key=lambda s: s['savedAt'] or 0, reverse=True)
 
 
 def load():
@@ -100,12 +129,69 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path.split('?')[0] == '/api/feedback':
+        path = self.path.split('?')[0]
+        if path == '/api/feedback':
             with LOCK:
                 return self.send_json(200, load())
+        if path == '/api/saves':
+            with SAVE_LOCK:
+                return self.send_json(200, list_saves())
+        if path.startswith('/api/save/'):
+            try:
+                with SAVE_LOCK, open(save_path(path[len('/api/save/'):]), encoding='utf-8') as f:
+                    return self.send_json(200, json.load(f))
+            except (OSError, ValueError):
+                return self.send_json(404, {'erro': 'personagem não encontrado'})
         return super().do_GET()
 
+    def read_json(self, limit):
+        n = int(self.headers.get('Content-Length') or 0)
+        if n <= 0 or n > limit:
+            return None
+        try:
+            return json.loads(self.rfile.read(n))
+        except (ValueError, UnicodeDecodeError):
+            return None
+
+    # salvar personagem: saves/<nome>.json (mantém o anterior em .bak)
+    def save_character(self):
+        data = self.read_json(2 * 1024 * 1024)
+        if not isinstance(data, dict) or not str(data.get('name', '')).strip() or 'cls' not in data:
+            return self.send_json(400, {'erro': 'save inválido'})
+        p = save_path(data['name'])
+        with SAVE_LOCK:
+            os.makedirs(SAVES_DIR, exist_ok=True)
+            try:
+                with open(p, encoding='utf-8') as f:
+                    old = json.load(f)
+                if (old.get('savedAt') or 0) > (data.get('savedAt') or 0):
+                    return self.send_json(200, {'ok': True, 'ignorado': 'save do projeto é mais recente'})
+                os.replace(p, p + '.bak')
+            except (OSError, ValueError):
+                pass
+            tmp = p + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False)
+            os.replace(tmp, p)
+        return self.send_json(200, {'ok': True})
+
+    # apagar personagem: vai para saves/lixeira (recuperável)
+    def do_DELETE(self):
+        path = self.path.split('?')[0]
+        if not path.startswith('/api/save/'):
+            return self.send_json(404, {'erro': 'rota desconhecida'})
+        p = save_path(path[len('/api/save/'):])
+        with SAVE_LOCK:
+            if not os.path.exists(p):
+                return self.send_json(404, {'erro': 'personagem não encontrado'})
+            os.makedirs(TRASH_DIR, exist_ok=True)
+            stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+            os.replace(p, os.path.join(TRASH_DIR, f'{os.path.basename(p)[:-5]}-{stamp}.json'))
+        return self.send_json(200, {'ok': True})
+
     def do_POST(self):
+        if self.path.split('?')[0] == '/api/save':
+            return self.save_character()
         if self.path.split('?')[0] != '/api/feedback':
             return self.send_json(404, {'erro': 'rota desconhecida'})
         n = int(self.headers.get('Content-Length') or 0)
