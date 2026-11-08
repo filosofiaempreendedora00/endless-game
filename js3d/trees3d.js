@@ -80,18 +80,17 @@ function leafAtlas(kind) {
         x.strokeStyle = `rgba(30,50,20,0.45)`; x.lineWidth = 1; x.beginPath(); x.moveTo(-L / 2, 0); x.lineTo(L / 2, 0); x.stroke();
         x.restore();
       }
-    } else { // agulhas: ramo central com raminhos laterais cobertos de agulhas, caindo nas pontas
-      const base = q === 3 ? [38, 70, 44] : [32 + q * 4, 62 + q * 6, 40 + q * 3];
-      x.strokeStyle = '#3e2a1a'; x.lineWidth = 5; x.beginPath(); x.moveTo(ox + S / 2, oy + S); x.lineTo(ox + S / 2, oy + S * 0.04); x.stroke();
-      for (let j = 0; j < 16; j++) {
-        const yy = oy + S * (0.08 + j / 16 * 0.86), side = j % 2 ? 1 : -1, len = S * (0.18 + (1 - Math.abs(j / 16 - 0.55)) * 0.24) * (0.8 + rng() * 0.3);
-        const ex = ox + S / 2 + side * len, ey = yy - len * 0.25;
-        x.strokeStyle = '#4a3220'; x.lineWidth = 2; x.beginPath(); x.moveTo(ox + S / 2, yy); x.lineTo(ex, ey); x.stroke();
-        for (let k = 0; k < 26; k++) { const t = k / 26, bx = ox + S / 2 + (ex - ox - S / 2) * t, by = yy + (ey - yy) * t, nl = S * 0.05 * (1 - t * 0.4) * (0.7 + rng() * 0.6), tone = rng();
-          x.strokeStyle = `rgb(${base[0] + tone * 26},${base[1] + tone * 40},${base[2] + tone * 22})`; x.lineWidth = 1.6;
-          for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + side * nl * 0.35, by + sd * nl); x.stroke(); } }
+    } else { // agulhas: ramo central com raminhos laterais densos de agulhas (forma de pena), pontas mais claras
+      const base = [[26, 58, 34], [30, 64, 36], [24, 54, 32], [34, 70, 40]][q];
+      x.strokeStyle = '#3a2818'; x.lineWidth = 6; x.beginPath(); x.moveTo(ox + S / 2, oy + S); x.lineTo(ox + S / 2, oy + S * 0.03); x.stroke();
+      for (let j = 0; j < 30; j++) {
+        const yy = oy + S * (0.05 + j / 30 * 0.92), side = j % 2 ? 1 : -1, prof = Math.sin(Math.PI * Math.min(1, (j / 30) * 1.1 + 0.05)), len = S * 0.44 * prof * (0.8 + rng() * 0.25);
+        const ex = ox + S / 2 + side * len, ey = yy - len * 0.35;
+        x.strokeStyle = '#3e2a1a'; x.lineWidth = 2.2; x.beginPath(); x.moveTo(ox + S / 2, yy); x.lineTo(ex, ey); x.stroke();
+        for (let k = 0; k < 34; k++) { const t2 = k / 34, bx = ox + S / 2 + (ex - ox - S / 2) * t2, by = yy + (ey - yy) * t2, nl = S * 0.045 * (1 - t2 * 0.35) * (0.7 + rng() * 0.6), tone = rng() * 0.7 + t2 * 0.3;
+          x.strokeStyle = `rgb(${base[0] + tone * 30 | 0},${base[1] + tone * 46 | 0},${base[2] + tone * 22 | 0})`; x.lineWidth = 2;
+          for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + side * nl * 0.45, by + sd * nl); x.stroke(); } }
       }
-      for (let k = 0; k < 140; k++) { const px = ox + S / 2 + (rng() - 0.5) * S * 0.25, py = oy + S * (0.05 + rng() * 0.9), nl = S * 0.04, tone = rng(); x.strokeStyle = `rgb(${base[0] + tone * 26},${base[1] + tone * 40},${base[2] + tone * 22})`; x.lineWidth = 1.6; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (rng() - 0.5) * nl * 2, py - nl); x.stroke(); }
     }
     x.restore();
   }
@@ -142,14 +141,14 @@ export function oakGeometry(seed, opts = {}) {
   // galhinhos curtos saindo de cada ponta para dentro dos cachos
   tips.forEach(([a, d, y], i) => {
     const rr = R * (i === 0 ? 0.8 : 0.5 + rng() * 0.3), ccx = Math.cos(a) * d, ccz = Math.sin(a) * d, hue = (rng() - 0.5) * 0.05;
-    const nCards = Math.round(10 + rr * 7);
+    const nCards = Math.round(12 + rr * 9);
     for (let k = 0; k < nCards; k++) {
       const dir = rndDir(rng); const along = Math.pow(rng(), 0.55); // mais cartões na casca externa do cacho
       const px = ccx + dir.x * rr * along * 0.85, py = y + dir.y * rr * along * 0.62, pz = ccz + dir.z * rr * along * 0.85;
       const sz = 1.0 + rng() * 0.8, out2 = new THREE.Vector3(px, py - cy * 0.15, pz).normalize(), up = new THREE.Vector3(rng() - 0.5, 1, rng() - 0.5).normalize();
       const dirC = out2.clone().add(rndDir(rng).multiplyScalar(0.6)).normalize(); if (Math.abs(dirC.dot(up)) > 0.95) up.set(1, 0, 0);
       card(out, { cx: px - dirC.x * sz * 0.5, cy: py - dirC.y * sz * 0.5, cz: pz - dirC.z * sz * 0.5, w: sz, h: sz, dir: dirC, up, uvq: Math.floor(rng() * 4), droop: sz * 0.12, center,
-        shade: (x, yy, z) => { const inner = Math.min(1, Math.hypot(x, (yy - cy) * 1.2, z) / (R * 1.25)), top = Math.min(1, Math.max(0, (yy - (cy - R * 0.9)) / (R * 1.8))); const v = (0.42 + inner * 0.38 + top * 0.32) * dk; return tmp.setRGB(v * (1 + hue), v, v * (1 - hue * 0.5)); } });
+        shade: (x, yy, z) => { const inner = Math.min(1, Math.hypot(x, (yy - cy) * 1.2, z) / (R * 1.25)), top = Math.min(1, Math.max(0, (yy - (cy - R * 0.9)) / (R * 1.8))); const v = (0.58 + inner * 0.34 + top * 0.3) * dk; return tmp.setRGB(v * (1 + hue), v, v * (1 - hue * 0.5)); } });
     }
   });
   const leaf = cardGeo(out);
@@ -167,32 +166,32 @@ export function pineGeometry(seed, opts = {}) {
   // auditoria: camadas de galhos feitos de cartões de agulhas (ramos com caimento), em volta de um miolo escuro que dá massa
   const layers = 8 + Math.floor(rng() * 3), out = { pos: [], nor: [], uv: [], col: [], idx: [] }, tmp = new THREE.Color(), dk = opts.dark ? 0.7 : 0.9;
   for (let i = 0; i < layers; i++) {
-    const k = i / layers, r = base * (1 - k * 0.85) * (0.92 + rng() * 0.16), y0 = H * 0.2 + k * H * 0.72, nb = Math.max(6, Math.round(9 + r * 4)), off = rng() * 6, center = new THREE.Vector3(0, y0, 0);
+    const k = i / layers, r = base * (1 - k * 0.85) * (0.92 + rng() * 0.16), y0 = H * 0.2 + k * H * 0.72, nb = Math.max(7, Math.round(9 + r * 4)), off = rng() * 6, center = new THREE.Vector3(0, y0, 0);
     // miolo: cone escuro e liso (não aparece como cone: fica dentro dos ramos e só escurece os vãos)
-    const core = new THREE.ConeGeometry(r * 0.42, H * 0.2, 12, 1, true); core.translate(0, y0 + H * 0.06, 0);
+    const core = new THREE.ConeGeometry(r * 0.3, H * 0.16, 12, 1, true); core.translate(0, y0 + H * 0.04, 0);
     parts.push(colorize(toNonIndexed(core.deleteAttribute('uv')), c => c.copy(dark).multiplyScalar(0.55)));
     for (let j = 0; j < nb; j++) {
       const a = j / nb * Math.PI * 2 + off + (rng() - 0.5) * 0.4, len = r * (0.85 + rng() * 0.3), dir = new THREE.Vector3(Math.cos(a), 0.18 - k * 0.1 + (rng() - 0.5) * 0.1, Math.sin(a)).normalize();
-      const up = new THREE.Vector3(0, 1, 0), w = len * (0.55 + rng() * 0.2), y = y0 + (rng() - 0.5) * H * 0.04;
+      const up = new THREE.Vector3(0, 1, 0), w = len * (0.62 + rng() * 0.2), y = y0 + (rng() - 0.5) * H * 0.03;
       for (const tilt of [0, 0.9]) { // dois cartões cruzados por ramo (volume de todos os lados)
         const upT = up.clone().applyAxisAngle(dir, tilt);
-        card(out, { cx: Math.cos(a) * 0.1, cy: y, cz: Math.sin(a) * 0.1, w, h: len, dir, up: upT, uvq: Math.floor(rng() * 4), droop: len * (0.28 + rng() * 0.15), center,
-          shade: (x, yy, z) => { const out2 = Math.min(1, Math.hypot(x, z) / Math.max(0.3, r)), v = (0.5 + out2 * 0.4 + k * 0.15) * dk; return tmp.setRGB(v, v, v); } });
+        card(out, { cx: Math.cos(a) * 0.1, cy: y, cz: Math.sin(a) * 0.1, w, h: len, dir, up: upT, uvq: Math.floor(rng() * 4), droop: len * (0.38 + rng() * 0.18), center,
+          shade: (x, yy, z) => { const out2 = Math.min(1, Math.hypot(x, z) / Math.max(0.3, r)), v = (0.62 + out2 * 0.38 + k * 0.12) * dk; return tmp.setRGB(v, v, v); } });
       }
-      if (opts.snow) { // S-158: neve fofa assentada por cima do ramo (montinho alongado e liso), as pontas que caem ficam verdes
-        const sn = mergeVertices(new THREE.SphereGeometry(1, 12, 8)); sn.scale(len * 0.36, 0.07 + rng() * 0.05, w * 0.3);
+      if (opts.snow && j % 3 === 0) { // S-158: montinhos de neve fofa em alguns ramos (o resto da neve vem do material, pelo lado de cima de cada ramo)
+        const sn = mergeVertices(new THREE.SphereGeometry(1, 9, 5)); sn.scale(len * 0.36, 0.07 + rng() * 0.05, w * 0.3);
         const P = sn.attributes.position; for (let q = 0; q < P.count; q++) { const yy = P.getY(q); if (yy < 0) P.setY(q, yy * 0.3); P.setX(q, P.getX(q) + Math.sin(P.getZ(q) * 9 + j) * 0.03); }
         sn.computeVertexNormals(); sn.rotateY(-a); sn.translate(Math.cos(a) * len * 0.42, y + len * 0.05, Math.sin(a) * len * 0.42);
         parts.push(colorize(toNonIndexed(sn.deleteAttribute('uv')), (c, x, yy) => c.copy(snowA).lerp(snowB, rng() * 0.4)));
       }
     }
   }
-  const leaf = cardGeo(out);
-  // ponta fina no topo
-  const tip = new THREE.ConeGeometry(0.12, H * 0.12, 8); tip.translate(0, H * 0.95, 0);
-  parts.push(colorize(toNonIndexed(tip), (c, x, y) => c.copy(opts.snow && y > H * 0.97 ? snowA : light)));
+  
+  // ponta: três cartões de agulhas em pé (broto do topo), nada de cone liso
+  for (let j = 0; j < 3; j++) { const a = j / 3 * Math.PI; card(out, { cx: 0, cy: H * 0.84, cz: 0, w: 0.38, h: H * 0.13, dir: new THREE.Vector3(0, 1, 0), up: new THREE.Vector3(Math.cos(a), 0, Math.sin(a)), uvq: j, droop: 0, center: new THREE.Vector3(0, H * 0.8, 0), shade: () => tmp.setRGB(0.9 * dk, 0.9 * dk, 0.9 * dk) }); }
+  const leaf2 = cardGeo(out);
   const g = mergeGeometries(parts.map(q => { for (const k of Object.keys(q.attributes)) if (!['position', 'normal', 'color'].includes(k)) q.deleteAttribute(k); return q; }));
-  return { geo: g, leaf, leafKind: 'needle', radius: 0.45, height: H };
+  return { geo: g, leaf: leaf2, leafKind: opts.snow ? 'needleSnow' : 'needle', radius: 0.45, height: H };
 }
 
 /* ---------- Toco com raízes (enterrado no chão, não flutua em encostas) ---------- */
@@ -271,10 +270,34 @@ export function rockGeometry(seed, opts = {}) {
 // gera variações prontas para clonar: { nome: { scene, radius } }
 export function makeTreeTemplates() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: false });
+  // auditoria: casca com sulcos verticais, placas e musgo (ruído no espaço do mundo, sem textura nem custo de geometria)
+  mat.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vBW;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvBW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vBW;
+float bh(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float bn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(bh(i), bh(i + vec2(1,0)), f.x), mix(bh(i + vec2(0,1)), bh(i + vec2(1,1)), f.x), f.y); }`).replace('#include <color_fragment>', `#include <color_fragment>
+{ float a = (vBW.x + vBW.z) * 9.0; float furrow = bn(vec2(a, vBW.y * 1.3)) * 0.6 + bn(vec2(a * 2.3, vBW.y * 3.0)) * 0.4;
+  float plates = smoothstep(0.35, 0.65, furrow); diffuseColor.rgb *= 0.55 + plates * 0.6;
+  float moss = smoothstep(0.62, 0.8, bn(vec2(a * 0.4, vBW.y * 0.6) + 5.0)) * smoothstep(2.5, 0.3, vBW.y - 0.0);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.28, 0.36, 0.16), moss * 0.55); }`);
+  };
   const out = {};
   // folhas: alphaTest (recorte sem ordenar transparência), dois lados, e material de profundidade com o mesmo recorte para a sombra ter o desenho das folhas
   const leafMats = {}, leafMat = kind => leafMats[kind] || (leafMats[kind] = (() => {
-    const map = leafAtlas(kind), m = new THREE.MeshStandardMaterial({ map, vertexColors: true, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.78, emissive: new THREE.Color(kind === 'leaf' ? '#0e1a06' : '#081208') });
+    const map = leafAtlas(kind === 'needleSnow' ? 'needle' : kind), m = new THREE.MeshStandardMaterial({ map, vertexColors: true, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.78, emissive: new THREE.Color(kind === 'leaf' ? '#0e1a06' : '#081208') });
+    if (kind === 'needleSnow') { // S-158: neve assentada no lado de CIMA de cada ramo (pela inclinação real do cartão), em manchas — pontas e lado de baixo seguem verdes
+      m.onBeforeCompile = sh => {
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSW;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSW;\nfloat sh1(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }')
+          .replace('#include <color_fragment>', `#include <color_fragment>
+          { vec3 fn = normalize(cross(dFdx(vSW), dFdy(vSW))); if (dot(fn, cameraPosition - vSW) < 0.0) fn = -fn;
+            float patchy = 0.55 + 0.45 * sin(vSW.x * 2.7 + vSW.z * 3.1) * sin(vSW.y * 1.9 - vSW.x * 1.3);
+            float snow = smoothstep(0.35, 0.75, fn.y) * smoothstep(0.4, 0.75, patchy);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.96, 1.0) * (0.92 + sh1(floor(vSW.xz * 8.0)) * 0.08), snow * 0.9); }`);
+      };
+      m.customProgramCacheKey = () => 'needleSnow';
+    }
     const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map, alphaTest: 0.45 });
     return { m, dm };
   })());

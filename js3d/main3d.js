@@ -2817,6 +2817,7 @@ function draw(dt) {
     camera.lookAt(VILLAGE.x, 2, VILLAGE.z);
     sky.position.copy(camera.position);
   }
+  if (S.started) cullInteriors(); // garante que a sala aparece no mesmo quadro em que a câmera entra
   renderer.render(scene, camera);
 }
 // para testes automáticos: avança o jogo sem depender do requestAnimationFrame

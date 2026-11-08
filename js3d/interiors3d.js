@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { vlight } from './lights3d.js';
 import { masonry } from './landmarks3d.js';
 import { dungeonWallMat, dungeonBox } from './dungeon3d.js';
+import { realFlame } from './castle3d.js';
 
 export const INTERIORS = {
   // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 450 e as montanhas do horizonte até ~740)
@@ -81,6 +82,13 @@ export function buildRoomShell(def) {
   const dw = 2.4, side = (w - dw) / 2;
   const wallS1 = box(side, h, 0.3, WM, -w / 2 + side / 2, h / 2, d / 2), wallS2 = box(side, h, 0.3, WM, w / 2 - side / 2, h / 2, d / 2), lintel = box(dw, h - 2.8, 0.3, WM, 0, 2.8 + (h - 2.8) / 2, d / 2);
   for (const m of [wallN, wallW, wallE, wallS1, wallS2, lintel]) { g.add(m); walls.push(m); }
+  { // auditoria: porta de madeira de verdade no vão (nada de retângulo branco estourado)
+    const dW = woodMat('#5a3a22', [1, 2]), iron = mat('#2b2622', { metalness: 0.7, roughness: 0.45 }), door = new THREE.Group(); door.position.set(0, 0, d / 2 + 0.02); g.add(door);
+    for (let k = 0; k < 5; k++) { const pl = box(dw / 5 - 0.02, 2.78, 0.08, dW, -dw / 2 + (k + 0.5) * dw / 5, 1.39, 0); pl.castShadow = false; door.add(pl); }
+    for (const y of [0.5, 1.4, 2.3]) door.add(box(dw - 0.1, 0.1, 0.04, iron, 0, y, -0.06));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 20), iron); ring.position.set(dw * 0.3, 1.25, -0.08); door.add(ring);
+    door.add(box(dw + 0.3, 0.2, 0.18, woodMat('#3e2818'), 0, 2.88, -0.02)); for (const sx of [-1, 1]) door.add(box(0.16, 2.9, 0.18, woodMat('#3e2818'), sx * (dw / 2 + 0.07), 1.45, -0.02));
+  }
   // rodapé e vigas de madeira (enxaimel)
   for (const [x, z, ww, dd] of [[0, -d / 2 + 0.17, w, 0.06], [-w / 2 + 0.17, 0, 0.06, d], [w / 2 - 0.17, 0, 0.06, d]]) g.add(box(ww, 0.35, dd, BM, x, 0.17, z));
   for (let i = 0; i <= 4; i++) { const x = -w / 2 + 0.2 + i * (w - 0.4) / 4; g.add(box(0.25, h, 0.12, BM, x, h / 2, -d / 2 + 0.2)); }
@@ -175,7 +183,7 @@ export function bench(len = 2.2) {
 }
 // balcão mais baixo (dá para ver o rosto de quem atende), com painéis, tampo com borda e garrafas de verdade
 export function counter(len = 5) {
-  const g = new THREE.Group(), W = mat('#5e3e24'), T = mat('#8a6040'), P = mat('#6e4a2c');
+  const g = new THREE.Group(), W = woodMat('#5e3e24', [len / 2, 1]), T = woodMat('#8a6040', [len / 2, 0.5]), P = woodMat('#6e4a2c', [1, 1]); // auditoria: madeira com veios no balcão
   g.add(box(len, 0.88, 0.7, W, 0, 0.44, 0)); g.add(box(len + 0.2, 0.08, 0.9, T, 0, 0.92, 0));
   for (let k = 0; k < Math.floor(len / 0.9); k++) g.add(box(0.7, 0.55, 0.03, P, -len / 2 + 0.5 + k * 0.9, 0.46, 0.36)); // painéis da frente
   g.add(box(len, 0.06, 0.06, mat('#c9a15a', { metalness: 0.6, roughness: 0.35 }), 0, 0.12, 0.42)); // apoio de pé de latão
@@ -207,10 +215,12 @@ export function fireplace() {
   const fire = new THREE.Group(); fire.position.set(0, 0.18, 0.02); g.add(fire);
   const layers = [['#ff4a12', 0.2, 0.75, 0.85], ['#ff8a2a', 0.15, 0.6, 0.9], ['#ffd27a', 0.09, 0.42, 0.95]];
   const flames = [];
-  for (const [col, r, h, op] of layers) for (let k = 0; k < 4; k++) { const fg = new THREE.ConeGeometry(r, h, 16, 4, true); fg.translate(0, h / 2, 0); const f = new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); f.position.set((k - 1.5) * 0.14, 0, (k % 2) * 0.06 - 0.03); f.userData.ph = k * 1.7 + r * 10; fire.add(f); flames.push(f); }
+  const rf = realFlame(0.8, 3); rf.position.set(0, 0.02, 0); fire.add(rf); // auditoria: chama de verdade (camadas que tremulam + brasas), no lugar dos cones
+  if (false) for (const [col, r, h, op] of layers) for (let k = 0; k < 4; k++) { const fg = new THREE.ConeGeometry(r, h, 16, 4, true); fg.translate(0, h / 2, 0); const f = new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); f.position.set((k - 1.5) * 0.14, 0, (k % 2) * 0.06 - 0.03); f.userData.ph = k * 1.7 + r * 10; fire.add(f); flames.push(f); }
   const sparks = []; for (let k = 0; k < 10; k++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffcf6a' })); sp.userData.ph = k / 10; fire.add(sp); sparks.push(sp); }
   const light = vlight('#ff9a4a', 8, 9, 1.5); light.position.set(0, 0.8, 0.9); g.add(light);
   g.userData.update = t => {
+    rf.userData.update(t);
     for (const f of flames) { const p = f.userData.ph; f.scale.set(1 + Math.sin(t * 7 + p) * 0.12, 0.8 + Math.sin(t * 9.3 + p * 1.3) * 0.22 + Math.sin(t * 15 + p) * 0.08, 1); f.rotation.z = Math.sin(t * 5 + p) * 0.08; }
     for (const sp of sparks) { const q = (t * 0.7 + sp.userData.ph) % 1; sp.position.set(Math.sin(sp.userData.ph * 40 + t * 2) * 0.25 * q, 0.2 + q * 1.0, Math.cos(sp.userData.ph * 30) * 0.1); sp.scale.setScalar(1 - q); }
     ember.material.opacity = 0.45 + Math.sin(t * 5) * 0.1;
