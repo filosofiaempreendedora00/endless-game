@@ -2,9 +2,19 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (2)
 
-_Nenhuma._
+### S-069 · Interface: Área de 911×756 px em Palco do personagem — "‹ · arraste para girar · rodinha aproxima"
+- **Status:** pendente · **Quando:** 2026-11-08T13:10:52
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** aqui está com muito lag no personagem. Além disso percebo que partes tanto do personagem quanto do mascote estão invadindo o lado externo da box e cortando parte de ambos eu preciso que você garante aqui nada será cortado
+- ![print](img/S-069.png)
+
+### S-070 · Interface: Área de 429×573 px em Palco do personagem
+- **Status:** pendente · **Quando:** 2026-11-08T13:11:23
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** Gostaria que fosse possível virar o personagem com a tecla a e tecla de da mesma forma com que eu consigo mexer nele a partir do mouse
+- ![print](img/S-070.png)
 
 ## Feitas (68)
 

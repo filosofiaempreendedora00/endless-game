@@ -25,6 +25,8 @@ FB_DIR = os.path.join(ROOT, 'feedback')
 IMG_DIR = os.path.join(FB_DIR, 'img')
 DB = os.path.join(FB_DIR, 'sugestoes.json')
 MD = os.path.join(FB_DIR, 'SUGESTOES.md')
+PROPS = os.path.join(FB_DIR, 'propostas.json')  # propostas do Claude (aba na janela L)
+PROP_STATUS = ('proposta', 'aprovada', 'recusada', 'feita')
 LOCK = threading.Lock()
 MAX_BODY = 8 * 1024 * 1024
 DEFAULT_PORT = 5577
@@ -130,6 +132,15 @@ def load():
         return []
 
 
+def load_props():
+    try:
+        with open(PROPS, encoding='utf-8') as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except (FileNotFoundError, ValueError):
+        return []
+
+
 def save(items):
     os.makedirs(FB_DIR, exist_ok=True)
     tmp = DB + '.tmp'
@@ -197,6 +208,9 @@ class Handler(SimpleHTTPRequestHandler):
         if path == '/api/feedback':
             with LOCK:
                 return self.send_json(200, load())
+        if path == '/api/propostas':
+            with LOCK:
+                return self.send_json(200, load_props())
         if path == '/api/saves':
             with SAVE_LOCK:
                 return self.send_json(200, list_saves())
@@ -261,6 +275,33 @@ class Handler(SimpleHTTPRequestHandler):
             os.replace(p, os.path.join(TRASH_DIR, f'{os.path.basename(p)[:-5]}-{stamp}.json'))
         return self.send_json(200, {'ok': True})
 
+    # o Roberto aprova/recusa uma proposta do Claude pela janela L
+    def answer_prop(self):
+        data = self.read_json(16 * 1024)
+        if not isinstance(data, dict) or data.get('status') not in ('proposta', 'aprovada', 'recusada'):
+            return self.send_json(400, {'erro': 'pedido inválido'})
+        with LOCK:
+            props = load_props()
+            p = next((x for x in props if x.get('id') == data.get('id')), None)
+            if not p or p.get('status') == 'feita':
+                return self.send_json(404, {'erro': 'proposta não encontrada'})
+            p['status'] = data['status']
+            p['respondidoEm'] = datetime.datetime.now().isoformat(timespec='seconds')
+            motivo = str(data.get('motivo') or '').strip()[:500]
+            if data['status'] == 'recusada' and motivo:
+                p['motivo'] = motivo
+            else:
+                p.pop('motivo', None)
+            if data['status'] == 'proposta':
+                p.pop('respondidoEm', None)
+            os.makedirs(FB_DIR, exist_ok=True)
+            tmp = PROPS + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(props, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, PROPS)
+        print(f"🤖 Proposta {p['id']}: {p['status']}", flush=True)
+        return self.send_json(200, {'ok': True})
+
     def arena(self, path):
         data = self.read_json(64 * 1024)
         if not isinstance(data, dict) or not data.get('id'):
@@ -306,6 +347,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path.split('?')[0] == '/api/save':
             return self.save_character()
+        if self.path.split('?')[0] == '/api/propostas':
+            return self.answer_prop()
         if self.path.split('?')[0].startswith('/api/arena/'):
             return self.arena(self.path.split('?')[0])
         if self.path.split('?')[0] != '/api/feedback':

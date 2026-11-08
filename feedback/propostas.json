@@ -1,0 +1,72 @@
+[
+  {
+    "id": "P-001",
+    "titulo": "Monstros que faltam com modelo próprio",
+    "detalhe": "Dar modelo próprio e orgânico ao Espantalho, ao Morcego, ao Golem de Musgo e ao Guardião (hoje usam formas provisórias), com animação de ataque e de morte.",
+    "principios": [
+      "Nada de fake ou quadradão",
+      "Vivo e animado"
+    ],
+    "evidencias": [
+      "S-039",
+      "S-044",
+      "S-053",
+      "S-055"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-002",
+    "titulo": "Arena PvP completa",
+    "detalhe": "Habilidades em área também acertam jogadores, e poções/curas passam pelo servidor (hoje o HP do servidor desfaz a cura).",
+    "principios": [
+      "Ferramentas e sistemas justos"
+    ],
+    "evidencias": [
+      "S-060"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-003",
+    "titulo": "Verificador de flutuação e colisão",
+    "detalhe": "Um teste automático que percorre o mundo e acusa objetos flutuando ou enterrados, árvores em encosta íngreme e colisões menores que o objeto. Roda antes de cada entrega.",
+    "principios": [
+      "Nada flutua, nada atravessa"
+    ],
+    "evidencias": [
+      "S-025",
+      "S-037",
+      "S-054",
+      "S-064"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-004",
+    "titulo": "Teste automático de música",
+    "detalhe": "Trocar de zona, entrar e sair de casas e da arena, e confirmar que só uma música toca por vez.",
+    "principios": [
+      "Som limpo"
+    ],
+    "evidencias": [
+      "S-002",
+      "S-032"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-005",
+    "titulo": "Aba de propostas na janela L",
+    "detalhe": "Ver as propostas do Claude dentro do jogo e aprovar ou recusar com um clique.",
+    "principios": [
+      "A ferramenta de sugestões é sagrada"
+    ],
+    "evidencias": [
+      "S-027",
+      "S-045"
+    ],
+    "status": "feita",
+    "resposta": "É esta aba! Aprovar ou recusar aqui fica salvo em feedback/propostas.json."
+  }
+]

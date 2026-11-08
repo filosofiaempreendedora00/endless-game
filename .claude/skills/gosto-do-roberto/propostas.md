@@ -1,13 +1,23 @@
 # Propostas do Claude
 
-Melhorias que o Claude identificou comparando o jogo com o perfil de gosto. O Roberto aprova dizendo, por exemplo: "aplique a P-002".
+As propostas ficam em **`feedback/propostas.json`**: é a fonte única, lida e gravada pelo jogo.
 
-Status possíveis: **proposta**, **aprovada**, **feita** ou **recusada**. Se ele recusar, registre o motivo, porque recusas também ensinam.
+O Roberto vê as propostas na janela **L → aba "🤖 Propostas do Claude"** e aprova ou recusa com um clique. Ao recusar, ele pode escrever o motivo.
 
-| Id | Proposta | Princípio | Evidências | Status |
-|---|---|---|---|---|
-| P-001 | Dar modelo próprio e orgânico ao Espantalho, ao Morcego, ao Golem de Musgo e ao Guardião, que ainda usam formas provisórias; com animação de ataque e morte. | 1, 6 | S-039, S-044, S-053, S-055 | proposta |
-| P-002 | Arena PvP: fazer as habilidades em área acertarem jogadores; poções e curas passam pelo servidor, para não serem desfeitas pelo HP dele. | 9, 10 | S-060 | proposta |
-| P-003 | Verificação automática que percorre o mundo e acusa objetos flutuando ou enterrados, árvores em encosta íngreme e colisores menores que o modelo. Roda antes de cada entrega. | 2 | S-025, S-037, S-054, S-064 | proposta |
-| P-004 | Teste automático de música: trocar de zona, entrar e sair de interiores e da arena, e confirmar que só uma trilha toca. | 13 | S-002, S-032 | proposta |
-| P-005 | Mostrar no jogo, na janela L, uma aba "Propostas do Claude" para ele aprovar ou recusar com um clique, sem precisar pedir no chat. | 12 | S-027, S-045 | proposta |
+## Formato
+```json
+{ "id": "P-006", "titulo": "curto", "detalhe": "o que muda, em pt-BR simples",
+  "principios": ["nome do princípio do perfil.md"], "evidencias": ["S-039"],
+  "status": "proposta", "resposta": "(ao concluir) o que foi feito", "motivo": "(se recusada) escrito por ele" }
+```
+
+## Status
+- `proposta`: nova, esperando a decisão dele.
+- `aprovada`: ele aprovou. Quando ele pedir *"aplique as propostas aprovadas"*, implemente, mude para `feita` e escreva uma `resposta`.
+- `recusada`: ele recusou. **Leia o `motivo`**, que diz muito sobre o gosto dele. Registre o aprendizado em `rodadas.md` e ajuste `perfil.md`. Não proponha de novo a mesma coisa.
+- `feita`: concluída.
+
+## Regras
+- Nunca mude o status de uma proposta que ele aprovou ou recusou sem que ele peça.
+- Novas propostas recebem o próximo id (P-xxx) e entram com `status: "proposta"`.
+- Faça poucas e boas: de 1 a 3 por rodada, priorizadas como descrito no `SKILL.md`.

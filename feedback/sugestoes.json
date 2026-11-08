@@ -3105,5 +3105,70 @@
     "criadoEm": "2026-11-08T09:42:00",
     "imagem": "img/S-068.png",
     "resposta": "Os monstros não entram mais no lago: eles não escolhem passeios perto da água e, se chegarem na beira, são empurrados de volta para a margem."
+  },
+  {
+    "texto": "aqui está com muito lag no personagem. Além disso percebo que partes tanto do personagem quanto do mascote estão invadindo o lado externo da box e cortando parte de ambos eu preciso que você garante aqui nada será cortado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Seleção de personagens",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Palco do personagem",
+      "nome": "Área de 911×756 px em Palco do personagem — \"‹ · arraste para girar · rodinha aproxima\"",
+      "codigo": "js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)",
+      "detalhes": {
+        "interface": [
+          "Palco do personagem"
+        ],
+        "textos": [
+          "‹",
+          "arraste para girar · rodinha aproxima"
+        ],
+        "area": [
+          906,
+          237,
+          1817,
+          993
+        ]
+      }
+    },
+    "mapa": null,
+    "jogador": null,
+    "id": "S-069",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:10:52",
+    "imagem": "img/S-069.png"
+  },
+  {
+    "texto": "Gostaria que fosse possível virar o personagem com a tecla a e tecla de da mesma forma com que eu consigo mexer nele a partir do mouse",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Seleção de personagens",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Palco do personagem",
+      "nome": "Área de 429×573 px em Palco do personagem",
+      "codigo": "js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)",
+      "detalhes": {
+        "interface": [
+          "Palco do personagem"
+        ],
+        "textos": [],
+        "area": [
+          1323,
+          304,
+          1752,
+          877
+        ]
+      }
+    },
+    "mapa": null,
+    "jogador": null,
+    "id": "S-070",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:11:23",
+    "imagem": "img/S-070.png"
   }
 ]

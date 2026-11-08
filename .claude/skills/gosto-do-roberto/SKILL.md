@@ -14,7 +14,7 @@ Ela **evolui a cada rodada de sugestões**. O perfil é uma hipótese que as pr�
 ## Arquivos
 - `perfil.md`: princípios de gosto com peso e evidências (ids S-xxx), antipadrões e o checklist de entrega. **Leia antes de implementar.**
 - `rodadas.md`: histórico de cada rodada (o que ele pediu, o que se repetiu, o que aprendemos). Serve para medir se estamos melhorando.
-- `propostas.md`: as melhorias que **você** propõe, com o princípio que as justifica e o status (proposta, aprovada, feita, recusada).
+- `propostas.md`: como funcionam as melhorias que **você** propõe. Elas ficam em `feedback/propostas.json` e o Roberto as aprova ou recusa no jogo (janela L).
 
 ## Ao aplicar sugestões (junto com o fluxo do CLAUDE.md)
 1. Leia `perfil.md` inteiro, depois as sugestões pendentes e os prints.
@@ -29,8 +29,8 @@ Ela **evolui a cada rodada de sugestões**. O perfil é uma hipótese que as pr�
    - Some as evidências novas aos princípios. Ajuste os pesos (★ a ★★★★★) pela frequência e pela intensidade da linguagem ("muuuito feio", "horroroso", "bug" pesam mais).
    - Crie um princípio quando aparecer um padrão novo. Rebaixe o que ficou velho.
    - Uma frase literal curta dele vale mais que uma paráfrase longa.
-3. **Em `propostas.md`**:
-   - Marque como feitas as propostas que a rodada resolveu.
+3. **Em `feedback/propostas.json`**:
+   - Leia as recusas e seus motivos (aprendizado!) e marque como feitas as propostas que a rodada resolveu.
    - Proponha de 1 a 3 itens novos, se o perfil indicar algo que ele ainda não pediu.
 4. Não guarde aqui o que já está no código ou no CLAUDE.md. Aqui fica o **porquê do gosto**, não a implementação.
 
@@ -39,5 +39,5 @@ Quando ele pedir ideias, ou ao fim de uma rodada:
 1. Percorra as telas e o mundo: vitrine, criador, mundo, janelas, monstros e montarias. Use `__api.shot` e prints numa cópia de teste, nunca com o Vidro.
 2. Compare o que vê com cada princípio de `perfil.md`. Cada desvio vira uma proposta candidata.
 3. Priorize por: **peso do princípio × quanto aparece na tela × reincidências do tema ÷ esforço**.
-4. Escreva em `propostas.md` (P-xxx), cada uma com o princípio, as evidências S-xxx e o que exatamente mudar. Apresente as 3 melhores numa frase cada.
+4. Escreva em `feedback/propostas.json` (P-xxx), cada uma com o princípio, as evidências S-xxx e o que exatamente mudar. Apresente as 3 melhores numa frase cada.
    - Não implemente sem o "sim" dele, a não ser que seja bug evidente (atravessar, flutuar, música duplicada).

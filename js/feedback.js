@@ -17,7 +17,7 @@ const TILE_NAMES = { [TT.GRASS]: 'Grama', [TT.DIRT]: 'Caminho de terra', [TT.STO
 const FB_QUEUE_KEY = 'aethra_fb_queue';
 
 const FB = {
-  picking: false, wasPaused: false, drag: null, hoverPick: null, box: null, cur: null, list: [], server: null,
+  picking: false, wasPaused: false, drag: null, hoverPick: null, box: null, cur: null, list: [], props: [], tab: 'minhas', server: null,
 
   init() {
     canvas.addEventListener('mousedown', e => this.onDown(e));
@@ -585,6 +585,7 @@ const FB = {
     if (location.protocol.startsWith('http')) {
       try { const r = await fetch('/api/feedback'); if (!r.ok) throw 0; this.list = await r.json(); this.server = true; }
       catch (e) { this.server = false; }
+      try { const r = await fetch('/api/propostas'); if (r.ok) this.props = await r.json(); } catch (e) { }
     } else this.server = false;
     UI.markDirty();
   },
@@ -633,6 +634,53 @@ const FB = {
 
   /* ---------- janela de lista (L) ---------- */
   renderList() {
+    const body = UI.body('sugestoes'); if (!body) return;
+    const novas = this.props.filter(p => p.status === 'proposta').length;
+    const tabs = `<div class="fb-tabs"><button class="fb-tab ${this.tab === 'minhas' ? 'on' : ''}" data-tab="minhas">💡 Minhas sugestões</button>
+      <button class="fb-tab ${this.tab === 'propostas' ? 'on' : ''}" data-tab="propostas">🤖 Propostas do Claude${novas ? ` <span class="fb-count">${novas}</span>` : ''}</button></div>`;
+    body.innerHTML = tabs + (this.tab === 'propostas' ? this.propsHtml() : this.mineHtml());
+    body.querySelectorAll('.fb-tab').forEach(b => b.onclick = () => { this.tab = b.dataset.tab; this.renderList(); });
+    if (this.tab === 'propostas') this.bindProps(body);
+  },
+  propsHtml() {
+    const ST = { proposta: ['nova', 'new'], aprovada: ['aprovada ✓', 'ok'], recusada: ['recusada', 'no'], feita: ['feita', 'ok'] };
+    const order = { proposta: 0, aprovada: 1, recusada: 2, feita: 3 };
+    const rows = this.props.slice().sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9) || a.id.localeCompare(b.id)).map(p => {
+      const [lbl, cls] = ST[p.status] || [p.status, ''];
+      let act = '';
+      if (p.status === 'proposta') act = `<div class="fb-pact"><button class="btn gold small" data-ap="${esc(p.id)}">✅ Aprovar</button> <button class="btn small" data-rc="${esc(p.id)}">❌ Recusar</button></div>
+        <div class="fb-why" data-why="${esc(p.id)}"><input maxlength="300" placeholder="Por quê? (opcional, ensina o Claude sobre o seu gosto)"><button class="btn small" data-rcok="${esc(p.id)}">Recusar</button></div>`;
+      else if (p.status === 'aprovada') act = `<div class="fb-pact"><span class="muted">Peça ao Claude: <i>"aplique as propostas aprovadas"</i></span> <button class="btn small" data-undo="${esc(p.id)}">↩ Desfazer</button></div>`;
+      else if (p.status === 'recusada') act = `<div class="fb-pact">${p.motivo ? `<span class="muted">Motivo: ${esc(p.motivo)}</span> ` : ''}<button class="btn small" data-undo="${esc(p.id)}">↩ Desfazer</button></div>`;
+      return `<div class="fb-row fb-prop ${p.status}">
+        <div><b class="gold">${esc(p.id)}</b> <span class="fb-badge ${cls}">${esc(lbl)}</span> <b>${esc(p.titulo || '')}</b></div>
+        <div class="fb-txt">${esc(p.detalhe || '')}</div>
+        <div class="muted" style="font-size:11px">Princípio: ${esc((p.principios || []).join(' · '))}${(p.evidencias || []).length ? ` · baseado em ${esc(p.evidencias.join(', '))}` : ''}</div>
+        ${p.resposta ? `<div class="fb-resp">🤖 ${esc(p.resposta)}</div>` : ''}${act}</div>`;
+    }).join('') || '<div class="muted">O Claude ainda não fez propostas.</div>';
+    return `<div class="muted" style="margin-bottom:8px">Ideias que o Claude tirou do seu gosto (das suas sugestões). Aprove as que quiser ver no jogo; recusar com um motivo também o ensina.</div><div class="fb-list">${rows}</div>`;
+  },
+  bindProps(body) {
+    const send = async (id, status, motivo) => {
+      try {
+        const r = await fetch('/api/propostas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status, motivo }) });
+        if (!r.ok) throw 0;
+        const p = this.props.find(x => x.id === id); if (p) { p.status = status; if (motivo && status === 'recusada') p.motivo = motivo; else delete p.motivo; }
+        try { Sound.play(status === 'aprovada' ? 'coin' : 'click'); } catch (e) { }
+        if (status === 'aprovada') UI.log(`🤖 Proposta ${id} aprovada! Peça ao Claude para aplicar as propostas aprovadas.`, 'card');
+      } catch (e) { UI.log('Não consegui falar com o servidor (python3 server.py).', 'warn'); }
+      this.renderList();
+    };
+    body.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => send(b.dataset.ap, 'aprovada'));
+    body.querySelectorAll('[data-undo]').forEach(b => b.onclick = () => send(b.dataset.undo, 'proposta'));
+    body.querySelectorAll('[data-rc]').forEach(b => b.onclick = () => { const w = body.querySelector(`[data-why="${b.dataset.rc}"]`); w.classList.add('show'); w.querySelector('input').focus(); });
+    body.querySelectorAll('[data-why]').forEach(w => {
+      const inp = w.querySelector('input'), go = () => send(w.dataset.why, 'recusada', inp.value.trim());
+      inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') go(); });
+      w.querySelector('[data-rcok]').onclick = go;
+    });
+  },
+  mineHtml() {
     const q = this.queue().map(s => Object.assign({}, s, { id: 'na fila', status: 'na fila' }));
     const all = this.list.slice().reverse().concat(q);
     const pend = this.list.filter(s => s.status !== 'feito').length + q.length, done = this.list.filter(s => s.status === 'feito').length;
@@ -643,7 +691,7 @@ const FB = {
         <span class="muted">${esc((s.alvo && s.alvo.rotulo) || '')}: ${esc((s.alvo && s.alvo.nome) || '')} · ${esc((s.mapa && s.mapa.nome) || s.tela || '')}</span>${s.categoria ? ` <span class="tag">${esc(s.categoria)}</span>` : ''}</div>
         <div class="fb-txt">${esc(s.texto)}</div>
         ${s.resposta ? `<div class="fb-resp">🤖 ${esc(s.resposta)}</div>` : ''}</div>`).join('') || '<div class="muted">Nenhuma sugestão ainda. Aperte <b>Q</b> e clique em algo do jogo!</div>';
-    UI.body('sugestoes').innerHTML = `<div style="margin-bottom:6px">${srv}</div>
+    return `<div style="margin-bottom:6px">${srv}</div>
       <div style="margin-bottom:8px"><b>${pend}</b> pendente(s) · <b>${done}</b> feita(s) · <span class="muted">P pausa · Q sugere · com o jogo pausado, 💡 marca onde cada sugestão foi feita</span></div>
       <div class="fb-list">${rows}</div>`;
   },

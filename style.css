@@ -536,3 +536,17 @@ body.fb-picking canvas { cursor: crosshair !important; }
 #arena-hud b { color: #ffd76a; }
 #arena-hud .ar-dead { margin-top: 4px; font-size: 16px; font-weight: 800; color: #ff8a7a; }
 #arena-hud .ar-wait { margin-top: 3px; font-size: 11px; color: #d8b8a8; }
+
+/* janela L: abas Minhas sugestões / Propostas do Claude */
+.fb-tabs { display: flex; gap: 6px; margin-bottom: 10px; border-bottom: 1px solid var(--border-soft); }
+.fb-tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: 800 13px Nunito, sans-serif; padding: 6px 10px; cursor: pointer; }
+.fb-tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.fb-count { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: #d9534f; color: #fff; font-size: 11px; text-align: center; }
+.fb-prop.recusada, .fb-prop.feita { opacity: 0.7; }
+.fb-badge.no { background: rgba(217, 83, 79, 0.25); color: #ff9c98; }
+.fb-pact { margin-top: 6px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.fb-why { display: none; margin-top: 6px; gap: 6px; }
+.fb-why.show { display: flex; }
+.fb-why input { flex: 1; min-width: 0; }
+.fb-badge.new { background: rgba(255, 215, 106, 0.22); color: #ffe36a; }
+.fb-why input { background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-soft); border-radius: 6px; color: inherit; padding: 4px 8px; font: 13px Nunito, sans-serif; }
