@@ -2,13 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (20)
-
-### S-093 · Interface: Área de 357×297 px em Palco do personagem
-- **Status:** pendente · **Quando:** 2026-11-08T15:16:44 · **Tela:** Seleção de personagens
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** o nariz ainda ficou horrivel e o rosto como um todo ainda tá com gráfico muito ruim. Preciso que melhore significativamente pra tornar os personagens muito mais realistas e nao parecendo várias formas geométricas. Idem os mascutes, têm muuuito a melhorar pr serem mais realistas
-- ![print](img/S-093.png)
+## Pendentes (23)
 
 ### S-098 · Área do mapa: Área da tela (429×362 px)
 - **Status:** pendente · **Quando:** 2026-11-08T15:36:09 · **Mapa:** Dunas de Sal-Rubro (tile [136, 154])
@@ -124,7 +118,31 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** isso tbm nao pode aparecer aqui. deveria te r sumido por eu estar suficientemente longe
 - ![print](img/S-116.png)
 
-## Feitas (96)
+### S-117 · Interface: Área de 594×469 px em Janela "👑 Painel do Mestre" — "🪨 Pedrinho · Nv. 1 · 🌍 Teleporte · — clique no mapa onde quer aparecer"
+- **Status:** pendente · **Quando:** 2026-11-08T16:03:34 · **Mapa:** Dunas de Sal-Rubro (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** foi um excelente começo esse aumento do mundo pra ter neve, deserto e etc. De fato preciso ter tudo isso no mundo. Senti falta de cidades perto de praias, e tbm quero que vc crie cidades pra cada raça. Na de humanos é onde todo mundo começa, mas tbm precisa ter cidades de anoes e de elfos. Sendo anoes guerreiros por padrao, cidade de equipamentos e tudo mais, machados e tudo nessa pegada, perto de montanhas mais altas. e tbm idades de elfos e tudo o que caracterizaria uma cidade de elfos. Obviamnente precisa ter npcs tbm que se adaptem às cidades, sendo das respectivas raças em sua maioria esmagadora
+- ![print](img/S-117.png)
+
+### S-118 · Interface: Área de 540×598 px em Janela "👑 Painel do Mestre" — "Nv. 40–55 · fora da área jogável — você aparece na b"
+- **Status:** pendente · **Quando:** 2026-11-08T16:17:18 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** quero que em algum lugar também tenha um campo em auqe tenha um portal pra entrar em algum grande castelo gigantesco, e la dentro tenha salas, comodos e tudo mais. Um castelo foda que fique em algum local no campo. Quero esse castelo bem enorme por dentro e bem detalhado
+- ![print](img/S-118.png)
+
+### S-119 · Área do mapa: Área da tela (1589×763 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:18:59 · **Mapa:** Vila de Alvorada (tile [816, 5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao osso ter essa visualizacao dentro do pvp, ia me atrapalhar demais ficar olhando pro muro assim
+- ![print](img/S-119.png)
+
+### S-120 · Área do mapa: Área da tela (531×184 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:19:20 · **Mapa:** Vila de Alvorada (tile [810, 3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao goto de uma forma geométrica tao disforme aqiu no meio, podia ser outra coisa
+- ![print](img/S-120.png)
+
+## Feitas (97)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -771,6 +789,13 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá
 - ![print](img/S-092.png)
 - **Resposta do Claude:** Os muros das Ruínas de Kael viraram alvenaria de pedra de verdade: blocos irregulares de cores variadas, musgo por cima, topo quebrado e pedras caídas ao pé.
+
+### S-093 · Interface: Área de 357×297 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-08T15:16:44 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** o nariz ainda ficou horrivel e o rosto como um todo ainda tá com gráfico muito ruim. Preciso que melhore significativamente pra tornar os personagens muito mais realistas e nao parecendo várias formas geométricas. Idem os mascutes, têm muuuito a melhorar pr serem mais realistas
+- ![print](img/S-093.png)
+- **Resposta do Claude:** Personagens realistas de verdade (modelos Quaternius, grátis/CC0): rosto humano com nariz, olhos e sobrancelhas, 5 cortes de cabelo, 13 cores, barba, homem ou mulher e pele clara ou morena (no criador). Você, os NPCs, a vitrine e os rivais da Arena usam o corpo novo, com 43 animações reais; cada classe tem a roupa nas cores dela, a arma na mão, capa e os efeitos. Os mascotes ficam para a próxima etapa.
 
 ### S-094 · Área do mapa: Área da tela (163×165 px)
 - **Status:** feito · **Quando:** 2026-11-08T15:20:55 · **Mapa:** Campos de Verdelume (tile [2, 28])

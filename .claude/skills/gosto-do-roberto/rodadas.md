@@ -119,3 +119,4 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - **Rosto: 5ª reclamação.** O teto do estilo chibi/KayKit foi atingido. Gosto dele = proporção e rosto realistas; esculpir em cima do chibi não basta.
   - Quando o pedido é "muito mais realista", vale propor a troca de base (modelos), com custo e opções.
   - O gosto dele aponta para Skyrim e WoW: 1ª pessoa, mira, mãos visíveis, mundo grande.
+- S-093 aplicado em 2026-11-08: ele viu o protótipo e aprovou. Mostrar um protótipo antes de uma troca grande funcionou: ele quis ver primeiro ("queria ver antes de aprovar").

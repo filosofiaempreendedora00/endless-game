@@ -10,12 +10,13 @@ import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, h
 import { makeColossus, makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead } from './looks3d.js';
+import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
 import { makePalisade } from './palisade3d.js';
+import { loadHumans, makeHuman, shareSkeletons } from './humans3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -202,9 +203,9 @@ function buildFruitMarket(mk) {
   colliders.push({ x: sx, z: sz, r: 1.9, box: true, hx: 1.95, hz: 0.6, rot, name: 'fruitstand' });
   // feirante atrás da mesa, virada para a praça
   const nx = sx - fx * 1.05, nz = sz - fz * 1.05;
-  const ch = makeChar('Rogue', []); dressLook(ch, 'aprendiz', { race: 'humano', face: 'alegre', hair: { style: 'coque', color: 'acobreado' }, beard: false });
+  const ch = makeNpcHero({ id: 'flora', model: 'Mage', look: { race: 'humano', sex: 'f', hair: { style: 'coque', color: 'acobreado' } } });
   ch.obj.position.set(nx, heightAt(nx, nz), nz); ch.obj.rotation.y = rot; ch.anim.play('Idle', { speed: 0.9 });
-  const npc = { id: 'flora', name: 'Dona Flora', title: 'Feirante', x: nx, z: nz, ...ch, isNpc: true, height: 1.6, radius: 0.5 };
+  const npc = { id: 'flora', name: 'Dona Flora', title: 'Feirante', x: nx, z: nz, ...ch, isNpc: true, height: 1.85, radius: 0.5 };
   ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x: nx, z: nz, r: 0.5 }); S.npcs.push(npc);
 }
 
@@ -255,11 +256,10 @@ function buildInteriors() {
 }
 const roomAnims = [], roomMounts = [];
 function roomNpc(n, x, z, yaw, anim = 'Idle') {
-  const ch = makeChar(n.model, n.show);
-  if (n.look) npcHead(ch, MODELS, n.model, n.look, !!n.hat);
+  const ch = makeNpcHero(n);
   ch.obj.position.set(x, 0, z); ch.obj.rotation.y = yaw; ch.anim.play(anim, { speed: 0.9 });
-  if (anim === 'Sit_Chair_Idle') ch.obj.position.y = -0.05;
-  const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.6, radius: 0.5 };
+  if (anim === 'Sit_Chair_Idle') ch.obj.position.y = 0.0;
+  const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.85, radius: 0.5 };
   ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x, z, r: 0.6 }); S.npcs.push(npc);
   return npc;
 }
@@ -612,10 +612,9 @@ const FLIGHTS = {
   colossos: { name: 'Acampamento dos Colossos', x: CAMPS.colossos.x + 6, z: CAMPS.colossos.z + 1 },
 };
 function worldNpc(n, x, z, yaw) {
-  const ch = makeChar(n.model, n.show || []);
-  if (n.look) npcHead(ch, MODELS, n.model, n.look, !!n.hat);
+  const ch = makeNpcHero(n);
   ch.obj.position.set(x, heightAt(x, z), z); ch.obj.rotation.y = yaw ?? 0; ch.anim.play('Idle', { speed: 0.8 + rng() * 0.4 });
-  const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.6, radius: 0.5 };
+  const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.85, radius: 0.5 };
   ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x, z, r: 0.6 }); S.npcs.push(npc);
   return npc;
 }
@@ -745,13 +744,14 @@ function charScale() {
   CHAR_SCALE = 1.8 / Math.max(0.01, box.max.y - box.min.y);
   return CHAR_SCALE;
 }
-const HERO_H = 1.5; // altura dos personagens (jogador e NPCs): proporcional às casas e árvores
+const HERO_H = 1.78; // altura dos personagens realistas (jogador e NPCs)
 function makeChar(model, show, height = HERO_H) {
   const g = MODELS[model];
   const root = SkeletonUtils.clone(g.scene);
   const acc = ACCESSORIES[model];
   if (acc && show) root.traverse(o => { if (acc.includes(o.name)) o.visible = show.includes(o.name); });
   root.scale.setScalar(charScale() * height / 1.8);
+  shareSkeletons(root); // um esqueleto por personagem (monstros esqueleto também)
   const wrap = new THREE.Group(); wrap.add(root);
   return { obj: wrap, root, anim: new Anim(root, g.animations) };
 }
@@ -848,7 +848,11 @@ function buildViewModel() {
   vmArmR = arm(1); vmArmR.position.set(0.22, -0.2, -0.42); vmArmR.rotation.set(0.25, 0.12, 0); viewModel.add(vmArmR);
   vmArmL = arm(-1); vmArmL.position.set(-0.24, -0.22, -0.44); vmArmL.rotation.set(0.3, -0.15, 0); viewModel.add(vmArmL);
   // a arma: copia o que está nas mãos do personagem
-  for (const [hn, armG] of [['handslotr', vmArmR], ['handslotl', vmArmL]]) {
+  for (const [name, it] of Object.entries(S.me.root.userData.items || {})) { // corpo realista: as armas ficam registradas por nome
+    const armG = /Offhand|Shield|Spellbook/.test(name) ? vmArmL : vmArmR, w = it.clone(true), ws = new THREE.Vector3(); it.getWorldScale(ws);
+    w.scale.set(ws.x * 0.55, ws.y * 0.55, ws.z * 0.55); w.position.set(0, 0.01, -0.02); w.rotation.set(-0.55, 0, 0); armG.userData.hand.add(w);
+  }
+  for (const [hn, armG] of S.me.root.userData.items ? [] : [['handslotr', vmArmR], ['handslotl', vmArmL]]) {
     const slot = S.me.root.getObjectByName(hn) || S.me.root.getObjectByName(hn.replace('slot', 'slot.')); if (!slot) continue;
     for (const c of slot.children) { if (!c.visible) continue; const w = c.clone(true); const ws = new THREE.Vector3(); c.getWorldScale(ws); w.scale.set(ws.x * 0.55, ws.y * 0.55, ws.z * 0.55); w.position.set(0, 0.01, -0.02); w.rotation.set(-0.55, 0, 0); armG.userData.hand.add(w); } // arma menor e inclinada para frente/cima, como em Skyrim
   }
@@ -1178,13 +1182,12 @@ const NPC3D = [
 ];
 function spawnNpcs() {
   for (const n of NPC3D) {
-    const ch = makeChar(n.model, n.show);
-    if (n.look) npcHead(ch, MODELS, n.model, n.look, !!n.hat);
+    const ch = makeNpcHero(n);
     const x = VILLAGE.x + n.dx, z = VILLAGE.z + n.dz;
     ch.obj.position.set(x, heightAt(x, z), z);
     ch.obj.rotation.y = Math.atan2(VILLAGE.x - x, VILLAGE.z - z);
     ch.anim.play(n.id === 'bento' ? 'Idle' : 'Idle', { speed: 0.8 + rng() * 0.4 });
-    const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.6, radius: 0.5 };
+    const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.85, radius: 0.5 };
     ch.obj.add(hitbox(npc, 0.6, 2));
     scene.add(ch.obj); colliders.push({ x, z, r: 0.6 });
     S.npcs.push(npc);
@@ -1203,13 +1206,30 @@ function dressLook(ch, cls, look = {}, hatId = null) {
   return hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d;
 }
 const hatOf = p => (p && p.equip && p.equip.cabeca && p.equip.cabeca.id) || null;
+// personagem realista (S-093): roupa da classe + rosto/cabelo/pele do jogador + armas + enfeites + chapéu equipado
+const SKIN_HEX = { clara: '#e2b393', escura: '#8a5a3c' };
+function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
+  const look = normalizeLook(look0);
+  const h = makeHuman({ sex: look.sex, outfit: extra.outfit || CLASS_OUTFIT[cls] || 'campones', hair: look.hair.style, hairColor: HAIR_COLORS[look.hair.color].hex, skin: look.skin, beard: (look.beard || look.race === 'anao') && look.sex === 'm', hood: extra.hood });
+  h.root.userData.skin = new THREE.Color(SKIN_HEX[look.skin]);
+  const d = cls ? dressHuman(h, cls, MODELS) : { style: '1h', update: () => { } };
+  if (look.race === 'anao') h.obj.scale.set(1.08, 0.86, 1.08); else if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97);
+  const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
+  return { ch: h, d: hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d };
+}
+const NPC_FEMALE = new Set(['ivra', 'clara', 'flora', 'rosa', 'neli', 'samira', 'isis', 'mirela']);
+function makeNpcHero(n) {
+  const look = normalizeLook({ ...(n.look || {}), sex: (n.look && n.look.sex) || (NPC_FEMALE.has(n.id) ? 'f' : 'm') });
+  const { ch } = makeHero(null, look, null, { outfit: /Knight|Barbarian|Rogue/.test(n.model) ? 'patrulheiro' : 'campones', hood: n.model === 'Rogue_Hooded' });
+  for (const it of n.show || []) if (!/_Cape$/.test(it)) humanBorrow(ch.root, MODELS, n.model, it);
+  return ch;
+}
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
-  const ch = makeChar(L.outfit, L.show);
-  const d = dressLook(ch, S.p.cls, S.p.look, hatOf(S.p));
-  const skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null;
-  S.me = { hatId: hatOf(S.p), ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
+  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p));
+  let skinFx = null; try { skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null; } catch (e) { }
+  S.me = { hatId: hatOf(S.p), ...ch, look: { model: 'humano', show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
   buildViewModel(); ch.obj.visible = S.view !== 'fps'; $('crosshair').classList.toggle('hidden', !isAction()); // mãos da 1ª pessoa com a arma da classe
@@ -2131,11 +2151,11 @@ function step(dt) {
     updatePet(dt);
     for (const m of [...S.monsters]) { // monstros longe e calmos ficam parados (o mundo grande tem muitos)
       const far = Math.hypot(m.x - S.pos.x, m.z - S.pos.z);
-      if (!m.dead && !m.aggro && far > 100) { m.obj.visible = far < 150; continue; } // a névoa já esconde quem está longe
+      if (!m.dead && !m.aggro && far > 70) { m.obj.visible = far < 85; continue; } // a névoa já esconde quem está longe
       m.obj.visible = true; updateMonster(m, dt);
     }
     separateBodies();
-    for (const n of S.npcs) n.anim.update(dt);
+    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) n.anim.update(dt); } // gente longe: nem anima nem aparece
     for (let i = S.projectiles.length - 1; i >= 0; i--) {
       const pr = S.projectiles[i], to = pr.toFn(), d = to.distanceTo(pr.mesh.position), st = pr.speed * dt;
       if (d <= st + 0.2) { scene.remove(pr.mesh); S.projectiles.splice(i, 1); pr.onHit(); }
@@ -2155,7 +2175,7 @@ function draw(dt) {
     cam.dist += (cam.distT - cam.dist) * Math.min(1, dt * 10);
     if (cam.pitchT !== undefined) cam.pitch += (cam.pitchT - cam.pitch) * Math.min(1, dt * 12);
     cam.viewYaw = angLerp(cam.viewYaw ?? cam.yaw, S.frontView ? P.yaw + Math.PI : cam.yaw, Math.min(1, dt * 10));
-    const head = new THREE.Vector3(P.x, P.y + 1.2 - Math.max(0, 1.6 - cam.dist) * 0.25 + (S.riding ? 1 : 0), P.z);
+    const head = new THREE.Vector3(P.x, P.y + 1.45 - Math.max(0, 1.6 - cam.dist) * 0.25 + (S.riding ? 1 : 0), P.z);
     const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     let cx = P.x - Math.sin(cam.viewYaw) * cp * cam.dist, cz = P.z - Math.cos(cam.viewYaw) * cp * cam.dist, cy = head.y + sp * cam.dist;
     const gy = groundAt(cx, cz) + 0.5; if (cy < gy) cy = gy;
@@ -2169,7 +2189,7 @@ function draw(dt) {
       const fx = Math.sin(cam.yaw), fz = Math.cos(cam.yaw), ap = Math.cos(S.aim), as = Math.sin(S.aim), look = new THREE.Vector3(fx * ap, as, fz * ap);
       if (S.view === 'fps') { const eye = new THREE.Vector3(P.x + fx * 0.14, P.y + HERO_H * 0.92 + (S.riding ? 1 : 0), P.z + fz * 0.14); camera.position.copy(eye); camera.lookAt(eye.clone().add(look)); }
       else {
-        const pivot = new THREE.Vector3(P.x - fz * 0.55, P.y + 1.4 + (S.riding ? 1 : 0), P.z + fx * 0.55), back = look.clone().multiplyScalar(-2.7);
+        const pivot = new THREE.Vector3(P.x - fz * 0.55, P.y + 1.62 + (S.riding ? 1 : 0), P.z + fx * 0.55), back = look.clone().multiplyScalar(-2.7);
         camRay.set(pivot, back.clone().normalize()); camRay.far = 2.7; const oh = camRay.intersectObjects(near, true)[0];
         const cpos = pivot.clone().add(back.setLength(oh ? Math.max(0.5, oh.distance - 0.25) : 2.7)); cpos.y = Math.max(cpos.y, groundAt(cpos.x, cpos.z) + 0.3);
         camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 12));
@@ -2216,9 +2236,8 @@ const STAGE_POS = new THREE.Vector3(1000, 0, 1000);
 stageKey.position.set(STAGE_POS.x + 2, 3, STAGE_POS.z + 4); stageKey.target.position.copy(STAGE_POS);
 stageRim.position.set(STAGE_POS.x - 3, 2.5, STAGE_POS.z - 3); stageRim.target.position.copy(STAGE_POS);
 function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null, hatId = null) {
-  const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, ch = makeChar(L.outfit, L.show);
-  const d = dressLook(ch, cls, look || {}, hatId);
-  const skinFx = cosmetics && cosmetics.skin ? applySkin(ch, cosmetics.skin) : null;
+  const { ch, d } = makeHero(cls, look || {}, hatId);
+  let skinFx = null; try { skinFx = cosmetics && cosmetics.skin ? applySkin(ch, cosmetics.skin) : null; } catch (e) { }
   ch.anim.play('Idle');
   return { ch, fx: t => { d.update(t); if (skinFx) skinFx(t); } };
 }
@@ -2259,7 +2278,7 @@ function makeStage(cv) {
     if (pet) { const e = extent(pet.obj); x0 = Math.min(x0, pet.obj.position.x - e.rad); x1 = Math.max(x1, pet.obj.position.x + e.rad); h = Math.max(h, e.top); depth = Math.max(depth, pet.obj.position.z + e.rad); }
     const th = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), wHalf = (x1 - x0) / 2 + 0.12, hHalf = h / 2 + 0.16;
     let face = HERO_H * 0.68; // altura do rosto: centro da cabeça de verdade (anão é mais baixo)
-    if (cur) { const hb = new THREE.Box3(); cur.ch.obj.traverse(o => { if (o.isSkinnedMesh && o.visible && (o.name === 'PlayerHead' || /_Head(_Hooded)?$/.test(o.name))) { o.computeBoundingBox(); hb.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); } }); if (!hb.isEmpty()) face = hb.getCenter(new THREE.Vector3()).y - 0.02; }
+    if (cur) { const hb = new THREE.Box3(); cur.ch.obj.traverse(o => { if (o.isSkinnedMesh && o.visible && (o.name === 'PlayerHead' || /^SuperHero/i.test(o.name) || /_Head(_Hooded)?$/.test(o.name))) { o.computeBoundingBox(); hb.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); } }); if (!hb.isEmpty()) face = hb.getCenter(new THREE.Vector3()).y - 0.02; const hbone = cur.ch.root.getObjectByName('Head'); if (hbone) { const v = new THREE.Vector3(); hbone.getWorldPosition(v); face = v.y + 0.09; } } // corpo realista: mira o osso da cabeça
     fit = { cx: (x0 + x1) / 2, cy: h / 2, dist: Math.max(hHalf / th, wHalf / (th * cam.aspect)) + depth * 0.45, face };
   };
   const api = {
@@ -2294,7 +2313,7 @@ function makeStage(cv) {
   return api;
 }
 const fmtAgo = ms => { if (!ms) return '—'; const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? 'agora há pouco' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.floor(m / 60)} h` : `há ${Math.floor(m / 1440)} dia(s)`; };
-const lookLabel = l0 => { const l = normalizeLook(l0); return `${FACE_TYPES[l.face].name} · ${HAIR_STYLES[l.hair.style].name} · ${HAIR_COLORS[l.hair.color].name}`; };
+const lookLabel = l0 => { const l = normalizeLook(l0); return `${l.sex === 'f' ? 'Mulher' : 'Homem'} · ${HAIR_STYLES[l.hair.style].name} · ${HAIR_COLORS[l.hair.color].name}`; };
 const thumbCacheChars = {};
 function charThumb(s) {
   const key = s.slug + '|' + s.cls + '|' + JSON.stringify(s.look || {}) + '|' + JSON.stringify((s.cosmetics || {}).skin || '') + '|' + hatOf(s);
@@ -2324,7 +2343,7 @@ async function chooseCharacter() {
     </div>
     <div class="cs-strip" id="cs-strip">${full.map((c, k) => `<div class="cs-card" data-k="${k}"><img alt=""><b>${escH(c.name)}</b><span>Nv. ${c.baseLv} · ${CLASSES[c.cls].name}</span></div>`).join('')}
       <div class="cs-card cs-new" id="cs-new"><div class="cs-plus">＋</div><b>Novo personagem</b><span>criar do zero</span></div></div>
-    <div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0 · clique para ativar o som</div>
+    <div class="ver">Personagens: Quaternius (quaternius.com) • Cenário e monstros: KayKit, por Kay Lousberg (kaylousberg.com) • CC0 · clique para ativar o som</div>
   </div>`;
   o.classList.add('show');
   if (csStage) csStage.dispose();
@@ -2376,7 +2395,8 @@ async function chooseCharacter() {
 }
 
 // ---------- criador de personagem (ou "barbearia" do mestre, no modo edição) ----------
-function randomLook() { const pick = a => a[Math.floor(Math.random() * a.length)]; return { race: pick(RACE_ORDER), face: pick(Object.keys(FACE_TYPES)), hair: { style: pick(Object.keys(HAIR_STYLES)), color: pick(Object.keys(HAIR_COLORS)) }, beard: Math.random() < 0.3 }; }
+const HERO_STYLES = ['curto', 'raspado', 'longo', 'coque', 'careca']; // cortes do corpo realista
+function randomLook() { const pick = a => a[Math.floor(Math.random() * a.length)], sex = Math.random() < 0.5 ? 'm' : 'f'; return { race: pick(RACE_ORDER), sex, skin: pick(['clara', 'escura']), hair: { style: pick(HERO_STYLES), color: pick(Object.keys(HAIR_COLORS)) }, beard: sex === 'm' && Math.random() < 0.35 }; }
 function showCreate3d(list, opts = {}) {
   const o = $('overlay'), edit = !!opts.edit;
   const st = { ...normalizeLook(opts.look || DEFAULT_LOOK), pet: opts.pet || null, name: '', cls: opts.cls || 'aprendiz' };
@@ -2391,8 +2411,8 @@ function showCreate3d(list, opts = {}) {
       <div class="cc-title">${edit ? '💈 Barbearia do Mestre' : 'Criar personagem'}</div>
       <div class="cc-sub">${edit ? 'Mude a aparência de ' + escH(S.p.name) + ' — o resto continua igual.' : 'Monte seu aventureiro e veja ao lado como ele fica.'}</div>
       <div class="cc-sec"><h4><b>1</b> Raça</h4><div class="cc-races">${RACE_ORDER.map(k => `<div class="cc-race" data-race="${k}"><div class="i">${RACES[k].icon}</div><div class="n">${RACES[k].name}</div><div class="h">${RACES[k].hint}</div></div>`).join('')}</div><div class="cc-note" id="cc-race-d"></div></div>
-      <div class="cc-sec"><h4><b>2</b> Rosto</h4><div class="cc-faces">${Object.entries(FACE_TYPES).map(([k, f]) => `<button class="cc-face" data-face="${k}"><span class="i">${f.icon}</span><b>${f.name}</b><small>${f.desc}</small></button>`).join('')}</div></div>
-      <div class="cc-sec"><h4><b>3</b> Corte de cabelo</h4><div class="cc-styles">${Object.entries(HAIR_STYLES).map(([k, h]) => `<button class="cc-style" data-style="${k}"><span>${h.icon}</span>${h.name}</button>`).join('')}</div></div>
+      <div class="cc-sec"><h4><b>2</b> Corpo e pele</h4><div class="cc-faces" style="grid-template-columns:repeat(4,1fr)">${[['sex', 'm', '🧔', 'Homem'], ['sex', 'f', '👩', 'Mulher'], ['skin', 'clara', '🏻', 'Pele clara'], ['skin', 'escura', '🏾', 'Pele morena']].map(([f, v, i, n]) => `<button class="cc-face" data-${f}="${v}"><span class="i">${i}</span><b>${n}</b></button>`).join('')}</div></div>
+      <div class="cc-sec"><h4><b>3</b> Corte de cabelo</h4><div class="cc-styles">${HERO_STYLES.map(k => `<button class="cc-style" data-style="${k}"><span>${HAIR_STYLES[k].icon}</span>${HAIR_STYLES[k].name}</button>`).join('')}</div></div>
       <div class="cc-sec"><h4><b>4</b> Cor do cabelo <span class="muted" id="cc-col-n"></span></h4><div class="cc-colors">${Object.entries(HAIR_COLORS).map(([k, c]) => `<button class="cc-col" data-color="${k}" title="${c.name}" style="--c:${c.hex}"></button>`).join('')}</div>
         <label class="cc-check"><input type="checkbox" id="cc-beard"> Barba <span class="muted">(da mesma cor do cabelo)</span></label></div>
       ${edit ? '' : `<div class="cc-sec"><h4><b>5</b> Companheiro</h4><div class="cc-pets">${Object.entries(PETS).map(([k, p]) => `<div class="cc-pet" data-pet="${k}" style="--pc:${p.color}"><div class="i">${p.stages[0].icon}</div><div class="n">${p.stages[0].name}</div><div class="h">${p.roleIcon} ${p.roleName}</div></div>`).join('')}</div><div class="cc-note" id="cc-pet-d"></div></div>
@@ -2403,8 +2423,10 @@ function showCreate3d(list, opts = {}) {
   const stage = makeStage($('cc-cv'));
   window.__ccStage = stage; // testes
   const refresh = () => {
-    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, face: st.face }, st.cls));
-    o.querySelectorAll('[data-face]').forEach(el => el.classList.toggle('on', el.dataset.face === st.face));
+    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, sex: st.sex, skin: st.skin }, st.cls));
+    o.querySelectorAll('[data-sex]').forEach(el => el.classList.toggle('on', el.dataset.sex === st.sex));
+    o.querySelectorAll('[data-skin]').forEach(el => el.classList.toggle('on', el.dataset.skin === st.skin));
+    $('cc-beard').parentElement.style.display = st.sex === 'm' ? '' : 'none';
     o.querySelectorAll('[data-race]').forEach(el => el.classList.toggle('on', el.dataset.race === st.race));
     o.querySelectorAll('[data-style]').forEach(el => el.classList.toggle('on', el.dataset.style === st.hair.style));
     o.querySelectorAll('[data-color]').forEach(el => el.classList.toggle('on', el.dataset.color === st.hair.color));
@@ -2416,7 +2438,8 @@ function showCreate3d(list, opts = {}) {
   };
   const click = () => { Sound.init(); Sound.play('click'); };
   o.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { click(); st.race = el.dataset.race; refresh(); });
-  o.querySelectorAll('[data-face]').forEach(el => el.onclick = () => { click(); st.face = el.dataset.face; stage.setZoom(1); $('cc-zoom').textContent = '🧍 Corpo inteiro'; refresh(); }); // mostra o rosto de perto
+  o.querySelectorAll('[data-sex]').forEach(el => el.onclick = () => { click(); st.sex = el.dataset.sex; if (st.sex === 'f') st.beard = false; refresh(); });
+  o.querySelectorAll('[data-skin]').forEach(el => el.onclick = () => { click(); st.skin = el.dataset.skin; stage.setZoom(1); $('cc-zoom').textContent = '🧍 Corpo inteiro'; refresh(); }); // mostra o rosto de perto
   o.querySelectorAll('[data-style]').forEach(el => el.onclick = () => { click(); st.hair = { ...st.hair, style: el.dataset.style }; refresh(); });
   o.querySelectorAll('[data-color]').forEach(el => el.onclick = () => { click(); st.hair = { ...st.hair, color: el.dataset.color }; refresh(); });
   o.querySelectorAll('[data-pet]').forEach(el => el.onclick = () => { click(); st.pet = el.dataset.pet; stage.setPet(st.pet); refresh(); });
@@ -2428,7 +2451,7 @@ function showCreate3d(list, opts = {}) {
   $('cc-back').onclick = () => { click(); stage.dispose(); if (edit) { o.classList.remove('show'); o.innerHTML = ''; } else if (list.length) chooseCharacter(); else showCreate3d(list); };
   const err = m => { $('cw-err').textContent = m; Sound.play('error'); };
   $('cc-ok').onclick = async () => {
-    const look = { race: st.race, hair: { ...st.hair }, beard: !!st.beard, face: st.face };
+    const look = { race: st.race, hair: { ...st.hair }, beard: !!st.beard && st.sex === 'm', sex: st.sex, skin: st.skin };
     if (edit) { S.p.look = look; buildPlayerModel(); save3d(); stage.dispose(); o.classList.remove('show'); o.innerHTML = ''; log('💈 Aparência atualizada!', 'sys'); return; }
     const nameEl = $('c3-name'), name = nameEl.value.trim();
     if (!st.pet) return err('Escolha um companheiro (passo 5).');
@@ -2701,6 +2724,7 @@ function drawAdmMap(cv) {
 (async function boot() {
   requestAnimationFrame(frame);
   await loadAll();
+  await loadHumans(k => { const t = $('ld-txt'); if (t) t.textContent = 'Carregando personagens… ' + k; }); // corpos realistas (Quaternius, CC0)
   friendlyFaces(MODELS);
   buildWorld();
   terrainNear(VILLAGE.x, VILLAGE.z, 130); // detalhe em volta da vila (tela inicial e começo do jogo)

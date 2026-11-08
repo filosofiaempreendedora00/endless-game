@@ -134,5 +134,5 @@ O que já existe no 3D: Vila de Alvorada, Campos, Bosque e Ruínas num único mu
 Inspirado no estilo dos MMORPGs clássicos, com conteúdo, nomes e música originais.
 
 - **Modelos 3D:** [KayKit](https://kaylousberg.itch.io/) — Adventurers, Skeletons e Medieval Hexagon — por **Kay Lousberg** (kaylousberg.com), licença **CC0**. Licenças originais em `assets3d/licencas/`.
-- **Personagens realistas (em teste):** [Quaternius](https://quaternius.com) — Universal Base Characters, Modular Character Outfits - Fantasy e Universal Animation Library (versões gratuitas), licença **CC0**. Em `assets3d/quaternius/` (licença em `LICENSE_CC0.txt`). Protótipo: `prototipo-personagem.html`.
+- **Personagens (jogador e NPCs):** [Quaternius](https://quaternius.com) — Universal Base Characters, Modular Character Outfits - Fantasy e Universal Animation Library (versões gratuitas), licença **CC0**. Em `assets3d/quaternius/` (licença em `LICENSE_CC0.txt`). Vitrine de teste: `prototipo-personagem.html`.
 - **Motor 3D:** [three.js](https://threejs.org) (licença MIT).

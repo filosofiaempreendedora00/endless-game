@@ -34,18 +34,30 @@ export const CLASS_LOOKS = {
   saqueador: { outfit: 'Barbarian', show: ['1H_Axe', '1H_Axe_Offhand', 'Barbarian_Cape'], tint: { body: '#7a5a3a', legs: '#4a3a2a', cape: '#a8842a' }, style: 'dual', extras: ['lootBag', 'goldCoins'] },
 };
 
-const bone = (root, n) => root.getObjectByName(n.replace(/\./g, '')) || root.getObjectByName(n);
+// esqueleto realista (Quaternius) tem outros nomes de osso: traduz os nomes antigos
+const HUMAN_BONE = { head: 'Head', chest: 'spine_03', hips: 'pelvis', 'handslot.r': 'hand_r', handslotr: 'hand_r', 'handslot.l': 'hand_l', handslotl: 'hand_l' };
+const bone = (root, n) => (root.userData.human && HUMAN_BONE[n] ? root.getObjectByName(HUMAN_BONE[n]) : null) || root.getObjectByName(n.replace(/\./g, '')) || root.getObjectByName(n);
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: false, ...extra });
 const glowMat = (color, k = 1.4, extra = {}) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: k, roughness: 0.3, ...extra });
 
 // grupo preso a um osso, onde 1 unidade = 1 metro (desfaz a escala do personagem)
 // medidas do corpo (m): cabeça de 0,95 a 1,80 (largura ~0,84); tronco ~0,62 de largura; peito em 0,73
 const PART_SCALE = { head: 1.65, chest: 1.3, hips: 1.4 };
+// no corpo realista, as peças feitas para o corpo antigo (cabeção) são reduzidas e deslocadas para caber
+const HUMAN_PART = { head: { k: 0.29, y: 0.085, z: 0.012 }, chest: { k: 0.62, y: -0.02, z: 0 }, hips: { k: 0.62, y: 0, z: 0 } };
 function socket(root, boneName) {
   const b = bone(root, boneName) || root;
   root.updateMatrixWorld(true);
   const ws = new THREE.Vector3(); b.getWorldScale(ws);
-  const g = new THREE.Group(); g.scale.setScalar((PART_SCALE[boneName] || 1) / ws.x);
+  const g = new THREE.Group();
+  if (root.userData.human) { // osso em metros: desfaz a rotação do osso (o enfeite fica "em pé" no corpo) e aplica a proporção
+    const H = HUMAN_PART[boneName] || { k: 0.62, y: 0, z: 0 };
+    const inner = new THREE.Group(); b.add(g); g.add(inner);
+    const wq = new THREE.Quaternion(); b.getWorldQuaternion(wq); const rq = new THREE.Quaternion(); root.getWorldQuaternion(rq);
+    g.quaternion.copy(wq.invert().multiply(rq)); g.scale.setScalar(1 / ws.x);
+    inner.position.set(0, H.y, H.z); inner.scale.setScalar(H.k); return inner;
+  }
+  g.scale.setScalar((PART_SCALE[boneName] || 1) / ws.x);
   b.add(g); return g;
 }
 // recolore a peça mantendo os detalhes da textura (troca a cor, não só escurece)
@@ -132,6 +144,17 @@ const EXTRAS = {
     const tail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.12), std('#5a4030')); tail.position.set(0, -0.04, -0.12); tail.rotation.x = 0.4; bird.add(tail);
     fx.push(t => { head.rotation.y = Math.sin(t * 0.9) * 0.8 * (Math.sin(t * 0.3) > 0 ? 1 : 0.2); });
   },
+  humanCape(root, fx, color) { // capa de tecido nas costas (corpo realista)
+    const g = socket(root, 'chest'), cg = new THREE.PlaneGeometry(1, 1.0, 8, 14), P = cg.attributes.position;
+    for (let k = 0; k < P.count; k++) { // trapézio: estreita nos ombros, larga e ondulada embaixo, curvada nas costas
+      const x = P.getX(k), y = P.getY(k), u = (0.575 - y) / 1.15, w = 0.32 + u * 0.18, X = x * w;
+      P.setXYZ(k, X, y + (u > 0.95 ? Math.sin(x * 14) * 0.025 : 0), -X * X * 1.1 - u * u * 0.08 + Math.sin(x * 10 + u * 4) * 0.012 * u);
+    }
+    cg.translate(0, -0.575, 0); cg.computeVertexNormals();
+    const cape = new THREE.Mesh(cg, std(color, { side: THREE.DoubleSide, roughness: 0.9 })); cape.position.set(0, 0.2, -0.16); cape.rotation.x = 0.1; cape.castShadow = true;
+    const h = new THREE.Group(); h.scale.setScalar(1 / 0.62); g.add(h); h.add(cape);
+    fx.push(tt => { cape.rotation.x = 0.08 + Math.sin(tt * 1.6) * 0.04; });
+  },
   lute(root) {
     // alaúde de verdade: caixa em forma de pera (costas abauladas, tampo reto), roseta, escala com trastes, cravelhal dobrado para trás e cordas
     const g = socket(root, 'chest'); const l = new THREE.Group(); l.position.set(-0.05, 0.02, -0.31); l.rotation.set(0.15, 0, 0.6); g.add(l);
@@ -213,7 +236,38 @@ const EXTRAS = {
 };
 
 // pega um acessório de outro modelo (ex.: besta do Ladino) e prende no mesmo osso
+// tamanho real de cada peça emprestada no corpo realista (maior medida, em metros)
+const HEAD_FIT = { Knight_Helmet: { y: 0.02 }, Mage_Hat: { y: 0.165 }, Barbarian_Hat: { y: 0.18 } };
+const ITEM_LEN = { '1H_Sword': 0.95, '2H_Sword': 1.35, '1H_Axe': 0.75, '2H_Axe': 1.2, '1H_Axe_Offhand': 0.75, Knife: 0.38, Knife_Offhand: 0.38, '2H_Staff': 1.65, '1H_Wand': 0.45, '1H_Crossbow': 0.6, '2H_Crossbow': 0.85, Spellbook: 0.28, Spellbook_open: 0.38, Mug: 0.16, Throwable: 0.2,
+  Round_Shield: 0.62, Rectangle_Shield: 0.75, Badge_Shield: 0.68, Spike_Shield: 0.65, Barbarian_Round_Shield: 0.64, '1H_Sword_Offhand': 0.95, Knight_Helmet: 0.3, Mage_Hat: 0.46, Barbarian_Hat: 0.3 };
+// pega a peça pronta (arma, escudo, elmo) e prende no osso certo do corpo realista, no tamanho real
+export function humanBorrow(root, MODELS, model, itemName, extraScale = 1) {
+  const src = MODELS[model] && MODELS[model].scene.getObjectByName(itemName); if (!src) return null;
+  const slot = src.parent ? src.parent.name : 'handslot.r', b = bone(root, /hat|helmet/i.test(itemName) ? 'head' : slot) || root;
+  const c = src.clone(true); c.visible = true; c.position.set(0, 0, 0); c.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(c), size = box.getSize(new THREE.Vector3()), len = Math.max(size.x, size.y, size.z) || 1;
+  const k = (ITEM_LEN[itemName] || 0.6) / len * extraScale;
+  const holder = new THREE.Group(); b.add(holder); holder.add(c);
+  root.updateMatrixWorld(true); const ws = new THREE.Vector3(); b.getWorldScale(ws);
+  holder.scale.setScalar(k / ws.x);
+  const isHead = /hat|helmet/i.test(itemName), left = /\.l$|l$/.test(slot) && !isHead;
+  if (isHead) { // chapéu/elmo: em pé sobre a cabeça
+    const wq = new THREE.Quaternion(); b.getWorldQuaternion(wq); const rq = new THREE.Quaternion(); root.getWorldQuaternion(rq);
+    holder.quaternion.copy(wq.invert().multiply(rq));
+    const fit = HEAD_FIT[itemName] || { y: 0.16 }; holder.position.set(0, fit.y, 0.012); // base do chapéu na altura da testa (elmo desce até o queixo)
+    const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -box.min.y, -ctr.z);
+  } else if (/Staff/.test(itemName)) { // cajado em pé, apoiado no chão ao lado do corpo
+    holder.rotation.set(Math.PI, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02);
+    const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -ctr.y + size.y * 0.12, -ctr.z);
+  } else { // arma: o cabo na palma, a lâmina para frente (orientação do osso da mão do esqueleto realista)
+    holder.rotation.set(0, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02); // (testado) a lâmina cai para frente, natural na mão parada
+  }
+  c.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  root.userData.items = root.userData.items || {}; root.userData.items[itemName] = c;
+  return c;
+}
 function borrow(root, MODELS, model, itemName) {
+  if (root.userData.human) return humanBorrow(root, MODELS, model, itemName);
   const src = MODELS[model] && MODELS[model].scene.getObjectByName(itemName);
   if (!src) return;
   const target = bone(root, src.parent.name) || root;
@@ -235,6 +289,27 @@ function swapHead(root, MODELS, outfit, headModel) {
   own.visible = false;
 }
 
+/* Corpo realista (S-093): pinta a roupa com as cores da classe, põe as armas/acessórios das mãos e os enfeites.
+   Devolve { style, update(t) } como dress(). */
+const HUMAN_SKIP_EXTRAS = new Set(['belt']);
+export const CLASS_OUTFIT = { aprendiz: 'campones', guerreiro: 'patrulheiro', cavaleiro_runico: 'patrulheiro', guardiao_sagrado: 'patrulheiro', mago: 'campones', arquimago: 'campones', sabio_elemental: 'campones', arqueiro: 'patrulheiro', cacador: 'patrulheiro', menestrel: 'campones', ladino: 'patrulheiro', lamina_sombria: 'patrulheiro', saqueador: 'campones' };
+export function dressHuman(ch, cls, MODELS) {
+  const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, root = ch.root, fx = [];
+  root.userData.human = true;
+  const t = L.tint || {}, mix = (m, hex, k) => { m.material = m.material.clone(); m.material.color = new THREE.Color('#ffffff').lerp(new THREE.Color(hex), k); };
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !/_(Body|Legs|Arms|Feet|Acc|Head_Hood)/.test(o.name)) return;
+    if (/Body|Head_Hood/.test(o.name) && t.body) mix(o, t.body, 0.55);
+    else if (/Legs/.test(o.name) && t.legs) mix(o, t.legs, 0.45);
+  });
+  // tudo que a classe segura ou veste (arma, escudo, livro...)
+  const items = [...(L.show || []).filter(n => !/_Cape$|_Hat$|_Helmet$/.test(n)).map(n => [L.outfit, n]), ...(L.borrow || [])];
+  for (const [model, item] of items) { const src = Object.keys(MODELS).find(k => MODELS[k] && MODELS[k].scene && MODELS[k].scene.getObjectByName(item)); humanBorrow(root, MODELS, MODELS[model] && MODELS[model].scene.getObjectByName(item) ? model : src, item); }
+  for (const [name, c] of Object.entries(L.glow || {})) { const o = root.userData.items && root.userData.items[name]; if (o) o.traverse(m => m.isMesh && glowMesh(m, c)); }
+  for (const e of L.extras || []) if (EXTRAS[e] && !HUMAN_SKIP_EXTRAS.has(e)) EXTRAS[e](root, fx); // a roupa realista já tem cinto, aljava etc. de verdade
+  if ((L.show || []).some(n => /_Cape$/.test(n))) EXTRAS.humanCape && EXTRAS.humanCape(root, fx, t.cape || '#5a3a2a');
+  return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
+}
 /* Veste o personagem: devolve { style, update(t) } */
 export function dress(ch, cls, MODELS, headModel = 'Knight') {
   const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, root = ch.root, fx = [];
@@ -463,6 +538,7 @@ export const HAIR_STYLES = {
   coque: { name: 'Coque', icon: '🍙' },
   longo: { name: 'Longo', icon: '🌾' },
   careca: { name: 'Careca', icon: '🥚' },
+  raspado: { name: 'Raspado', icon: '🪒' },
 };
 export const HAIR_COLORS = {
   preto: { name: 'Preto', hex: '#1d1814' }, castanho_escuro: { name: 'Castanho-escuro', hex: '#3d2617' }, castanho: { name: 'Castanho', hex: '#6e4426' },
@@ -492,7 +568,7 @@ const OLD_HEAD_LOOK = { Knight: { style: 'espetado', color: 'loiro' }, Mage: { s
 // limpa e completa um "look" (saves antigos, cor de cabelo que virou letras, rosto ausente)
 export function normalizeLook(look) {
   look = look || {};
-  const out = { race: RACES[look.race] ? look.race : 'humano', beard: !!look.beard, face: FACE_TYPES[look.face] ? look.face : 'sereno' };
+  const out = { race: RACES[look.race] ? look.race : 'humano', beard: !!look.beard, face: FACE_TYPES[look.face] ? look.face : 'sereno', sex: look.sex === 'f' ? 'f' : 'm', skin: look.skin === 'escura' ? 'escura' : 'clara' };
   const h = look.hair && typeof look.hair === 'object' ? look.hair : null;
   if (h && (HAIR_STYLES[h.style] || HAIR_COLORS[h.color])) out.hair = { style: HAIR_STYLES[h.style] ? h.style : 'curto', color: HAIR_COLORS[h.color] ? h.color : 'castanho' };
   else { const o = OLD_HEAD_LOOK[look.head] || DEFAULT_LOOK.hair; out.hair = { style: o.style, color: o.color }; if (o.beard) out.beard = true; }
@@ -777,7 +853,7 @@ export function applyHat(ch, hatId, MODELS, customHead = true) {
   const fx = [];
   const hb = bone(ch.root, 'head'), before = hb ? new Set(hb.children) : null;
   if (H.extra && EXTRAS[H.extra]) EXTRAS[H.extra](ch.root, fx);
-  if (hb && H.dy) for (const c of hb.children) if (!before.has(c)) c.position.y += H.dy * c.scale.y * (customHead ? 1 : 0.4); // (em unidades do soquete) assenta o chapéu na cabeça (a cabeça nova é mais baixa)
+  if (hb && H.dy) for (const c of hb.children) if (!before.has(c)) { if (ch.root.userData.human) { const inner = c.children[0]; if (inner) inner.position.y += H.dy * inner.scale.y; } else c.position.y += H.dy * c.scale.y * (customHead ? 1 : 0.4); } // (em unidades do soquete) assenta o chapéu na cabeça (a cabeça nova é mais baixa)
   if (H.borrow) { const [model, item] = H.borrow; borrow(ch.root, MODELS, model, item); if (H.scale) { const o = ch.root.getObjectByName(item); if (o) o.scale.multiplyScalar(H.scale); } }
   return fx.length ? t => fx.forEach(f => f(t)) : null;
 }

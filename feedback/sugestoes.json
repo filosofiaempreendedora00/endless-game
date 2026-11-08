@@ -4269,9 +4269,10 @@
     "mapa": null,
     "jogador": null,
     "id": "S-093",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:16:44",
-    "imagem": "img/S-093.png"
+    "imagem": "img/S-093.png",
+    "resposta": "Personagens realistas de verdade (modelos Quaternius, grátis/CC0): rosto humano com nariz, olhos e sobrancelhas, 5 cortes de cabelo, 13 cores, barba, homem ou mulher e pele clara ou morena (no criador). Você, os NPCs, a vitrine e os rivais da Arena usam o corpo novo, com 43 animações reais; cada classe tem a roupa nas cores dela, a arma na mão, capa e os efeitos. Os mascotes ficam para a próxima etapa."
   },
   {
     "texto": "gostaria que tivesse algum comando (preciso saber qual) no qual eu conseguisse mudar.a view pra primeira pessoa. Quero que ela seja absolutamente inspirada em skyrim.\n\nTbm quero mudar a forma de batalha, de serem target, pra atacar segurando o botão esquerdo do mouse. Entao vai ser algo de mira com o cursor e nao algo point click. Ou seja a dinamica vai mudar bastante.Inclusive as com armas de arcos e tbm as de magia. Quero que fiquem as maos dos personagens aparentes muito parecido com skyrim.. Pra armas fisicas ou a distancia, ou até magias",
@@ -5410,5 +5411,193 @@
     "status": "pendente",
     "criadoEm": "2026-11-08T16:00:57",
     "imagem": "img/S-116.png"
+  },
+  {
+    "texto": "foi um excelente começo esse aumento do mundo pra ter neve, deserto e etc. De fato preciso ter tudo isso no mundo. Senti falta de cidades perto de praias, e tbm quero que vc crie cidades pra cada raça. Na de humanos é onde todo mundo começa, mas tbm precisa ter cidades de anoes e de elfos. Sendo anoes guerreiros por padrao, cidade de equipamentos e tudo mais, machados e tudo nessa pegada, perto de montanhas mais altas. e tbm idades de elfos e tudo o que caracterizaria uma cidade de elfos. Obviamnente precisa ter npcs tbm que se adaptem às cidades, sendo das respectivas raças em sua maioria esmagadora",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"👑 Painel do Mestre\"",
+      "nome": "Área de 594×469 px em Janela \"👑 Painel do Mestre\" — \"🪨 Pedrinho · Nv. 1 · 🌍 Teleporte · — clique no mapa onde quer aparecer\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"👑 Painel do Mestre\""
+        ],
+        "textos": [
+          "🪨 Pedrinho",
+          "Nv. 1",
+          "🌍 Teleporte",
+          "— clique no mapa onde quer aparecer"
+        ],
+        "area": [
+          427,
+          189,
+          1021,
+          658
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-117",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:03:34",
+    "imagem": "img/S-117.png"
+  },
+  {
+    "texto": "quero que em algum lugar também tenha um campo em auqe tenha um portal pra entrar em algum grande castelo gigantesco, e la dentro tenha salas, comodos e tudo mais. Um castelo foda que fique em algum local no campo. Quero esse castelo bem enorme por dentro e bem detalhado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"👑 Painel do Mestre\"",
+      "nome": "Área de 540×598 px em Janela \"👑 Painel do Mestre\" — \"Nv. 40–55 · fora da área jogável — você aparece na b\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"👑 Painel do Mestre\""
+        ],
+        "textos": [
+          "Nv. 40–55",
+          "fora da área jogável — você aparece na b"
+        ],
+        "area": [
+          1477,
+          347,
+          2017,
+          945
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-118",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:17:18",
+    "imagem": "img/S-118.png"
+  },
+  {
+    "texto": "nao osso ter essa visualizacao dentro do pvp, ia me atrapalhar demais ficar olhando pro muro assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1589×763 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Paulico lico (Arquimago)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        816,
+        5
+      ],
+      "pos": [
+        816,
+        5
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-119",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:18:59",
+    "imagem": "img/S-119.png"
+  },
+  {
+    "texto": "nao goto de uma forma geométrica tao disforme aqiu no meio, podia ser outra coisa",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (531×184 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        810,
+        3
+      ],
+      "pos": [
+        810,
+        3
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-120",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:19:20",
+    "imagem": "img/S-120.png"
   }
 ]
