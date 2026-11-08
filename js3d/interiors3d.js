@@ -6,6 +6,7 @@
    ========================================================================= */
 import * as THREE from 'three';
 import { vlight } from './lights3d.js';
+import { masonry } from './landmarks3d.js';
 
 export const INTERIORS = {
   // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 450 e as montanhas do horizonte até ~740)
@@ -67,36 +68,101 @@ export function buildRoomShell(def) {
 }
 
 /* ---------- móveis ---------- */
+// --- taverna (S-077 a S-081): móveis e comida com detalhe de verdade ---
+const lathe = (pts, seg = 24) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+const MUG_GLASS = new THREE.MeshStandardMaterial({ color: '#e8f2f0', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false });
+const MUG_BEER = new THREE.MeshStandardMaterial({ color: '#e0a020', roughness: 0.2, emissive: '#a05a00', emissiveIntensity: 0.35 });
+// caneca de vidro clara com alça, cerveja dourada e colarinho de espuma
+export function mug() {
+  const g = new THREE.Group();
+  const glass = MUG_GLASS, beer = MUG_BEER;
+  const foam = new THREE.MeshStandardMaterial({ color: '#fff7e6', roughness: 0.9 });
+  const body = new THREE.Mesh(lathe([[0.001, 0], [0.068, 0], [0.072, 0.01], [0.074, 0.17], [0.076, 0.19], [0.07, 0.19], [0.068, 0.012], [0.001, 0.012]], 28), glass); body.renderOrder = 3; g.add(body);
+  const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.064, 0.14, 24), beer); liquid.position.y = 0.083; g.add(liquid);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.069, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), foam); head.scale.y = 0.45; head.position.y = 0.152; g.add(head);
+  const drip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 8), foam); drip.scale.set(1, 2.2, 0.6); drip.position.set(0.07, 0.165, 0.02); g.add(drip);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 10, 24, Math.PI * 1.15), glass); handle.position.set(0.085, 0.1, 0); handle.rotation.z = -Math.PI * 0.57; g.add(handle); // alça para puxar
+  return g;
+}
+// pão com cortes na casca, sobre uma tábua, e uma fatia de queijo
+function breadBoard() {
+  const g = new THREE.Group(), board = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.025, 28), mat('#a0703f')); board.scale.z = 0.7; board.position.y = 0.012; g.add(board);
+  const lg = new THREE.SphereGeometry(0.12, 32, 20), P = lg.attributes.position;
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); const cut = y > 0.04 ? Math.max(0, Math.cos(x * 52)) ** 8 * 0.012 : 0; P.setXYZ(i, x * 1.45, Math.max(-0.02, y * 0.62 - cut), z); }
+  lg.computeVertexNormals();
+  const col = new Float32Array(P.count * 3), a = new THREE.Color('#b06a28'), b = new THREE.Color('#e3b56c'), c = new THREE.Color();
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i); c.copy(a).lerp(b, Math.max(0, Math.cos(x / 1.45 * 52)) ** 8 * (P.getY(i) > 0.02 ? 1 : 0)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  lg.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const loaf = new THREE.Mesh(lg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })); loaf.position.y = 0.045; loaf.rotation.y = 0.3; g.add(loaf);
+  const cheese = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 20, 1, false, 0, Math.PI / 3), mat('#f0c64a', { roughness: 0.6 })); cheese.position.set(0.12, 0.05, 0.06); g.add(cheese);
+  return g;
+}
+const turnedLeg = h => lathe([[0.001, 0], [0.065, 0], [0.065, 0.06], [0.045, 0.1], [0.04, h * 0.45], [0.058, h * 0.5], [0.04, h * 0.55], [0.042, h - 0.08], [0.06, h - 0.04], [0.06, h], [0.001, h]], 16);
 export function table(len = 2.2) {
-  const g = new THREE.Group(), W = mat('#7a5232');
-  g.add(box(len, 0.12, 1.0, W, 0, 0.85, 0));
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(0.12, 0.85, 0.12, W, sx * (len / 2 - 0.15), 0.42, sz * 0.38));
-  // canecas e pão
-  const mug = mat('#c9a15a'), foam = mat('#fff8e8');
-  for (let i = 0; i < 3; i++) { const x = -len / 3 + i * len / 3; const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.16, 16), mug); m.position.set(x, 1.0, (i % 2 ? 0.2 : -0.2)); g.add(m); const f = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.03, 16), foam); f.position.set(x, 1.09, (i % 2 ? 0.2 : -0.2)); g.add(f); }
-  const bread = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 14), mat('#c98a3a')); bread.scale.set(1.4, 0.6, 1); bread.position.set(0.1, 0.97, 0); g.add(bread);
+  const g = new THREE.Group(), W = mat('#7a5232'), W2 = mat('#6a4628');
+  for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.BoxGeometry(len, 0.08, 0.32, 4, 1, 1), k === 1 ? W2 : W); p.position.set(0, 0.86, -0.34 + k * 0.34); g.add(p); } // tampo de 3 tábuas
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const l = new THREE.Mesh(turnedLeg(0.82), W2); l.position.set(sx * (len / 2 - 0.18), 0, sz * 0.36); g.add(l); }
+  for (const sx of [-1, 1]) g.add(box(0.06, 0.08, 0.72, W2, sx * (len / 2 - 0.18), 0.2, 0)); g.add(box(len - 0.36, 0.07, 0.06, W2, 0, 0.2, 0)); // travessas
+  for (let i = 0; i < 3; i++) { const m = mug(); m.position.set(-len / 3 + i * len / 3 + (i - 1) * 0.08, 0.9, i % 2 ? 0.22 : -0.24); m.rotation.y = i * 2.1; g.add(m); }
+  const bb = breadBoard(); bb.position.set(0.12, 0.9, 0.02); g.add(bb);
+  const candle = new THREE.Group(); candle.position.set(-0.3, 0.9, 0.05); g.add(candle);
+  const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.14, 16), mat('#efe6d0')); wax.position.y = 0.07; candle.add(wax);
+  const wick = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.05, 12), new THREE.MeshBasicMaterial({ color: '#ffd27a' })); wick.position.y = 0.17; candle.add(wick);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
 export function bench(len = 2.2) {
-  const g = new THREE.Group(), W = mat('#6a4628');
-  g.add(box(len, 0.1, 0.4, W, 0, 0.48, 0));
-  for (const sx of [-1, 1]) g.add(box(0.1, 0.48, 0.34, W, sx * (len / 2 - 0.15), 0.24, 0));
+  const g = new THREE.Group(), W = mat('#6a4628'), W2 = mat('#5a3a20');
+  for (let k = 0; k < 2; k++) g.add(box(len, 0.06, 0.19, k ? W : W2, 0, 0.47, -0.1 + k * 0.2));
+  for (const sx of [-1, 1]) { const l = new THREE.Mesh(turnedLeg(0.44), W2); l.position.set(sx * (len / 2 - 0.18), 0, 0); g.add(l); }
+  g.add(box(len - 0.36, 0.05, 0.05, W2, 0, 0.15, 0));
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
+// balcão mais baixo (dá para ver o rosto de quem atende), com painéis, tampo com borda e garrafas de verdade
 export function counter(len = 5) {
-  const g = new THREE.Group(), W = mat('#5e3e24'), T = mat('#8a6040');
-  g.add(box(len, 1.1, 0.8, W, 0, 0.55, 0)); g.add(box(len + 0.2, 0.1, 1.0, T, 0, 1.15, 0));
-  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 16), mat(['#3a7a3a', '#7a2a2a', '#c9a15a', '#3a4a8a'][i], { roughness: 0.3 })); b.position.set(-len / 2 + 0.6 + i * 0.35, 1.35, 0); g.add(b); }
+  const g = new THREE.Group(), W = mat('#5e3e24'), T = mat('#8a6040'), P = mat('#6e4a2c');
+  g.add(box(len, 0.88, 0.7, W, 0, 0.44, 0)); g.add(box(len + 0.2, 0.08, 0.9, T, 0, 0.92, 0));
+  for (let k = 0; k < Math.floor(len / 0.9); k++) g.add(box(0.7, 0.55, 0.03, P, -len / 2 + 0.5 + k * 0.9, 0.46, 0.36)); // painéis da frente
+  g.add(box(len, 0.06, 0.06, mat('#c9a15a', { metalness: 0.6, roughness: 0.35 }), 0, 0.12, 0.42)); // apoio de pé de latão
+  const glassC = ['#2f6b3a', '#6a2a1e', '#c9a15a', '#2f3f6a', '#7a5a2a'];
+  for (let i = 0; i < 5; i++) {
+    const bt = new THREE.Mesh(lathe([[0.001, 0], [0.05, 0], [0.055, 0.02], [0.055, 0.2], [0.03, 0.26], [0.018, 0.3], [0.018, 0.34], [0.001, 0.34]], 20), new THREE.MeshPhysicalMaterial({ color: glassC[i], roughness: 0.1, transparent: true, opacity: 0.8, clearcoat: 1 }));
+    bt.position.set(-len / 2 + 0.5 + i * 0.32, 0.96, -0.2); g.add(bt);
+    const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.018, 0.04, 10), mat('#b08a5a')); cork.position.set(bt.position.x, 1.32, -0.2); g.add(cork);
+  }
+  for (let i = 0; i < 2; i++) { const m = mug(); m.position.set(len / 2 - 0.6 - i * 0.3, 0.96, 0.15); g.add(m); }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
+// lareira de pedra (S-080): alvenaria irregular, arco, cornija de madeira, toras e chama em camadas com faíscas
 export function fireplace() {
-  const g = new THREE.Group(), S = mat('#7d776d', { flatShading: false }), D = mat('#2a221c');
-  g.add(box(2.6, 2.2, 0.9, S, 0, 1.1, 0)); g.add(box(1.5, 1.1, 0.5, D, 0, 0.6, 0.25)); g.add(box(1.4, 3.0, 0.7, S, 0, 3.0, -0.1));
-  const fire = new THREE.Group(); fire.position.set(0, 0.25, 0.35); g.add(fire);
-  const fm = new THREE.MeshStandardMaterial({ color: '#ff9a3a', emissive: '#ff7a1a', emissiveIntensity: 2, roughness: 0.4 });
-  const flames = []; for (let i = 0; i < 5; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 14), fm); f.position.set((i - 2) * 0.13, 0.22, (i % 2) * 0.08); fire.add(f); flames.push(f); }
+  const g = new THREE.Group();
+  const front = masonry({ w: 2.6, h: 2.0, d: 0.9, seed: 31, base: '#8a847a', hole: { x: 0, w: 1.3, h: 1.15 }, rowH: 0.28 }); g.add(front);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.15, 0.2), mat('#1e1712')); back.position.set(0, 0.57, -0.3); g.add(back);
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.06, 0.8), mat('#2a221c')); floor.position.set(0, 0.03, 0); g.add(floor);
+  const chimney = masonry({ w: 1.5, h: 2.6, d: 0.7, seed: 37, base: '#857f75', rowH: 0.3 }); chimney.position.set(0, 2.0, -0.1); g.add(chimney);
+  const mantel = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.16, 0.5, 6, 1, 1), mat('#5a3a20')); mantel.position.set(0, 2.06, 0.1); g.add(mantel);
+  for (const [x, c] of [[-0.9, '#efe6d0'], [0.95, '#efe6d0']]) { const cd = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.18, 14), mat(c)); cd.position.set(x, 2.23, 0.15); g.add(cd); }
+  const jar = new THREE.Mesh(lathe([[0.001, 0], [0.08, 0], [0.11, 0.08], [0.09, 0.18], [0.05, 0.22], [0.06, 0.25], [0.001, 0.25]], 20), mat('#a85a3a', { roughness: 0.6 })); jar.position.set(0.4, 2.14, 0.12); g.add(jar);
+  // toras com casca e brasas
+  const logM = mat('#4a3220'), cutM = mat('#c9a674');
+  for (const [x, z, ry, rz] of [[-0.15, 0.05, 0.3, 0.12], [0.18, 0.08, -0.4, -0.1], [0, -0.08, 1.4, 0.0]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.85, 14), logM); l.rotation.set(0, ry, Math.PI / 2 + rz); l.position.set(x, 0.14, z); g.add(l); }
+  const ember = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff5a1a', transparent: true, opacity: 0.55 })); ember.scale.set(1.2, 0.25, 0.8); ember.position.set(0, 0.06, 0.02); g.add(ember);
+  // chama: cones alongados em 3 camadas (vermelho, laranja, amarelo) que tremulam, e faíscas subindo
+  const fire = new THREE.Group(); fire.position.set(0, 0.18, 0.02); g.add(fire);
+  const layers = [['#ff4a12', 0.2, 0.75, 0.85], ['#ff8a2a', 0.15, 0.6, 0.9], ['#ffd27a', 0.09, 0.42, 0.95]];
+  const flames = [];
+  for (const [col, r, h, op] of layers) for (let k = 0; k < 4; k++) { const fg = new THREE.ConeGeometry(r, h, 16, 4, true); fg.translate(0, h / 2, 0); const f = new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })); f.position.set((k - 1.5) * 0.14, 0, (k % 2) * 0.06 - 0.03); f.userData.ph = k * 1.7 + r * 10; fire.add(f); flames.push(f); }
+  const sparks = []; for (let k = 0; k < 10; k++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffcf6a' })); sp.userData.ph = k / 10; fire.add(sp); sparks.push(sp); }
   const light = vlight('#ff9a4a', 8, 9, 1.5); light.position.set(0, 0.8, 0.9); g.add(light);
-  g.userData.update = t => { flames.forEach((f, i) => { f.scale.y = 0.8 + Math.sin(t * 9 + i * 1.7) * 0.25; f.scale.x = 1 + Math.sin(t * 7 + i) * 0.1; }); light.intensity = 7 + Math.sin(t * 11) * 1.2 + Math.sin(t * 17) * 0.6; };
+  g.userData.update = t => {
+    for (const f of flames) { const p = f.userData.ph; f.scale.set(1 + Math.sin(t * 7 + p) * 0.12, 0.8 + Math.sin(t * 9.3 + p * 1.3) * 0.22 + Math.sin(t * 15 + p) * 0.08, 1); f.rotation.z = Math.sin(t * 5 + p) * 0.08; }
+    for (const sp of sparks) { const q = (t * 0.7 + sp.userData.ph) % 1; sp.position.set(Math.sin(sp.userData.ph * 40 + t * 2) * 0.25 * q, 0.2 + q * 1.0, Math.cos(sp.userData.ph * 30) * 0.1); sp.scale.setScalar(1 - q); }
+    ember.material.opacity = 0.45 + Math.sin(t * 5) * 0.1;
+    light.intensity = 7 + Math.sin(t * 11) * 1.2 + Math.sin(t * 17) * 0.6;
+  };
+  g.traverse(o => { if (o.isMesh && o.material.blending !== THREE.AdditiveBlending && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
 export function hayBale() {

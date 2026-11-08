@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
+const vlightAt = (c, i, d, x, y, z) => { const L = vlight(c, i, d); L.position.set(x, y, z); return L; }; // luz virtual já posicionada
 
 const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -134,7 +135,7 @@ function brazier() {
   const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.35, 0.6, 18), new THREE.MeshStandardMaterial({ color: '#4a3a2a', metalness: 0.6, roughness: 0.4 })); bowl.position.y = 1.4; g.add(bowl);
   const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, 1.2, 12), bowl.material); leg.position.y = 0.6; g.add(leg);
   const flame = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.3, 14), new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0.85 })); flame.position.y = 2.2; g.add(flame);
-  g.add(vlight('#ffa040', 2.2, 14, [0, 2.4, 0]));
+  g.add(vlightAt('#ffa040', 2.2, 14, 0, 2.4, 0));
   g.userData.update = t => { flame.scale.set(1 + Math.sin(t * 9) * 0.08, 1 + Math.sin(t * 11 + 1) * 0.15, 1); };
   return g;
 }
@@ -161,7 +162,7 @@ export function makeCampfire() {
   for (let k = 0; k < 4; k++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.1, 12), logM); l.rotation.set(Math.PI / 2 - 0.35, k * Math.PI / 2, 0); l.position.set(Math.cos(k * Math.PI / 2) * 0.25, 0.2, Math.sin(k * Math.PI / 2) * 0.25); g.add(l); }
   for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, s = new THREE.Mesh(rock(rng, 0.16, 0.12, 0.14, 0.15), new THREE.MeshStandardMaterial({ color: '#8a857c', roughness: 1 })); s.position.set(Math.cos(a) * 0.62, 0.08, Math.sin(a) * 0.62); g.add(s); }
   const fl = [0, 1, 2].map(k => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.22 - k * 0.05, 0.8 - k * 0.15, 14), new THREE.MeshBasicMaterial({ color: ['#ff8a2a', '#ffb347', '#ffe08a'][k], transparent: true, opacity: 0.85 })); f.position.y = 0.45; g.add(f); return f; });
-  g.add(vlight('#ff9a40', 2.4, 12, [0, 0.8, 0]));
+  g.add(vlightAt('#ff9a40', 2.4, 12, 0, 0.8, 0));
   g.userData.update = t => fl.forEach((f, k) => { f.scale.set(1 + Math.sin(t * 10 + k) * 0.1, 1 + Math.sin(t * 13 + k * 2) * 0.2, 1); f.rotation.y = t * (k + 1); });
   return g;
 }
@@ -177,5 +178,77 @@ export function makeRoost() {
   const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.6, 6, 6), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 })); flag.position.set(0, 2.7, 0.06); g.add(flag);
   const P = flag.geometry.attributes.position, base = P.array.slice();
   g.userData.update = t => { for (let i = 0; i < P.count; i++) P.setZ(i, base[i * 3 + 2] + Math.sin(t * 3 + base[i * 3] * 3 + base[i * 3 + 1]) * 0.05); P.needsUpdate = true; };
+  return g;
+}
+
+/* ---------- alvenaria: blocos de pedra irregulares, quinas arredondadas, cor variada e musgo ----------
+   Usada na lareira da taverna (S-080) e nos muros das ruínas (S-092). */
+function stoneBlock(rng, w, h, d) {
+  const g = mergeVertices(new THREE.BoxGeometry(w, h, d, 3, 2, 2)), P = g.attributes.position, r = Math.min(w, h, d) * 0.22;
+  for (let i = 0; i < P.count; i++) {
+    let x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+    // arredonda as quinas: puxa para dentro quem está perto de duas faces ao mesmo tempo
+    const ex = Math.max(0, Math.abs(x) - (w / 2 - r)), ey = Math.max(0, Math.abs(y) - (h / 2 - r)), ez = Math.max(0, Math.abs(z) - (d / 2 - r));
+    const e = Math.hypot(ex, ey, ez); if (e > 0) { const k = r / e; x -= Math.sign(x) * ex * (1 - k); y -= Math.sign(y) * ey * (1 - k); z -= Math.sign(z) * ez * (1 - k); }
+    const j = (rng() - 0.5) * 0.025; P.setXYZ(i, x + j, y + j, z + j);
+  }
+  g.computeVertexNormals(); return g;
+}
+export function masonry(opts) {
+  const { w, h, d = 0.5, seed = 1, base = '#8a857b', moss = 0, hole = null, broken = 0, rowH = 0.32 } = opts;
+  const rng = rngOf(seed), parts = [], baseC = new THREE.Color(base), dark = new THREE.Color('#4f4b45'), mossC = new THREE.Color('#5b7a36');
+  let y = 0, row = 0;
+  while (y < h - 0.05) {
+    const bh = Math.min(rowH * (0.85 + rng() * 0.3), h - y);
+    let x = -w / 2 + (row % 2 ? -rng() * 0.3 : 0);
+    const topCut = broken ? h - broken * (0.5 + 0.5 * Math.sin(row * 1.7 + seed)) : h; // borda de cima quebrada
+    while (x < w / 2 - 0.05) {
+      const bw = Math.min(0.45 + rng() * 0.5, w / 2 - x);
+      const cx = x + bw / 2, cy = y + bh / 2;
+      x += bw;
+      if (cx < -w / 2 || bw < 0.12) continue;
+      if (hole && Math.abs(cx - hole.x) < hole.w / 2 && cy < hole.h && (cy < hole.h - hole.w / 2 || Math.hypot(cx - hole.x, cy - (hole.h - hole.w / 2)) < hole.w / 2)) continue; // vão (lareira)
+      if (y + bh > topCut + rng() * 0.6) continue;
+      const g = stoneBlock(rng, bw - 0.03, bh - 0.03, d * (0.92 + rng() * 0.12)); g.translate(cx, cy, (rng() - 0.5) * 0.04);
+      const c = baseC.clone().offsetHSL((rng() - 0.5) * 0.03, (rng() - 0.5) * 0.08, (rng() - 0.5) * 0.14), N = g.attributes.normal, Pp = g.attributes.position, col = new Float32Array(Pp.count * 3), t = new THREE.Color();
+      for (let i = 0; i < Pp.count; i++) { t.copy(c); if (moss && N.getY(i) > 0.4 && rng() < moss) t.lerp(mossC, 0.7); if (Pp.getY(i) < 0.15) t.lerp(dark, 0.3); col[i * 3] = t.r; col[i * 3 + 1] = t.g; col[i * 3 + 2] = t.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(col, 3)); parts.push(g.toNonIndexed());
+    }
+    y += bh; row++;
+  }
+  // argamassa escura atrás dos blocos
+  const back = new THREE.BoxGeometry(w * 0.99, Math.max(0.1, (broken ? h - broken : h) * 0.98), d * 0.7); back.translate(0, (broken ? h - broken : h) * 0.49, -0.02);
+  if (!hole) { const n = back.attributes.position.count, col = new Float32Array(n * 3).fill(0.25); back.setAttribute('color', new THREE.BufferAttribute(col, 3)); back.deleteAttribute('uv'); parts.push(back.toNonIndexed()); }
+  const m = new THREE.Mesh(mergeGeometries(parts.map(p => { if (p.attributes.uv) p.deleteAttribute('uv'); return p; })), stoneMat); m.castShadow = m.receiveShadow = true;
+  return m;
+}
+/* ---------- muro de ruína (S-092): pedra de verdade, com musgo e topo quebrado ---------- */
+export function makeRuinWall(seed = 1, len = 7, h = 3.4) {
+  const g = new THREE.Group(), rng = rngOf(seed);
+  const wall = masonry({ w: len, h, d: 0.9, seed, base: '#8d887d', moss: 0.35, broken: 1.4, rowH: 0.42 }); wall.position.y = -0.25; g.add(wall);
+  // pedras caídas ao pé do muro
+  for (let k = 0; k < 4; k++) { const s = mesh([paint(rock(rng, 0.25 + rng() * 0.2, 0.18 + rng() * 0.12, 0.22 + rng() * 0.15, 0.15), '#8d887d', '#5b7a36', 0.4, seed + k)]); s.position.set((rng() - 0.5) * len, 0.08, 0.7 + rng() * 0.5); s.rotation.set(rng(), rng(), rng()); g.add(s); }
+  return g;
+}
+/* ---------- carrinho de mão (S-082): caçamba de tábuas, cabos curvos e roda com raios ---------- */
+export function makeWheelbarrow() {
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: '#8a5a32', roughness: 0.85 }), dark = new THREE.MeshStandardMaterial({ color: '#5a3a20', roughness: 0.9 }), iron = new THREE.MeshStandardMaterial({ color: '#4a4a4e', roughness: 0.45, metalness: 0.7 });
+  const plank = (w, h, d, x, y, z, rx = 0, rz = 0, m = wood) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 1, 1), m); b.position.set(x, y, z); b.rotation.set(rx, 0, rz); b.castShadow = b.receiveShadow = true; g.add(b); };
+  // caçamba (laterais inclinadas, tábuas com frestas)
+  for (let k = 0; k < 4; k++) plank(0.62, 0.035, 0.17, 0, 0.42, -0.26 + k * 0.175, 0, 0, k % 2 ? wood : dark);
+  for (const sx of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.04, 0.16, 0.72, sx * 0.36, 0.52 + k * 0.17, 0, 0, sx * -0.35);
+  for (const sz of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.7, 0.16, 0.04, 0, 0.52 + k * 0.17, sz * 0.38, sz * 0.3, 0);
+  // cabos curvos que viram pegadores
+  for (const sx of [-1, 1]) { const c = new THREE.CatmullRomCurve3([new THREE.Vector3(sx * 0.22, 0.3, 0.62), new THREE.Vector3(sx * 0.26, 0.38, 0.1), new THREE.Vector3(sx * 0.3, 0.52, -0.55), new THREE.Vector3(sx * 0.32, 0.66, -0.95)]); const t = new THREE.Mesh(new THREE.TubeGeometry(c, 20, 0.035, 10), dark); t.castShadow = true; g.add(t); const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.18, 12), wood); grip.position.set(sx * 0.32, 0.67, -0.92); grip.rotation.x = 1.3; g.add(grip); }
+  // pés de apoio
+  for (const sx of [-1, 1]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.4, 10), dark); l.position.set(sx * 0.26, 0.2, -0.45); g.add(l); }
+  // roda com aro de ferro, cubo e raios
+  const wheel = new THREE.Group(); wheel.position.set(0, 0.24, 0.72); g.add(wheel);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 10, 32), iron); rim.rotation.y = Math.PI / 2; wheel.add(rim);
+  const tread = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 10, 32), wood); tread.rotation.y = Math.PI / 2; wheel.add(tread);
+  for (let k = 0; k < 8; k++) { const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 8), wood); sp.rotation.x = k / 8 * Math.PI; wheel.add(sp); }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 14), iron); hub.rotation.z = Math.PI / 2; wheel.add(hub);
+  const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), iron); axle.rotation.z = Math.PI / 2; wheel.add(axle);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }

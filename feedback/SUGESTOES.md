@@ -2,105 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (16)
+## Pendentes (0)
 
-### S-077 · Área do mapa: Área da tela (438×298 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:20:13 · **Mapa:** Vila de Alvorada (tile [659, -5])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao tem como ela ficar assim so com a cabeça de fora. Preciso ver o rosto dela. Talvz ela estar em cima de um balcao que dê altura pra eu ver o rosto
-- ![print](img/S-077.png)
+_Nenhuma._
 
-### S-078 · Área do mapa: Área da tela (352×117 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:20:25 · **Mapa:** Vila de Alvorada (tile [658, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** trazer algo aqui em cima da mesa mais realista que esses copos
-- ![print](img/S-078.png)
-
-### S-079 · Área do mapa: Área da tela (350×298 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:20:47 · **Mapa:** Vila de Alvorada (tile [664, 2])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ficou sentado bugado pro lado errado e entrando na mesa
-- ![print](img/S-079.png)
-
-### S-080 · Área do mapa: Área da tela (594×746 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:21:04 · **Mapa:** Vila de Alvorada (tile [659, 1])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** fogueira muito bugada que pode e deve ser melhorada
-- ![print](img/S-080.png)
-
-### S-081 · Área do mapa: Área da tela (556×263 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:21:32 · **Mapa:** Vila de Alvorada (tile [660, 2])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** melhorar detalhes das meses, pao e cervejas. Precisa ser caneca clara na cerveja com o lugar de puxar
-- ![print](img/S-081.png)
-
-### S-082 · Área do mapa: Área da tela (290×201 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:22:41 · **Mapa:** Vila de Alvorada (tile [-79, 27])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** melhora o gráfico disso
-- ![print](img/S-082.png)
-
-### S-083 · Área do mapa: Área da tela (326×114 px) (sobre: Painel de status, Barra de atalhos, Ícones de buff)
-- **Status:** pendente · **Quando:** 2026-11-08T13:23:16 · **Mapa:** Vila de Alvorada (tile [-34, 19])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** nao quero que apareça o hp dos npcs
-- ![print](img/S-083.png)
-
-### S-084 · Área do mapa: Área da tela (679×454 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:24:48 · **Mapa:** Campos de Verdelume (tile [22, 26])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Melhor o efeito de quando eu aumento de nível gostaria de algum efeito sonoro parecido com Ragnarok online e também aquela aquelas asinhas bem elaboradas em volta do meu personagem quero uma animação bem robusta para quando a gente passar de nível tanto a nível efeito sonoro quanto visual quero deixar algo bastante incrementado mesmo
-- ![print](img/S-084.png)
-
-### S-085 · Área do mapa: Área da tela (295×147 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:25:14 · **Mapa:** Bosque Sussurrante (tile [57, 13])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o que eu pedi pra mudar o poring obio que tbm vale pra esse mini-boss aqui
-- ![print](img/S-085.png)
-
-### S-086 · Área do mapa: Área da tela (583×229 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:27:05 · **Mapa:** Bosque Sussurrante (tile [64, 15])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu percebi que você sumiu com o botão do Som Mas eu não encontrei ele no esc então preciso que você inclua ele nas configurações que fiquem dentro do esc para que eu possa voltar com o som e eu consigo ouvir a música e também ouvir todos os outros efeitos sonoros você pode dentro desse som desabilitar música de jogo e também desabilitar efeitos sonoros como todo como por exemplo barulhos de saltar barulhos de monstro atacando monstro morrendo e todos os outros efeitos sonoros naturais
-- ![print](img/S-086.png)
-
-### S-087 · Área do mapa: Área da tela (303×309 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:27:52 · **Mapa:** Bosque Sussurrante (tile [65, 11])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Vi que você melhorou consideravelmente a estética dos lobos e inclusive fez efeitos de ataques porém eles ainda tem muita a melhorar a nível gráfico pois eu entendo que tá muito pontiagudo e com muitas formas geométricas como as orelhas deles estão esquisitas as bochechas esquisitas não dá para ver os pelos deles o pé deles também está uma bola e poderia ser muito mais interessante o efeito dos movimentos que tudo mais acredito que há muito o que melhorar na construção deste monstro
-- ![print](img/S-087.png)
-
-### S-088 · Área do mapa: Área da tela (336×301 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:28:58 · **Mapa:** Bosque Sussurrante (tile [58, 15])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Preciso que os Monstros tenham uma Box própria de forma com que um não consiga ficar dentro do outro eles não podem ocupar o mesmo lugar no espaço preciso que você melhore as físicas desse jogo como um todo
-- ![print](img/S-088.png)
-
-### S-089 · Área do mapa: Área da tela (647×508 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:29:38 · **Mapa:** Vila de Alvorada (tile [-46, 24])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso que aumente a velocidade de andar no god mode, pra eu conseguir ser mais rápido
-- ![print](img/S-089.png)
-
-### S-090 · Área do mapa: Área da tela (102×81 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:31:13 · **Mapa:** Vila de Alvorada (tile [-72, 32])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Preciso que você queria aqui um boneco para testes de forma com que ele tenha HP infinito e eu possa ficar dando golpes neles para testar tanto os meus ataques físicos sejam eles sejam eles ranged e também habilidades e obviamente eles nunca podem morrer faça por favor esse boneco como com um gráfico muito interessante e pode até se inspirar no filme de Hércules
-- ![print](img/S-090.png)
-
-### S-091 · Área do mapa: Área da tela (128×99 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:31:58 · **Mapa:** Campos de Verdelume (tile [-29, 41])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Este monstro ao andar tem que fazer efeitos sonoros bastante parecidos com o do esporo do Ragnarok online e inclusive quando eles morrerem tem que fazer um barulho parecido também reparem que eu digo parecido e não igual para que não seja uma cópia Descarada
-- ![print](img/S-091.png)
-
-### S-092 · Área do mapa: Área da tela (1113×521 px)
-- **Status:** pendente · **Quando:** 2026-11-08T13:37:48 · **Mapa:** Ruínas de Kael (tile [21, -64])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá
-- ![print](img/S-092.png)
-
-## Feitas (76)
+## Feitas (92)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -635,3 +541,115 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** Agora vou te fazer um pedido maior e isso certamente vai requerer um pouco mais de processamento o que eu quero é começar a expandir a quantidade de cidades de Campos e de Dungeons e eu quero que você se inspire muito no mundo aberto primeiro do jogo Shadow of the Colossus e também do próprio World of Warcraft
 - ![print](img/S-076.png)
 - **Resposta do Claude:** O mundo ficou 9× maior (900×900 m). A serra do vale ganhou passagens e, além dela: Colinas de Âmbar e a Cidadela de Pedraclara (2ª cidade, muralha de pedra) a leste; Dunas de Sal-Rubro com cactos ao sul; Vale da Geada com neve e lago congelado a oeste; e ao norte a Planície dos Colossos (gigantes de pedra ajoelhados, monólitos, arcos e uma calçada antiga) até o Santuário Silente, entrada da masmorra Catacumbas do Santuário, com a chefe Sentinela Silente. Mestres-grifo (estilo WoW) levam você entre os pontos que já conheceu, e cada região nova tem música própria.
+
+### S-077 · Área do mapa: Área da tela (438×298 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:20:13 · **Mapa:** Vila de Alvorada (tile [659, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao tem como ela ficar assim so com a cabeça de fora. Preciso ver o rosto dela. Talvz ela estar em cima de um balcao que dê altura pra eu ver o rosto
+- ![print](img/S-077.png)
+- **Resposta do Claude:** A Dona Rosa agora fica num estrado de madeira atrás do balcão, que também ficou mais baixo: dá para ver o rosto dela (que ganhou o rosto 3D novo).
+
+### S-078 · Área do mapa: Área da tela (352×117 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:20:25 · **Mapa:** Vila de Alvorada (tile [658, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** trazer algo aqui em cima da mesa mais realista que esses copos
+- ![print](img/S-078.png)
+- **Resposta do Claude:** As mesas ganharam canecas de vidro de verdade (com cerveja e espuma), pão com cortes na casca sobre uma tábua com queijo e uma vela; o balcão tem garrafas de vidro com rolha.
+
+### S-079 · Área do mapa: Área da tela (350×298 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:20:47 · **Mapa:** Vila de Alvorada (tile [664, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou sentado bugado pro lado errado e entrando na mesa
+- ![print](img/S-079.png)
+- **Resposta do Claude:** O Velho Gui agora senta no banco virado para a mesa, sem entrar nela, e também ganhou o rosto 3D novo (Tomé e Dona Rosa também).
+
+### S-080 · Área do mapa: Área da tela (594×746 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:21:04 · **Mapa:** Vila de Alvorada (tile [659, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** fogueira muito bugada que pode e deve ser melhorada
+- ![print](img/S-080.png)
+- **Resposta do Claude:** Lareira refeita: alvenaria de pedras irregulares, cornija de madeira com velas e um pote, toras com brasa, chama em três camadas que tremulam e faíscas subindo.
+
+### S-081 · Área do mapa: Área da tela (556×263 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:21:32 · **Mapa:** Vila de Alvorada (tile [660, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorar detalhes das meses, pao e cervejas. Precisa ser caneca clara na cerveja com o lugar de puxar
+- ![print](img/S-081.png)
+- **Resposta do Claude:** Mesas com tampo de três tábuas, pés torneados e travessas; canecas claras de vidro com alça para segurar, cerveja dourada e colarinho de espuma; pão de verdade.
+
+### S-082 · Área do mapa: Área da tela (290×201 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:22:41 · **Mapa:** Vila de Alvorada (tile [-79, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhora o gráfico disso
+- ![print](img/S-082.png)
+- **Resposta do Claude:** Carrinho de mão novo feito em código: caçamba de tábuas, cabos curvos com pegadores, pés de apoio e roda com aro de ferro, cubo e raios.
+
+### S-083 · Área do mapa: Área da tela (326×114 px) (sobre: Painel de status, Barra de atalhos, Ícones de buff)
+- **Status:** feito · **Quando:** 2026-11-08T13:23:16 · **Mapa:** Vila de Alvorada (tile [-34, 19])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** nao quero que apareça o hp dos npcs
+- ![print](img/S-083.png)
+- **Resposta do Claude:** NPCs não mostram mais barra de vida: o quadro do alvo mostra só o nome, o título e a dica para conversar (nome numa linha só).
+
+### S-084 · Área do mapa: Área da tela (679×454 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:24:48 · **Mapa:** Campos de Verdelume (tile [22, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Melhor o efeito de quando eu aumento de nível gostaria de algum efeito sonoro parecido com Ragnarok online e também aquela aquelas asinhas bem elaboradas em volta do meu personagem quero uma animação bem robusta para quando a gente passar de nível tanto a nível efeito sonoro quanto visual quero deixar algo bastante incrementado mesmo
+- ![print](img/S-084.png)
+- **Resposta do Claude:** Subir de nível agora é um evento: asas douradas se abrem e batem nas costas do personagem, coluna de luz, círculo de runas girando no chão, partículas douradas subindo em espiral, auréola e uma fanfarra nova (sopro que sobe, arpejo de sinos, acorde de coro e brilhos).
+
+### S-085 · Área do mapa: Área da tela (295×147 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:25:14 · **Mapa:** Bosque Sussurrante (tile [57, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o que eu pedi pra mudar o poring obio que tbm vale pra esse mini-boss aqui
+- ![print](img/S-085.png)
+- **Resposta do Claude:** O Gosmão virou o rei das gotas: a forma de gota viva (nada de bola), coroa de coral, três núcleos brilhando em triângulo, gotinhas orbitando e pingos escorrendo.
+
+### S-086 · Área do mapa: Área da tela (583×229 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:27:05 · **Mapa:** Bosque Sussurrante (tile [64, 15])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu percebi que você sumiu com o botão do Som Mas eu não encontrei ele no esc então preciso que você inclua ele nas configurações que fiquem dentro do esc para que eu possa voltar com o som e eu consigo ouvir a música e também ouvir todos os outros efeitos sonoros você pode dentro desse som desabilitar música de jogo e também desabilitar efeitos sonoros como todo como por exemplo barulhos de saltar barulhos de monstro atacando monstro morrendo e todos os outros efeitos sonoros naturais
+- ![print](img/S-086.png)
+- **Resposta do Claude:** Esc → ⚙️ Configurações: liga/desliga o som do jogo, a música e os efeitos (golpes, saltos, monstros, passos) separadamente, cada um com volume. Fica salvo.
+
+### S-087 · Área do mapa: Área da tela (303×309 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:27:52 · **Mapa:** Bosque Sussurrante (tile [65, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Vi que você melhorou consideravelmente a estética dos lobos e inclusive fez efeitos de ataques porém eles ainda tem muita a melhorar a nível gráfico pois eu entendo que tá muito pontiagudo e com muitas formas geométricas como as orelhas deles estão esquisitas as bochechas esquisitas não dá para ver os pelos deles o pé deles também está uma bola e poderia ser muito mais interessante o efeito dos movimentos que tudo mais acredito que há muito o que melhorar na construção deste monstro
+- ![print](img/S-087.png)
+- **Resposta do Claude:** Lobo refeito: pelagem de verdade (mechas deitadas no corpo, juba, bochechas e rabo peludo), orelhas em concha com o lado de dentro claro, máscara clara no rosto, patas com dedos e unhas. E mais vida: respira, mexe as orelhas sozinho, abaixa para farejar o chão e a pata dobra ao andar.
+
+### S-088 · Área do mapa: Área da tela (336×301 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:28:58 · **Mapa:** Bosque Sussurrante (tile [58, 15])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Preciso que os Monstros tenham uma Box própria de forma com que um não consiga ficar dentro do outro eles não podem ocupar o mesmo lugar no espaço preciso que você melhore as físicas desse jogo como um todo
+- ![print](img/S-088.png)
+- **Resposta do Claude:** Monstros agora têm corpo: um não entra no outro, nem no jogador, nem no mascote. Cada um tem um peso (chefe e boneco quase não saem do lugar) e ninguém é empurrado para dentro de parede.
+
+### S-089 · Área do mapa: Área da tela (647×508 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:29:38 · **Mapa:** Vila de Alvorada (tile [-46, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que aumente a velocidade de andar no god mode, pra eu conseguir ser mais rápido
+- ![print](img/S-089.png)
+- **Resposta do Claude:** No God Mode você corre bem mais rápido (3,2× em vez de 1,8×), com a animação de corrida acelerada junto.
+
+### S-090 · Área do mapa: Área da tela (102×81 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:31:13 · **Mapa:** Vila de Alvorada (tile [-72, 32])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Preciso que você queria aqui um boneco para testes de forma com que ele tenha HP infinito e eu possa ficar dando golpes neles para testar tanto os meus ataques físicos sejam eles sejam eles ranged e também habilidades e obviamente eles nunca podem morrer faça por favor esse boneco como com um gráfico muito interessante e pode até se inspirar no filme de Hércules
+- ![print](img/S-090.png)
+- **Resposta do Claude:** Três bonecos de treino na vila (onde você marcou): espírito de ginásio grego, com elmo de bronze e crista vermelha, escudo com sol pintado, espada de madeira e base com friso grego. Nunca morrem, balançam numa mola e soltam palha ao apanhar; o quadro do alvo mostra o DPS e o dano total.
+
+### S-091 · Área do mapa: Área da tela (128×99 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:31:58 · **Mapa:** Campos de Verdelume (tile [-29, 41])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Este monstro ao andar tem que fazer efeitos sonoros bastante parecidos com o do esporo do Ragnarok online e inclusive quando eles morrerem tem que fazer um barulho parecido também reparem que eu digo parecido e não igual para que não seja uma cópia Descarada
+- ![print](img/S-091.png)
+- **Resposta do Claude:** O Fungolino faz um 'pufe' macio a cada pulinho quando está perto de você e, ao morrer, um 'pwoop' com nuvem de esporos (parecido no espírito, sem copiar).
+
+### S-092 · Área do mapa: Área da tela (1113×521 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:37:48 · **Mapa:** Ruínas de Kael (tile [21, -64])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá
+- ![print](img/S-092.png)
+- **Resposta do Claude:** Os muros das Ruínas de Kael viraram alvenaria de pedra de verdade: blocos irregulares de cores variadas, musgo por cima, topo quebrado e pedras caídas ao pé.

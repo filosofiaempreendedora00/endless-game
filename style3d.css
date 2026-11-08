@@ -85,3 +85,14 @@ body.g3d { background: #9fd3ff; }
 /* escurece a tela ao passar por um portal */
 #fade3d { position: fixed; inset: 0; background: #05070c; opacity: 0; pointer-events: none; z-index: 400; transition: opacity 0.25s; }
 #fade3d.on { opacity: 1; }
+/* nome do alvo numa linha só (S-083) */
+#target3d #tg-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#target3d #tg-lv { white-space: nowrap; flex: none; }
+/* Esc → Configurações (S-086) */
+.opts-box { min-width: 380px; text-align: left; }
+.opts-box h2 { text-align: center; }
+.opt-sec { font-weight: 800; color: var(--gold); margin: 10px 0 6px; }
+.opt-sw { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; }
+.opt-sw span { flex: 1; }
+.opt-sw input[type=range] { width: 110px; }
+.opt-sw b { width: 38px; text-align: right; font-size: 12px; }

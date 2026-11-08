@@ -1,6 +1,6 @@
 # Perfil de gosto do Roberto
 
-Destilado de S-001 a S-076 (atualizado em 2026-11-08, rodada 9) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
+Destilado de S-001 a S-092 (atualizado em 2026-11-08, rodada 10) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
 
 ## Princípios
 
@@ -122,9 +122,22 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Evidências: "muito lag" no jogo (antes da S-042) e "muito lag no personagem" da vitrine (S-069).
 - Como aplicar: meça (ms por quadro, número de chamadas de desenho) antes de entregar algo pesado. Ele percebe a lentidão.
 
-### 13. Som limpo ★★
-- Evidências: duas músicas sobrepostas (S-002, reincidência em S-032).
-- Como aplicar: em toda troca de zona, tela ou interior, garanta que só uma música toca.
+### 13. Som rico e sob controle ★★★
+- Evidências: duas músicas sobrepostas (S-002, S-032); controle de música e efeitos separado no Esc (S-086); sons próprios de monstro andando e morrendo (S-091); fanfarra de nível (S-084).
+- Como aplicar:
+  - Só uma música por vez.
+  - Monstros e eventos importantes têm som próprio, parecido no espírito com o RO, nunca copiado.
+  - O jogador controla música e efeitos separadamente.
+
+### 17. Ambientes vivos e críveis, objeto por objeto ★★★★
+- Evidências: taverna (S-077 a S-081: balcão, pose do NPC, lareira, mesas, canecas "claras com lugar de puxar", pão) e carrinho de mão (S-082).
+- Como aplicar:
+  - Ao mexer num ambiente, revise todos os objetos: proporção com o personagem de 1,5 m, poses dos NPCs e materiais (vidro, madeira, pedra, comida).
+  - Nada de cilindro liso representando caneca, ou caixa representando lareira.
+
+### 18. Ferramentas para testar o próprio jogo ★★★
+- Evidências: boneco de treino com HP infinito (S-090), God Mode mais rápido (S-089), mascote no Painel (S-075).
+- Como aplicar: ele testa o jogo de verdade e quer números (DPS) e atalhos de mestre.
 
 ## Antipadrões (ele já rejeitou)
 - Primitivos geométricos à mostra, como cones de grama, cubos de pedra e esferas de mascote.

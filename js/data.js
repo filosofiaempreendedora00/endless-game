@@ -472,13 +472,17 @@ const MONSTERS = {
     drops: [['ferrao', 0.5], ['mel', 0.15], ['luvas_couro', 0.01]],
     card: { equip: 'arma', bonuses: { dmgVs: { agua: 20 }, dex: 1 } },
   },
+  boneco_treino: { // boneco de treino da vila (S-090): não ataca, não anda e nunca morre
+    name: 'Boneco de Treino', lv: 1, hp: 999999, atk: [0, 0], def: 0, mdef: 0, exp: 0, jexp: 0, element: 'neutro', shape: 'dummy', color: '#c9a15a', size: 1, speed: 0, dummy: true, flee: 0, race: 'Treino', icon: '🎯',
+    drops: [],
+  },
   sentinela_silente: {
     name: 'Sentinela Silente', lv: 55, hp: 42000, atk: [190, 250], def: 60, mdef: 40, exp: 65000, jexp: 48000, element: 'sombra', shape: 'knight', color: '#5a5a7a', size: 1.6, speed: 60, aggressive: true, aggroRange: 9, boss: true, respawn: 600000,
     drops: [['essencia_sombria', 1], ['fragmento_ferro', 0.8], ['anel_de_forca', 0.25], ['pocao_azul', 0.6]],
     card: { equip: 'armadura', bonuses: { vit: 4, def: 6, hp: 400 } }, cardRate: 0.05,
   },
   gosmao: {
-    name: 'Gosmão', lv: 12, hp: 1100, atk: [30, 45], def: 8, exp: 420, jexp: 300, element: 'agua', shape: 'blob', variant: 'agua', color: '#3a8fe0', size: 2, speed: 35, mini: true, respawn: 90000,
+    name: 'Gosmão', lv: 12, hp: 1100, atk: [30, 45], def: 8, exp: 420, jexp: 300, element: 'agua', shape: 'blob', variant: 'rei', color: '#3a8fe0', size: 2, speed: 35, mini: true, respawn: 90000,
     drops: [['geleia_real', 1], ['pocao_vermelha', 0.5], ['anel_de_forca', 0.08], ['espada_curta', 0.1]],
     card: { equip: 'arma', bonuses: { str: 2, atk: 12 } }, cardRate: 0.08,
   },

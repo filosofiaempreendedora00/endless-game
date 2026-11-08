@@ -12,10 +12,12 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 | Grama | 2 | S-008, S-031 |
 | Música sobreposta | 2 | S-002, S-032 |
 | Ferramenta Q não alcança algo | 4 | S-027, S-045, a conversa de 2026-11-08 e S-009 (print errado) |
-| Lobo / monstros "quadradões" | 3 | S-039, S-044, S-053 |
+| Lobo / monstros "quadradões" | 4 | S-039, S-044, S-053, S-087 (pontiagudo, orelhas, bochechas, pés de bola, sem pelos) |
 | "Quadriculado" (facetas) | 2 | S-012 ("pontio agudas"), S-071 (alaúde: "algo que eu detesto") |
 | Lag | 2 | conversa (antes da S-042), S-069 |
-| Parecer cópia de outro jogo | 1 | S-074 (Gotinha = poring) |
+| Parecer cópia de outro jogo | 2 | S-074 (Gotinha = poring), S-085 (o mini-chefe também) |
+| Física / corpos se atravessando | 3 | S-064, S-072, S-088 (monstro dentro de monstro) |
+| Som (falta de efeitos ou de controle) | 2 | S-086 (botão de som sumiu), S-091 (passos e morte do cogumelo) |
 
 ## Histórico
 
@@ -68,3 +70,27 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Ele pede escala épica (princípio 15).
   - Reclamação repetida pede solução de raiz, não retoque.
 - Propostas novas: P-006 (voar de grifo animado), P-007 (clima por região), P-008 (missões que levam às regiões novas).
+
+### Rodada 10 (S-077 a S-092), 2026-11-08
+- Pedidos:
+  - Taverna inteira: balcão e rosto da Rosa, Gui sentado errado, lareira, mesas, canecas e pão (S-077 a S-081).
+  - Carrinho de mão (S-082) e NPC sem barra de vida (S-083).
+  - Subir de nível "bem incrementado", com asas e som no estilo RO (S-084).
+  - Gosmão ainda parecia poring (S-085).
+  - Configurações de som no Esc (S-086).
+  - Lobo melhor (S-087).
+  - Monstros com corpo (S-088).
+  - God Mode mais rápido (S-089).
+  - Boneco de treino inspirado no filme Hércules (S-090).
+  - Sons do Fungolino (S-091).
+  - Muro das ruínas "chapado" (S-092).
+- Reincidências:
+  - Lobo: 4ª vez. Desta vez ganhou pelagem, orelhas, patas e comportamento.
+  - Originalidade: "vale para o mini-chefe também" (generalizar!).
+  - Física: corpos se atravessando.
+- Aprendizados:
+  - Quando ele aponta um ambiente (a taverna), olha **cada objeto** de perto: proporção (balcão alto escondendo o rosto), pose de NPC, comida e louça.
+  - Vale cuidar de tudo do ambiente, não só do item clicado.
+  - Pedidos com "parecido com RO, mas sem copiar" mostram que a referência é a **sensação** (som de subir de nível, som do esporo).
+  - Ele quer ferramentas de teste práticas: boneco com DPS, God Mode rápido.
+  - Uma mudança minha deixou "pontiagudo" (pelos como espinhos) e foi corrigida antes da entrega, conferindo o print com o perfil.

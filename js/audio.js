@@ -132,8 +132,8 @@ const Sound = {
     if (!AC) return;
     const c = this.ctx = new AC();
     this.master = c.createGain(); this.master.gain.value = this.enabled ? 0.8 : 0; this.master.connect(c.destination);
-    this.music = c.createGain(); this.music.gain.value = 0.16 * this.musicVol;
-    this.sfx = c.createGain(); this.sfx.gain.value = 0.32 * this.sfxVol; this.sfx.connect(this.master);
+    this.music = c.createGain(); this.music.gain.value = 0.16 * this.mv();
+    this.sfx = c.createGain(); this.sfx.gain.value = 0.32 * this.sv(); this.sfx.connect(this.master);
     // eco suave na música
     const delay = c.createDelay(); delay.delayTime.value = 0.27;
     const fb = c.createGain(); fb.gain.value = 0.22;
@@ -157,18 +157,26 @@ const Sound = {
       claim();
     } catch (e) { }
   },
-  musicVol: 1, sfxVol: 1,
+  musicVol: 1, sfxVol: 1, musicOn: true, sfxOn: true,
+  mv() { return this.musicOn ? this.musicVol : 0; }, // volume efetivo da música (desligada = 0)
+  sv() { return this.sfxOn ? this.sfxVol : 0; },
   // volumes de 0 a 1 (multiplicam o nível padrão de música e efeitos)
   setVolumes(music, sfx) {
     if (music != null) this.musicVol = music; if (sfx != null) this.sfxVol = sfx;
-    if (this.music) this.music.gain.setTargetAtTime(0.16 * this.musicVol, this.ctx.currentTime, 0.05);
-    if (this.sfx) this.sfx.gain.setTargetAtTime(0.32 * this.sfxVol, this.ctx.currentTime, 0.05);
-    try { localStorage.setItem('aethra_vol', JSON.stringify({ m: this.musicVol, s: this.sfxVol })); } catch (e) { }
+    this.applyVol();
+    try { localStorage.setItem('aethra_vol', JSON.stringify({ m: this.musicVol, s: this.sfxVol, mo: this.musicOn, so: this.sfxOn })); } catch (e) { }
   },
+  applyVol() {
+    if (this.music) this.music.gain.setTargetAtTime(0.16 * this.mv(), this.ctx.currentTime, 0.05);
+    if (this.sfx) this.sfx.gain.setTargetAtTime(0.32 * this.sv(), this.ctx.currentTime, 0.05);
+  },
+  // liga/desliga música e efeitos separadamente (Esc → Configurações)
+  setMusicOn(on) { this.musicOn = !!on; this.setVolumes(); },
+  setSfxOn(on) { this.sfxOn = !!on; this.setVolumes(); },
   loadPrefs() {
     try {
       if (localStorage.getItem('aethra_sound') === '0') this.enabled = false;
-      const v = JSON.parse(localStorage.getItem('aethra_vol') || 'null'); if (v) { this.musicVol = +v.m; this.sfxVol = +v.s; }
+      const v = JSON.parse(localStorage.getItem('aethra_vol') || 'null'); if (v) { this.musicVol = +v.m; this.sfxVol = +v.s; if (v.mo === false) this.musicOn = false; if (v.so === false) this.sfxOn = false; }
     } catch (e) { }
   },
   setEnabled(on) {
@@ -240,6 +248,17 @@ const Sound = {
   kick(t, dest = this.music) { this.sweep(140, 45, t, 0.18, 'sine', 0.7, dest); },
   arp(notes, t, gap, type, vol) { notes.forEach((n, i) => this.tone(mtof(noteToMidi(n)), t + i * gap, gap * 1.6, type, vol, this.sfx)); },
 
+  // fanfarra de subir de nível: sopro que sobe, arpejo de sinos, acorde de coro e brilhos
+  levelUp(t) {
+    const c = this.ctx, src = c.createBufferSource(); src.buffer = this.noiseBuf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(3600, t + 0.7);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.35, t + 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t); src.stop(t + 1);
+    ['C5', 'E5', 'G5', 'C6', 'E6', 'G6', 'C7'].forEach((n, i) => { this.tone(mtof(noteToMidi(n)), t + 0.18 + i * 0.075, 0.35, 'sine', 0.22, this.sfx, 0.005, true); this.tone(mtof(noteToMidi(n)) * 2, t + 0.18 + i * 0.075, 0.2, 'sine', 0.06, this.sfx, 0.005, true); });
+    for (const n of ['C4', 'G4', 'C5', 'E5', 'G5']) this.tone(mtof(noteToMidi(n)), t + 0.7, 1.4, 'sine', 0.07, this.sfx, 0.25);
+    for (const n of ['C6', 'E6', 'G6']) this.tone(mtof(noteToMidi(n)), t + 0.72, 1.0, 'triangle', 0.08, this.sfx, 0.01, true);
+    for (let k = 0; k < 9; k++) this.tone(2000 + Math.random() * 3000, t + 0.8 + k * 0.09 + Math.random() * 0.05, 0.08, 'sine', 0.04, this.sfx, 0.002, true);
+  },
   play(name) {
     if (!this.ctx || !this.enabled) return;
     const t = this.ctx.currentTime;
@@ -257,7 +276,9 @@ const Sound = {
       case 'holy': this.arp(['C6', 'E6', 'G6', 'C7'], t, 0.05, 'sine', 0.2); break;
       case 'heal': this.arp(['C6', 'E6', 'G6'], t, 0.07, 'sine', 0.25); break;
       case 'buff': this.arp(['G5', 'B5', 'D6', 'G6'], t, 0.06, 'triangle', 0.2); break;
-      case 'levelup': this.arp(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], t, 0.08, 'triangle', 0.3); break;
+      case 'levelup': this.levelUp(t); break;
+      case 'mushStep': { const k = 0.9 + Math.random() * 0.25; this.sweep(300 * k, 170 * k, t, 0.09, 'sine', 0.16); this.noise(t, 0.06, 0.1, 700, 'lowpass'); break; } // pufe macio de cogumelo pulando
+      case 'mushDie': this.tone(1100, t, 0.03, 'sine', 0.12, this.sfx); this.sweep(560, 150, t + 0.03, 0.38, 'triangle', 0.26); this.sweep(840, 220, t + 0.05, 0.3, 'sine', 0.1); this.noise(t + 0.05, 0.35, 0.32, 1100, 'lowpass'); break; // "pwoop" e nuvem de esporos
       case 'card': this.arp(['G6', 'B6', 'D7', 'G7', 'D7', 'G7'], t, 0.07, 'sine', 0.25); this.arp(['G5', 'D6', 'G6'], t + 0.05, 0.14, 'triangle', 0.18); break;
       case 'pickup': this.sweep(880, 1320, t, 0.08, 'square', 0.12); break;
       case 'coin': this.tone(1320, t, 0.06, 'square', 0.12, this.sfx); this.tone(1760, t + 0.07, 0.12, 'square', 0.12, this.sfx); break;

@@ -3520,9 +3520,10 @@
       "sp": "27/27"
     },
     "id": "S-077",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:20:13",
-    "imagem": "img/S-077.png"
+    "imagem": "img/S-077.png",
+    "resposta": "A Dona Rosa agora fica num estrado de madeira atrás do balcão, que também ficou mais baixo: dá para ver o rosto dela (que ganhou o rosto 3D novo)."
   },
   {
     "texto": "trazer algo aqui em cima da mesa mais realista que esses copos",
@@ -3564,9 +3565,10 @@
       "sp": "27/27"
     },
     "id": "S-078",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:20:25",
-    "imagem": "img/S-078.png"
+    "imagem": "img/S-078.png",
+    "resposta": "As mesas ganharam canecas de vidro de verdade (com cerveja e espuma), pão com cortes na casca sobre uma tábua com queijo e uma vela; o balcão tem garrafas de vidro com rolha."
   },
   {
     "texto": "ficou sentado bugado pro lado errado e entrando na mesa",
@@ -3610,9 +3612,10 @@
       "sp": "27/27"
     },
     "id": "S-079",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:20:47",
-    "imagem": "img/S-079.png"
+    "imagem": "img/S-079.png",
+    "resposta": "O Velho Gui agora senta no banco virado para a mesa, sem entrar nela, e também ganhou o rosto 3D novo (Tomé e Dona Rosa também)."
   },
   {
     "texto": "fogueira muito bugada que pode e deve ser melhorada",
@@ -3659,9 +3662,10 @@
       "sp": "27/27"
     },
     "id": "S-080",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:21:04",
-    "imagem": "img/S-080.png"
+    "imagem": "img/S-080.png",
+    "resposta": "Lareira refeita: alvenaria de pedras irregulares, cornija de madeira com velas e um pote, toras com brasa, chama em três camadas que tremulam e faíscas subindo."
   },
   {
     "texto": "melhorar detalhes das meses, pao e cervejas. Precisa ser caneca clara na cerveja com o lugar de puxar",
@@ -3703,9 +3707,10 @@
       "sp": "27/27"
     },
     "id": "S-081",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:21:32",
-    "imagem": "img/S-081.png"
+    "imagem": "img/S-081.png",
+    "resposta": "Mesas com tampo de três tábuas, pés torneados e travessas; canecas claras de vidro com alça para segurar, cerveja dourada e colarinho de espuma; pão de verdade."
   },
   {
     "texto": "melhora o gráfico disso",
@@ -3749,9 +3754,10 @@
       "sp": "27/27"
     },
     "id": "S-082",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:22:41",
-    "imagem": "img/S-082.png"
+    "imagem": "img/S-082.png",
+    "resposta": "Carrinho de mão novo feito em código: caçamba de tábuas, cabos curvos com pegadores, pés de apoio e roda com aro de ferro, cubo e raios."
   },
   {
     "texto": "nao quero que apareça o hp dos npcs",
@@ -3798,9 +3804,10 @@
       "sp": "27/27"
     },
     "id": "S-083",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:23:16",
-    "imagem": "img/S-083.png"
+    "imagem": "img/S-083.png",
+    "resposta": "NPCs não mostram mais barra de vida: o quadro do alvo mostra só o nome, o título e a dica para conversar (nome numa linha só)."
   },
   {
     "texto": "Melhor o efeito de quando eu aumento de nível gostaria de algum efeito sonoro parecido com Ragnarok online e também aquela aquelas asinhas bem elaboradas em volta do meu personagem quero uma animação bem robusta para quando a gente passar de nível tanto a nível efeito sonoro quanto visual quero deixar algo bastante incrementado mesmo",
@@ -3842,9 +3849,10 @@
       "sp": "31/31"
     },
     "id": "S-084",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:24:48",
-    "imagem": "img/S-084.png"
+    "imagem": "img/S-084.png",
+    "resposta": "Subir de nível agora é um evento: asas douradas se abrem e batem nas costas do personagem, coluna de luz, círculo de runas girando no chão, partículas douradas subindo em espiral, auréola e uma fanfarra nova (sopro que sobe, arpejo de sinos, acorde de coro e brilhos)."
   },
   {
     "texto": "o que eu pedi pra mudar o poring obio que tbm vale pra esse mini-boss aqui",
@@ -3889,9 +3897,10 @@
       "sp": "31/31"
     },
     "id": "S-085",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:25:14",
-    "imagem": "img/S-085.png"
+    "imagem": "img/S-085.png",
+    "resposta": "O Gosmão virou o rei das gotas: a forma de gota viva (nada de bola), coroa de coral, três núcleos brilhando em triângulo, gotinhas orbitando e pingos escorrendo."
   },
   {
     "texto": "Eu percebi que você sumiu com o botão do Som Mas eu não encontrei ele no esc então preciso que você inclua ele nas configurações que fiquem dentro do esc para que eu possa voltar com o som e eu consigo ouvir a música e também ouvir todos os outros efeitos sonoros você pode dentro desse som desabilitar música de jogo e também desabilitar efeitos sonoros como todo como por exemplo barulhos de saltar barulhos de monstro atacando monstro morrendo e todos os outros efeitos sonoros naturais",
@@ -3933,9 +3942,10 @@
       "sp": "31/31"
     },
     "id": "S-086",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:27:05",
-    "imagem": "img/S-086.png"
+    "imagem": "img/S-086.png",
+    "resposta": "Esc → ⚙️ Configurações: liga/desliga o som do jogo, a música e os efeitos (golpes, saltos, monstros, passos) separadamente, cada um com volume. Fica salvo."
   },
   {
     "texto": "Vi que você melhorou consideravelmente a estética dos lobos e inclusive fez efeitos de ataques porém eles ainda tem muita a melhorar a nível gráfico pois eu entendo que tá muito pontiagudo e com muitas formas geométricas como as orelhas deles estão esquisitas as bochechas esquisitas não dá para ver os pelos deles o pé deles também está uma bola e poderia ser muito mais interessante o efeito dos movimentos que tudo mais acredito que há muito o que melhorar na construção deste monstro",
@@ -3980,9 +3990,10 @@
       "sp": "31/31"
     },
     "id": "S-087",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:27:52",
-    "imagem": "img/S-087.png"
+    "imagem": "img/S-087.png",
+    "resposta": "Lobo refeito: pelagem de verdade (mechas deitadas no corpo, juba, bochechas e rabo peludo), orelhas em concha com o lado de dentro claro, máscara clara no rosto, patas com dedos e unhas. E mais vida: respira, mexe as orelhas sozinho, abaixa para farejar o chão e a pata dobra ao andar."
   },
   {
     "texto": "Preciso que os Monstros tenham uma Box própria de forma com que um não consiga ficar dentro do outro eles não podem ocupar o mesmo lugar no espaço preciso que você melhore as físicas desse jogo como um todo",
@@ -4027,9 +4038,10 @@
       "sp": "31/31"
     },
     "id": "S-088",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:28:58",
-    "imagem": "img/S-088.png"
+    "imagem": "img/S-088.png",
+    "resposta": "Monstros agora têm corpo: um não entra no outro, nem no jogador, nem no mascote. Cada um tem um peso (chefe e boneco quase não saem do lugar) e ninguém é empurrado para dentro de parede."
   },
   {
     "texto": "preciso que aumente a velocidade de andar no god mode, pra eu conseguir ser mais rápido",
@@ -4071,9 +4083,10 @@
       "sp": "31/31"
     },
     "id": "S-089",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:29:38",
-    "imagem": "img/S-089.png"
+    "imagem": "img/S-089.png",
+    "resposta": "No God Mode você corre bem mais rápido (3,2× em vez de 1,8×), com a animação de corrida acelerada junto."
   },
   {
     "texto": "Preciso que você queria aqui um boneco para testes de forma com que ele tenha HP infinito e eu possa ficar dando golpes neles para testar tanto os meus ataques físicos sejam eles sejam eles ranged e também habilidades e obviamente eles nunca podem morrer faça por favor esse boneco como com um gráfico muito interessante e pode até se inspirar no filme de Hércules",
@@ -4115,9 +4128,10 @@
       "sp": "31/31"
     },
     "id": "S-090",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:31:13",
-    "imagem": "img/S-090.png"
+    "imagem": "img/S-090.png",
+    "resposta": "Três bonecos de treino na vila (onde você marcou): espírito de ginásio grego, com elmo de bronze e crista vermelha, escudo com sol pintado, espada de madeira e base com friso grego. Nunca morrem, balançam numa mola e soltam palha ao apanhar; o quadro do alvo mostra o DPS e o dano total."
   },
   {
     "texto": "Este monstro ao andar tem que fazer efeitos sonoros bastante parecidos com o do esporo do Ragnarok online e inclusive quando eles morrerem tem que fazer um barulho parecido também reparem que eu digo parecido e não igual para que não seja uma cópia Descarada",
@@ -4161,9 +4175,10 @@
       "sp": "31/31"
     },
     "id": "S-091",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:31:58",
-    "imagem": "img/S-091.png"
+    "imagem": "img/S-091.png",
+    "resposta": "O Fungolino faz um 'pufe' macio a cada pulinho quando está perto de você e, ao morrer, um 'pwoop' com nuvem de esporos (parecido no espírito, sem copiar)."
   },
   {
     "texto": "Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá",
@@ -4222,8 +4237,9 @@
       "sp": "15/15"
     },
     "id": "S-092",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:37:48",
-    "imagem": "img/S-092.png"
+    "imagem": "img/S-092.png",
+    "resposta": "Os muros das Ruínas de Kael viraram alvenaria de pedra de verdade: blocos irregulares de cores variadas, musgo por cima, topo quebrado e pedras caídas ao pé."
   }
 ]
