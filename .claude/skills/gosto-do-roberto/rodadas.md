@@ -6,7 +6,7 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 | Tema | Vezes | Ids |
 |---|---|---|
 | Tamanho gigante das classes | 6 | S-016, S-017, S-021, S-022, S-050 (e S-019 no chapéu) |
-| Rosto feio / não humano | 4 | S-041, S-045, a conversa (nomes errados dos rostos), S-073 |
+| Rosto feio / não humano | 5 | S-041, S-045, a conversa (nomes errados dos rostos), S-073, S-093 ("o nariz ainda ficou horrível") |
 | Montarias feias ou com animação estranha | 3 | S-042, S-043, S-059 |
 | Água e lago (fake, bordas, vitórias-régias, monstros) | 5 | S-014, S-034, S-056, S-067, S-068 |
 | Grama | 2 | S-008, S-031 |
@@ -104,3 +104,18 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Aprendizados:
   - Pelagem com mechas grandes vira "escama" ou "ovelha". O que funciona é mecha fina e curta, no tom do corpo; mechas maiores só onde o bicho tem juba ou rabo felpudo.
   - Pedido "como um todo" = aplicar o mesmo nível de cuidado a todos os monstros, inclusive os modelos prontos (KayKit).
+
+### Rodada 11 (S-093 a S-097), 2026-11-08
+- Pedidos:
+  - Personagens e mascotes muito mais realistas (S-093).
+  - 1ª pessoa estilo Skyrim, com combate de mira e mãos visíveis (S-094).
+  - Grama por bioma, com transições (S-095).
+  - Nomes de monstros de longe (S-096).
+  - Sons de todos os monstros e lobo mais real (S-097).
+- Decisões dele:
+  - Trocar para modelos realistas de verdade (gratuitos), em vez de seguir esculpindo os chibis. Escolheu Quaternius CC0.
+  - Manter os dois combates (alvo e mira), com a tecla V.
+- Aprendizados:
+  - **Rosto: 5ª reclamação.** O teto do estilo chibi/KayKit foi atingido. Gosto dele = proporção e rosto realistas; esculpir em cima do chibi não basta.
+  - Quando o pedido é "muito mais realista", vale propor a troca de base (modelos), com custo e opções.
+  - O gosto dele aponta para Skyrim e WoW: 1ª pessoa, mira, mãos visíveis, mundo grande.

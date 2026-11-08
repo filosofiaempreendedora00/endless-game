@@ -108,6 +108,12 @@ export function heightAt(x, z) {
 
 /* ---------- região (zona) em um ponto ---------- */
 const ZONE_BY = Object.fromEntries(ZONES.map(z => [z.id, z]));
+// peso de cada região num ponto (somam 1): transições suaves entre biomas (S-095)
+export function biome(x, z) {
+  let tw = 0; const w = {};
+  for (const zn of ZONES) { const d = Math.max(1, Math.hypot(x - zn.x, z - zn.z) / zn.r), v = 1 / (d * d * d * d); w[zn.id] = v; tw += v; }
+  for (const k in w) w[k] /= tw; return w;
+}
 export function zoneAt(x, z) {
   let best = ZONES[1], bd = 1e9;
   for (const zn of ZONES) { const d = Math.hypot(x - zn.x, z - zn.z) / zn.r; if (d < bd) { bd = d; best = zn; } }
@@ -133,9 +139,9 @@ export function groundColor(x, z, h, slopeIn) {
   c.offsetHSL(0, 0, n);
   const far = Math.abs(x) > 140 || Math.abs(z) > 140;
   if (far) { // chão das regiões novas
-    const wD = zw('dunas', x, z), wG = zw('geada', x, z), wC = zw('colossos', x, z);
-    if (wD > 0) c.lerp(new THREE.Color('#e3c58e').offsetHSL(0, 0, (Math.sin(x * 0.9 + Math.sin(z * 0.3) * 3) * 0.5 + 0.5) * 0.05 - 0.03), smooth(0.05, 0.6, wD)); // areia com marolas do vento
-    if (wG > 0) { const patch = vnoise(x * 0.07, z * 0.07); c.lerp(new THREE.Color('#f3f6f9').offsetHSL(0.55, 0.05, (patch - 0.5) * 0.06), smooth(0.05, 0.55, wG) * (patch > 0.28 ? 1 : 0.55)); } // neve com manchas de grama
+    const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
+    if (wD > 0.08) { const rip = Math.sin(x * 0.9 + Math.sin(z * 0.3) * 3) * 0.5 + 0.5, dune = Math.sin(x * 0.045 + Math.sin(z * 0.018) * 2.6) * 0.5 + 0.5; c.lerp(new THREE.Color('#e8c98c').offsetHSL(0.005, 0.05, rip * 0.06 - 0.04 + (dune - 0.5) * 0.08), smooth(0.12, 0.5, wD)); } // areia bem marcada, com marolas e sombra das dunas
+    if (wG > 0.08) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); c.lerp(new THREE.Color('#f3f6f9').offsetHSL(0.55, 0.05, (patch - 0.5) * 0.06), cover * (patch > 0.6 - cover * 0.45 ? 1 : 0.35)); } // neve que vai cobrindo a grama aos poucos
     if (wC > 0.2) c.offsetHSL(0.01, 0.04, (vnoise(x * 0.03, z * 0.03) - 0.5) * 0.08); // capim dourado ondulando em manchas
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.15);
     if (df < 1.05) c.lerp(new THREE.Color('#bfe2f0').offsetHSL(0, 0, (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.08), smooth(1.05, 0.95, df)); // gelo
@@ -468,10 +474,11 @@ function grassChunk(ci, cj) {
     const y = heightAt(x, z);
     if (valley && y > 7) continue;
     const ruins = valley ? zoneWeight('ruinas', x, z) : 0, forest = valley ? zoneWeight('floresta', x, z) : 0;
-    const wD = valley ? 0 : zw('dunas', x, z), wG = valley ? 0 : zw('geada', x, z), wC = valley ? 0 : zw('colossos', x, z);
+    const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
     q.setFromAxisAngle(up, rng() * 6.28);
-    if (wD > 0.4 && rng() < 0.95) { if (rng() < 0.03) { sc.set(0.4 + rng(), 0.3 + rng() * 0.4, 0.4 + rng()); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // dunas: quase só areia
-    if (wG > 0.4 && rng() < 0.82) continue; // neve: pouca grama
+    // densidade de planta pela mistura de regiões: deserto quase nada, neve pouco, planície dos colossos capim alto (transição gradual)
+    const dens = 1 - wD * 0.985 - wG * 0.8 + wC * 0.15;
+    if (rng() > dens) { if (wD > 0.5 && rng() < 0.02) { sc.set(0.4 + rng(), 0.3 + rng() * 0.4, 0.4 + rng()); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; }
     if (ruins > 0.55) {
       if (rng() < 0.5) { sc.set(0.6 + rng() * 1.4, 0.4 + rng() * 0.6, 0.6 + rng() * 1.4); m.compose(v.set(x, y + 0.03, z), q, sc); rub.push(m.clone()); continue; }
       if (rng() < 0.75) continue;

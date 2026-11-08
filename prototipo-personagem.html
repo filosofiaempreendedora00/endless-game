@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo — personagens realistas</title>
+<style>
+  body { margin: 0; background: radial-gradient(ellipse at 50% 40%, #3a2e52, #0b0a14 70%); color: #eee; font: 14px Nunito, system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; }
+  #ui { position: fixed; left: 12px; top: 12px; width: 300px; background: rgba(12,10,22,0.85); border: 1px solid #c9a24a; border-radius: 12px; padding: 12px; }
+  h1 { font-size: 16px; margin: 0 0 4px; color: #ffd76a; } .muted { color: #aaa; font-size: 12px; }
+  .row { margin-top: 10px; } .row b { display: block; margin-bottom: 4px; font-size: 12px; color: #ffe9a8; }
+  button { background: #2a2440; color: #eee; border: 1px solid #4a3f6a; border-radius: 7px; padding: 4px 8px; margin: 2px; cursor: pointer; font: inherit; font-size: 12px; }
+  button.on { border-color: #ffd76a; background: #4a3a1a; }
+  #load { position: fixed; inset: 0; display: grid; place-items: center; font-size: 18px; color: #ffd76a; }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three/three.module.min.js", "three/addons/": "./lib/three/" } }</script>
+</head>
+<body>
+<div id="load">Carregando modelos…</div>
+<div id="ui" style="display:none">
+  <h1>Protótipo: personagens realistas</h1>
+  <div class="muted">Arraste para girar · roda aproxima. Modelos Quaternius (CC0).</div>
+  <div class="row"><b>Animação</b><div id="an"></div></div>
+  <div class="row"><b>Cabelo</b><div id="hr"></div></div>
+  <div class="row"><b>Cor do cabelo</b><div id="hc"></div></div>
+  <div class="row"><b>Pele</b><div id="sk"></div></div>
+  <div class="row"><b>Roupa</b><div id="ou"></div></div>
+  <div class="row"><b>De perto (roda do mouse)</b><button onclick="window.__focus=-0.55">Ver ele</button><button onclick="window.__focus=0.55">Ver ela</button></div>
+  <div class="row"><label><input type="checkbox" id="bd"> Barba (homem)</label> <label><input type="checkbox" id="hd"> Capuz</label></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { loadHumans, makeHuman, humanAnims, HUMAN_HAIRS, HUMAN_OUTFITS } from './js3d/humans3d.js';
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 100);
+scene.add(new THREE.HemisphereLight('#dfeaff', '#4a3a2a', 1.1));
+const key = new THREE.DirectionalLight('#fff1dc', 2.4); key.position.set(2, 4, 3); key.castShadow = true; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03; key.shadow.mapSize.set(2048, 2048); scene.add(key);
+const rim = new THREE.DirectionalLight('#9fc4ff', 1.4); rim.position.set(-3, 2, -3); scene.add(rim);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), new THREE.MeshStandardMaterial({ color: '#2a2438', roughness: 1 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const st = { anim: 'Idle_Loop', hair: ['curto', 'longo'], hairColor: '#4a2e1a', skin: 'clara', outfit: 'patrulheiro', beard: false, hood: false };
+let chars = [], yaw = 0.3, dist = 4.6, drag = false, lx = 0;
+await loadHumans(k => document.getElementById('load').textContent = 'Carregando… ' + k);
+document.getElementById('load').remove(); document.getElementById('ui').style.display = '';
+function rebuild() {
+  for (const c of chars) scene.remove(c.obj);
+  chars = ['m', 'f'].map((sex, i) => { const c = makeHuman({ sex, outfit: st.outfit, hair: st.hair[i], hairColor: st.hairColor, skin: st.skin, beard: st.beard, hood: st.hood }); c.obj.position.x = i ? 0.55 : -0.55; scene.add(c.obj); c.anim.play(st.anim); return c; });
+  window.__chars = chars;
+}
+const btns = (id, list, get, set) => { const el = document.getElementById(id); el.innerHTML = ''; for (const [v, label] of list) { const b = document.createElement('button'); b.textContent = label; b.className = get() === v ? 'on' : ''; b.onclick = () => { set(v); render(); rebuild(); }; el.appendChild(b); } };
+const anims = humanAnims().map(a => a.name).filter(n => !/TPose|Pistol|Driving|Push|Fixing|PickUp/.test(n));
+function render() {
+  btns('an', anims.map(n => [n, n.replace('_Loop', '')]), () => st.anim, v => st.anim = v);
+  btns('hr', [['curto|longo', 'Curto / Longo'], ['raspado|coque', 'Raspado / Coque'], ['careca|raspadoF', 'Careca / Raspado'], ['curto|curto', 'Curto / Curto']], () => st.hair.join('|'), v => st.hair = v.split('|'));
+  btns('hc', [['#4a2e1a', 'Castanho'], ['#1d1814', 'Preto'], ['#d8b468', 'Loiro'], ['#a63c1a', 'Ruivo'], ['#9b968f', 'Grisalho']], () => st.hairColor, v => st.hairColor = v);
+  btns('sk', [['clara', 'Clara'], ['escura', 'Morena']], () => st.skin, v => st.skin = v);
+  btns('ou', [['patrulheiro', 'Patrulheiro'], ['campones', 'Camponês']], () => st.outfit, v => st.outfit = v);
+  document.getElementById('bd').checked = st.beard; document.getElementById('hd').checked = st.hood;
+}
+document.getElementById('bd').onchange = e => { st.beard = e.target.checked; rebuild(); };
+document.getElementById('hd').onchange = e => { st.hood = e.target.checked; rebuild(); };
+render(); rebuild();
+addEventListener('pointerdown', e => { if (e.target === renderer.domElement) { drag = true; lx = e.clientX; } });
+addEventListener('pointerup', () => drag = false);
+addEventListener('pointermove', e => { if (drag) { yaw += (e.clientX - lx) * 0.01; lx = e.clientX; } });
+addEventListener('wheel', e => { dist = Math.max(1.2, Math.min(8, dist * (e.deltaY > 0 ? 1.1 : 0.9))); });
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); });
+const clock = new THREE.Clock();
+window.__frame = (dt = 0.016) => { for (const c of chars) c.anim.update(dt); const z = Math.max(0, Math.min(1, (3.2 - dist) / 2)), h = 0.95 + z * 0.62, cx = (window.__focus ?? -0.55) * z; cam.position.set(cx + Math.sin(yaw) * dist, h + 0.2 * (1 - z), Math.cos(yaw) * dist); cam.lookAt(cx, h, 0); /* de perto, mira o rosto */ renderer.render(scene, cam); };
+(function loop() { window.__frame(Math.min(0.05, clock.getDelta())); if (!drag) yaw += 0.002; requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>

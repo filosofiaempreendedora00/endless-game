@@ -365,14 +365,25 @@ export function wolf(color) {
   neck.add(new THREE.Mesh(taper([V3(0, -0.04, -0.06), V3(0, 0.08, 0.08), V3(0, 0.14, 0.17)], 0.15, 0.12, 8, 12), FUR));
   furPatch(neck, STRAND, [{ n: 108, c: [0, 0.06, 0.06], r: [0.15, 0.14, 0.12], len: 1.0, back: 1.3 }], rng, base, tones);
   const head = new THREE.Group(); head.position.set(0, 0.16, 0.2); head.scale.setScalar(1.18); neck.add(head);
-  const skull = new THREE.Group(); head.add(skull);
-  skull.add(blob(0.13, 1, 0.88, 1.12, FUR, 0, 0, 0, 20));
-  skull.add(blob(0.06, 1.15, 0.7, 1.1, LIGHT, 0, -0.045, 0.06, 14)); // queixo/garganta claros
-  skull.add(new THREE.Mesh(taper([V3(0, -0.015, 0.08), V3(0, -0.035, 0.2), V3(0, -0.05, 0.31)], 0.07, 0.038, 18, 24), FUR)); // focinho
-  skull.add(new THREE.Mesh(taper([V3(0, 0.02, 0.06), V3(0, -0.005, 0.2), V3(0, -0.025, 0.3)], 0.032, 0.02, 16, 20), BACK)); // ponte do focinho mais escura
-  skull.add(blob(0.022, 1.35, 0.9, 1, NOSE, 0, -0.035, 0.33, 12));
-  for (const sx of [-1, 1]) skull.add(blob(0.04, 1.3, 0.55, 0.7, LIGHT, sx * 0.075, 0.06, 0.08, 10)); // sobrancelhas claras (máscara de lobo)
-  bakeChildren(skull);
+  // cabeça esculpida numa peça só (S-097): crânio em cunha, "stop" na testa, focinho afinando, bochechas largas e máscara clara
+  const hg = new THREE.SphereGeometry(1, 56, 40), HP = hg.attributes.position, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for (let k = 0; k < HP.count; k++) {
+    let x = HP.getX(k), y = HP.getY(k), z = HP.getZ(k);
+    const t = sm(0.15, 1, z); // 0 = crânio, 1 = ponta do focinho
+    let X = x * 0.125 * (1 - 0.5 * t), Y = y * 0.11 * (1 - 0.42 * t), Z = z * 0.12 + Math.pow(Math.max(0, z - 0.15) / 0.85, 1.3) * 0.2;
+    Y += -0.04 * t + (y > 0 ? -0.012 * Math.exp(-Math.pow((z - 0.35) / 0.15, 2)) : 0); // focinho mais baixo e o "degrau" da testa
+    if (y < 0.2 && z < 0.45 && z > -0.5) X *= 1 + 0.18 * (1 - Math.abs(z)) * (1 - Math.max(0, y)); // bochechas
+    if (y > 0.5) Y *= 0.92; // topo achatado
+    if (y < -0.3 && z > 0.2) Y += 0.01 * t; // queixo do focinho mais reto
+    HP.setXYZ(k, X, Y, Z);
+  }
+  hg.computeVertexNormals();
+  vcolor(hg, (c, x, y, z) => { const muzzleUnder = y < -0.02 && z > 0.05, mask = (z > 0.02 && z < 0.1 && y > 0.02 && Math.abs(x) > 0.035) ? 1 : 0;
+    c.copy(base); if (y > 0.04 && Math.abs(x) < 0.05) c.offsetHSL(0, 0, -0.14); // listra escura no alto do focinho/testa
+    if (muzzleUnder || mask) c.lerp(LIGHT.color, 0.85); if (z > 0.3) c.lerp(new THREE.Color('#2a2224'), sm(0.3, 0.33, z) * 0.8); });
+  const skull = new THREE.Mesh(hg, VC(0.9)); head.add(skull);
+  const noseG = new THREE.SphereGeometry(0.017, 20, 14); noseG.scale(1.3, 0.85, 0.9); { const P = noseG.attributes.position; for (let k = 0; k < P.count; k++) if (P.getY(k) < -0.005 && Math.abs(P.getX(k)) < 0.012) P.setZ(k, P.getZ(k) - 0.006); noseG.computeVertexNormals(); } // narinas
+  const nose = new THREE.Mesh(noseG, mat('#141012', { roughness: 0.25 })); nose.position.set(0, -0.03, 0.312); head.add(nose);
   // bochechas de pelo varrendo para trás (no lugar das "bolas")
   furPatch(head, STRAND, [{ n: 126, c: [0, -0.02, 0.0], r: [0.13, 0.11, 0.12], len: 0.75, back: 1.6, yMin: -0.7 }], rng, base, tones);
   const jaw = new THREE.Group(); jaw.position.set(0, -0.075, 0.08); head.add(jaw);
@@ -383,13 +394,17 @@ export function wolf(color) {
     head.add(blob(0.021, 1.5, 0.75, 0.6, mat('#e8b04a', { emissive: '#c07010', emissiveIntensity: 0.25, roughness: 0.15 }), sx * 0.068, 0.035, 0.12, 12));
     head.add(blob(0.009, 1, 1.25, 0.6, NOSE, sx * 0.07, 0.035, 0.133, 8));
   }
-  // orelhas em concha: fora escura, dentro clara, com tufo
-  const earG = new THREE.ConeGeometry(0.06, 0.17, 18, 4, true, -Math.PI * 0.62, Math.PI * 1.24); earG.translate(0, 0.085, 0);
-  const earIn = new THREE.ConeGeometry(0.045, 0.13, 14, 3, true, -Math.PI * 0.55, Math.PI * 1.1); earIn.translate(0, 0.07, 0.008);
+  // orelhas grossas (com espessura e borda arredondada), triangulares e levemente em concha, de dentro mais claro e peludo
+  const earShape = new THREE.Shape(); earShape.moveTo(-0.055, 0); earShape.quadraticCurveTo(-0.05, 0.1, -0.006, 0.17); earShape.quadraticCurveTo(0, 0.18, 0.006, 0.17); earShape.quadraticCurveTo(0.05, 0.1, 0.055, 0); earShape.quadraticCurveTo(0, -0.012, -0.055, 0);
+  const earOutG = new THREE.ExtrudeGeometry(earShape, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006, bevelSegments: 3, curveSegments: 12 });
+  { const P = earOutG.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k); P.setZ(k, P.getZ(k) - x * x * 6 * (1 - y * 3)); } earOutG.computeVertexNormals(); } // concha
+  const inShape = new THREE.Shape(); inShape.moveTo(-0.034, 0.012); inShape.quadraticCurveTo(-0.03, 0.08, 0, 0.135); inShape.quadraticCurveTo(0.03, 0.08, 0.034, 0.012); inShape.quadraticCurveTo(0, 0.004, -0.034, 0.012);
+  const earInG = new THREE.ShapeGeometry(inShape, 10); { const P = earInG.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k); P.setZ(k, 0.024 - x * x * 6 * (1 - y * 3) + 0.003); } earInG.computeVertexNormals(); }
+  const EAR_OUT = mat(base.clone().offsetHSL(0, 0, -0.14), { roughness: 0.95 }), EAR_IN = mat(INNER.color, { roughness: 0.9, side: THREE.DoubleSide });
   const ears = [-1, 1].map(sx => {
-    const e = new THREE.Group(); e.position.set(sx * 0.075, 0.08, -0.03); e.rotation.set(-0.15, sx * 0.25, -sx * 0.22); head.add(e);
-    const out = new THREE.Mesh(earG, mat(base.clone().offsetHSL(0, 0, -0.14), { roughness: 0.95, side: THREE.DoubleSide })); out.scale.z = 0.55; e.add(out);
-    const inn = new THREE.Mesh(earIn, mat(INNER.color, { roughness: 0.85, side: THREE.DoubleSide })); inn.scale.z = 0.5; inn.rotation.y = Math.PI; e.add(inn);
+    const e = new THREE.Group(); e.position.set(sx * 0.07, 0.075, -0.035); e.rotation.set(-0.25, sx * 0.35, -sx * 0.25); head.add(e);
+    e.add(new THREE.Mesh(earOutG, EAR_OUT)); e.add(new THREE.Mesh(earInG, EAR_IN));
+    furPatch(e, STRAND, [{ n: 26, c: [0, 0.04, 0.02], r: [0.03, 0.04, 0.01], len: 0.3, back: -0.2 }], rng, LIGHT.color.clone(), [LIGHT.color.clone(), base.clone()]); // pelinhos de dentro
     return e;
   });
   // rabo peludo

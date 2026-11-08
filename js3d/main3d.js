@@ -40,7 +40,7 @@ const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
 const FOG_SNOW = new THREE.Color('#e3edf4'), FOG_SAND = new THREE.Color('#ecd9b0'), FOG_PLAIN = new THREE.Color('#dbe8ee');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
-const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1700);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 1700);
 const lightPool = makeLightPool(scene, 3); // poucas luzes reais, levadas às fontes mais próximas
 const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
 const sun = new THREE.DirectionalLight('#fff1d0', 2.4); sun.layers.enable(1);
@@ -50,6 +50,8 @@ Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, n
 sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
 const sky = buildSky(); scene.add(sky);
+scene.add(camera); // a câmera fica na cena: as mãos da 1ª pessoa são filhas dela
+{ const ch = document.createElement('div'); ch.id = 'crosshair'; ch.className = 'hidden'; ch.innerHTML = '<i></i><i></i><i></i><i></i><b></b>'; document.body.appendChild(ch); }
 const terrain = buildTerrain(); scene.add(terrain);
 scene.add(buildWater());
 scene.add(buildGrass(mulberry(99)));
@@ -779,6 +781,93 @@ function hitbox(ref, r, h) {
   m.position.y = h / 2; m.userData.ref = ref; hitboxes.push(m); return m;
 }
 
+
+/* =========================== Modo ação (S-094) ===========================
+   V alterna a câmera: 'classica' (estilo WoW, com alvo) → 'fps' (1ª pessoa, estilo Skyrim) → 'ombro' (3ª pessoa de ação).
+   Nos modos de ação o mouse fica preso (clique na tela), a mira fica no centro e segurar o botão
+   esquerdo ataca o que está na mira. Habilidades (1–9) também vão para quem está na mira. */
+const VIEWS = ['classica', 'fps', 'ombro'], VIEW_NAMES = { classica: '3ª pessoa clássica (alvo)', fps: '1ª pessoa (mira)', ombro: '3ª pessoa de ação (mira)' };
+try { S.view = localStorage.getItem('aethra_view') || 'classica'; } catch (e) { S.view = 'classica'; }
+if (!VIEWS.includes(S.view)) S.view = 'classica';
+S.aim = 0.05; S.fire = false;
+const isAction = () => S.view !== 'classica';
+function setView(v) {
+  S.view = v; try { localStorage.setItem('aethra_view', v); } catch (e) { }
+  $('crosshair').classList.toggle('hidden', !isAction());
+  if (!isAction() && document.pointerLockElement) document.exitPointerLock();
+  if (S.me) S.me.obj.visible = S.view !== 'fps';
+  if (viewModel) viewModel.visible = S.view === 'fps';
+  banner(VIEW_NAMES[v], isAction() ? 'Clique para mirar · segure o botão esquerdo para atacar · Esc solta o mouse' : 'Tab ou clique escolhe o alvo · R ataca');
+}
+function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]); }
+// quem está na mira: raio do centro da tela; para corpo a corpo, um cone generoso à frente
+const aimRay = new THREE.Raycaster();
+function aimTarget(maxRange) {
+  aimRay.setFromCamera(new THREE.Vector2(0, 0), camera);
+  const hit = aimRay.intersectObjects(hitboxes, false).find(h => { const r = h.object.userData.ref; return r && !r.isNpc && !r.dead && Math.hypot(r.x - S.pos.x, r.z - S.pos.z) <= maxRange; });
+  if (hit) return hit.object.userData.ref;
+  let best = null, bd = 1e9;
+  for (const m of [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])]) {
+    if (m.dead || !m.obj.visible) continue; const d = Math.hypot(m.x - S.pos.x, m.z - S.pos.z); if (d > Math.min(maxRange, 4.5)) continue;
+    const a = Math.abs(((Math.atan2(m.x - S.pos.x, m.z - S.pos.z) - S.cam.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    if (a < 0.6 && d < bd) { bd = d; best = m; }
+  }
+  return best;
+}
+function aimPoint(dist = 30) { aimRay.setFromCamera(new THREE.Vector2(0, 0), camera); return aimRay.ray.at(dist, new THREE.Vector3()); }
+function actionFire() {
+  const p = S.p, t = S.time; if (!S.fire || p.dead || t < S.nextAttack || t < S.lockAnim || S.casting) return;
+  const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : p.d.rangeTiles * TM + 1.8;
+  const m = aimTarget(reach);
+  S.nextAttack = t + p.d.aspd / 1000;
+  vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
+  if (m) { setTarget(m); playerAttack(m); return; }
+  // ninguém na mira: o golpe vai no vazio (projétil segue reto)
+  const me = S.me, list = ATTACK_ANIM[me.look.style]; me.anim.play(list[0], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); S.lockAnim = t + 0.3;
+  if (ranged) { const to = aimPoint(28); shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto); Sound.play(p.d.magicAuto ? 'magic' : 'bow'); }
+  else Sound.play('swing');
+}
+// mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
+let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing';
+function buildViewModel() {
+  if (viewModel) { camera.remove(viewModel); viewModel = null; }
+  const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz, sleeve = new THREE.MeshStandardMaterial({ color: (L.tint && L.tint.body) || '#6a5a48', roughness: 0.8 });
+  const skinCol = (() => { let c = null; S.me.root.traverse(o => { if (!c && o.userData.skin) c = o.userData.skin; }); return c || new THREE.Color().setRGB(0.871, 0.527, 0.352); })();
+  const skin = new THREE.MeshStandardMaterial({ color: skinCol, roughness: 0.6 }), glove = new THREE.MeshStandardMaterial({ color: '#5a3a22', roughness: 0.75 });
+  const arm = side => {
+    const g = new THREE.Group();
+    const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.42, 18), sleeve); fore.rotation.x = Math.PI / 2; fore.position.z = 0.16; g.add(fore);
+    const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.012, 10, 24), glove); cuff.position.z = -0.04; g.add(cuff);
+    const hand = new THREE.Group(); hand.position.z = -0.1; g.add(hand);
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.05, 20, 14), skin); palm.scale.set(0.9, 0.55, 1.15); hand.add(palm);
+    for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, 0.045, 4, 10), skin); f.rotation.x = Math.PI / 2 + 0.9; f.position.set(-0.03 + k * 0.02, -0.02, -0.055); hand.add(f); } // dedos fechados no cabo
+    const th = new THREE.Mesh(new THREE.CapsuleGeometry(0.013, 0.035, 4, 10), skin); th.rotation.set(Math.PI / 2, 0, side * 0.8); th.position.set(side * 0.04, 0.01, -0.03); hand.add(th);
+    g.userData.hand = hand; return g;
+  };
+  viewModel = new THREE.Group(); camera.add(viewModel);
+  vmArmR = arm(1); vmArmR.position.set(0.22, -0.2, -0.42); vmArmR.rotation.set(0.25, 0.12, 0); viewModel.add(vmArmR);
+  vmArmL = arm(-1); vmArmL.position.set(-0.24, -0.22, -0.44); vmArmL.rotation.set(0.3, -0.15, 0); viewModel.add(vmArmL);
+  // a arma: copia o que está nas mãos do personagem
+  for (const [hn, armG] of [['handslotr', vmArmR], ['handslotl', vmArmL]]) {
+    const slot = S.me.root.getObjectByName(hn) || S.me.root.getObjectByName(hn.replace('slot', 'slot.')); if (!slot) continue;
+    for (const c of slot.children) { if (!c.visible) continue; const w = c.clone(true); const ws = new THREE.Vector3(); c.getWorldScale(ws); w.scale.set(ws.x * 0.55, ws.y * 0.55, ws.z * 0.55); w.position.set(0, 0.01, -0.02); w.rotation.set(-0.55, 0, 0); armG.userData.hand.add(w); } // arma menor e inclinada para frente/cima, como em Skyrim
+  }
+  vmKind = (S.p.d.magicAuto ? 'magic' : S.p.d.ranged ? 'bow' : 'swing');
+  if (vmKind === 'magic') { const orb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshBasicMaterial({ color: '#9ad0ff' })); orb.position.set(0, 0.06, -0.05); vmArmR.userData.hand.add(orb); vmArmR.userData.orb = orb; }
+  viewModel.traverse(o => { if (o.isMesh) { o.castShadow = false; o.frustumCulled = false; o.renderOrder = 10; } });
+  viewModel.visible = S.view === 'fps';
+}
+let vmAtk = -9;
+function vmAttack(kind) { vmAtk = S.time; vmKind = kind; }
+function updateViewModel(dt) {
+  if (!viewModel || !viewModel.visible) return;
+  vmT += dt; const sp = Math.hypot(S.vel.x, S.vel.z), bob = Math.sin(vmT * 9) * 0.012 * Math.min(1, sp / 3), k = Math.min(1, (S.time - vmAtk) / 0.35), sw = k < 1 ? Math.sin(k * Math.PI) : 0;
+  viewModel.position.set(Math.cos(vmT * 4.5) * 0.006 * Math.min(1, sp / 3), bob + Math.sin(vmT * 1.6) * 0.004, 0);
+  if (vmKind === 'swing') { vmArmR.rotation.set(0.25 - sw * 1.2, 0.12 + sw * 0.9, -sw * 0.6); vmArmR.position.x = 0.22 - sw * 0.12; }
+  else if (vmKind === 'bow') { vmArmL.rotation.set(0.1, -0.05, 0); vmArmL.position.set(-0.1, -0.16, -0.5); vmArmR.position.set(0.1, -0.15, -0.36 + sw * 0.12); vmArmR.rotation.set(0.1, 0.1, 0); }
+  else { vmArmR.rotation.set(0.15 - sw * 0.5, 0.05, 0); vmArmR.position.z = -0.42 - sw * 0.15; vmArmL.rotation.set(0.3 - sw * 0.3, -0.15, 0); if (vmArmR.userData.orb) vmArmR.userData.orb.scale.setScalar(1 + Math.sin(vmT * 6) * 0.15 + sw); }
+}
+
 /* =========================== Monstros =========================== */
 const SPAWNS = [
   ['campos', 'gotinha', 10], ['campos', 'fungolino', 8], ['campos', 'coelho_chifre', 6], ['campos', 'abelha_rubra', 4], ['campos', 'gosmao', 1],
@@ -977,11 +1066,26 @@ function updateMonster(m, dt) {
   }
   m.obj.position.set(m.x, groundAt(m.x, m.z), m.z);
   m.obj.rotation.y = m.yaw;
-  if (m.moving && d.shape === 'mushroom' && t >= (m.stepT || 0) && Math.hypot(m.x - P.x, m.z - P.z) < 16) { Sound.play('mushStep'); m.stepT = t + 0.36 + rng() * 0.12; } // pufe a cada pulinho (S-091)
+  { // sons de cada bicho (S-091/S-097): passos perto de você e um som de "presença" de vez em quando
+    const sx = MON_SFX[d.shape], near = Math.hypot(m.x - P.x, m.z - P.z);
+    if (sx && near < 16 && sx.step && m.moving && t >= (m.stepT || 0)) { Sound.play(sx.step); m.stepT = t + sx.every * (m.aggro ? 0.7 : 1) * (0.85 + rng() * 0.3); }
+    if (sx && sx.idle && near < (sx.idleR || 22) && t >= (m.idleT || 0)) { if (m.idleT) Sound.play(sx.idle); m.idleT = t + (sx.idleEvery || 8) * (0.7 + rng() * 0.8); }
+  }
   if (m.vis.critter) m.vis.critter.animate(t, m.moving, dt);
   else if (t >= m.lockAnim) monAnim(m, m.moving ? (m.aggro || m.returning ? 'Running_C' : 'Walking_D_Skeletons') : (m.aggro ? 'Idle_Combat' : 'Idle'));
 }
+const MON_SFX = {
+  wolf: { step: 'wolfStep', every: 0.32, attack: 'wolfBite', pre: 'wolfGrowl', hurt: 'wolfHurt', die: 'wolfDie', idle: 'wolfHowl', idleEvery: 25, idleR: 60 },
+  bee: { step: 'beeBuzz', every: 0.42, attack: 'beeSting', die: 'beeDie' },
+  blob: { step: 'slimeStep', every: 0.5, attack: 'slimeStep', die: 'slimeDie' },
+  mushroom: { step: 'mushStep', every: 0.42, attack: 'mushStep', die: 'mushDie' },
+  rabbit: { step: 'rabbitStep', every: 0.35, die: 'rabbitDie' },
+  skeleton: { step: 'boneStep', every: 0.45, attack: 'boneAttack', die: 'boneDie' },
+  knight: { step: 'boneStep', every: 0.5, attack: 'boneAttack', die: 'boneDie' },
+  ghost: { attack: 'ghostWail', die: 'ghostWail', idle: 'ghostWail', idleEvery: 12, idleR: 18 },
+};
 function monsterAttack(m) {
+  { const sx = MON_SFX[m.def.shape]; if (sx && sx.attack) Sound.play(sx.attack); if (sx && sx.pre && !m.growled) { Sound.play(sx.pre); m.growled = true; } }
   const d = m.def;
   if (m.vis.anim) { monAnim(m, d.shape === 'ghost' ? 'Spellcast_Shoot' : (d.shape === 'knight' ? '2H_Melee_Attack_Chop' : '1H_Melee_Attack_Chop'), { once: true, restart: true }); m.lockAnim = S.time + 0.7; }
   else if (m.vis.critter.attack) m.vis.critter.attack(); // bote / mordida / ferroada (animação própria de cada bicho)
@@ -1039,6 +1143,7 @@ function hurtMonster(m, res, elem) {
   const strong = elem && elem !== 'neutro' && elem !== 'veneno' && elementMult(elem, m.def.element) > 1;
   floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : strong ? '#ffb070' : elem === 'veneno' ? '#9be36a' : '#ffffff', m.height + 0.4, res.crit);
   Sound.play(res.crit ? 'crit' : 'hit');
+  { const sx = MON_SFX[m.def.shape]; if (sx && sx.hurt && Math.random() < 0.6) Sound.play(sx.hurt); }
   if (m.vis.critter) { const r = m.vis.critter.root, s0 = r.scale.x; r.scale.setScalar(s0 * 1.15); later(0.08, () => r.scale.setScalar(s0)); }
   else if (S.time >= m.lockAnim) { monAnim(m, 'Hit_A', { once: true, restart: true, fade: 0.05 }); m.lockAnim = S.time + 0.3; }
   if (p.d.lifesteal) p.hp = Math.min(p.d.maxHp, p.hp + Math.floor(res.dmg * p.d.lifesteal / 100));
@@ -1049,7 +1154,7 @@ function killMonster(m) {
   m.dead = true; m.deathT = S.time; m.hp = 0; m.deathStyle = Math.random() < 0.15 ? 'raro' : 'normal'; m.deathSide = Math.random() < 0.5 ? -1 : 1;
   if (m.deathStyle === 'raro') later(m.vis.kind === 'critter' ? 0.25 : 1.1, () => soulBurst(m));
   if (m.vis.anim) monAnim(m, 'Death_C_Skeletons', { once: true, fade: 0.1 });
-  Sound.play(d.shape === 'mushroom' ? 'mushDie' : 'mdie');
+  Sound.play((MON_SFX[d.shape] && MON_SFX[d.shape].die) || 'mdie');
   gainExp(d.exp, d.jexp);
   for (const [id, rate] of d.drops) if (Math.random() < rate * CONFIG.DROP_RATE) { addItem(p, id, 1); log(`Saque: ${ITEMS[id].icon} ${ITEMS[id].name}`, 'item'); }
   if (Math.random() < (d.cardRate ?? CONFIG.CARD_DROP_RATE)) {
@@ -1107,6 +1212,7 @@ function buildPlayerModel() {
   S.me = { hatId: hatOf(S.p), ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
+  buildViewModel(); ch.obj.visible = S.view !== 'fps'; $('crosshair').classList.toggle('hidden', !isAction()); // mãos da 1ª pessoa com a arma da classe
 }
 const keys = {};
 const mouse = { left: false, right: false, moved: 0, x: 0, y: 0 };
@@ -1116,7 +1222,7 @@ function moveInput() {
   if (k.w || k.arrowup || (mouse.left && mouse.right)) fwd += 1;
   if (k.s || k.arrowdown) fwd -= 1;
   const L = k.a || k.arrowleft, R = k.d || k.arrowright;
-  if (mouse.right) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; }
+  if (mouse.right || isAction()) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; } // modo ação: A/D andam de lado
   if (k.q_strafe) strafe -= 1;
   return { fwd, strafe, turn, any: !!(fwd || strafe) };
 }
@@ -1163,9 +1269,12 @@ function updatePlayer(dt) {
   if (S.god) { p.hp = p.d.maxHp; p.sp = p.d.maxSp; }
   // movimento
   const mi = moveInput();
-  P.yaw += mi.turn * 2.6 * dt;
-  if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
-  else if (mi.any && !mouse.left && !mouse.right) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 3));
+  if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
+  else {
+    P.yaw += mi.turn * 2.6 * dt;
+    if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
+    else if (mi.any && !mouse.left && !mouse.right) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 3));
+  }
   if ((mi.any || mi.turn) && S.sitting) S.sitting = false;
   if (mi.any && S.casting) { S.casting = null; log('Conjuração cancelada.', 'warn'); $('castbar3d').classList.add('hidden'); }
   const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? MOUNT_SPEED : 1);
@@ -1612,8 +1721,8 @@ function updatePlates() {
     if (e.dead && !e.isNpc) continue;
     const d = Math.hypot(e.x - P.x, e.z - P.z);
     // nomes só de perto: monstros até 13 m (ou o alvo / quem está brigando com você), NPCs até 24 m
-    const near = e.isNpc ? 24 : 13, fight = e === S.target || (!e.isNpc && e.aggro);
-    if (d > near && !fight) continue;
+    const near = e.isNpc ? 24 : 13, fight = (e === S.target || (!e.isNpc && e.aggro)) && d < 40; // nem em combate aparece de longe (S-096)
+    if ((d > near && !fight) || (e.obj && !e.obj.visible)) continue;
     const s = toScreen(tmpV.set(e.x, (e.obj.position.y) + e.height + 0.45, e.z));
     if (!s.vis) continue;
     let el = plateEls.get(e);
@@ -1885,27 +1994,33 @@ addEventListener('keydown', e => {
   if (k === 'enter') { UI.setChatMin(false); $('chatinput').focus(); e.preventDefault(); return; }
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); return; }
   const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes', b: 'bestiario', o: 'loja', g: 'mapa' }[k];
-  if (win) { UI.toggle(win); return; }
+  if (win) { if (document.pointerLockElement) document.exitPointerLock(); UI.toggle(win); return; }
   if (k === 'n') { toggleSound(); return; }
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
   if (S.paused) return;
   if (k === 'tab') { e.preventDefault(); tabTarget(); return; }
   if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; if (!S.riding) S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground && !S.riding) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
-  if (k >= '1' && k <= '9') { useSlot(+k - 1); return; }
+  if (k >= '1' && k <= '9') { if (isAction()) { const tg = aimTarget(40); if (tg) setTarget(tg); } useSlot(+k - 1); return; } // modo ação: a habilidade vai para quem está na mira
   if (k === 'r') { if (S.target && !S.target.isNpc && !S.target.dead) { S.autoAttack = !S.autoAttack; log(S.autoAttack ? 'Ataque automático ligado.' : 'Ataque automático desligado.'); } else msgOnce('sel', 'Selecione um inimigo (Tab).'); return; }
   if (k === 'x') { if (!S.p.dead) { if (S.riding) dismount(); S.sitting = !S.sitting; S.autoAttack = false; } return; }
   if (k === 'm') { toggleMount(); return; }
+  if (k === 'v') { cycleView(); return; } // câmera: clássica → 1ª pessoa → ombro (S-094)
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.left = mouse.right = false; });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
   if (!S.started || S.menuOpen || FB.picking || FB.box) return;
+  if (isAction()) { // modo ação: o 1º clique prende o mouse; depois, segurar o esquerdo ataca
+    if (document.pointerLockElement !== canvas) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; }
+    if (e.button === 0) S.fire = true; return;
+  }
   if (e.button === 1) { e.preventDefault(); S.frontView = true; return; } // segurar o botão do meio: vista de frente
   if (e.button === 0) mouse.left = true; else if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
 });
 addEventListener('mousemove', e => {
+  if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
   if (!mouse.left && !mouse.right) return;
   const dx = e.movementX, dy = e.movementY;
   mouse.moved += Math.abs(dx) + Math.abs(dy);
@@ -1917,6 +2032,8 @@ addEventListener('mousemove', e => {
   }
 });
 addEventListener('mouseup', e => {
+  if (e.button === 0) S.fire = false;
+  if (isAction()) return;
   const wasClick = mouse.moved <= 4 && (e.button === 0 ? mouse.left : mouse.right);
   if (e.button === 1) S.frontView = false;
   if (e.button === 0) mouse.left = false; else if (e.button === 2) mouse.right = false;
@@ -2048,6 +2165,16 @@ function draw(dt) {
     const hit = camRay.intersectObjects(near, true)[0];
     if (hit) camPos.copy(head).addScaledVector(dir, Math.max(0.6, hit.distance - 0.3));
     camera.position.copy(camPos); camera.lookAt(head);
+    if (isAction()) { // 1ª pessoa / por cima do ombro: a câmera aponta para a mira (S-094)
+      const fx = Math.sin(cam.yaw), fz = Math.cos(cam.yaw), ap = Math.cos(S.aim), as = Math.sin(S.aim), look = new THREE.Vector3(fx * ap, as, fz * ap);
+      if (S.view === 'fps') { const eye = new THREE.Vector3(P.x + fx * 0.14, P.y + HERO_H * 0.92 + (S.riding ? 1 : 0), P.z + fz * 0.14); camera.position.copy(eye); camera.lookAt(eye.clone().add(look)); }
+      else {
+        const pivot = new THREE.Vector3(P.x - fz * 0.55, P.y + 1.4 + (S.riding ? 1 : 0), P.z + fx * 0.55), back = look.clone().multiplyScalar(-2.7);
+        camRay.set(pivot, back.clone().normalize()); camRay.far = 2.7; const oh = camRay.intersectObjects(near, true)[0];
+        const cpos = pivot.clone().add(back.setLength(oh ? Math.max(0.5, oh.distance - 0.25) : 2.7)); cpos.y = Math.max(cpos.y, groundAt(cpos.x, cpos.z) + 0.3);
+        camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 12));
+      }
+    }
     sun.position.set(P.x + 30, P.y + 60, P.z + 18); sun.target.position.set(P.x, P.y, P.z);
     sky.position.copy(camera.position);
     // névoa por região
@@ -2481,7 +2608,7 @@ function installIntegration() {
       <b>Botão direito (segurar)</b> gira a câmera <i>e</i> o personagem — aí A/D andam de lado<br>
       <b>Botão esquerdo (segurar)</b> só olha em volta • <b>os dois botões</b> correm • <b>roda</b> zoom<br><br>
       <b class="gold">Combate</b><br>
-      <b>Tab</b> próximo inimigo à frente • <b>clique</b> seleciona • <b>R</b> ou <b>botão direito no alvo</b> ataca • <b>1–9</b> habilidades/itens • <b>X</b> sentar<br><br>
+      <b>Tab</b> próximo inimigo à frente • <b>clique</b> seleciona • <b>R</b> ou <b>botão direito no alvo</b> ataca • <b>1–9</b> habilidades/itens • <b>X</b> sentar<br><b>V</b> troca a câmera: clássica → <b>1ª pessoa</b> → <b>por cima do ombro</b>. Nos dois modos de ação: clique para prender o mouse, a mira fica no centro, <b>segure o botão esquerdo</b> para atacar o que está na mira, A/D andam de lado, Esc solta o mouse.<br><br>
       <b class="gold">Janelas</b> (as mesmas do 2D)<br>
       <b>C</b> Personagem • <b>I</b> Inventário • <b>E</b> Equipamento • <b>K</b> Habilidades • <b>T</b> Árvore de Classes • <b>L</b> Sugestões • <b>N</b> Som • <b>Enter</b> chat<br><br>
       <b class="gold">Pausa, sugestões e mestre</b><br>

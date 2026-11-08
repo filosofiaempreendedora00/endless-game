@@ -96,3 +96,10 @@ body.g3d { background: #9fd3ff; }
 .opt-sw span { flex: 1; }
 .opt-sw input[type=range] { width: 110px; }
 .opt-sw b { width: 38px; text-align: right; font-size: 12px; }
+/* mira do modo ação (S-094) */
+#crosshair { position: fixed; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; pointer-events: none; z-index: 30; }
+#crosshair.hidden { display: none; }
+#crosshair i { position: absolute; background: rgba(255,245,220,0.85); box-shadow: 0 0 3px rgba(0,0,0,0.8); }
+#crosshair i:nth-child(1) { left: 12px; top: 0; width: 2px; height: 8px; } #crosshair i:nth-child(2) { left: 12px; bottom: 0; width: 2px; height: 8px; }
+#crosshair i:nth-child(3) { top: 12px; left: 0; width: 8px; height: 2px; } #crosshair i:nth-child(4) { top: 12px; right: 0; width: 8px; height: 2px; }
+#crosshair b { position: absolute; left: 11px; top: 11px; width: 4px; height: 4px; border-radius: 50%; background: #ffe9a8; }
