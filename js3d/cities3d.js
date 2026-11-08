@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
-import { heightAt, PORT, DWARF, ELF, SEA, seaDist } from './world3d.js';
+import { heightAt, PORT, DWARF, ELF, SEA, seaDist, FROZEN } from './world3d.js';
 
 export const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 
@@ -320,91 +320,186 @@ function smithy(ctx, x, z, ry) {
   const L = vlight('#ff8a3a', 6, 16, 1.6); L.position.set(-3.6, 2.2, -1.8); g.add(L);
   return g;
 }
+/* S-178: Pedrafunda reconstruída como uma cidade-fortaleza antiga (no espírito das cidades muradas dos épicos gregos, mas anã):
+   muralha circular de pedra com talude e torres, portão monumental com portas de bronze, rua principal até a ágora
+   (praça com a forja de lava, pórtico de colunas e a ferraria do Brakar), cidade baixa em anéis de casas e, ao norte,
+   a acrópole em dois terraços: templo da Forja, santuário dos Ancestrais e o Salão do Rei-Sob-a-Pedra no alto.
+   Terraços e escadarias são "pisos" (DECKS): dá para subir andando. */
+function dwarfTemple() { // templo da Forja: estilóbata em degraus, colunata, frontões e telhado de bronze; porta acesa
+  const K = new Kit(), cv = M.dwarfCarve(), st = M.dwarfStone(), W = 14, D = 14;
+  for (let k = 0; k < 3; k++) K.box(W + 3 - k * 1.0, 0.45, D + 3 - k * 1.0, cv, 0, 0.22 + k * 0.45, 0);
+  const y0 = 1.35, H = 7.5;
+  for (let i = 0; i < 6; i++) for (const z of [-D / 2 + 0.6, D / 2 - 0.6]) { const x = -W / 2 + 0.6 + i * (W - 1.2) / 5; K.box(1.3, 0.4, 1.3, cv, x, y0 + 0.2, z); K.cyl(0.5, 0.58, H, cv, x, y0 + 0.4 + H / 2, z, 16); K.box(1.4, 0.45, 1.4, cv, x, y0 + 0.62 + H, z); }
+  for (let i = 1; i < 5; i++) for (const x of [-W / 2 + 0.6, W / 2 - 0.6]) { const z = -D / 2 + 0.6 + i * (D - 1.2) / 5; K.box(1.3, 0.4, 1.3, cv, x, y0 + 0.2, z); K.cyl(0.5, 0.58, H, cv, x, y0 + 0.4 + H / 2, z, 16); K.box(1.4, 0.45, 1.4, cv, x, y0 + 0.62 + H, z); }
+  K.box(W - 4, H, D - 5, st, 0, y0 + H / 2, -1); // cela
+  K.box(W + 0.6, 1.4, D + 0.6, cv, 0, y0 + H + 1.5, 0); // entablamento
+  for (let k = 0; k < 18; k++) K.box(0.5, 0.5, 0.12, M.rune(), -W / 2 + 0.8 + k * 0.75, y0 + H + 1.5, D / 2 + 0.32); // friso de runas
+  gable(K, W + 0.6, D + 0.6, 3.2, M.copper(), 0, y0 + H + 2.2, 0, Math.PI / 2, 0.4);
+  K.box(3.0, 4.6, 0.3, M.darkWood(), 0, y0 + 2.3, D / 2 - 3.4); K.box(2.2, 3.6, 0.1, M.ember(), 0, y0 + 1.9, D / 2 - 3.3);
+  return K;
+}
+function dwarfTholos() { // santuário dos Ancestrais: círculo de colunas com cúpula de bronze e uma estátua de antepassado
+  const K = new Kit(), cv = M.dwarfCarve();
+  for (let k = 0; k < 3; k++) K.cyl(7.5 - k * 0.6, 7.5 - k * 0.6, 0.45, cv, 0, 0.22 + k * 0.45, 0, 40);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; K.cyl(0.42, 0.5, 6, cv, Math.cos(a) * 5.6, 1.35 + 3, Math.sin(a) * 5.6, 14); K.box(1.1, 0.4, 1.1, cv, Math.cos(a) * 5.6, 7.55, Math.sin(a) * 5.6, -a); }
+  K.cyl(6.4, 6.4, 1.0, cv, 0, 8.2, 0, 40, 0, 0, 0, true); K.cyl(6.3, 6.3, 0.2, cv, 0, 7.75, 0, 40);
+  K.add(new THREE.SphereGeometry(6.2, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), M.copper(), 0, 8.6, 0, 0, 0, 0, 1, 0.55, 1);
+  const s = dwarfStatue(77); for (const { mat, geos } of s.parts.values()) for (const g of geos) { const c = g.clone(); c.scale(0.36, 0.36, 0.36); c.translate(0, 1.35, 0); K.add(c, mat); }
+  return K;
+}
+function terrace(K, w, d, h, mat, cap) { // plataforma de pedra com talude, cornija e friso
+  K.box(w + 0.8, h - 0.4, d + 0.8, mat, 0, (h - 0.4) / 2, 0); K.box(w + 1.4, 0.5, d + 1.4, mat, 0, 0.25, 0); K.box(w + 1.2, 0.4, d + 1.2, cap, 0, h - 0.2, 0); // o topo fica exatamente na altura do piso (h)
+  for (let k = 0; k < Math.floor(w / 3); k++) { const xx = -w / 2 + 1.5 + k * 3; K.box(0.07, 0.55, 0.06, M.rune(), xx, h - 0.75, d / 2 + 0.43, 0, 0, (k % 3 - 1) * 0.35); K.box(0.32, 0.06, 0.06, M.rune(), xx + 0.05, h - 0.62 - (k % 2) * 0.18, d / 2 + 0.43); } // runas gravadas (traços finos), não janelas
+}
+function stairs(K, w, run, rise, mat, steps) { // escadaria (anda em +z para baixo): degraus de pedra com corrimões
+  for (let k = 0; k < steps; k++) { const y = rise * (1 - (k + 1) / steps), z = run * (k + 0.5) / steps; K.box(w, rise / steps + y, run / steps + 0.02, mat, 0, (rise / steps + y) / 2, z); }
+  for (const sx of [-1, 1]) { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(run, 0); sh.lineTo(0, rise + 0.9); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 0.9, bevelEnabled: false }); g.rotateY(-Math.PI / 2); g.translate(sx > 0 ? w / 2 + 0.9 : -w / 2, 0, 0); K.add(g, mat); } // muretas laterais
+}
 function buildDwarfCity(ctx) {
-  const C = DWARF, r = rngOf(707), st = M.dwarfStone();
-  // portão: duas torres atarracadas sobre a estrada (sul) e as estátuas dos guardiões
-  { const K = new Kit(), cv = M.dwarfCarve();
-    for (const sx of [-1, 1]) { K.box(7, 14, 8, st, sx * 9, 7, 0); K.box(8, 1.2, 9, cv, sx * 9, 14.4, 0); for (let k = -1; k <= 1; k++) K.box(1.6, 1.4, 1.6, cv, sx * 9 + k * 2.6, 15.6, 3.6); for (let k = 0; k < 5; k++) { const yy = 7.6 + k * 0.62; K.box(0.7 - (k % 2) * 0.3, 0.09, 0.08, M.rune(), sx * 9, yy, 4.04); K.box(0.09, 0.42, 0.08, M.rune(), sx * 9 + (k % 2 ? 0.2 : -0.25), yy + 0.25, 4.04, 0, 0, (k % 3 - 1) * 0.5); } }
-    K.box(11, 4, 8, st, 0, 12, 0); K.box(12, 1.0, 9, cv, 0, 14.4, 0);
-    archBlocks(K, 11, 1.2, 8.4, cv, 0, 6, 0, 0, 15);
-    for (const sx of [-1, 1]) K.box(1.0, 6.0, 8.4, cv, sx * 5.4, 3.0, 0);
-    for (let k = 0; k < 9; k++) K.box(0.18, 3.2, 0.18, M.iron(), -4 + k, 10.0, 3.4); // grade do portão (levantada)
-    put(ctx, K, 'portao_pedrafunda', C.x - 2, C.z + 44, 0.08, { box: [[-9, 0, 3.5, 4], [9, 0, 3.5, 4]] });
-    for (const sx of [-1, 1]) { const s = dwarfStatue(5 + sx); put(ctx, s, 'estatua_anao', C.x - 2 + sx * 17, C.z + 47, sx * 0.25, { box: [[0, 0, 2.3, 2.3]] }); }
-    for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.2, 6); b.position.set(C.x - 2 + sx * 9 + Math.sin(0.08) * 4.1, gY(C.x, C.z + 44) + 13, C.z + 44 + 4.15); b.rotation.y = 0.08; ctx.scene.add(b); }
+  const C = DWARF, r = rngOf(707), st = M.dwarfStone(), cv = M.dwarfCarve(), base = gY(C.x, C.z);
+  const at = (dx, dz) => [C.x + dx, C.z + dz];
+  // ---------- muralha circular com talude, ameias e torres; o portão fica ao sul (estrada) ----------
+  const RW = 58, HW = 13, gate = Math.PI / 2;
+  { const K = new Kit(), N = 84;
+    for (let i = 0; i < N; i++) {
+      const a = (i + 0.5) / N * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.21) continue; // vão do portão
+      const x = Math.cos(a) * RW, z = Math.sin(a) * RW, ry = -a - Math.PI / 2, seg = Math.PI * 2 * RW / N + 0.15, y = gY(C.x + x, C.z + z) - base;
+      K.box(seg, HW, 4.2, st, x, y + HW / 2 - 0.5, z, ry); K.box(seg, 3.4, 6.2, st, x + Math.cos(a) * 0.9, y + 1.0, z + Math.sin(a) * 0.9, ry); // muro e talude na base (lado de fora)
+      K.box(seg, 0.5, 4.8, cv, x, y + HW - 0.2, z, ry);
+      const ox = Math.cos(a) * 1.9, oz = Math.sin(a) * 1.9; if (i % 2 === 0) K.box(seg * 0.55, 1.5, 0.9, cv, x + ox, y + HW + 0.7, z + oz, ry); // ameias
+      ctx.colliders.push({ x: C.x + x, z: C.z + z, r: 2.7, name: 'muralha_pedrafunda' });
+    }
+    for (let t = 0; t < 10; t++) { // torres redondas e atarracadas
+      const a = gate + (t + 0.5) / 10 * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.45) continue;
+      const x = Math.cos(a) * (RW + 0.5), z = Math.sin(a) * (RW + 0.5), y = gY(C.x + x, C.z + z) - base;
+      K.cyl(5.2, 5.8, HW + 6, st, x, y + (HW + 6) / 2 - 0.5, z, 24); K.cyl(5.9, 5.9, 0.7, cv, x, y + HW + 5.6, z, 24);
+      for (let m = 0; m < 12; m++) { const b = m / 12 * Math.PI * 2; if (m % 2) K.box(1.6, 1.5, 0.9, cv, x + Math.cos(b) * 5.5, y + HW + 6.6, z + Math.sin(b) * 5.5, -b + Math.PI / 2); }
+      for (let m = 0; m < 3; m++) { const b = a + Math.PI + (m - 1) * 0.5; K.box(0.35, 1.6, 0.2, M.glass(), x + Math.cos(b) * 5.3, y + HW + 1 + m * 0.2, z + Math.sin(b) * 5.3, -b + Math.PI / 2); } // seteiras acesas
+      ctx.colliders.push({ x: C.x + x, z: C.z + z, r: 6, name: 'torre_pedrafunda' });
+    }
+    put(ctx, K, 'muralha_pedrafunda', C.x, C.z, 0, { y: base, occ: false });
   }
-  // Salão do Rei-Sob-a-Pedra: fachada esculpida no paredão norte (colunas, frontão, porta de runas)
-  { const K = new Kit(), cv = M.dwarfCarve();
-    K.box(34, 3, 10, st, 0, 1.5, 0); for (let k = 0; k < 6; k++) K.box(30 - k * 1.6, 0.5, 2, cv, 0, 0.25 + k * 0.5, 6 + k * -0.6); // escadaria
-    for (let k = 0; k < 6; k++) { const x = -12.5 + k * 5; K.box(2.4, 1.0, 2.4, cv, x, 3.5, 2); K.cyl(0.95, 1.05, 14, cv, x, 11, 2, 16); K.box(2.6, 1.2, 2.6, cv, x, 18.6, 2); }
-    K.box(32, 2.4, 4, cv, 0, 20.4, 2); { const sh = new THREE.Shape(); sh.moveTo(-16, 0); sh.lineTo(16, 0); sh.lineTo(0, 7); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }); g.translate(0, 21.6, 0.5); K.add(g, st); }
-    K.box(30, 22, 3, st, 0, 11, -2.5); K.box(7, 9, 0.6, M.darkWood(), 0, 7.5, -0.9); archBlocks(K, 7, 1.0, 1.2, cv, 0, 12, -0.8, 0, 11);
-    for (let k = 0; k < 7; k++) K.box(0.35, 0.35, 0.1, M.rune(), -3 + k, 10.2, -0.55); // runas na porta
-    for (let k = 0; k < 11; k++) K.box(0.12, 0.8, 0.1, M.rune(), -3 + k * 0.6, 24.2, 3.55, 0, 0, (k % 3 - 1) * 0.4); // inscrição gravada no frontão
-    put(ctx, K, 'salao_anao', C.x + 2, C.z - 30, 0, { box: [[0, -1, 17, 4]] });
-    for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.4, 9); b.position.set(C.x + 2 + sx * 5, gY(C.x, C.z - 30) + 18.5, C.z - 30 + 3.5); ctx.scene.add(b); }
+  // ---------- portão monumental (torres quadradas, arco de aduelas, portas de bronze abertas) ----------
+  { const K = new Kit();
+    for (const sx of [-1, 1]) { K.box(9, 22, 13, st, sx * 9.5, 11, 0); K.box(10, 1.2, 14, cv, sx * 9.5, 22.4, 0); for (let k = -1; k <= 1; k++) K.box(1.8, 1.6, 1.6, cv, sx * 9.5 + k * 3, 23.8, 6.2); K.box(9.6, 4, 13.6, st, sx * 9.5 + sx * 0.3, 2, 0);
+      for (let k = 0; k < 6; k++) { const yy = 10 + k * 0.8; K.box(0.8 - (k % 2) * 0.35, 0.1, 0.08, M.rune(), sx * 9.5, yy, 6.55); K.box(0.1, 0.5, 0.08, M.rune(), sx * 9.5 + (k % 2 ? 0.25 : -0.3), yy + 0.3, 6.55, 0, 0, (k % 3 - 1) * 0.5); }
+      // portas de bronze escancaradas, encostadas na passagem
+      K.box(0.4, 9.4, 4.6, M.copper(), sx * 4.3, 4.7, -3.6); for (let k = 0; k < 4; k++) K.box(0.5, 0.3, 4.7, M.iron(), sx * 4.25, 1.4 + k * 2.4, -3.6);
+    }
+    K.box(10.6, 7, 13, st, 0, 18.5, 0); K.box(11.6, 1.2, 14, cv, 0, 22.4, 0); archBlocks(K, 9, 1.4, 13.2, cv, 0, 10, 0, 0, 17);
+    for (const sx of [-1, 1]) K.box(1.2, 10, 13.2, cv, sx * 5.1, 5, 0);
+    K.add(new THREE.SphereGeometry(1.1, 20, 14), cv, 0, 15.4, 6.7, 0, 0, 0, 1, 1, 0.5); // pedra-chave com cabeça de carneiro
+    for (const sx of [-1, 1]) K.add(new THREE.TorusGeometry(0.7, 0.25, 10, 20, Math.PI * 1.3), cv, sx * 0.9, 15.7, 7.1, 0, 0, sx * 1.2);
+    const [gx, gz] = at(0, RW); put(ctx, K, 'portao_pedrafunda', gx, gz, 0, { y: base, box: [[-9.5, 0, 4.5, 6.5], [9.5, 0, 4.5, 6.5]] });
+    for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.6, 8); b.position.set(gx + sx * 9.5, base + 19, gz + 6.7); ctx.scene.add(b); }
   }
-  // casas em anel, viradas para a praça
-  const ring = [[200, 25], [228, 26], [312, 25], [338, 26], [160, 24], [20, 24], [-20, 27]];
-  ring.forEach(([deg, rr], i) => { const a = deg * Math.PI / 180, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr, { K, box } = dwarfHouse(40 + i, 7 + r() * 2, 6 + r() * 2); put(ctx, K, 'casa_anao', x, z, Math.atan2(C.x - x, C.z - z), { box }); });
-  // moradas escavadas no paredão: fachadas lavradas com porta, janelas acesas e escada de pedra
-  [160, 182, 204, 226, 248, 296, 318, 340, 2, 24].forEach((deg, k) => {
-    const a = deg * Math.PI / 180, rr = 37.5 + (k % 2) * 1.2, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr, yb = gY(C.x + Math.cos(a) * 33, C.z + Math.sin(a) * 33); // no pé do paredão (o fundo entra na rocha)
-    const K = new Kit(), cv = M.dwarfCarve(), lvl = k % 3 === 0 ? 6 : 0;
-    K.box(9, 12 + lvl, 4, st, 0, (12 + lvl) / 2 - 1, -1.6); for (const sx of [-1, 1]) K.box(1.1, 10 + lvl, 1.1, cv, sx * 3.6, (10 + lvl) / 2 - 1, 0.6);
-    K.box(8.6, 1.0, 1.4, cv, 0, 9 + lvl, 0.5); { const sh = new THREE.Shape(); sh.moveTo(-4.4, 0); sh.lineTo(4.4, 0); sh.lineTo(0, 2.2); sh.closePath(); K.add(new THREE.ExtrudeGeometry(sh, { depth: 1.2, bevelEnabled: false }), cv, 0, 9.5 + lvl, -0.2); }
-    K.box(2.2, 3.2, 0.3, M.darkWood(), 0, 1.6 + lvl, 0.45); archBlocks(K, 2.2, 0.5, 0.7, cv, 0, 3.2 + lvl, 0.45, 0, 9);
-    for (const sx of [-1, 1]) { K.box(0.8, 1.1, 0.12, M.glass(), sx * 2.2, 5.2 + lvl, 0.42); K.box(1.1, 0.2, 0.5, cv, sx * 2.2, 4.55 + lvl, 0.5); }
-    if (lvl) { K.box(9, lvl, 2.2, st, 0, lvl / 2 - 0.2, 1.5); K.box(9.2, 0.3, 2.4, cv, 0, lvl - 0.05, 1.5); for (let s2 = 0; s2 < 12; s2++) K.box(0.55, 0.5 * (s2 + 1), 1.6, cv, -10.3 + s2 * 0.5, 0.25 * (s2 + 1) - 0.2, 1.7); } // sacada e escada lateral até a porta do alto
-    put(ctx, K, 'morada_anao', x, z, Math.atan2(C.x - x, C.z - z), { y: yb, box: [[0, -1.6, 4.5, 2]] });
-  });
-  // ferraria do Brakar (lado leste da praça, frente para o oeste)
-  const SM = { x: C.x + 20, z: C.z + 8, ry: -Math.PI / 2 };
+  // ---------- rua principal (lajes) do portão até a ágora, com estátuas de guardiões e braseiros ----------
+  { const K = new Kit(); for (let z = 30; z < RW - 4; z += 1.6) for (let x = -3.6; x < 3.6; x += 1.8) K.box(1.74 + r() * 0.05, 0.12, 1.54, cv, x + 0.9 + ((z / 1.6) % 2 ? 0.45 : 0), 0.06, z + 0.8, 0, 0, (r() - 0.5) * 0.02);
+    const [x, z] = at(0, 0); put(ctx, K, 'rua_pedrafunda', x, z, 0, { y: base, occ: false }); }
+  for (const sx of [-1, 1]) { const s = dwarfStatue(5 + sx); const [x, z] = at(sx * 10.5, 44); put(ctx, s, 'estatua_anao', x, z, sx > 0 ? -Math.PI / 2 + 0.3 : Math.PI / 2 - 0.3, { y: base, box: [[0, 0, 2.3, 2.3]] }); }
+  for (const z of [34, 50]) for (const sx of [-1, 1]) { const [x, zz] = at(sx * 5.2, z); brazier(ctx, x, base, zz, z === 50, sx * z); }
+  // ---------- ágora: forja de lava no meio, pórtico (estoa) a oeste, ferraria do Brakar a leste ----------
+  const AG = { x: 0, z: 16 };
+  { const K = new Kit(); K.cyl(4.4, 4.8, 0.9, cv, 0, 0.3, 0, 32); K.cyl(3.6, 3.6, 0.1, M.ember(), 0, 0.72, 0, 32); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.8, 2.2, 0.8, cv, Math.cos(a) * 4.6, 1.1, Math.sin(a) * 4.6, -a); }
+    const [x, z] = at(AG.x, AG.z); const g = put(ctx, K, 'forja_da_praca', x, z, 0, { y: base, box: [[0, 0, 4.8, 4.8]] }); const L = vlight('#ff7a2a', 6, 18, 1.5); L.position.set(0, 2, 0); g.add(L); const f = flame(3.2, 9); f.position.y = 0.7; g.add(f); ctx.roomAnims.push(f); }
+  { const K = new Kit(), L = 26, D = 7; // estoa: muro do fundo, colunata e telhado de bronze, com bancos de pedra
+    K.box(0.9, 6, L, st, -D / 2, 3, 0); K.box(D + 0.4, 0.4, L + 0.4, cv, 0, 0.2, 0);
+    for (let i = 0; i < 10; i++) { const z = -L / 2 + 0.8 + i * (L - 1.6) / 9; K.cyl(0.38, 0.45, 5.4, cv, D / 2 - 0.5, 3.1, z, 14); K.box(1, 0.35, 1, cv, D / 2 - 0.5, 5.9, z); }
+    K.box(D + 1, 0.8, L + 1, cv, 0, 6.4, 0); { const sh = new THREE.Shape(); sh.moveTo(-D / 2 - 0.6, 0); sh.lineTo(D / 2 + 0.6, 0); sh.lineTo(-D / 2 - 0.6, 1.8); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: L + 1.2, bevelEnabled: false }); g.translate(0, 6.8, -(L + 1.2) / 2); K.add(g, M.copper()); }
+    for (let k = 0; k < 3; k++) K.box(0.8, 0.5, 3.2, cv, -D / 2 + 1.0, 0.65, -8 + k * 8);
+    const [x, z] = at(-19, AG.z); put(ctx, K, 'estoa_pedrafunda', x, z, 0, { y: base, box: [[-D / 2, 0, 0.6, L / 2], [D / 2 - 0.5, -L / 2 + 0.8, 0.5, 0.5], [D / 2 - 0.5, L / 2 - 0.8, 0.5, 0.5]] }); }
+  const SM = { x: C.x + 21, z: C.z + AG.z, ry: -Math.PI / 2 };
   smithy(ctx, SM.x, SM.z, SM.ry);
-  // praça: braseiros, banca de armas, barris e o poço de lava (fonte quente)
-  { const K = new Kit(), cv = M.dwarfCarve(); K.cyl(4.4, 4.8, 0.9, cv, 0, 0.3, 0, 32); K.cyl(3.6, 3.6, 0.1, M.ember(), 0, 0.72, 0, 32); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.8, 2.2, 0.8, cv, Math.cos(a) * 4.6, 1.1, Math.sin(a) * 4.6, -a); }
-    const g = put(ctx, K, 'forja_da_praca', C.x, C.z + 4, 0, { box: [[0, 0, 4.8, 4.8]] }); const L = vlight('#ff7a2a', 6, 18, 1.5); L.position.set(0, 2, 0); g.add(L); const f = flame(3.2, 9); f.position.y = 0.7; g.add(f); ctx.roomAnims.push(f); }
-  for (const [dx, dz] of [[-10, 14], [8, 16], [-14, -8], [12, -12], [-6, 34], [4, 34]]) brazier(ctx, C.x + dx, gY(C.x + dx, C.z + dz), C.z + dz, (dx === -10 || dx === 12), dx);
+  const smw = (lx, lz) => [SM.x + lx * Math.cos(SM.ry) + lz * Math.sin(SM.ry), SM.z - lx * Math.sin(SM.ry) + lz * Math.cos(SM.ry)];
   { const K = new Kit(), wd = M.darkWood(); K.box(5, 0.9, 1.6, wd, 0, 0.45, 0); K.box(5.4, 0.12, 2.0, wd, 0, 0.95, 0); for (const sx of [-2.4, 2.4]) K.box(0.18, 2.6, 0.18, wd, sx, 1.3, -0.8); K.box(5.2, 0.1, 2.2, plain('canvasRed', '#8a2a1e', { rough: 0.9 }), 0, 2.6, -0.2, 0, -0.25);
     for (let k = 0; k < 5; k++) for (const g of axeGeo(1.1, 0.3)) K.add(g, k % 2 ? M.steel() : M.iron(), -2 + k, 1.0, 0.3, 0.3, Math.PI / 2 - 0.15, 0);
-    for (let k = 0; k < 3; k++) K.add(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 24), M.iron(), -1.5 + k * 1.5, 1.6, -0.75, 0, Math.PI / 2 - 0.2, 0); // escudos redondos
-    put(ctx, K, 'banca_de_armas', C.x - 14, C.z + 2, Math.PI / 2, { box: [[0, 0, 2.6, 1]] }); }
-  for (let k = 0; k < 10; k++) { const a = r() * Math.PI * 2, rr = 12 + r() * 16; ctx.place(r() < 0.5 ? 'barrel' : 'crate_A', C.x + Math.cos(a) * rr, C.z + Math.sin(a) * rr, { rf: 0.6 }); }
-  // NPCs: anões (quase todos)
-  const W = (n, dx, dz, yaw) => ctx.worldNpc(n, C.x + dx, C.z + dz, yaw);
+    for (let k = 0; k < 3; k++) K.add(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 24), M.iron(), -1.5 + k * 1.5, 1.6, -0.75, 0, Math.PI / 2 - 0.2, 0);
+    const [x, z] = at(-10.5, AG.z + 9); put(ctx, K, 'banca_de_armas', x, z, Math.PI / 2, { y: base, box: [[0, 0, 2.6, 1]] }); }
+  for (const [dx, dz] of [[-8, 4], [8, 4], [-8, 28], [8, 28]]) { const [x, z] = at(dx, dz); brazier(ctx, x, base, z, dx < 0 && dz < 10, dx + dz); }
+  // ---------- acrópole: dois terraços, escadarias, templo, santuário e o Salão do Rei ----------
+  const T1 = { w: 50, z0: -10, z1: -46, h: 3.2 }, T2 = { w: 34, z0: -27, z1: -49, h: 6.6 };
+  { const K = new Kit(); const d1 = T1.z0 - T1.z1, d2 = T2.z0 - T2.z1;
+    const k1 = new Kit(); terrace(k1, T1.w, d1, T1.h, st, cv); for (const { mat, geos } of k1.parts.values()) for (const g of geos) K.add(g.clone().translate(0, 0, (T1.z0 + T1.z1) / 2), mat);
+    const k2 = new Kit(); terrace(k2, T2.w, d2, T2.h, st, cv); for (const { mat, geos } of k2.parts.values()) for (const g of geos) K.add(g.clone().translate(0, 0, (T2.z0 + T2.z1) / 2), mat);
+    const s1 = new Kit(); stairs(s1, 12, 8, T1.h, cv, 10); for (const { mat, geos } of s1.parts.values()) for (const g of geos) K.add(g.clone().translate(0, 0, T1.z0), mat);
+    const s2 = new Kit(); stairs(s2, 10, 8, T2.h - T1.h, cv, 10); for (const { mat, geos } of s2.parts.values()) for (const g of geos) K.add(g.clone().translate(0, T1.h, T2.z0), mat);
+    const [x, z] = at(0, 0); put(ctx, K, 'acropole_pedrafunda', x, z, 0, { y: base, occ: false });
+    // pisos para andar em cima (rampa = escada) e bordas que não deixam cair
+    DECKS.unshift({ x: C.x, z: C.z + T2.z0, yaw: 0, w: 10, len: 8, y: base + T2.h, y1: base + T1.h, tag: 'pedrafunda' }, { x: C.x, z: C.z + T1.z0, yaw: 0, w: 12, len: 8, y: base + T1.h, y1: base, tag: 'pedrafunda' },
+      { x: C.x, z: C.z + T2.z1, yaw: 0, w: T2.w, len: T2.z0 - T2.z1, y: base + T2.h, tag: 'pedrafunda' }, { x: C.x, z: C.z + T1.z1, yaw: 0, w: T1.w, len: T1.z0 - T1.z1, y: base + T1.h, tag: 'pedrafunda' });
+    const edge = (x0, x1, zz) => { const cx = (x0 + x1) / 2, hx = (x1 - x0) / 2; ctx.colliders.push({ x: C.x + cx, z: C.z + zz, r: Math.max(hx, 0.6), box: true, hx, hz: 0.6, rot: 0, name: 'acropole_pedrafunda' }); };
+    const side = (xx, z0, z1) => { const cz = (z0 + z1) / 2, hz = Math.abs(z1 - z0) / 2; ctx.colliders.push({ x: C.x + xx, z: C.z + cz, r: Math.max(hz, 0.6), box: true, hx: 0.6, hz, rot: 0, name: 'acropole_pedrafunda' }); };
+    edge(-T1.w / 2, -6.4, T1.z0); edge(6.4, T1.w / 2, T1.z0); side(-T1.w / 2, T1.z0, T1.z1); side(T1.w / 2, T1.z0, T1.z1); edge(-T1.w / 2, T1.w / 2, T1.z1);
+    edge(-T2.w / 2, -5.4, T2.z0); edge(5.4, T2.w / 2, T2.z0); side(-T2.w / 2, T2.z0, T2.z1); side(T2.w / 2, T2.z0, T2.z1);
+    for (const sx of [-1, 1]) { side(sx * 6.4, T1.z0, T1.z0 + 8); side(sx * 5.4, T2.z0, T2.z0 + 8); } // corrimãos das escadas
+  }
+  { const [x, z] = at(15.5, -18); put(ctx, dwarfTemple(), 'templo_da_forja', x, z, 0, { y: base + T1.h, box: [[0, 0, 7.6, 7.6]] }); const L = vlight('#ff8a3a', 3, 10, 1.6); L.position.set(x, base + T1.h + 3, z + 5); ctx.scene.add(L); }
+  { const [x, z] = at(-15.5, -19); put(ctx, dwarfTholos(), 'santuario_ancestrais', x, z, 0, { y: base + T1.h }); for (let i = 0; i < 12; i++) { if (i === 3) continue; const a = i / 12 * Math.PI * 2; ctx.colliders.push({ x: x + Math.cos(a) * 5.6, z: z + Math.sin(a) * 5.6, r: 0.6 }); } ctx.colliders.push({ x, z, r: 1.6 }); }
+  // Salão do Rei-Sob-a-Pedra no terraço de cima (fachada de colunas e frontão)
+  { const K = new Kit();
+    K.box(30, 3, 10, st, 0, 1.5, 0); for (let k = 0; k < 5; k++) K.box(26 - k * 1.6, 0.5, 2, cv, 0, 0.25 + k * 0.5, 6 - k * 0.6);
+    for (let k = 0; k < 6; k++) { const x = -11 + k * 4.4; K.box(2.2, 1.0, 2.2, cv, x, 3.5, 2); K.cyl(0.85, 0.95, 12, cv, x, 10, 2, 16); K.box(2.4, 1.1, 2.4, cv, x, 16.6, 2); }
+    K.box(28, 2.2, 4, cv, 0, 18.3, 2); { const sh = new THREE.Shape(); sh.moveTo(-14, 0); sh.lineTo(14, 0); sh.lineTo(0, 6); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }); g.translate(0, 19.4, 0.5); K.add(g, st); }
+    K.box(26, 20, 10, st, 0, 10, -5); K.box(7, 9, 0.6, M.darkWood(), 0, 7.5, -0.1); archBlocks(K, 7, 1.0, 1.2, cv, 0, 12, 0, 0, 11);
+    for (let k = 0; k < 7; k++) K.box(0.35, 0.35, 0.1, M.rune(), -3 + k, 10.2, 0.25);
+    for (let k = 0; k < 11; k++) K.box(0.12, 0.8, 0.1, M.rune(), -3 + k * 0.6, 21.8, 3.55, 0, 0, (k % 3 - 1) * 0.4);
+    gable(K, 26, 10, 4, M.copper(), 0, 20, -5, 0, 0.4);
+    const [x, z] = at(0, -38.5); put(ctx, K, 'salao_anao', x, z, 0, { y: base + T2.h - 0.2, box: [[0, -4, 13.5, 5.5]] });
+    for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.4, 8); b.position.set(x + sx * 6.6, base + T2.h + 15.5, z + 3.6); ctx.scene.add(b); }
+    for (const sx of [-1, 1]) brazier(ctx, x + sx * 9, base + T2.h, z + 9, sx > 0, sx * 7);
+  }
+  // ---------- cidade baixa: casas de pedra em anéis, de frente para a ágora; a taverna "Bigorna Bêbada" a leste ----------
+  const HOUSES = [[355, 34], [10, 34], [350, 47], [5, 47], [20, 48], [58, 37], [70, 48], [50, 49], [114, 38], [124, 49], [107, 49], [170, 34], [185, 34], [160, 47], [175, 47], [190, 48], [200, 36]];
+  const houseAt = {};
+  HOUSES.forEach(([deg, rr], i) => { const a = deg * Math.PI / 180, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr, ry = Math.atan2(C.x + AG.x - x, C.z + AG.z - z), w = 7 + r() * 2, d = 6 + r() * 1.5, { K, box } = dwarfHouse(40 + i, w, d); put(ctx, K, i === 1 ? 'taverna_anao' : 'casa_anao', x, z, ry, { y: base, box }); houseAt[deg + '|' + rr] = { x, z, ry, d }; });
+  // taverna: mesas e bancos do lado de fora, barris encostados
+  const tav = houseAt['10|34'], front = (h, k, side = 0) => [h.x + Math.sin(h.ry) * (h.d / 2 + k) + Math.cos(h.ry) * side, h.z + Math.cos(h.ry) * (h.d / 2 + k) - Math.sin(h.ry) * side];
+  { const K = new Kit(), wd = M.darkWood(); for (const side of [-2.8, 2.8]) { K.box(2.2, 0.12, 1.0, wd, side, 0.85, 3.2); for (const sx of [-0.9, 0.9]) K.box(0.12, 0.85, 0.12, wd, side + sx, 0.42, 3.2); for (const bz of [2.4, 4.0]) K.box(2.0, 0.1, 0.4, wd, side, 0.48, bz); } K.add(new THREE.CylinderGeometry(0.12, 0.1, 0.24, 14), plain('mugWood', '#7a5230', { rough: 0.7 }), -2.4, 1.03, 3.2);
+    put(ctx, K, 'mesas_da_taverna', tav.x + Math.sin(tav.ry) * (tav.d / 2), tav.z + Math.cos(tav.ry) * (tav.d / 2), tav.ry, { y: base, box: [[-2.8, 3.2, 1.2, 0.6], [2.8, 3.2, 1.2, 0.6]], occ: false }); }
+  for (const s of [-4.6, 4.6]) { const [x, z] = front(tav, 0.6, s); ctx.place('barrel', x, z, { rf: 0.6 }); }
+  // carroça de minério e pilha de pedra-fagulha para a mineira (cidade baixa, noroeste)
+  const MINE = at(-31, -30);
+  { const K = new Kit(), wd = M.darkWood(); K.box(2.4, 0.9, 1.4, wd, 0, 0.9, 0); for (const sx of [-1, 1]) for (const sz of [-0.8, 0.8]) K.add(new THREE.CylinderGeometry(0.42, 0.42, 0.14, 18), M.iron(), sx * 0.85, 0.42, sz, 0, 0, Math.PI / 2);
+    for (let k = 0; k < 14; k++) K.add(new THREE.DodecahedronGeometry(0.22 + r() * 0.12, 0), k % 4 ? M.dwarfStone() : M.ember(), (r() - 0.5) * 1.8, 1.45 + r() * 0.3, (r() - 0.5) * 1.0, r() * 3);
+    for (let k = 0; k < 22; k++) K.add(new THREE.DodecahedronGeometry(0.3 + r() * 0.25, 0), k % 5 ? M.dwarfStone() : M.ember(), 2.6 + (r() - 0.5) * 2.4, 0.2 + r() * 0.5, (r() - 0.5) * 2.2, r() * 3);
+    put(ctx, K, 'carroca_de_minerio', MINE[0], MINE[1], 0.4, { y: base, box: [[0, 0, 1.3, 0.8], [2.6, 0, 1.3, 1.2]] }); }
+  // NPCs: anões em lugares que fazem sentido (de costas para paredes, perto do que fazem, nunca olhando o nada)
+  const npcList = [];
+  const W = (n, x, z, yaw, y) => { const npc = ctx.worldNpc(n, x, z, yaw); if (npc && y !== undefined) { npc.obj.position.y = y; } npcList.push(npc); return npc; };
+  const face = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
   const brakar = { id: 'brakar', name: 'Mestre Brakar', title: 'Refinador de Pedrafunda', model: 'Barbarian', show: ['1H_Axe'], refine: true, look: { race: 'anao', face: 'valente', hair: { style: 'careca', color: 'ruivo' }, beard: true },
     hello: 'Hmpf! Mais um que quer ver o aço cantar. Traga a arma ou a armadura, o minério e o zeny, e eu esquento a forja.' };
-  const npcs = [
-    [brakar, 18.2, 8.5, -Math.PI / 2],
-    [{ id: 'thorga', name: 'Thorga', title: 'Guardiã do Portão', model: 'Knight', show: ['1H_Sword', 'Round_Shield', 'Knight_Helmet', 'Knight_Cape'], hat: true, look: { race: 'anao', sex: 'f', face: 'valente', hair: { style: 'coque', color: 'ruivo' } },
-      lines: 'Alto lá! Ah, é só um viajante. Bem-vindo a Pedrafunda, a cidade sob os picos.\nAqui todo anão nasce com um machado na mão. Se quer equipamento de verdade, fale com o Mestre Brakar na ferraria.' }, -6, 38, Math.PI],
-    [{ id: 'durgan', name: 'Rei Dúrgan', title: 'Senhor de Pedrafunda', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
-      lines: 'Meu povo cava a montanha há mil invernos. Os picos à nossa volta são os mais altos de Aethra: nada passa por eles sem a nossa permissão.\nDizem que lá no sul, nos Campos de Valcinza, os humanos ergueram um castelo enorme... Pedra mole, pedra de planície.' }, 2, -22, 0],
-    [{ id: 'bofur', name: 'Bárdin', title: 'Mercador de Machados', model: 'Barbarian', show: ['2H_Axe', 'Barbarian_Cape'], shopList: 'geral', shopTitle: '🪓 Machados de Pedrafunda', look: { race: 'anao', face: 'alegre', hair: { style: 'curto', color: 'castanho_escuro' }, beard: true },
-      hello: 'Machado bom é machado anão! Olhe à vontade, mas cuidado com o fio.' }, -12, 2, Math.PI / 2],
-    [{ id: 'helga', name: 'Helga', title: 'Taverneira da Bigorna Bêbada', model: 'Barbarian', show: ['Mug'], look: { race: 'anao', sex: 'f', face: 'alegre', hair: { style: 'longo', color: 'loiro' } },
-      lines: 'Cerveja de cogumelo das cavernas, a melhor do mundo! Quem diz o contrário nunca provou.\nO Brakar? Já quebrou mais espada do que consertou — mas as que aguentam ficam lendárias.' }, -18, -12, 0.6],
-    [{ id: 'grum', name: 'Grum', title: 'Soldado de Pedrafunda', model: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'raspado', color: 'preto' }, beard: true },
-      lines: 'Três turnos de guarda e ainda nenhum troll. Que tédio.' }, 6, 30, Math.PI],
-    [{ id: 'oldra', name: 'Oldra', title: 'Mineira', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'astuto', hair: { style: 'curto', color: 'castanho' } },
-      lines: 'O minério que o Brakar usa sai das galerias lá do fundo. Brilha no escuro, sabia? A gente chama de "pedra-fagulha".' }, 14, -14, -0.8],
-    [{ id: 'lian_vis', name: 'Lian', title: 'Viajante humano', model: 'Rogue', look: { race: 'humano', face: 'gentil', hair: { style: 'curto', color: 'castanho' } },
-      lines: 'Subi a estrada da Geada só para ver as forjas. Valeu cada passo — e cada calo.' }, -4, 18, 2.4],
-    // S-163: mais gente de Pedrafunda pelas ruas
-    [{ id: 'korvin', name: 'Korvin', title: 'Joalheiro das Profundezas', model: 'Barbarian', look: { race: 'anao', face: 'astuto', hair: { style: 'longo', color: 'preto' }, beard: true },
-      lines: 'Rubis do coração da montanha, lapidados à luz da forja. Quer ver? Olhe, mas não toque.' }, -20, 6, 1.2],
-    [{ id: 'brunna', name: 'Brunna', title: 'Mestre-Cervejeira', model: 'Barbarian', show: ['Mug'], look: { race: 'anao', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } },
-      lines: 'A cevada vem das colinas, o cogumelo vem das cavernas e o segredo vem da minha avó.' }, -22, -6, 0.9],
-    [{ id: 'torvald', name: 'Torvald', title: 'Veterano da Guarda', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: 'grisalho' }, beard: true },
-      lines: 'Quarenta invernos de guarda nesse portão. Já vi troll, dragão de gelo e até humano educado.' }, 10, 38, Math.PI],
-    [{ id: 'nim', name: 'Nim', title: 'Aprendiz de Ferreiro', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'castanho' } },
-      lines: 'O Mestre Brakar diz que eu ainda não sei segurar o martelo. Mas já sei carregar o carvão!' }, 14, 4, -1.4],
-    [{ id: 'gudrun', name: 'Gudrun', title: 'Anciã do Clã', model: 'Mage', look: { race: 'anao', sex: 'f', face: 'sabio', hair: { style: 'longo', color: 'branco' } },
-      lines: 'Nossos avós cavaram estas casas na rocha quando o mundo ainda era jovem. Cada runa nas portas conta uma história.' }, -2, -12, 0],
-  ];
-  for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
-  // quadro do refino: parede leste do galpão (por dentro), virada para o oeste — onde o main3d pendura a tabela
-  const cs = Math.cos(SM.ry), sn = Math.sin(SM.ry), lx = 4.2, lz = -3.84; // moldura de madeira na parede do fundo, à direita da forja
+  { const [x, z] = smw(1.5, -1.3); W(brakar, x, z, SM.ry); } // ao lado da bigorna, de frente para a ágora
+  { const [x, z] = smw(-3.6, -0.9); W({ id: 'nim', name: 'Nim', title: 'Aprendiz de Ferreiro', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'castanho' } },
+    lines: 'O Mestre Brakar diz que eu ainda não sei segurar o martelo. Mas já sei atiçar a forja!' }, x, z, SM.ry + Math.PI); } // atiçando a forja
+  { const [gx, gz] = at(0, RW); W({ id: 'thorga', name: 'Thorga', title: 'Guardiã do Portão', model: 'Knight', show: ['1H_Sword', 'Round_Shield', 'Knight_Helmet', 'Knight_Cape'], hat: true, look: { race: 'anao', sex: 'f', face: 'valente', hair: { style: 'coque', color: 'ruivo' } },
+    lines: 'Alto lá! Ah, é só um viajante. Bem-vindo a Pedrafunda, a cidade sob os picos.\nAqui todo anão nasce com um machado na mão. Se quer equipamento de verdade, fale com o Mestre Brakar na ferraria da ágora.' }, gx + 6.4, gz + 7.6, 0);
+    W({ id: 'torvald', name: 'Torvald', title: 'Veterano da Guarda', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: 'grisalho' }, beard: true },
+      lines: 'Quarenta invernos de guarda nesse portão. Já vi troll, dragão de gelo e até humano educado.' }, gx - 6.4, gz + 7.6, 0); } // de costas para as torres do portão, olhando a estrada
+  { const [x, z] = at(6.6, RW - 7.4); W({ id: 'grum', name: 'Grum', title: 'Soldado de Pedrafunda', model: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'raspado', color: 'preto' }, beard: true },
+    lines: 'Três turnos de guarda e ainda nenhum troll. Que tédio.' }, x, z, Math.PI); } // de costas para o portão, vigiando a rua
+  { const [x, z] = at(-10.5, AG.z + 7.4); W({ id: 'bofur', name: 'Bárdin', title: 'Mercador de Machados', model: 'Barbarian', show: ['2H_Axe', 'Barbarian_Cape'], shopList: 'geral', shopTitle: '🪓 Machados de Pedrafunda', look: { race: 'anao', face: 'alegre', hair: { style: 'curto', color: 'castanho_escuro' }, beard: true },
+    hello: 'Machado bom é machado anão! Olhe à vontade, mas cuidado com o fio.' }, x - 1.6, z + 1.6, Math.PI / 2); } // atrás da banca
+  { const [x, z] = at(-21.6, AG.z - 6); W({ id: 'korvin', name: 'Korvin', title: 'Joalheiro das Profundezas', model: 'Barbarian', look: { race: 'anao', face: 'astuto', hair: { style: 'longo', color: 'preto' }, beard: true },
+    lines: 'Rubis do coração da montanha, lapidados à luz da forja. Quer ver? Olhe, mas não toque.' }, x, z, Math.PI / 2); } // sob a estoa, de costas para o muro
+  { const [x, z] = at(-21.6, AG.z + 2); W({ id: 'brunna', name: 'Brunna', title: 'Mestre-Cervejeira', model: 'Barbarian', show: ['Mug'], look: { race: 'anao', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } },
+    lines: 'A cevada vem das colinas, o cogumelo vem das cavernas e o segredo vem da minha avó.' }, x, z, Math.PI / 2); }
+  { const [x, z] = front(tav, 1.0, 0); W({ id: 'helga', name: 'Helga', title: 'Taverneira da Bigorna Bêbada', model: 'Barbarian', show: ['Mug'], look: { race: 'anao', sex: 'f', face: 'alegre', hair: { style: 'longo', color: 'loiro' } },
+    lines: 'Cerveja de cogumelo das cavernas, a melhor do mundo! Quem diz o contrário nunca provou.\nO Brakar? Já quebrou mais espada do que consertou — mas as que aguentam ficam lendárias.' }, x, z, tav.ry); } // na porta da taverna
+  { W({ id: 'oldra', name: 'Oldra', title: 'Mineira', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'astuto', hair: { style: 'curto', color: 'castanho' } },
+    lines: 'O minério que o Brakar usa sai das galerias lá do fundo. Brilha no escuro, sabia? A gente chama de "pedra-fagulha".' }, MINE[0] + 1.2, MINE[1] + 2.4, face(MINE[0] + 1.2, MINE[1] + 2.4, MINE[0] + 1.2, MINE[1])); } // ao lado da carroça
+  { const [x, z] = at(0, -30.6); W({ id: 'durgan', name: 'Rei Dúrgan', title: 'Senhor de Pedrafunda', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
+    lines: 'Meu povo cava a montanha há mil invernos. Os picos à nossa volta são os mais altos de Aethra: nada passa por eles sem a nossa permissão.\nDizem que lá no sul, nos Campos de Valcinza, os humanos ergueram um castelo enorme... Pedra mole, pedra de planície.' }, x, z, 0, base + T2.h); } // diante da escadaria do Salão, de costas para ele
+  for (const sx of [-1, 1]) { const [x, z] = at(sx * 4.4, -31.4); W({ id: 'guarda_rei_' + (sx > 0 ? 'l' : 'o'), name: 'Guarda Real', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: sx > 0 ? 'preto' : 'ruivo' }, beard: true },
+    lines: 'Nenhum passo além sem a palavra do Rei.' }, x, z, 0, base + T2.h); }
+  { const [x, z] = at(-15.5, -16); W({ id: 'gudrun', name: 'Gudrun', title: 'Anciã do Clã', model: 'Mage', look: { race: 'anao', sex: 'f', face: 'sabio', hair: { style: 'longo', color: 'branco' } },
+    lines: 'Nossos avós ergueram estes muros quando o mundo ainda era jovem. Cada runa no santuário conta uma história.' }, x, z, 0, base + T1.h + 1.35); } // diante da estátua do ancestral
+  { const [x, z] = at(15.5, -11.4); W({ id: 'sacerdote_forja', name: 'Irmão Hulda', title: 'Sacerdote da Forja', model: 'Mage', look: { race: 'anao', face: 'sereno', hair: { style: 'careca', color: 'grisalho' }, beard: true },
+    lines: 'No templo guardamos a primeira brasa, acesa pelo Pai-Martelo. Enquanto ela queimar, Pedrafunda não cai.' }, x, z, 0, base + T1.h + 1.35); } // na escadaria do templo, de costas para a porta
+  { const [x, z] = at(4.8, AG.z + 4.8); W({ id: 'lian_vis', name: 'Lian', title: 'Viajante humano', model: 'Rogue', look: { race: 'humano', face: 'gentil', hair: { style: 'curto', color: 'castanho' } },
+    lines: 'Subi a estrada da Geada só para ver as forjas. Valeu cada passo — e cada calo.' }, x, z, face(x, z, C.x + AG.x, C.z + AG.z)); } // admirando a forja de lava
+  // quadro do refino: parede do fundo do galpão (por dentro), virada para a ágora
+  const cs = Math.cos(SM.ry), sn = Math.sin(SM.ry), lx = 4.2, lz = -3.84;
   return { refineBoard: { x: SM.x + lx * cs + lz * sn, y: gY(SM.x, SM.z) + 2.4, z: SM.z - lx * sn + lz * cs, yaw: SM.ry, w: 3.3, h: 2.3 } };
 }
 
@@ -531,137 +626,16 @@ function buildElfCity(ctx) {
   for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
 }
 
-/* =========================== PORTO DAS GAIVOTAS (litoral) =========================== */
-// casa do porto: paredes caiadas com enxaimel de madeira escura, telhado de palha ou de barro, alpendre
-function portHouse(seed) {
-  const K = new Kit(), r = rngOf(seed), w = 6 + r() * 2.5, d = 5.5 + r() * 2, h = 3.2 + r() * 0.8, pl = M.plaster(), wd = M.darkWood(), thatch = r() < 0.5;
-  K.box(w + 0.6, 0.9, d + 0.6, M.greyStone(), 0, -0.2, 0); K.box(w, h, d, pl, 0, 0.25 + h / 2, 0);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.28, h, 0.28, wd, sx * w / 2, 0.25 + h / 2, sz * d / 2);
-  for (const sz of [-1, 1]) { K.box(w, 0.22, 0.25, wd, 0, 0.25 + h, sz * d / 2); K.box(w, 0.18, 0.25, wd, 0, 0.25 + h * 0.5, sz * d / 2); for (let k = -1; k <= 1; k += 2) K.box(0.18, h * 0.62, 0.22, wd, k * w / 4, 0.25 + h * 0.5, sz * d / 2, 0, 0, k * 0.6); }
-  gable(K, w + 0.2, d + 0.2, 2.2 + r() * 0.5, thatch ? M.thatch() : M.clay(), 0, 0.25 + h, 0, 0, thatch ? 0.7 : 0.45);
-  K.box(1.3, 2.2, 0.2, M.wood(), -w / 4, 1.35, d / 2 + 0.08); K.box(1.0, 0.9, 0.12, M.glass(), w / 4, 2.0, d / 2 + 0.05);
-  for (const sx of [-1, 1]) K.box(0.5, 1.0, 0.08, plain('shutter', '#3e6a8a', { rough: 0.8 }), w / 4 + sx * 0.78, 2.0, d / 2 + 0.1, 0, 0, 0);
-  K.box(w * 0.6, 0.12, 1.6, M.wood(), 0, 2.7, d / 2 + 0.8, 0, -0.2); for (const sx of [-1, 1]) K.box(0.16, 2.6, 0.16, wd, sx * w * 0.28, 1.4, d / 2 + 1.5); // alpendre
-  return { K, box: [[0, 0, w / 2 + 0.3, d / 2 + 0.3]] };
-}
-// casco de barco (seções em U), com bancos e remos; veleiro maior com mastro e vela
-function boat(len = 6, sail = false, seed = 1) {
-  const K = new Kit(), r = rngOf(seed), wd = M.wood(), dark = M.darkWood(), W = len * 0.3, H = len * 0.16, SEG = 18, RS = 10;
-  const pos = [], idx = [];
-  for (let i = 0; i <= SEG; i++) { const t = i / SEG, z = (t - 0.5) * len, wk = Math.pow(Math.sin(t * Math.PI), 0.55), hk = 1 + Math.pow(Math.abs(t - 0.5) * 2, 3) * 0.35;
-    for (let j = 0; j <= RS; j++) { const a = j / RS * Math.PI; pos.push(Math.cos(a) * W * wk, H * hk - Math.sin(a) * H * (0.4 + wk * 0.6), z); } }
-  for (let i = 0; i < SEG; i++) for (let j = 0; j < RS; j++) { const a = i * (RS + 1) + j, b = a + RS + 1; idx.push(a, a + 1, b, b, a + 1, b + 1); }
-  const hull = new THREE.BufferGeometry(); hull.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); hull.setIndex(idx); hull.computeVertexNormals();
-  K.add(hull, wd); const inner = hull.clone(); inner.scale(0.94, 0.94, 0.97); inner.translate(0, 0.04, 0); { const ix = inner.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i]; ix[i] = ix[i + 1]; ix[i + 1] = t; } inner.computeVertexNormals(); } K.add(inner, dark);
-  K.add(new THREE.TorusGeometry(1, 0.05, 6, 32), dark, 0, H * 1.02, 0, 0, Math.PI / 2, 0, W, len * 0.5, 1); // borda
-  for (let k = -1; k <= 1; k++) K.box(W * 1.6, 0.08, 0.3, dark, 0, H * 0.55, k * len * 0.22);
-  K.cyl(0.05, 0.05, len * 0.5, wd, W * 0.7, H * 0.9, 0.2, 8, 0.3, Math.PI / 2 - 0.3);
-  if (sail) {
-    K.cyl(0.09, 0.12, len * 1.15, wd, 0, H + len * 0.55, -len * 0.05, 10); K.cyl(0.06, 0.06, len * 0.55, wd, 0, H + len * 0.32, -len * 0.05, 8, 0, Math.PI / 2);
-    const sl = new THREE.PlaneGeometry(len * 0.5, len * 0.75, 6, 8), P = sl.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin((P.getY(i) / (len * 0.75) + 0.5) * Math.PI) * 0.35); sl.computeVertexNormals();
-    K.add(sl, plain('sail', '#efe6cf', { rough: 0.9, side: THREE.DoubleSide }), 0, H + len * 0.7, -len * 0.05 + 0.25, Math.PI / 2);
-  }
-  return K;
-}
-// palmeira: tronco curvo em anéis e folhas compridas penduradas
-function palm(seed) {
-  const K = new Kit(), r = rngOf(seed), H = 7 + r() * 4, lean = 0.8 + r() * 1.4, bark = M.bark();
-  const pts = []; for (let k = 0; k <= 8; k++) { const t = k / 8; pts.push(new THREE.Vector3(Math.pow(t, 1.6) * lean * 2, t * H, 0)); }
-  const curve = new THREE.CatmullRomCurve3(pts); K.add(new THREE.TubeGeometry(curve, 24, 0.22, 10), bark);
-  for (let k = 0; k < 12; k++) { const p = curve.getPoint(k / 12); K.add(new THREE.TorusGeometry(0.24, 0.05, 6, 14), bark, p.x, p.y, 0, 0, Math.PI / 2); }
-  const top = curve.getPoint(1), leafM = plain('palmLeaf', '#4f8a34', { rough: 0.7, side: THREE.DoubleSide });
-  for (let k = 0; k < 9; k++) {
-    const a = k / 9 * Math.PI * 2 + r(), len = 3.4 + r() * 1.2, g = new THREE.PlaneGeometry(len, 0.9, 12, 2), P = g.attributes.position;
-    for (let i = 0; i < P.count; i++) { const x = P.getX(i) + len / 2, y = P.getY(i), w = Math.sin(x / len * Math.PI) * (0.4 + 0.6 * (1 - x / len)); P.setXYZ(i, x, -Math.pow(x / len, 2) * 2.0 + Math.abs(y) * 0.4, y * w); }
-    g.computeVertexNormals(); K.add(g, leafM, top.x, top.y, 0, a, 0, 0.15);
-  }
-  for (let k = 0; k < 4; k++) K.add(new THREE.SphereGeometry(0.17, 12, 10), plain('coconut', '#5a3a1e'), top.x + Math.cos(k * 1.6) * 0.25, top.y - 0.25, Math.sin(k * 1.6) * 0.25);
-  return K;
-}
-// farol listrado em pedra, lanterna de vidro com luz
-function lighthouse() {
-  const K = new Kit(), H = 18;
-  K.add(new THREE.CylinderGeometry(3.2, 4.2, 2.0, 24), M.greyStone(), 0, 0.5, 0);
-  for (let k = 0; k < 6; k++) { const y0 = 1.5 + k * H / 6, t0 = k / 6, t1 = (k + 1) / 6; K.add(new THREE.CylinderGeometry(2.6 - t1 * 1.0, 2.6 - t0 * 1.0, H / 6, 28), k % 2 ? plain('lhRed', '#a8322a', { rough: 0.7 }) : M.plaster(), 0, y0 + H / 12, 0); }
-  K.cyl(2.2, 2.0, 0.4, M.iron(), 0, H + 1.7, 0, 28); K.add(new THREE.TorusGeometry(2.1, 0.05, 6, 32), M.iron(), 0, H + 2.7, 0, 0, Math.PI / 2);
-  for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; K.cyl(0.04, 0.04, 1.0, M.iron(), Math.cos(a) * 2.1, H + 2.3, Math.sin(a) * 2.1, 6); }
-  K.cyl(1.1, 1.1, 2.2, plain('lhGlass', '#fff3c8', { emissive: '#ffd27a', ei: 1.8, rough: 0.1 }), 0, H + 3.0, 0, 20);
-  K.add(new THREE.ConeGeometry(1.5, 1.8, 20), M.copper(), 0, H + 5.0, 0);
-  K.box(1.2, 2.0, 0.2, M.wood(), 0, 2.0, 3.85);
-  return K;
-}
-// tablados onde dá para andar (cais): o main3d usa deckAt no groundAt
+/* =========================== PORTO DAS GAIVOTAS ===========================
+   O porto (cais, navio, docas, farol, casas, mercado e bairro dos mercadores) fica em js3d/port3d.js (rodada 15).
+   Aqui ficam só os tablados onde se anda fora do terreno (cais, prancha, convés, quebra-mar). */
+// tablados onde dá para andar: o main3d usa deckAt no groundAt. y1 (opcional) = altura no fim (rampa)
 const DECKS = [];
 export function deckAt(x, z) {
-  for (const d of DECKS) { const dx = x - d.x, dz = z - d.z, cs = Math.cos(d.yaw), sn = Math.sin(d.yaw), lx = dx * cs - dz * sn, lz = dx * sn + dz * cs; if (Math.abs(lx) <= d.w / 2 && lz >= -0.3 && lz <= d.len) return d.y; }
-  return null;
+  let best = null;
+  for (const d of DECKS) { const dx = x - d.x, dz = z - d.z, cs = Math.cos(d.yaw), sn = Math.sin(d.yaw), lx = dx * cs - dz * sn, lz = dx * sn + dz * cs; if (Math.abs(lx) <= d.w / 2 && lz >= -0.3 && lz <= d.len) { const y = d.y1 === undefined || d.y1 === d.y ? d.y : d.y + (d.y1 - d.y) * Math.max(0, Math.min(1, lz / d.len)); if (best === null || y > best) best = y; } }
+  return best;
 }
-// cais: tábuas sobre estacas, com cordas e cabeços de amarração
-function pier(len = 34, w = 3.2) {
-  const K = new Kit(), wd = M.wood();
-  for (let z = 0; z < len; z += 0.42) K.box(w, 0.1, 0.38, wd, 0, 0, z + 0.21, 0, 0, (Math.sin(z * 7) * 0.012));
-  for (let z = 1.5; z < len; z += 3) for (const sx of [-1, 1]) { K.cyl(0.16, 0.18, 4.2, M.darkWood(), sx * (w / 2 - 0.1), -1.6, z, 10); }
-  for (let z = 4; z < len; z += 9) for (const sx of [-1, 1]) { K.cyl(0.13, 0.15, 0.6, M.iron(), sx * (w / 2 - 0.3), 0.3, z, 12); K.add(new THREE.TorusGeometry(0.17, 0.04, 6, 14), M.rope(), sx * (w / 2 - 0.3), 0.45, z, 0, Math.PI / 2); }
-  return K;
-}
-function fishStand(seed) {
-  const K = new Kit(), r = rngOf(seed), wd = M.wood();
-  K.box(3.2, 0.9, 1.4, wd, 0, 0.45, 0); for (const sx of [-1.5, 1.5]) for (const sz of [-0.6, 0.6]) K.box(0.12, 2.6, 0.12, wd, sx, 1.3, sz);
-  K.box(3.6, 0.08, 1.9, plain('awning', '#2e5ea0', { rough: 0.9 }), 0, 2.6, 0, 0, -0.18);
-  for (let k = 0; k < 9; k++) { const g = new THREE.SphereGeometry(0.12, 12, 8); g.scale(0.5, 0.45, 2.0); K.add(g, plain('fish' + (k % 3), ['#9fb3c0', '#c98a5a', '#7a8e9a'][k % 3], { metal: 0.4, rough: 0.35 }), -1.2 + (k % 5) * 0.6, 0.98, -0.3 + Math.floor(k / 5) * 0.5, 0.2 * r()); K.add(new THREE.ConeGeometry(0.1, 0.18, 8), plain('fishT', '#6a7e8a'), -1.2 + (k % 5) * 0.6, 0.98, -0.3 + Math.floor(k / 5) * 0.5 - 0.45, 0, -Math.PI / 2); }
-  K.box(3.0, 0.06, 1.2, plain('ice', '#dff2f8', { rough: 0.3 }), 0, 0.92, 0);
-  return K;
-}
-function buildPortTown(ctx) {
-  const C = PORT, r = rngOf(515), u = { x: SEA.x - C.x, z: SEA.z - C.z }, ul = Math.hypot(u.x, u.z); u.x /= ul; u.z /= ul; // u: direção do mar
-  const yawSea = Math.atan2(u.x, u.z);
-  // linha da praia na direção do mar
-  let s0 = 0; while (seaDist(C.x + u.x * s0, C.z + u.z * s0) > 1.5 && s0 < 120) s0 += 0.5;
-  const B = { x: C.x + u.x * s0, z: C.z + u.z * s0 };
-  // três cais saindo da praia mar adentro, com barcos amarrados e um veleiro
-  const side = { x: u.z, z: -u.x };
-  [-16, 0, 16].forEach((o, i) => {
-    const px = B.x + side.x * o - u.x * 4, pz = B.z + side.z * o - u.z * 4, len = i === 1 ? 44 : 30;
-    put(ctx, pier(len, i === 1 ? 4 : 3), 'cais', px, pz, yawSea, { y: SEA.level + 1.1, occ: false }); DECKS.push({ x: px, z: pz, yaw: yawSea, len, w: i === 1 ? 4 : 3, y: SEA.level + 1.15 });
-    for (let k = 0; k < 1 + i % 2; k++) { const bz = 10 + k * 11, sd = (k % 2 ? 1 : -1) * 3.6; const bx = px + u.x * bz + side.x * sd, bzz = pz + u.z * bz + side.z * sd; const bk = boat(5 + r() * 2, false, 30 + i * 3 + k); const g = put(ctx, bk, 'barco', bx, bzz, yawSea + (r() - 0.5) * 0.3, { y: SEA.level - 0.32, occ: false }); g.userData.update = t => { g.position.y = SEA.level - 0.32 + Math.sin(t * 1.1 + bx) * 0.07; g.rotation.z = Math.sin(t * 0.9 + bzz) * 0.04; }; ctx.roomAnims.push(g); }
-  });
-  { const px = B.x + u.x * 34 - side.x * 6, pz = B.z + u.z * 34 - side.z * 6; const g = put(ctx, boat(13, true, 77), 'veleiro', px, pz, yawSea + Math.PI / 2, { y: SEA.level - 0.6, occ: false }); g.userData.update = t => { g.position.y = SEA.level - 0.6 + Math.sin(t * 0.7) * 0.12; g.rotation.z = Math.sin(t * 0.6) * 0.05; g.rotation.x = Math.sin(t * 0.5 + 1) * 0.02; }; ctx.roomAnims.push(g); }
-  // farol numa ponta de pedras ao lado do porto
-  { const lx = B.x + side.x * 38 + u.x * 2, lz = B.z + side.z * 38 + u.z * 2; for (let k = 0; k < 8; k++) ctx.place('rock_' + 'ABCDE'[k % 5], lx + (r() - 0.5) * 9, lz + (r() - 0.5) * 9, { scale: 1.2 + r() * 1.2 });
-    const g = put(ctx, lighthouse(), 'farol', lx, lz, yawSea, { y: Math.max(gY(lx, lz), SEA.level + 0.3), box: [[0, 0, 3.5, 3.5]] }); const L = vlight('#ffd27a', 6, 30, 1.4); L.position.set(0, 21, 0); g.add(L); }
-  // casas viradas para a praça (atrás da praia)
-  const back = { x: -u.x, z: -u.z };
-  const spots = [[-22, 6], [-11, 12], [0, 15], [11, 12], [22, 6], [-26, -8], [26, -8], [-14, 26], [14, 26]];
-  spots.forEach(([o, dd], i) => { const x = C.x + side.x * o + back.x * dd, z = C.z + side.z * o + back.z * dd, { K, box } = portHouse(80 + i); put(ctx, K, 'casa_do_porto', x, z, Math.atan2(C.x - x, C.z - z) * 0.4 + yawSea * 0.6, { box }); });
-  // mercado de peixe e redes
-  for (const [o, dd] of [[-8, -4], [8, -4], [0, -8]]) put(ctx, fishStand(o + 50), 'banca_de_peixe', C.x + side.x * o + back.x * dd, C.z + side.z * o + back.z * dd, yawSea + Math.PI, { box: [[0, 0, 1.6, 0.8]] });
-  { const K = new Kit(); for (let k = 0; k < 3; k++) { K.cyl(0.08, 0.08, 2.4, M.darkWood(), k * 2.6, 1.2, 0, 8); } const net = new THREE.PlaneGeometry(5.2, 1.8, 12, 4), P = net.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 1.2) * 0.2 - Math.pow(Math.sin((P.getX(i) / 2.6) * Math.PI), 2) * 0.2); net.computeVertexNormals(); K.add(net, plain('net', '#6a5a3a', { rough: 1, side: THREE.DoubleSide, transparent: true, opacity: 0.75 }), 2.6, 1.4, 0);
-    put(ctx, K, 'redes_de_pesca', C.x + side.x * -30 + back.x * -12, C.z + side.z * -30 + back.z * -12, yawSea + Math.PI / 2, { occ: false }); }
-  for (let k = 0; k < 12; k++) { const o = (r() - 0.5) * 50, dd = -2 - r() * 10; ctx.place(['barrel', 'crate_A', 'crate_B', 'sack'][k % 4], C.x + side.x * o + back.x * dd, C.z + side.z * o + back.z * dd, { rf: 0.6 }); }
-  for (let k = 0; k < 14; k++) { const o = (r() - 0.5) * 110, dd = -6 + (r() - 0.5) * 18, x = C.x + side.x * o + back.x * dd, z = C.z + side.z * o + back.z * dd; if (Math.abs(o) < 30 && dd < 4) continue; put(ctx, palm(200 + k), 'palmeira', x, z, r() * 6, { box: [[0, 0, 0.3, 0.3]], occ: false }); }
-  for (const sx of [-1, 1]) { const b = makeBanner('porto', 1.0, 2.6); const x = C.x + side.x * sx * 4 + back.x * 18, z = C.z + side.z * sx * 4 + back.z * 18; const K = new Kit(); K.cyl(0.1, 0.12, 7, M.darkWood(), 0, 3.5, 0, 10); put(ctx, K, 'mastro', x, z, 0, { box: [[0, 0, 0.2, 0.2]], occ: false }); b.position.set(x, gY(x, z) + 6.6, z + 0.15); b.rotation.y = yawSea; ctx.scene.add(b); }
-  // NPCs: humanos do litoral
-  const P = (o, dd) => ({ x: C.x + side.x * o + back.x * dd, z: C.z + side.z * o + back.z * dd });
-  const npcs = [
-    [{ id: 'marinha', name: 'Capitã Marinha', title: 'Mestre do Porto', model: 'Knight', show: ['1H_Sword', 'Knight_Cape'], look: { race: 'humano', sex: 'f', face: 'valente', hair: { style: 'longo', color: 'castanho_escuro' }, skin: 'escura' },
-      lines: 'Bem-vindo ao Porto das Gaivotas, o único pedaço de Aethra onde se sente cheiro de sal!\nOs barcos saem ao amanhecer. Um dia vamos navegar para além do horizonte — dizem que há ilhas lá fora.' }, 0, 2],
-    [{ id: 'joca', name: 'Joca', title: 'Pescador', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'grisalho' }, beard: true },
-      lines: 'Hoje o mar tá generoso! Peguei um peixe-lua deste tamanho... tá bom, deste tamanho.' }, -9, -6],
-    [{ id: 'iara', name: 'Iara', title: 'Peixeira', model: 'Rogue', show: ['Knife'], shopList: 'geral', shopTitle: '🐟 Mercado do Porto', look: { race: 'humano', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'preto' }, skin: 'escura' },
-      hello: 'Peixe fresquinho, sal, corda, isca... e compro o que você trouxer da estrada!' }, 8, -6],
-    [{ id: 'tonho', name: 'Tonho', title: 'Construtor de Barcos', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'humano', face: 'gentil', hair: { style: 'raspado', color: 'ruivo' }, beard: true },
-      lines: 'Madeira boa vem de Aelindra, mas os elfos não gostam que a gente corte as árvores deles. Então a gente compra das colinas mesmo.' }, -24, -2],
-    [{ id: 'lena', name: 'Lena', title: 'Faroleira', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', sex: 'f', face: 'sereno', hair: { style: 'longo', color: 'loiro' } },
-      lines: 'Toda noite subo os 120 degraus do farol para acender a lanterna. Nenhum barco se perde enquanto eu estiver aqui.' }, 34, -2],
-    [{ id: 'nilo', name: 'Nilo', title: 'Marujo', model: 'Rogue', show: ['Knife_Offhand'], look: { race: 'humano', face: 'astuto', hair: { style: 'careca', color: 'preto' }, skin: 'escura' },
-      lines: 'Já vi uma serpente do mar maior que o veleiro da capitã! Ninguém acredita em mim...' }, 4, -14],
-    [{ id: 'fenn_vis', name: 'Fenn', title: 'Elfo comerciante de sal', model: 'Rogue_Hooded', look: { race: 'elfo', face: 'sereno', hair: { style: 'longo', color: 'platinado' } },
-      lines: 'O sal daqui é o mais puro de Aethra. Levo para Aelindra, onde vira tinta para os estandartes.' }, -14, 6],
-  ];
-  for (const [n, o, dd] of npcs) { const p = P(o, dd); ctx.worldNpc(n, p.x, p.z, yawSea + Math.PI + (r() - 0.5)); }
-  return { beach: B, yawSea };
-}
-
 
 /* =========================== A MURALHA GÉLIDA e a FORTALEZA DA VIGÍLIA NEGRA (S-165) ===========================
    No extremo oeste do Vale da Geada, uma muralha de gelo colossal (≈55 m) guarda o fim do mundo conhecido.
@@ -687,6 +661,21 @@ const FM = {
   rawWood: () => texMat('rawWood', () => woodTex({ base: [26, 26, 26], seed: 71 }), 2.2, { bump: 3 }),
   darkStone: () => texMat('frostStone', () => stoneTex({ base: [210, 6, 34], mortar: '#1c1e22', rows: [40, 60], wide: [60, 140], seed: 73 }), 4),
 };
+/* S-229: o lago congelado do Vale da Geada ganha uma camada de gelo de verdade (rachaduras, bolhas presas, neve soprada nas bordas),
+   lisa e sem o quadriculado que aparecia quando o desenho vinha só da cor do terreno */
+function frozenLake(ctx) {
+  const R = FROZEN.r * 1.08, c = document.createElement('canvas'); c.width = c.height = 1024; const g = c.getContext('2d'), rr = rngOf(919);
+  const gr = g.createRadialGradient(512, 512, 40, 512, 512, 512); gr.addColorStop(0, '#9fc9dd'); gr.addColorStop(0.6, '#b9dbea'); gr.addColorStop(0.88, '#dcedf5'); gr.addColorStop(1, 'rgba(240,246,250,0)'); g.fillStyle = gr; g.fillRect(0, 0, 1024, 1024);
+  for (let k = 0; k < 60; k++) { const x = rr() * 1024, y = rr() * 1024, rad = 30 + rr() * 140, gg = g.createRadialGradient(x, y, 0, x, y, rad); gg.addColorStop(0, `rgba(${rr() < 0.5 ? '120,170,200' : '230,242,248'},${0.12 + rr() * 0.12})`); gg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gg; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); } // manchas: gelo escuro (fundo) e gelo leitoso
+  const crack = (x, y, a, len, w, depth) => { g.strokeStyle = `rgba(245,250,255,${0.35 + rr() * 0.3})`; g.lineWidth = w; g.beginPath(); g.moveTo(x, y); for (let s = 0; s < len; s += 8) { a += (rr() - 0.5) * 0.5; x += Math.cos(a) * 8; y += Math.sin(a) * 8; g.lineTo(x, y); if (depth < 3 && rr() < 0.05) crack(x, y, a + (rr() < 0.5 ? 1 : -1) * (0.6 + rr()), len * 0.45, w * 0.6, depth + 1); } g.stroke(); };
+  for (let k = 0; k < 14; k++) crack(512 + (rr() - 0.5) * 500, 512 + (rr() - 0.5) * 500, rr() * 6.28, 180 + rr() * 380, 1.4 + rr() * 1.4, 0); // rachaduras ramificadas
+  for (let k = 0; k < 500; k++) { const x = 512 + (rr() - 0.5) * 860, y = 512 + (rr() - 0.5) * 860; g.fillStyle = `rgba(255,255,255,${0.25 + rr() * 0.4})`; g.beginPath(); g.arc(x, y, 0.8 + rr() * 2.6, 0, 7); g.fill(); } // bolhas presas no gelo
+  for (let k = 0; k < 40; k++) { const a = rr() * 6.28, d = 380 + rr() * 110, x = 512 + Math.cos(a) * d, y = 512 + Math.sin(a) * d, rad = 40 + rr() * 90, gg = g.createRadialGradient(x, y, 0, x, y, rad); gg.addColorStop(0, 'rgba(248,251,253,0.85)'); gg.addColorStop(1, 'rgba(248,251,253,0)'); g.fillStyle = gg; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); } // neve soprada nas bordas
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  const m = new THREE.Mesh(new THREE.CircleGeometry(R, 96), new THREE.MeshStandardMaterial({ map: t, transparent: true, roughness: 0.18, metalness: 0.05, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  m.rotation.x = -Math.PI / 2; m.position.set(FROZEN.x, heightAt(FROZEN.x, FROZEN.z) + 0.03, FROZEN.z); m.receiveShadow = true; m.renderOrder = 1;
+  m.userData.asset = 'lago_congelado'; m.userData.big = true; ctx.scene.add(m); ctx.placed.push(m); CULL.push(m);
+}
 // telhado de duas águas com neve por cima (uma segunda "capa" branca um pouco maior)
 function snowRoof(K, w, d, h, mat, x, y, z, ry = 0) { gable(K, w, d, h, mat, x, y, z, ry, 0.5); gable(K, w + 0.25, d + 0.1, h + 0.12, FM.snow(), x, y + 0.14, z, ry, 0.42); }
 function icicles(K, r, x0, x1, y, z, ry = 0, n = 12) { const cs = Math.cos(ry), sn = Math.sin(ry); for (let k = 0; k < n; k++) { const u = x0 + (x1 - x0) * (k + r() * 0.6) / n, L = 0.25 + r() * 0.7; K.add(new THREE.ConeGeometry(0.05 + r() * 0.04, L, 6), FM.icicle(), u * cs + z * sn, y - L / 2, -u * sn + z * cs, 0, Math.PI, 0); } }
@@ -735,6 +724,7 @@ function iceWall(len, H, D) {
 function putAbs(ctx, K, asset, cx, cz, opts = {}) { for (const { geos } of K.parts.values()) for (const g of geos) g.translate(-cx, 0, -cz); return put(ctx, K, asset, cx, cz, 0, { y: 0, ...opts }); }
 function buildFrostHold(ctx) {
   const C = FROST, r = rngOf(4242), wd = FM.rawWood(), dk = M.darkWood(), st = FM.darkStone();
+  frozenLake(ctx);
   // ---------- a Muralha ----------
   const H = 56, LEN = 500, wallZ = 2;
   { const w = iceWall(LEN, H, 22); w.position.set(C.wallX, gY(C.wallX + 4, wallZ) - 0.5, wallZ); ctx.scene.add(w); w.userData.asset = 'muralha_gelida'; w.userData.big = true; w.userData.far = 900; ctx.placed.push(w); ctx.occluders.push(w); CULL.push(w); ctx.extraPick && ctx.extraPick.push(w);
@@ -810,7 +800,15 @@ function buildFrostHold(ctx) {
   // ---------- braseiros, lenha, neve amontoada e estandartes negros ----------
   for (const [dx, dz, L] of [[2, -10, true], [16, 8, false], [-12, 6, true], [0, 30, false], [20, -26, false], [-16, -28, true], [30, 0, false]]) brazier(ctx, C.x + dx, gY(C.x + dx, C.z + dz), C.z + dz, L, dx);
   for (const [dx, dz] of [[14, -12], [-10, 30], [2, 40]]) { const K = new Kit(); for (let k = 0; k < 18; k++) K.add(new THREE.CylinderGeometry(0.16, 0.16, 1.6, 8), wd, (k % 6) * 0.34 - 0.85, 0.16 + Math.floor(k / 6) * 0.3, 0, 0, Math.PI / 2, 0); K.add(new THREE.BoxGeometry(2.3, 0.15, 1.8), FM.snow(), 0, 1.0, 0); put(ctx, K, 'lenha', C.x + dx, C.z + dz, r() * 3, { box: [[0, 0, 1.2, 0.9]], occ: false }); }
-  { const K = new Kit(); for (let k = 0; k < 26; k++) { const a = r() * Math.PI * 2, d = 6 + r() * 34, s2 = 0.8 + r() * 2.2, x = Math.cos(a) * d, z = Math.sin(a) * d; K.add(new THREE.SphereGeometry(1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), FM.snow(), x, gY(C.x + x, C.z + z) - gY(C.x, C.z) - 0.15, z, r() * 3, 0, 0, s2 * 1.5, s2 * 0.35, s2); } put(ctx, K, 'neve', C.x, C.z, 0, { occ: false }); }
+  { // S-228: montes de neve assentados no ponto mais baixo do terreno sob eles (nada voando nas encostas), baixinhos e com borda que some no chão
+    const K = new Kit(), y0 = gY(C.x, C.z);
+    for (let k = 0; k < 26; k++) {
+      const a = r() * Math.PI * 2, d = 6 + r() * 34, s2 = 0.8 + r() * 1.8, x = Math.cos(a) * d, z = Math.sin(a) * d, ry = r() * 3;
+      let lo = Infinity, hi = -Infinity; for (let q = 0; q < 9; q++) { const b = q / 8 * Math.PI * 2, rx = q === 8 ? 0 : Math.cos(b) * s2 * 1.5, rz = q === 8 ? 0 : Math.sin(b) * s2; const h = gY(C.x + x + rx, C.z + z + rz); lo = Math.min(lo, h); hi = Math.max(hi, h); }
+      if (hi - lo > s2 * 0.5) continue; // encosta forte demais: não põe monte ali
+      K.add(new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), FM.snow(), x, lo - y0 - 0.12, z, ry, 0, 0, s2 * 1.5, s2 * 0.22 + (hi - lo), s2);
+    }
+    put(ctx, K, 'neve', C.x, C.z, 0, { occ: false }); }
   for (let k = 0; k < 8; k++) ctx.place(['barrel', 'crate_A', 'crate_B', 'sack'][k % 4], C.x + 12 + (r() - 0.5) * 8, C.z - 12 + (r() - 0.5) * 6, { rf: 0.6 });
   for (const [dx, dz] of [[34, -6], [34, 10]]) { const K = new Kit(); K.cyl(0.12, 0.15, 8, dk, 0, 4, 0, 10); put(ctx, K, 'mastro', C.x + dx, C.z + dz, 0, { box: [[0, 0, 0.2, 0.2]], occ: false }); const b = makeBanner('vigilia', 1.3, 3.2); b.position.set(C.x + dx + 0.12, gY(C.x + dx, C.z + dz) + 7.6, C.z + dz); b.rotation.y = Math.PI / 2; ctx.scene.add(b); }
   // ---------- a irmandade de mantos negros (NPCs com roupa de frio) ----------
@@ -834,98 +832,6 @@ function buildFrostHold(ctx) {
   for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
 }
 
-/* =========================== PORTO DAS GAIVOTAS: bairro dos mercadores (S-175) ===========================
-   Cidade portuária de comércio (inspiração de sensação: o grande porto mercante dos MMOs clássicos):
-   Guilda dos Mercadores com cúpula, armazéns de carga, guindastes no cais, um galeão mercante,
-   a feira de toldos coloridos (tapetes, especiarias, cerâmica, tecidos) e mercadores por toda parte. */
-function galleon(len = 24) {
-  const K = boat(len, false, 99), wd = M.wood(), dk = M.darkWood(), H = len * 0.16, sail = plain('sail2', '#f2ead6', { rough: 0.9, side: THREE.DoubleSide, emissive: '#4a4438', ei: 0.35 });
-  K.box(len * 0.34, 0.3, len * 0.26, wd, 0, H * 1.0, -len * 0.36); K.box(len * 0.3, 2.2, len * 0.22, dk, 0, H + 1.2, -len * 0.37); K.box(len * 0.34, 0.3, len * 0.26, wd, 0, H + 2.4, -len * 0.37); // castelo de popa
-  for (let k = 0; k < 4; k++) K.box(0.7, 0.6, 0.1, M.glass(), -len * 0.12 + k * len * 0.08, H + 1.4, -len * 0.48 + 0.02);
-  for (const [z, hgt, sw] of [[len * 0.2, len * 0.95, len * 0.4], [-len * 0.08, len * 1.1, len * 0.48], [-len * 0.3, len * 0.75, len * 0.32]]) {
-    K.cyl(0.18, 0.24, hgt, wd, 0, H + hgt / 2, z, 12);
-    for (const [yy, ww] of [[0.45, 1], [0.78, 0.75]]) { K.cyl(0.08, 0.08, sw * ww, wd, 0, H + hgt * yy, z, 8, 0, 0, Math.PI / 2);
-      const sl = new THREE.PlaneGeometry(sw * ww * 0.95, hgt * 0.28, 8, 6), P = sl.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin((P.getY(i) / (hgt * 0.28) + 0.5) * Math.PI) * 0.6 + Math.cos(P.getX(i) / (sw * ww) * Math.PI) * 0.3); sl.computeVertexNormals(); K.add(sl, sail, 0, H + hgt * (yy - 0.15), z + 0.4, Math.PI / 2 * 0); }
-  }
-  K.cyl(0.12, 0.12, len * 0.45, wd, 0, H + 1.6, len * 0.62, 8, 0, Math.PI / 2 - 0.35); // gurupés
-  return K;
-}
-function warehouse(seed) {
-  const K = new Kit(), r = rngOf(seed), w = 12 + r() * 4, d = 9, h = 6.5, st = M.greyStone(), wd = M.darkWood();
-  K.box(w + 0.6, 1, d + 0.6, st, 0, 0, 0); K.box(w, h, d, st, 0, 0.5 + h / 2, 0); for (const sx of [-1, 1]) K.box(0.6, h, 0.6, M.wood(), sx * w / 2, 0.5 + h / 2, d / 2);
-  gable(K, w + 0.4, d + 0.4, 3.2, M.clay(), 0, 0.5 + h, 0, 0, 0.5);
-  K.box(4.2, 4.6, 0.25, wd, 0, 2.8, d / 2 + 0.05); for (let k = -1; k <= 1; k++) K.box(4.2, 0.18, 0.3, M.iron(), 0, 1.6 + (k + 1) * 1.4, d / 2 + 0.1); // portão de carga
-  K.box(1.6, 0.25, 0.4, wd, 0, h + 0.2, d / 2 + 0.6); K.box(0.25, 0.25, 2.2, wd, 0, h + 0.4, d / 2 + 1.2); // viga do guincho
-  K.add(new THREE.CylinderGeometry(0.02, 0.02, 2.4, 6), M.rope(), 0, h - 1, d / 2 + 2.2);
-  for (let k = 0; k < 6; k++) K.box(1.0, 1.0, 1.0, M.wood(), (k % 3 - 1) * 1.1 + 3.5, 0.5 + Math.floor(k / 3) * 1.0, d / 2 + 1.4, r() * 0.2); // caixas empilhadas
-  for (let k = 0; k < 3; k++) K.add(new THREE.CylinderGeometry(0.42, 0.42, 1.0, 14), M.wood(), -3.8 + k * 0.9, 0.5, d / 2 + 1.3);
-  K.box(3.0, 0.7, 0.12, plain('whSign', '#2a1e14'), -3.5, h - 0.4, d / 2 + 0.07);
-  return { K, box: [[0, 0, w / 2 + 0.3, d / 2 + 0.3]] };
-}
-function guildHall() {
-  const K = new Kit(), st = M.sandStone(), mar = M.marble(), wd = M.darkWood();
-  K.box(22, 1.2, 16, M.greyStone(), 0, 0.2, 0); for (let k = 0; k < 4; k++) K.box(12 - k * 0.6, 0.35, 1.2, mar, 0, 0.18 + k * 0.35, 8.6 + 2.6 - k * 0.6); // escadaria
-  K.box(20, 9, 14, st, 0, 5.2, 0); K.box(21, 0.8, 15, mar, 0, 9.9, 0);
-  for (let k = 0; k < 6; k++) { const x = -7.5 + k * 3; K.cyl(0.55, 0.62, 8.6, mar, x, 5.0, 7.6, 16); K.box(1.5, 0.5, 1.5, mar, x, 9.4, 7.6); K.box(1.5, 0.5, 1.5, mar, x, 0.95, 7.6); } // pórtico de colunas
-  { const sh = new THREE.Shape(); sh.moveTo(-10.5, 0); sh.lineTo(10.5, 0); sh.lineTo(0, 3.4); sh.closePath(); K.add(new THREE.ExtrudeGeometry(sh, { depth: 2.2, bevelEnabled: false }), mar, 0, 10.3, 6.6); } // frontão
-  K.add(new THREE.CylinderGeometry(6.4, 6.4, 3, 32), st, 0, 11.8, -1); K.add(new THREE.SphereGeometry(6.4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), M.copper(), 0, 13.3, -1); // cúpula de cobre
-  K.cyl(0.6, 0.8, 2.2, M.gold(), 0, 20.6, -1, 12); K.add(new THREE.SphereGeometry(0.7, 16, 12), M.gold(), 0, 22.1, -1);
-  K.box(3.4, 5.4, 0.3, wd, 0, 3.6, 7.05); archBlocks(K, 3.4, 0.6, 0.8, mar, 0, 6.3, 7.0, 0, 11);
-  for (const sx of [-1, 1]) for (const yy of [3.5, 7]) K.box(1.6, 2.4, 0.15, M.glass(), sx * 6.5, yy, 7.02);
-  return K;
-}
-function marketStall(seed, kind) {
-  const K = new Kit(), r = rngOf(seed), wd = M.wood(), cols = ['#b8322a', '#2e6aa8', '#d8a020', '#3a8a4a', '#8a3aa0', '#e07a2a'], awn = plain('awn' + kind, cols[kind % cols.length], { rough: 0.9, side: THREE.DoubleSide }), awn2 = plain('awnW', '#f2ead6', { rough: 0.9, side: THREE.DoubleSide });
-  K.box(3.4, 0.95, 1.6, wd, 0, 0.48, 0); K.box(3.7, 0.1, 1.9, M.darkWood(), 0, 0.98, 0);
-  for (const sx of [-1.65, 1.65]) for (const sz of [-0.8, 0.8]) K.box(0.12, 2.8, 0.12, M.darkWood(), sx, 1.4, sz);
-  for (let k = 0; k < 6; k++) K.box(0.62, 0.06, 2.4, k % 2 ? awn : awn2, -1.55 + k * 0.62, 2.85, 0.15, 0, -0.22); // toldo listrado
-  for (let k = 0; k < 6; k++) K.add(new THREE.PlaneGeometry(0.62, 0.3), k % 2 ? awn : awn2, -1.55 + k * 0.62, 2.48, 1.32, 0, 0, 0); // franja
-  if (kind % 4 === 0) for (let k = 0; k < 5; k++) K.add(new THREE.CylinderGeometry(0.22, 0.26, 0.25, 14), plain('spice' + k, ['#c8501a', '#e0b030', '#7a3a1a', '#3a6a2a', '#a0281e'][k], { rough: 1 }), -1.3 + k * 0.65, 1.16, 0.1); // especiarias em tigelas
-  else if (kind % 4 === 1) for (let k = 0; k < 4; k++) K.add(new THREE.CylinderGeometry(0.18, 0.42, 0.9, 14, 1), plain('rug' + k, ['#8a2a1e', '#2a4a8a', '#c89a2a', '#4a2a6a'][k], { rough: 1 }), -1.2 + k * 0.8, 1.45, -0.3, 0, Math.PI / 2, 0.2); // tapetes enrolados
-  else if (kind % 4 === 2) for (let k = 0; k < 6; k++) K.add(new THREE.LatheGeometry([[0.01, 0], [0.16, 0.02], [0.22, 0.18], [0.12, 0.36], [0.09, 0.44], [0.12, 0.48]].map(([a, b]) => new THREE.Vector2(a, b)), 14), plain('pot', '#b8673a', { rough: 0.8 }), -1.4 + k * 0.55, 1.03, (k % 2) * 0.3 - 0.15); // cerâmica
-  else for (let k = 0; k < 5; k++) K.box(0.6, 0.12 + (k % 3) * 0.05, 0.9, plain('cloth' + k, cols[(k + 2) % cols.length], { rough: 1 }), -1.3 + k * 0.65, 1.1, 0); // tecidos dobrados
-  return K;
-}
-function buildMerchantQuarter(ctx, port) {
-  const C = PORT, u = { x: SEA.x - C.x, z: SEA.z - C.z }, ul = Math.hypot(u.x, u.z); u.x /= ul; u.z /= ul;
-  const side = { x: u.z, z: -u.x }, back = { x: -u.x, z: -u.z }, yawSea = port.yawSea, B = port.beach, r = rngOf(919);
-  const at = (o, dd) => ({ x: C.x + side.x * o + back.x * dd, z: C.z + side.z * o + back.z * dd });
-  // Guilda dos Mercadores, de frente para a praça (atrás das casas)
-  { const p = at(0, 64); put(ctx, guildHall(), 'guilda_dos_mercadores', p.x, p.z, yawSea, { box: [[0, 0, 11, 8]] });
-    for (const sx of [-1, 1]) { const b = makeBanner('guilda', 1.6, 5); const q = at(sx * 5.5, 64 - 8.1); b.position.set(q.x, gY(p.x, p.z) + 9.3, q.z); b.rotation.y = yawSea; ctx.scene.add(b); } }
-  // armazéns de carga ao longo da orla
-  [[-46, 4], [46, 4], [-56, 18], [56, 18]].forEach(([o, dd], i) => { const p = at(o, dd), { K, box } = warehouse(300 + i); put(ctx, K, 'armazem', p.x, p.z, yawSea + Math.PI + (o < 0 ? 0.25 : -0.25), { box }); });
-  // feira de toldos coloridos (rua dos mercadores)
-  for (let k = 0; k < 10; k++) { const o = -22 + (k % 5) * 11, dd = k < 5 ? 48 : 38, p = at(o, dd); put(ctx, marketStall(500 + k, k), 'banca_do_mercado', p.x, p.z, yawSea + (k < 5 ? 0 : Math.PI), { box: [[0, 0, 1.8, 0.9]] }); }
-  // guindastes de carga no cais e o galeão mercante atracado no cais central
-  for (const o of [-16, 16]) { const p = { x: B.x + side.x * o + u.x * 3, z: B.z + side.z * o + u.z * 3 }, K = new Kit(), wd = M.darkWood();
-    K.box(0.6, 7, 0.6, wd, 0, 3.5, 0); K.box(0.45, 0.45, 6, wd, 0, 6.8, 2.2, 0, 0.35); K.box(0.3, 3.4, 0.3, wd, 0, 5, 1.4, 0, -0.6); K.add(new THREE.CylinderGeometry(0.02, 0.02, 4, 6), M.rope(), 0, 4.6, 4.8); K.box(1.0, 0.8, 1.0, M.wood(), 0, 2.2, 4.8);
-    put(ctx, K, 'guindaste_do_cais', p.x, p.z, yawSea + (o < 0 ? 0.6 : -0.6), { box: [[0, 0, 0.5, 0.5]], occ: false }); }
-  { const px = B.x + u.x * 26 + side.x * 11, pz = B.z + u.z * 26 + side.z * 11, g = put(ctx, galleon(26), 'galeao_mercante', px, pz, yawSea, { y: SEA.level - 2.3, occ: false, box: [[0, 0, 3.6, 12]] });
-    g.userData.update = t => { g.position.y = SEA.level - 2.3 + Math.sin(t * 0.55) * 0.1; g.rotation.z = Math.sin(t * 0.4) * 0.02; }; ctx.roomAnims.push(g); }
-  // pilhas de carga pela orla
-  for (let k = 0; k < 16; k++) { const p = at((r() - 0.5) * 90, -1 - r() * 8); ctx.place(['crate_A', 'crate_B', 'barrel', 'sack'][k % 4], p.x, p.z, { rf: 0.6 }); }
-  // mercadores
-  const M2 = (n, o, dd, yaw) => { const p = at(o, dd); ctx.worldNpc(n, p.x, p.z, yaw); };
-  const ys = yawSea;
-  M2({ id: 'aurelio', name: 'Aurélio Vasconde', title: 'Mestre da Guilda dos Mercadores', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', face: 'sabio', hair: { style: 'curto', color: 'grisalho' }, beard: true },
-    lines: 'Todo navio que entra no Porto das Gaivotas paga à Guilda — e todo mercador honesto ganha com isso.\nQuer vender em grande? Traga drops raros: os compradores de além-mar pagam bem por presas, cristais e escamas.' }, 0, 54, ys);
-  M2({ id: 'zaira', name: 'Zaíra', title: 'Mercadora de Especiarias', model: 'Rogue', shopList: 'geral', shopTitle: '🌶️ Especiarias de Zaíra', look: { race: 'humano', sex: 'f', face: 'astuto', hair: { style: 'longo', color: 'preto' }, skin: 'escura' },
-    hello: 'Pimenta-de-fogo das dunas, sal rosado, canela do outro lado do mar! Cheire, cheire...' }, -22, 46, ys + Math.PI);
-  M2({ id: 'tadeu', name: 'Tadeu', title: 'Vendedor de Tapetes', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'careca', color: 'castanho' }, beard: true },
-    lines: 'Este aqui foi tecido por noventa dias! Para você, um preço de amigo. Para o meu amigo, um preço de irmão.' }, -11, 46, ys + Math.PI);
-  M2({ id: 'cora', name: 'Cora', title: 'Oleira', model: 'Barbarian', show: ['Mug'], look: { race: 'humano', sex: 'f', face: 'gentil', hair: { style: 'coque', color: 'castanho' } },
-    lines: 'Barro do rio, fogo do forno e paciência. Cada jarro tem o meu polegar marcado no fundo.' }, 0, 46, ys + Math.PI);
-  M2({ id: 'baltazar', name: 'Capitão Baltazar', title: 'Capitão do Galeão Mercante', model: 'Knight', show: ['1H_Sword'], look: { race: 'humano', face: 'valente', hair: { style: 'longo', color: 'ruivo' }, beard: true },
-    lines: 'O "Gaivota Dourada" volta do oriente a cada lua cheia, com o porão cheio. Um dia levo você junto — quando houver para onde ir.' }, 7, 6, ys);
-  M2({ id: 'dolf', name: 'Dolf', title: 'Estivador', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'preto' }, beard: true },
-    lines: 'Caixa pra cá, barril pra lá. Anão no porto? Ora, alguém tem que carregar o peso!' }, -30, 2, ys + 1);
-  M2({ id: 'selene', name: 'Selene', title: 'Mercadora de Tecidos', model: 'Mage', look: { race: 'elfo', sex: 'f', face: 'sereno', hair: { style: 'longo', color: 'platinado' } },
-    lines: 'Seda élfica de Aelindra e lã das montanhas dos anões. No porto, todas as raças fazem negócio.' }, 22, 40, ys);
-  M2({ id: 'fabio', name: 'Fábio', title: 'Cambista', model: 'Rogue', look: { race: 'humano', face: 'astuto', hair: { style: 'curto', color: 'castanho_escuro' } },
-    lines: 'Zeny, ouro de além-mar, pedras preciosas... eu troco tudo. Com uma pequena taxa, é claro.' }, 11, 43, ys);
-}
-
 /* =========================== entrada =========================== */
 // ctx: { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera }
 export function buildCities(ctx) {
@@ -934,9 +840,8 @@ export function buildCities(ctx) {
   ctx.roomAnims.push(anim); // vento nos estandartes e distância de desenho das cidades
   const dwarf = buildDwarfCity(ctx);
   buildElfCity(ctx);
-  const port = buildPortTown(ctx);
-  buildMerchantQuarter(ctx, port); // S-175: bairro dos mercadores (guilda, armazéns, feira, galeão)
+  // o Porto das Gaivotas é montado por buildPortCity/buildMerchants (js3d/port3d.js), chamados pelo main3d logo depois
   buildFrostHold(ctx);             // S-165: a Muralha Gélida e a Fortaleza da Vigília Negra
-  return { refineBoard: dwarf.refineBoard, port };
+  return { refineBoard: dwarf.refineBoard };
 }
-export { makeBanner, flame, brazier, axeGeo, archBlocks, gable, put, stoneTex, woodTex, roofTex, CULL };
+export { makeBanner, flame, brazier, axeGeo, archBlocks, gable, put, stoneTex, woodTex, roofTex, CULL, DECKS };

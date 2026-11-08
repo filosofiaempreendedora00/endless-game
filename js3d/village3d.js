@@ -465,3 +465,45 @@ export function makeBarrel(seed = 4) {
   g.userData.radius = RB;
   return bakeGroup(g);
 }
+
+/* =========================================================================
+   AUDITORIA: pilha de toras (no lugar das caixas marrons "bufadas") e
+   suporte de armas de verdade (com espadas, lança e escudo)
+   ========================================================================= */
+let _barkMat = null, _endMat = null;
+function barkMat() {
+  if (_barkMat) return _barkMat;
+  _barkMat = new THREE.MeshStandardMaterial({ map: canvasTex('bark', 256, 256, (g, W, H) => { g.fillStyle = '#4a3422'; g.fillRect(0, 0, W, H); for (let k = 0; k < 900; k++) { const x = Math.random() * W, y = Math.random() * H, l = 10 + Math.random() * 40; g.strokeStyle = `rgba(${Math.random() < 0.5 ? '20,12,6' : '120,95,70'},${0.25 + Math.random() * 0.35})`; g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x + (Math.random() - 0.5) * 6, y + l); g.stroke(); } for (let k = 0; k < 25; k++) { g.fillStyle = 'rgba(80,110,50,0.35)'; g.beginPath(); g.ellipse(Math.random() * W, Math.random() * H, 6 + Math.random() * 12, 3 + Math.random() * 6, 0, 0, 7); g.fill(); } }), roughness: 0.95 });
+  return _barkMat;
+}
+function endMat() { // corte da tora: anéis de crescimento e rachaduras
+  if (_endMat) return _endMat;
+  _endMat = new THREE.MeshStandardMaterial({ map: canvasTex('logend', 128, 128, (g, W, H) => { const c = W / 2; g.fillStyle = '#c9a070'; g.fillRect(0, 0, W, H); for (let r = 60; r > 2; r -= 3 + Math.random() * 3) { g.strokeStyle = `rgba(120,80,45,${0.3 + Math.random() * 0.3})`; g.lineWidth = 1.2; g.beginPath(); g.arc(c + (Math.random() - 0.5) * 2, c + (Math.random() - 0.5) * 2, r, 0, 7); g.stroke(); } g.strokeStyle = 'rgba(60,35,20,0.6)'; g.lineWidth = 2; for (let k = 0; k < 3; k++) { const a = Math.random() * 6.28; g.beginPath(); g.moveTo(c, c); g.lineTo(c + Math.cos(a) * 50, c + Math.sin(a) * 50); g.stroke(); } g.strokeStyle = '#3a2614'; g.lineWidth = 6; g.beginPath(); g.arc(c, c, 61, 0, 7); g.stroke(); }), roughness: 0.9 });
+  return _endMat;
+}
+export function makeLogPile(seed = 9) {
+  const rng = rngOf(seed), g = new THREE.Group(), L = 2.4;
+  const rows = [[4, 0], [3, 1], [2, 2]];
+  for (const [n, row] of rows) for (let k = 0; k < n; k++) {
+    const r = 0.17 + rng() * 0.05, x = (k - (n - 1) / 2) * 0.38, y = 0.18 + row * 0.32;
+    const log = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.04, L * (0.92 + rng() * 0.12), 14, 1, false), [barkMat(), endMat(), endMat()]);
+    log.rotation.z = Math.PI / 2; log.rotation.y = (rng() - 0.5) * 0.06; log.position.set((rng() - 0.5) * 0.15, y, x); log.castShadow = log.receiveShadow = true; g.add(log);
+  }
+  // estacas de contenção nas pontas
+  for (const s of [-1, 1]) for (const zz of [-0.85, 0.85]) { const st = M(new THREE.CylinderGeometry(0.05, 0.06, 1.0, 8), barkMat(), s * 0.95, 0.45, zz); st.rotation.z = s * 0.08; g.add(st); }
+  g.userData.radius = 1.1; return g;
+}
+export function makeWeaponRack() {
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ map: woodTex(7, [104, 70, 40]), roughness: 0.8 }), steel = std('#c8ccd2', { metalness: 0.85, roughness: 0.3 }), leather = std('#4a2e1a');
+  for (const s of [-1, 1]) { g.add(M(new THREE.BoxGeometry(0.1, 1.5, 0.1), wood, s * 0.75, 0.75, 0)); g.add(M(new THREE.BoxGeometry(0.1, 0.08, 0.6), wood, s * 0.75, 0.04, 0)); }
+  for (const y of [0.35, 1.25]) g.add(M(new THREE.BoxGeometry(1.6, 0.08, 0.1), wood, 0, y, 0));
+  const sword = (x, tilt) => { const sw = new THREE.Group(); sw.position.set(x, 0.12, 0.02); sw.rotation.z = tilt; g.add(sw);
+    const bl = M(new THREE.BoxGeometry(0.05, 0.85, 0.012), steel, 0, 0.6, 0); g.add; sw.add(bl); const tip = M(new THREE.ConeGeometry(0.035, 0.12, 4), steel, 0, 1.08, 0); tip.scale.z = 0.25; sw.add(tip);
+    sw.add(M(new THREE.BoxGeometry(0.22, 0.035, 0.04), std('#8a7a5a', { metalness: 0.7, roughness: 0.4 }), 0, 0.17, 0)); sw.add(M(new THREE.CylinderGeometry(0.018, 0.02, 0.16, 8), leather, 0, 0.08, 0)); sw.add(M(new THREE.SphereGeometry(0.03, 10, 8), std('#8a7a5a', { metalness: 0.7 }), 0, -0.01, 0)); };
+  sword(-0.45, 0.04); sword(-0.15, -0.03); sword(0.15, 0.05);
+  const spear = new THREE.Group(); spear.position.set(0.48, 0.05, 0.02); spear.rotation.z = -0.05; g.add(spear); spear.add(M(new THREE.CylinderGeometry(0.02, 0.022, 1.9, 8), wood, 0, 0.95, 0)); const head = M(new THREE.ConeGeometry(0.045, 0.22, 4), steel, 0, 2.0, 0); head.scale.z = 0.35; spear.add(head);
+  const shield = new THREE.Group(); shield.position.set(0, 0.55, -0.12); shield.rotation.x = -0.15; g.add(shield);
+  const disc = M(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 28), new THREE.MeshStandardMaterial({ map: woodTex(4, [130, 84, 46], 6), roughness: 0.8 }), 0, 0, 0); disc.rotation.x = Math.PI / 2; shield.add(disc);
+  const rim = M(new THREE.TorusGeometry(0.32, 0.02, 6, 32), IRON, 0, 0, 0); shield.add(rim); const boss = M(new THREE.SphereGeometry(0.08, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), IRON, 0, 0, -0.02); boss.rotation.x = -Math.PI / 2; shield.add(boss);
+  g.userData.radius = 0.9; return bakeGroup(g);
+}

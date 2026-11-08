@@ -2,285 +2,99 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (46)
+## Pendentes (15)
 
-### S-178 · Área do mapa: Área da tela (2277×606 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:04:49 · **Mapa:** Pedrafunda (tile [-271, -307])
+### S-230 · Área do mapa: Área da tela (360×230 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:01:57 · **Mapa:** Vila de Alvorada (tile [-34, 25])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** corrigir os bugs das coisas dentro das pedras, aumentar o tamanho da cidade e inspirar ao maximo essa cidade naquela cidade do filme da Odisseia que lançou recente, aquela cidade onde o pessoal saiu de dentro do cavalo de troia. Pode se inspirar bastante naquela ciade. E tornar essa cidade dos anoes maiores. E tbm... cade os anoes? Nao pode ser so model ode humano menor, precisa se parecer de fato muito com anao, inspirado no wow se quiser, com anoes mais cabeçudos e tudo mais, humanoides mas mais robustos e brutos
-- ![print](img/S-178.png)
+- **Sugestão:** queria melhorar muuuuito esse animal parecendo mais um pegasus. Melhorar MUITO esse grafico, que ainda ta muito baixo. QUero penas, rosto mais realistas, perna nao torta, rabo de cabalo, asas maiores. que nao pareçam morcego...
+- ![print](img/S-230.png)
 
-### S-179 · Área do mapa: Área da tela (804×195 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:05:31 · **Mapa:** Campos de Valcinza (tile [-297, 269])
+### S-231 · Área do mapa: Área da tela (298×311 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:03:21 · **Mapa:** Vila de Alvorada (tile [-78, 14])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** resolver bugs de grama em cima do concreto aqui. Dentro do castelo precisa ser full concreto mesmo sem grama
-- ![print](img/S-179.png)
+- **Sugestão:** a mestra das classes precisa ter uma fisionomia unica, nao com chapeu e cajado, e sim algo mais unico e parecido com o ragnarok online, roupas mais especiais e feicao mais amigavel
+- ![print](img/S-231.png)
 
-### S-180 · Área do mapa: Área da tela (275×212 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:05:57 · **Mapa:** Campos de Valcinza (tile [-292, 296])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao acho que casa com chafariz aqui. Podia ter aquele rio em volta do castelo como tinha antigamente como protecao.
-- ![print](img/S-180.png)
-
-### S-181 · Área do mapa: Área da tela (258×133 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:06:21 · **Mapa:** Campos de Valcinza (tile [-292, 296])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o portal aqui bugou. Precisa esta r evidente, nao denrto de escada
-- ![print](img/S-181.png)
-
-### S-182 · Área do mapa: Área da tela (117×119 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:06:36 · **Mapa:** Campos de Valcinza (tile [-292, 296])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** essa chama precisava ser beeem mais realista do que está
-- ![print](img/S-182.png)
-
-### S-183 · Área do mapa: Área da tela (1233×522 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:07:18 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** aqui por dentro dicou tudo com parede branca bugada, precisa consertar isso. E o gráfico do tapeta aqui precia melgorar tbm.
-- ![print](img/S-183.png)
-
-### S-184 · Área do mapa: Área da tela (907×194 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:07:28 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostei ds ideias das armaduras mas precisam serr muito melhores
-- ![print](img/S-184.png)
-
-### S-185 · Área do mapa: Área da tela (1590×272 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:08:08 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** tem que ter algo na lore aqui de falar de espadas de grandes guerreiros e blablabla, e mostrar as espadas fodas. Inspirar muito em assassins creed aqui pra construir isso
-- ![print](img/S-185.png)
-
-### S-186 · Área do mapa: Área da tela (1339×588 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:09:00 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso que tudo isso aqui seja muuuuuito inspirado no castelo la principal onde ocorre o game of thrones, aquele que mais aparece cenas e tal. Só o trono que nao pode ser copia, mas todo o restante, pode ser o mais proximo possivel que vc conseguir.
-- ![print](img/S-186.png)
-
-### S-187 · Área do mapa: Área da tela (1037×288 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:09:30 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** aqui precisamos de outros modelos, com armaduras de verdade. e O rei precisa ter muuuuuito mais cara de rei. E repare que te mmulher dentro da pedra ali
-- ![print](img/S-187.png)
-
-### S-188 · Área do mapa: Área da tela (2173×789 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:10:36 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostei da ideia d biblioteca, mas melgorar muuuito esse apostento e transformar em uma biblioteca foda de verdade. Esse mapa mundi tbm ali, ou melhor globo, precisa ser foda tbm e realista representar o mapa do local sempre e nao o mapa mundi como um todo como o da vida real. Seria o desse universo aqui mesmo
-- ![print](img/S-188.png)
-
-### S-189 · Área do mapa: Área da tela (305×198 px) (sobre: Minimapa, Menu lateral)
-- **Status:** pendente · **Quando:** 2026-11-08T18:11:03 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** como estou dentro de um local, o mapa precisa se adpartar pra eu saber exatamente onde vou. Nao posso permanecer no mapa mundi
-- ![print](img/S-189.png)
-
-### S-190 · Área do mapa: Área da tela (390×288 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:11:19 · **Mapa:** Campos de Valcinza (tile [1750, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** melhorar fogo e obviamente esse aposento como um todo
-- ![print](img/S-190.png)
-
-### S-191 · Área do mapa: Área da tela (787×407 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:12:04 · **Mapa:** Campos de Valcinza (tile [-292, 296])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao sei se isso é padrao de catelo mas achei beem estranho. Precisaria mehorar isso pra ser mais real
-- ![print](img/S-191.png)
-
-### S-192 · Área do mapa: Área da tela (377×415 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:14:19 · **Mapa:** Vila de Alvorada (tile [-75, 31])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o ato de atacar, precisa sair som do s golpes. E a animacao de ataque precisa melhorar muito.Tb nao quero que, se eu tentar atacar o 'ar' ele titubeie e pare. O ataque do 'anda'precisa ser o mesmo de como se eu atacasse algum objeto
-- ![print](img/S-192.png)
-
-### S-193 · Área do mapa: Área da tela (183×318 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:14:55 · **Mapa:** Vila de Alvorada (tile [-77, 27])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** precisa se parecer mais uma freira ou santa e nao uma vagabunda. Precisa ser uma pegada mais priest
-- ![print](img/S-193.png)
-
-### S-194 · Área do mapa: Área da tela (324×151 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:15:53 · **Mapa:** Vila de Alvorada (tile [1298, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** precisa parecer muito mais feno e o ambiente inteiro interno precisa parecer mais um estábulo. seinto que falta muito detalhe nesse ambiente interior, na lampada, no chao, no curral... pra deixar tudo muito mais detalhado e realista
-- ![print](img/S-194.png)
-
-### S-195 · Área do mapa: Área da tela (264×167 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:16:59 · **Mapa:** Vila de Alvorada (tile [-72, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o escudo ta mal feito e flutuando demais no braço. Precisa melhorar ele. E preciso de uma armadura simples e nao de capa como guerreiro
-- ![print](img/S-195.png)
-
-### S-196 · Área do mapa: Área da tela (625×460 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:18:05 · **Mapa:** Vila de Alvorada (tile [-73, 32])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso que o meu mouse, meu cursor, direcione pra onde estou focando com a camera, de forma que eu mei oque fixe um local, segure o botao esquerdo do mouse e consiga ir andando com o WASD pra acertar meus inimigos de forma precisa
-- ![print](img/S-196.png)
-
-### S-197 · Área do mapa: Área da tela (258×95 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:32:03 · **Mapa:** Vila de Alvorada (tile [-55, 22])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ficou ainda a boca de fora, nao ficou legal. E nao podia ser campones se ta de elmo e sim outra roupa
-- ![print](img/S-197.png)
-
-### S-198 · Área do mapa: Área da tela (199×160 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:32:51 · **Mapa:** Vila de Alvorada (tile [-60, 31])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** tirar essa caixa do meio do camino, ou colocar mais prox ali da feirante
-- ![print](img/S-198.png)
-
-### S-199 · Área do mapa: Área da tela (286×183 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:34:09 · **Mapa:** Campos de Verdelume (tile [15, 51])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao quero que afunda TANTO quando eu esteja acima e sim so um pouquinho entre agua
-- ![print](img/S-199.png)
-
-### S-200 · Área do mapa: Área da tela (254×269 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:35:13 · **Mapa:** Vila de Alvorada (tile [-73, 26])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao quero que a arma padrao do arqueiro seja uma besta e sim um arco. E o movimento de disparo de flechas desse personagem precisa ser perfeito
-- ![print](img/S-200.png)
-
-### S-201 · Área do mapa: Área da tela (194×256 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:35:54 · **Mapa:** Vila de Alvorada (tile [-74, 30])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o ladino tem que ter roupas mais parecidas com a de um gatuno do ragnarok e nao manter o campones
-- ![print](img/S-201.png)
-
-### S-202 · Área do mapa: Área da tela (335×324 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:36:44 · **Mapa:** Vila de Alvorada (tile [-74, 31])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ele tem que atacasr com um FACA E MAP [ARECER.O VOLVERINE. ELE PRECISA TER 1 ADAGA COMO ATAQUE.E pode ter espaço pra u m escudo como broquel, mas esse so pode aparecer se eu tiver de fato o equipamenteo equipado
-- ![print](img/S-202.png)
-
-### S-203 · Interface: Área de 161×61 px em Janela "👑 Painel do Mestre" — "Cavaleiro Rúnico · ⚜️"
-- **Status:** pendente · **Quando:** 2026-11-08T18:37:45 · **Mapa:** Vila de Alvorada (tile None)
+### S-232 · Interface: Área de 553×704 px em Janela "👑 Painel do Mestre" — "🫧 Bolhinha · Nv. 1 · 📍 Vila de Alvorada · 📍 Campos de Verdelume · 📍 Bosque Sussurrante · 📍 Ruínas de Kael · 📍 Coli"
+- **Status:** pendente · **Quando:** 2026-11-08T19:07:49 · **Mapa:** Dunas de Sal-Rubro (tile None)
 - **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** o nome desse nao pode ser runico e sim  cavalaiero. E tanto ele quato o paladin podem ter montarias proprias que seria naquele bicho analogo ao peco peco que flaei pra vc criar. E obviamente isso é uma skill e nao daria pra usar montaria normal enquanto tivesse montado nesse monstro
-- ![print](img/S-203.png)
+- **Sugestão:** nao quero que o menu de master dê essas possibilidades , e sim o mapa. Nao quero todos npcs e tudo mais
+- ![print](img/S-232.png)
 
-### S-204 · Área do mapa: Área da tela (329×239 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:38:23 · **Mapa:** Vila de Alvorada (tile [-73, 29])
+### S-233 · Área do mapa: Área da tela (294×210 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:13:53 · **Mapa:** Vila de Alvorada (tile [-72, 29])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** esquece isso de parecer uma fada. Aqui até ok ter capa mas precisa ser muuuito mais realista, parecendo que tenha efeito fisico mesmo e nao um retangulozao. Precisa ser tudo muito melhor e ter uma armadura
-- ![print](img/S-204.png)
+- **Sugestão:** gostaria que enquanto o boto esquerdo do mouse esteja sendo pressionado, que o cursor funcione como um alvo, nao colorido como emoji e sim algo que deixe claro onde está sendo mirado. E essa mecânica de atacar e poder anr enquanto seguraa, e tbm lidar com range e etc, hit box, a forma de andar... tudo isso precisa ser melhorado pra que seja mais fiel à realidade. E tambem quero sons de ataque com laminas, espadas etc. Precisa sair som pra ficar initivo quando um golpe acertou e quando deu miss. E o Miss tbm tem que aparecer. quando vc acera o nada, fora do range
+- ![print](img/S-233.png)
 
-### S-205 · Área do mapa: Área da tela (278×244 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:38:55 · **Mapa:** Vila de Alvorada (tile [-73, 30])
+### S-234 · Área do mapa: Área da tela (170×76 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:15:18 · **Mapa:** Vila de Alvorada (tile [-73, 29])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso rter animacoes de atqeus diferntes entre as classes. Nao posso fazer com que todos ataquem da exatae mesma forma
-- ![print](img/S-205.png)
+- **Sugestão:** quando eu tiver com o botao esquerdo selecionado e mover o cursor, tbm tem que fazer com que eu consiga mover a camera cmo um todo, mesmo que de forma mais 'devagar', como se com o mouse mais 'pesado' e nao leve. E esse pesado ou leve pode ser mudado tbm nas configuracoes. Pesado ou leve de ataque no caso
+- ![print](img/S-234.png)
 
-### S-206 · Área do mapa: Área da tela (291×294 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:39:36 · **Mapa:** Vila de Alvorada (tile [-72, 27])
+### S-235 · Interface: Área de 973×683 px em Palco do personagem — "‹ · arraste ou / para girar · rodinha aproxi · A · D · ← · → · ›"
+- **Status:** pendente · **Quando:** 2026-11-08T19:17:20 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** gostei que resolver os bugs. So acho que ficou muito espaço vazio do lado direito de forma desnecessaria
+- ![print](img/S-235.png)
+
+### S-236 · Área do mapa: Área da tela (370×249 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:18:41 · **Mapa:** Vila de Alvorada (tile [-74, 29])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao existe capa aqui e esse instrumento ficou minusculo, na pode isso. Precisa ser algo beeeeem melhor
-- ![print](img/S-206.png)
+- **Sugestão:** me incomoda muito o fato de meu modelo ir 'slidando' pro lado quando eu to atacando. Preciso que as pernas se mexam se e utiver andando pro lado, de forma real. Precisa ser mais realista isso. E eu preciso me mover mais devagar enquanto eu estiver atacando, obrigatoriamente, pra ser real. Estilo wow
+- ![print](img/S-236.png)
 
-### S-207 · Interface: Área de 155×76 px em Janela "👑 Painel do Mestre" — "Lâmina Sombria · 🌑 · Saqueador · 💰"
-- **Status:** pendente · **Quando:** 2026-11-08T18:40:37 · **Mapa:** Vila de Alvorada (tile None)
+### S-237 · Interface: Área de 145×123 px em Janela "📖 Bestiário"
+- **Status:** pendente · **Quando:** 2026-11-08T19:20:41 · **Mapa:** Vila de Alvorada (tile None)
 - **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** gostaria de outros nomes mais inspirados ali no algoz e desordeiro do ragnarok, mas sem deixar escrachado que é o mesa coisa. Mas em relacao às classes pode ser muito parecido mesmo. So odiei isso de saqueador por exemplo
-- ![print](img/S-207.png)
+- **Sugestão:** clicando no mosntro gostaria de uma pup-up na tela tal que eu consiga mexer nele 360 e ver com mais detalhes, dar zoom e etc
+- ![print](img/S-237.png)
 
-### S-208 · Área do mapa: Área da tela (494×447 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:42:06 · **Mapa:** Porto das Gaivotas (tile [307, 315])
+### S-238 · Interface: Área de 133×40 px em Janela "📖 Bestiário"
+- **Status:** pendente · **Quando:** 2026-11-08T19:21:05 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao gostei desse nome
+- ![print](img/S-238.png)
+
+### S-239 · Área do mapa: Área da tela (145×129 px)
+- **Status:** pendente · **Quando:** 2026-11-08T19:22:24 · **Mapa:** Vila de Alvorada (tile [-61, 13])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** aqui ficou feio e aleatorio assim. Prefiro que tenha um navio aqui que eu possa entrar e explorar. E tenha npcs dentro do navio. Pode se inspirar no que exist em alberta. Capriche nesse navio por favor. E nao deixe bugs. Tbm nao quero agua dentro dos barcos e navios. Cuidado com ios bugs squi dessa cidade
-- ![print](img/S-208.png)
+- **Sugestão:** esse hat de urso aqui ainda icou zoado, muito estrsnho
+- ![print](img/S-239.png)
 
-### S-209 · Área do mapa: Área da tela (350×330 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:42:32 · **Mapa:** Porto das Gaivotas (tile [315, 261])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gosto dessa ideia de farol mas claramente ta mal posicionado aqui. Precisa pensar melhor
-- ![print](img/S-209.png)
+### S-240 · Interface: Área de 333×323 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
+- **Status:** pendente · **Quando:** 2026-11-08T19:23:08 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** está com muito lag ao arrastar
+- ![print](img/S-240.png)
 
-### S-210 · Área do mapa: Área da tela (802×735 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:42:50 · **Mapa:** Porto das Gaivotas (tile [281, 274])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ficou tudo muito quadradao aqui, nao ta legal
-- ![print](img/S-210.png)
+### S-241 · Interface: Área de 321×313 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
+- **Status:** pendente · **Quando:** 2026-11-08T19:23:22 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao quero isso de aureola. So roupa mesmo
+- ![print](img/S-241.png)
 
-### S-211 · Área do mapa: Área da tela (851×180 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:43:26 · **Mapa:** Porto das Gaivotas (tile [265, 266])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** deixar essas barraquinhas mais proximas e dar detalhes pra esses peixes e não deixar tudo assim aleatorio.
-- ![print](img/S-211.png)
+### S-242 · Interface: Área de 299×266 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)>"
+- **Status:** pendente · **Quando:** 2026-11-08T19:24:23 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** a forma de sentar em montaria precisa ser melhorada MUITO ainda. O cavalo ainda está muito amador, mas preciso que isso de a pessoa sentar direito serja feita com muito esmero, pois sera util pra todas as montarias
+- ![print](img/S-242.png)
 
-### S-212 · Área do mapa: Área da tela (1548×276 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:43:57 · **Mapa:** Porto das Gaivotas (tile [251, 251])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** algumas das cases podiam ter portas pra coisas internas com npcs e coisa uteis la dentro
-- ![print](img/S-212.png)
+### S-243 · Interface: Área de 266×227 px em Janela "✦ Loja de Auroras" — "Capitão Bravo"
+- **Status:** pendente · **Quando:** 2026-11-08T19:25:01 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** prefiro que seja um tigre siberiano aqui e nao uma onça. E precisa melhorar esassas pernas pq tao feias
+- ![print](img/S-243.png)
 
-### S-213 · Área do mapa: Área da tela (503×363 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:44:12 · **Mapa:** Porto das Gaivotas (tile [295, 230])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** aumentar quantidade de coqueiros e tornar melhor esteticamente
-- ![print](img/S-213.png)
+### S-244 · Interface: Área de 301×352 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · Trotavento · Rara · mesma velocidade das outras"
+- **Status:** pendente · **Quando:** 2026-11-08T19:25:57 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas
+- ![print](img/S-244.png)
 
-### S-214 · Área do mapa: Área da tela (1009×218 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:44:21 · **Mapa:** Porto das Gaivotas (tile [261, 246])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** melhorar estetica das casas
-- ![print](img/S-214.png)
-
-### S-215 · Área do mapa: Área da tela (277×61 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:45:17 · **Mapa:** Porto das Gaivotas (tile [273, 295])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** tem uns pinos aleatorios aqui que nao fazem sentio, precisa ser alho mais realista
-- ![print](img/S-215.png)
-
-### S-216 · Área do mapa: Área da tela (919×339 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:45:59 · **Mapa:** Porto das Gaivotas (tile [275, 307])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao ta fisicamente realistater agua de um lado que vai ate certo local e do lado direito a agua é menor. E esse barco com areia dentro tbm nao ta legal
-- ![print](img/S-216.png)
-
-### S-217 · Área do mapa: Área da tela (1331×277 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:47:18 · **Mapa:** Porto das Gaivotas (tile [264, 264])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** tanto a estetica dos npcs nao ta legal, quanto a posicao. nunca pode ter npcs olhando pro 'nada'. Precisam sempre estar posicionados em um local em qie pessoas estariam e nao soltos do nada. Em geral teriam que estar perto de objetos e de costas pra parede e nunca defretne olhando pra parede. Vc tem que melhorar o posicionamento dos npcs como umtodo. Nessas novas cidasdes que vc anda criando
-- ![print](img/S-217.png)
-
-### S-218 · Área do mapa: Área da tela (2234×655 px) (sobre: Minimapa)
-- **Status:** pendente · **Quando:** 2026-11-08T18:48:05 · **Mapa:** Porto das Gaivotas (tile [185, 312])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** gosto da ideia de deserto, mas nao acho que a cidade da água seja a mais inteligente pra estar colada no desetto. Esse posicionamento estrategico entre as cidades precisa ser mais inteligente como um roso pera nao ficar estranho
-- ![print](img/S-218.png)
-
-### S-219 · Interface: Área de 712×212 px em Palco do personagem
-- **Status:** pendente · **Quando:** 2026-11-08T18:51:12 · **Tela:** Seleção de personagens
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** repara que parte de baixo ta cortada e isso nao é nada legal. Melhore o grafico desse circulo de baixo tambem
-- ![print](img/S-219.png)
-
-### S-220 · Interface: Área de 381×516 px em Palco do personagem
-- **Status:** pendente · **Quando:** 2026-11-08T18:51:48 · **Tela:** Seleção de personagens
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** esse cajado ta excessivamente grande. e na oé assm que segura um cajado. Essas rodelas em volta tbm nao existe, nao pode ser assim, ta ridiculo
-- ![print](img/S-220.png)
-
-### S-221 · Área do mapa: Área da tela (807×662 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:53:05 · **Mapa:** Dunas de Sal-Rubro (tile [87, 277])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** melhore consideravelmente o gráfico disso, tornando mais realistas. Ta tudo muito com forma geométrica. da pra melhorar muuuuito esse gráfico pra que nao fique tudo como bolotas. olha esse pe e braços ridiculos.   unica cosia que ficou razoavel foram as asas
-- ![print](img/S-221.png)
-
-### S-222 · Área do mapa: Área da tela (244×171 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:53:38 · **Mapa:** Dunas de Sal-Rubro (tile [63, 227])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ficou meio parecido com uma lagosta ou caranguejo, mas precisa ser muito mais um escorpiao
-- ![print](img/S-222.png)
-
-### S-223 · Área do mapa: Área da tela (297×263 px)
-- **Status:** pendente · **Quando:** 2026-11-08T18:55:08 · **Mapa:** Dunas de Sal-Rubro (tile [52, 288])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** patas muito grudadas. Pode ser menor tbmessa formiga. E menos 'geometrica'. Mais realista
-- ![print](img/S-223.png)
-
-## Feitas (177)
+## Feitas (229)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -1530,3 +1344,367 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** nao gostaria que fosse copia muito descarada do Wow (la é grifo ne?) Gostaria de pelo menos que fosse muuuit inspirado naquele bicho do harry potter que é um cavalo com asas. Acho que petiucio o nome, do hagrid. Mas teria que ser uma criadtura muuuito foda que vc fossse criar e nao uma meia boca. E aí sim, beleaza, vc pode ter essa parada de grifo. Mas deixar a bandeira melhor, nao pode ser de agua. E a cruz tbm mais realista
 - ![print](img/S-177.png)
 - **Resposta do Claude:** No lugar do grifo agora existe o Noctívago, criatura original: um cavalo alado noturno, magro, cinza-ardósia, com costelas marcadas, espinha ossuda, olhos claros, crina e cauda esfiapadas e asas de couro com ossos dos dedos que abre, bate e recolhe de vez em quando. O poleiro foi refeito com poste de madeira entalhado com braço e mão-francesa (a "cruz" mais realista), estandarte de tecido de verdade vinho com o cavalo alado bordado em prata balançando, cocho de água e fardos de feno. Os NPCs agora são Mestres dos Noctívagos.
+
+### S-178 · Área do mapa: Área da tela (2277×606 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:04:49 · **Mapa:** Pedrafunda (tile [-271, -307])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** corrigir os bugs das coisas dentro das pedras, aumentar o tamanho da cidade e inspirar ao maximo essa cidade naquela cidade do filme da Odisseia que lançou recente, aquela cidade onde o pessoal saiu de dentro do cavalo de troia. Pode se inspirar bastante naquela ciade. E tornar essa cidade dos anoes maiores. E tbm... cade os anoes? Nao pode ser so model ode humano menor, precisa se parecer de fato muito com anao, inspirado no wow se quiser, com anoes mais cabeçudos e tudo mais, humanoides mas mais robustos e brutos
+- ![print](img/S-178.png)
+- **Resposta do Claude:** Pedrafunda foi refeita como uma cidade antiga murada no espírito da Troia da Odisseia, mas de anões: muralha circular de 58 m com 9 torres e seteiras acesas, portão monumental com torres de 22 m e portas de bronze, rua calçada com estátuas e braseiros, ágora com a forja de lava, pórtico de colunas e a ferraria do Brakar, cidade baixa com 17 casas e a taverna Bigorna Bêbada, e acrópole em dois terraços com escadarias (Templo da Forja, Santuário dos Ancestrais e Salão do Rei). Nada mais fica dentro da rocha. E os anões agora são anões de verdade: cabeça grande, tronco curto e largo, ombros enormes, braços grossos, mãos e pés grandes e pernas curtas e fortes (vale para os NPCs e para quem cria um anão). Cada NPC está fazendo algo, perto do que faz, de costas para a parede.
+
+### S-179 · Área do mapa: Área da tela (804×195 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:05:31 · **Mapa:** Campos de Valcinza (tile [-297, 269])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** resolver bugs de grama em cima do concreto aqui. Dentro do castelo precisa ser full concreto mesmo sem grama
+- ![print](img/S-179.png)
+- **Resposta do Claude:** O calçamento do pátio do castelo agora acompanha o terreno (inclusive a passagem sob o portão) e não nasce mais grama dentro das muralhas nem no fosso.
+
+### S-180 · Área do mapa: Área da tela (275×212 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:05:57 · **Mapa:** Campos de Valcinza (tile [-292, 296])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao acho que casa com chafariz aqui. Podia ter aquele rio em volta do castelo como tinha antigamente como protecao.
+- ![print](img/S-180.png)
+- **Resposta do Claude:** O chafariz saiu: o castelo agora tem um fosso de água em volta das muralhas, com margens de pedra e uma ponte de pedra com parapeito, que é a única entrada.
+
+### S-181 · Área do mapa: Área da tela (258×133 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:06:21 · **Mapa:** Campos de Valcinza (tile [-292, 296])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o portal aqui bugou. Precisa esta r evidente, nao denrto de escada
+- ![print](img/S-181.png)
+- **Resposta do Claude:** A escadaria alta da torre virou um degrau baixo, e o portal fica no chão do pátio, bem na frente da porta, fácil de ver.
+
+### S-182 · Área do mapa: Área da tela (117×119 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:06:36 · **Mapa:** Campos de Valcinza (tile [-292, 296])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** essa chama precisava ser beeem mais realista do que está
+- ![print](img/S-182.png)
+- **Resposta do Claude:** Chamas novas no castelo inteiro: cinco camadas de fogo que tremulam, com brasas subindo, e braseiros com toras em brasa.
+
+### S-183 · Área do mapa: Área da tela (1233×522 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:07:18 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** aqui por dentro dicou tudo com parede branca bugada, precisa consertar isso. E o gráfico do tapeta aqui precia melgorar tbm.
+- ![print](img/S-183.png)
+- **Resposta do Claude:** O "branco bugado" eram as caixas invisíveis que seguram a câmera aparecendo por engano; agora elas não desenham nada (e a regra vale para todas as salas). Os tapetes ganharam trama de tecido com faixas, medalhões, desgaste, espessura e franja.
+
+### S-184 · Área do mapa: Área da tela (907×194 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:07:28 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostei ds ideias das armaduras mas precisam serr muito melhores
+- ![print](img/S-184.png)
+- **Resposta do Claude:** As armaduras de exposição viraram armaduras completas de placas: couraça com quilha e rebites, gorjal, ombreiras em camadas, braçais, manoplas, saia de placas sobre malha, grevas e elmo fechado com viseira e pluma. Seis delas ladeiam o vestíbulo.
+
+### S-185 · Área do mapa: Área da tela (1590×272 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:08:08 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** tem que ter algo na lore aqui de falar de espadas de grandes guerreiros e blablabla, e mostrar as espadas fodas. Inspirar muito em assassins creed aqui pra construir isso
+- ![print](img/S-185.png)
+- **Resposta do Claude:** Novo Salão das Lâminas, no espírito de Assassin's Creed: seis espadas lendárias em molduras de veludo iluminadas, cada uma com placa de história (Aurora de Kael, Dente do Inverno, Juramento de Valcinza, Lâmina Silente, Brasa Eterna e Última Promessa), uma placa de entrada e a Dagna como Guardiã das Lâminas.
+
+### S-186 · Área do mapa: Área da tela (1339×588 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:09:00 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que tudo isso aqui seja muuuuuito inspirado no castelo la principal onde ocorre o game of thrones, aquele que mais aparece cenas e tal. Só o trono que nao pode ser copia, mas todo o restante, pode ser o mais proximo possivel que vc conseguir.
+- ![print](img/S-186.png)
+- **Resposta do Claude:** A sala do trono foi refeita no espírito do grande salão da Fortaleza Vermelha: colunas agrupadas com bases e capitéis, arcos, janelas altas pontiagudas, um estrado largo de quatro degraus com tapete subindo, rosácea atrás do trono, grandes estandartes e tochas nas colunas. O trono é original.
+
+### S-187 · Área do mapa: Área da tela (1037×288 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:09:30 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** aqui precisamos de outros modelos, com armaduras de verdade. e O rei precisa ter muuuuuito mais cara de rei. E repare que te mmulher dentro da pedra ali
+- ![print](img/S-187.png)
+- **Resposta do Claude:** Agora há quatro guardas no castelo (os de fora usam armadura de verdade). O rei ganhou coroa, gola de arminho, manto vermelho e cetro presos ao corpo, e a rainha agora fica de pé no estrado ao lado do trono, não mais dentro do degrau.
+
+### S-188 · Área do mapa: Área da tela (2173×789 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:10:36 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostei da ideia d biblioteca, mas melgorar muuuito esse apostento e transformar em uma biblioteca foda de verdade. Esse mapa mundi tbm ali, ou melhor globo, precisa ser foda tbm e realista representar o mapa do local sempre e nao o mapa mundi como um todo como o da vida real. Seria o desse universo aqui mesmo
+- ![print](img/S-188.png)
+- **Resposta do Claude:** Biblioteca de verdade: estantes de dois andares com mezanino em L, balaustrada torneada, escada com patamar e escadas de correr, mesas de leitura com livros, tinteiro e velas, atril e candelabros. A mesa de mapas e o globo de latão (que gira devagar) mostram o mundo de Aethra, desenhado a partir do terreno de verdade: mar, costa, montanhas, cores do chão e nomes das regiões.
+
+### S-189 · Área do mapa: Área da tela (305×198 px) (sobre: Minimapa, Menu lateral)
+- **Status:** feito · **Quando:** 2026-11-08T18:11:03 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** como estou dentro de um local, o mapa precisa se adpartar pra eu saber exatamente onde vou. Nao posso permanecer no mapa mundi
+- ![print](img/S-189.png)
+- **Resposta do Claude:** Dentro de prédios o minimapa e o mapa (G) mostram a planta do lugar (paredes, móveis, colunas, saídas) com você nela, e não mais o mapa do mundo. Vale para o castelo, a taverna, o estábulo, a Arena e as outras salas; a masmorra já mostrava o andar.
+
+### S-190 · Área do mapa: Área da tela (390×288 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:11:19 · **Mapa:** Campos de Valcinza (tile [1750, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorar fogo e obviamente esse aposento como um todo
+- ![print](img/S-190.png)
+- **Resposta do Claude:** O quarto real ganhou fogo de verdade na lareira, duas poltronas com mesinha, tapeçaria e candelabros; as velas e tochas tremulam juntas.
+
+### S-191 · Área do mapa: Área da tela (787×407 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:12:04 · **Mapa:** Campos de Valcinza (tile [-292, 296])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao sei se isso é padrao de catelo mas achei beem estranho. Precisaria mehorar isso pra ser mais real
+- ![print](img/S-191.png)
+- **Resposta do Claude:** As duas "caixas de pedra" do pátio viraram casas de verdade encostadas na muralha: térreo de pedra, andar de cima em enxaimel, telhado de ardósia, chaminé, porta em arco e janelas com moldura.
+
+### S-192 · Área do mapa: Área da tela (377×415 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:14:19 · **Mapa:** Vila de Alvorada (tile [-75, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o ato de atacar, precisa sair som do s golpes. E a animacao de ataque precisa melhorar muito.Tb nao quero que, se eu tentar atacar o 'ar' ele titubeie e pare. O ataque do 'anda'precisa ser o mesmo de como se eu atacasse algum objeto
+- ![print](img/S-192.png)
+- **Resposta do Claude:** Golpes com som de verdade: lufada da lâmina cortando o ar, golpe pesado para 2 mãos, estocada para adaga, corda e flecha para o arco, e uma pancada quando acerta. E atacar o "ar" agora é exatamente o mesmo golpe de quando você acerta algo (mesma animação, tempo e som), sem titubear: só não dá dano.
+
+### S-193 · Área do mapa: Área da tela (183×318 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:14:55 · **Mapa:** Vila de Alvorada (tile [-77, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** precisa se parecer mais uma freira ou santa e nao uma vagabunda. Precisa ser uma pegada mais priest
+- ![print](img/S-193.png)
+- **Resposta do Claude:** A Irmã Clara (e a Irmã Mirela, de Pedraclara) agora usam hábito de freira: véu preto, touca branca emoldurando o rosto, túnica longa com dobras, escapulário branco, cordão na cintura e cruz dourada, com o cabelo coberto.
+
+### S-194 · Área do mapa: Área da tela (324×151 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:15:53 · **Mapa:** Vila de Alvorada (tile [1298, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** precisa parecer muito mais feno e o ambiente inteiro interno precisa parecer mais um estábulo. seinto que falta muito detalhe nesse ambiente interior, na lampada, no chao, no curral... pra deixar tudo muito mais detalhado e realista
+- ![print](img/S-194.png)
+- **Resposta do Claude:** O estábulo ficou de estábulo: fardos de feno de verdade (palha com fios, cantos gastos, barbante e fiapos soltos), baias com tábuas de madeira com veios, postes arredondados, manjedoura com feno, cocho com água e cama de palha irregular. Os lampiões viraram lanternas de ferro com vidro, vela acesa tremulando e corrente (vale para a taverna também), e paredes, vigas, teto e chão de todas as salas ganharam reboco com manchas e madeira com veios.
+
+### S-195 · Área do mapa: Área da tela (264×167 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:16:59 · **Mapa:** Vila de Alvorada (tile [-72, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o escudo ta mal feito e flutuando demais no braço. Precisa melhorar ele. E preciso de uma armadura simples e nao de capa como guerreiro
+- ![print](img/S-195.png)
+- **Resposta do Claude:** O Guerreiro agora usa uma armadura simples (peitoral de aço moldado ao corpo, placas de couro, ombreiras e braçadeiras) e não tem mais capa. O escudo foi refeito e fica justo no antebraço. As peças de armadura agora são moldadas no corpo de verdade e acompanham os ossos nas animações.
+
+### S-196 · Área do mapa: Área da tela (625×460 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:18:05 · **Mapa:** Vila de Alvorada (tile [-73, 32])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que o meu mouse, meu cursor, direcione pra onde estou focando com a camera, de forma que eu mei oque fixe um local, segure o botao esquerdo do mouse e consiga ir andando com o WASD pra acertar meus inimigos de forma precisa
+- ![print](img/S-196.png)
+- **Resposta do Claude:** Segurando o botão esquerdo, o personagem fica virado para onde o cursor aponta e você anda com WASD (A/D vão de lado em vez de girar), atacando enquanto se move. Assim dá para fixar um ponto e ir acertando com precisão.
+
+### S-197 · Área do mapa: Área da tela (258×95 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:32:03 · **Mapa:** Vila de Alvorada (tile [-55, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou ainda a boca de fora, nao ficou legal. E nao podia ser campones se ta de elmo e sim outra roupa
+- ![print](img/S-197.png)
+- **Resposta do Claude:** O Guarda Tobias (e o Bastião) usam roupa de guarda: cota de malha, tabardo azul com uma torre, ombreiras e grevas. O elmo de ferro ficou um pouco maior e mais baixo para todo mundo, então o rosto não escapa mais.
+
+### S-198 · Área do mapa: Área da tela (199×160 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:32:51 · **Mapa:** Vila de Alvorada (tile [-60, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** tirar essa caixa do meio do camino, ou colocar mais prox ali da feirante
+- ![print](img/S-198.png)
+- **Resposta do Claude:** A caixa do meio do caminho saiu da praça.
+
+### S-199 · Área do mapa: Área da tela (286×183 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:34:09 · **Mapa:** Campos de Verdelume (tile [15, 51])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao quero que afunda TANTO quando eu esteja acima e sim so um pouquinho entre agua
+- ![print](img/S-199.png)
+- **Resposta do Claude:** A vitória-régia agora fica por cima da água e afunda só um tiquinho quando você pisa, com os pés em cima da folha.
+
+### S-200 · Área do mapa: Área da tela (254×269 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:35:13 · **Mapa:** Vila de Alvorada (tile [-73, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao quero que a arma padrao do arqueiro seja uma besta e sim um arco. E o movimento de disparo de flechas desse personagem precisa ser perfeito
+- ![print](img/S-200.png)
+- **Resposta do Claude:** O Arqueiro agora usa um arco recurvo de verdade na mão esquerda (o Caçador e o Bardo também; nenhuma classe usa besta). O disparo tem mira e soltura, com som de corda e flecha cortando o ar.
+
+### S-201 · Área do mapa: Área da tela (194×256 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:35:54 · **Mapa:** Vila de Alvorada (tile [-74, 30])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o ladino tem que ter roupas mais parecidas com a de um gatuno do ragnarok e nao manter o campones
+- ![print](img/S-201.png)
+- **Resposta do Claude:** O Ladino ganhou roupa de gatuno: colete de couro justo, braçadeiras, máscara de pano no rosto, faixa na cabeça e bolsinhas no cinto.
+
+### S-202 · Área do mapa: Área da tela (335×324 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:36:44 · **Mapa:** Vila de Alvorada (tile [-74, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ele tem que atacasr com um FACA E MAP [ARECER.O VOLVERINE. ELE PRECISA TER 1 ADAGA COMO ATAQUE.E pode ter espaço pra u m escudo como broquel, mas esse so pode aparecer se eu tiver de fato o equipamenteo equipado
+- ![print](img/S-202.png)
+- **Resposta do Claude:** O Ladino ataca com uma adaga só, lâmina para a frente e golpes de estocada (nada de Wolverine; as facas e o machado extras saíram de todas as classes). E agora vale para todas as classes: escudo ou broquel só aparece se estiver equipado de verdade (madeira, broquel de aço ou o escudo do Paladino com o sol).
+
+### S-203 · Interface: Área de 161×61 px em Janela "👑 Painel do Mestre" — "Cavaleiro Rúnico · ⚜️"
+- **Status:** feito · **Quando:** 2026-11-08T18:37:45 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** o nome desse nao pode ser runico e sim  cavalaiero. E tanto ele quato o paladin podem ter montarias proprias que seria naquele bicho analogo ao peco peco que flaei pra vc criar. E obviamente isso é uma skill e nao daria pra usar montaria normal enquanto tivesse montado nesse monstro
+- ![print](img/S-203.png)
+- **Resposta do Claude:** "Cavaleiro Rúnico" agora se chama só Cavaleiro. Cavaleiro e Paladino ganharam a habilidade Montaria de Guerra: chamam o próprio Trotavento (a ave corredora) e lutam montados, andando 25% mais rápido. Enquanto estão nela, a montaria comum (M) fica bloqueada; usar a habilidade de novo desmonta.
+
+### S-204 · Área do mapa: Área da tela (329×239 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:38:23 · **Mapa:** Vila de Alvorada (tile [-73, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esquece isso de parecer uma fada. Aqui até ok ter capa mas precisa ser muuuito mais realista, parecendo que tenha efeito fisico mesmo e nao um retangulozao. Precisa ser tudo muito melhor e ter uma armadura
+- ![print](img/S-204.png)
+- **Resposta do Claude:** O Paladino perdeu as asas e a auréola de fada: usa armadura leve de placas, tabardo branco com sol dourado e uma capa de tecido com física de verdade (presa nos ombros, com gravidade e inércia, encostando nas costas e nas pernas).
+
+### S-205 · Área do mapa: Área da tela (278×244 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:38:55 · **Mapa:** Vila de Alvorada (tile [-73, 30])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso rter animacoes de atqeus diferntes entre as classes. Nao posso fazer com que todos ataquem da exatae mesma forma
+- ![print](img/S-205.png)
+- **Resposta do Claude:** Cada classe ataca de um jeito: o Aprendiz alterna socos e espada, o Guerreiro dá golpes rápidos de espada, o Cavaleiro e o Paladino golpes pesados mais lentos com avanço do corpo, o Ladino e o Executor estocadas rápidas de adaga, o Arqueiro e o Caçador miram e disparam, e os magos e o Bardo conjuram. Cada linha tem som próprio.
+
+### S-206 · Área do mapa: Área da tela (291×294 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:39:36 · **Mapa:** Vila de Alvorada (tile [-72, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao existe capa aqui e esse instrumento ficou minusculo, na pode isso. Precisa ser algo beeeeem melhor
+- ![print](img/S-206.png)
+- **Resposta do Claude:** O Bardo não tem mais capa, e o alaúde agora tem tamanho de verdade (~85 cm), levado nas costas.
+
+### S-207 · Interface: Área de 155×76 px em Janela "👑 Painel do Mestre" — "Lâmina Sombria · 🌑 · Saqueador · 💰"
+- **Status:** feito · **Quando:** 2026-11-08T18:40:37 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** gostaria de outros nomes mais inspirados ali no algoz e desordeiro do ragnarok, mas sem deixar escrachado que é o mesa coisa. Mas em relacao às classes pode ser muito parecido mesmo. So odiei isso de saqueador por exemplo
+- ![print](img/S-207.png)
+- **Resposta do Claude:** Nomes novos no espírito do Algoz e do Desordeiro, sem copiar: Lâmina Sombria virou Executor e Saqueador virou Arruaceiro.
+
+### S-208 · Área do mapa: Área da tela (494×447 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:42:06 · **Mapa:** Porto das Gaivotas (tile [307, 315])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** aqui ficou feio e aleatorio assim. Prefiro que tenha um navio aqui que eu possa entrar e explorar. E tenha npcs dentro do navio. Pode se inspirar no que exist em alberta. Capriche nesse navio por favor. E nao deixe bugs. Tbm nao quero agua dentro dos barcos e navios. Cuidado com ios bugs squi dessa cidade
+- ![print](img/S-208.png)
+- **Resposta do Claude:** O Porto agora tem o navio Gaivota Dourada atracado no cais: suba pela prancha e ande no convés (cabine do capitão, timão, 3 mastros com velas recolhidas e cordame, cesto da gávea, canhões, cabrestante, barris e uma gaivota dourada na proa), com o Baltazar, o Tico e o Nilo a bordo. A escotilha leva ao porão (a Odete vende, o Bóris cura, a Ilka é a navegadora). Não há mais água nem areia dentro de barco nenhum, e o veleiro e o galeão "aleatórios" saíram.
+
+### S-209 · Área do mapa: Área da tela (350×330 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:42:32 · **Mapa:** Porto das Gaivotas (tile [315, 261])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gosto dessa ideia de farol mas claramente ta mal posicionado aqui. Precisa pensar melhor
+- ![print](img/S-209.png)
+- **Resposta do Claude:** O farol agora fica na boca do porto, no fim de um quebra-mar de pedras com caminho para andar e uma plataforma com parapeito, com a Lena na porta.
+
+### S-210 · Área do mapa: Área da tela (802×735 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:42:50 · **Mapa:** Porto das Gaivotas (tile [281, 274])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou tudo muito quadradao aqui, nao ta legal
+- ![print](img/S-210.png)
+- **Resposta do Claude:** O porto ficou bem menos quadradão: casas com base de pedra, enxaimel, beirais, cumeeiras, chaminés, janelas com venezianas pintadas e floreiras, algumas com varanda e anexos em L, calçamento de pedras irregulares no passeio e na praça, terra batida entre as casas e uma âncora na praça.
+
+### S-211 · Área do mapa: Área da tela (851×180 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:43:26 · **Mapa:** Porto das Gaivotas (tile [265, 266])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** deixar essas barraquinhas mais proximas e dar detalhes pra esses peixes e não deixar tudo assim aleatorio.
+- ![print](img/S-211.png)
+- **Resposta do Claude:** As bancas de peixe ficaram juntas, lado a lado, com gelo, peixes de verdade (cauda, barbatanas, olho, dorso escuro e barriga prateada), caixas de peixe, escamas, peixes pendurados e toldos listrados.
+
+### S-212 · Área do mapa: Área da tela (1548×276 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:43:57 · **Mapa:** Porto das Gaivotas (tile [251, 251])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** algumas das cases podiam ter portas pra coisas internas com npcs e coisa uteis la dentro
+- ![print](img/S-212.png)
+- **Resposta do Claude:** Duas casas do porto agora têm porta com interior: a Taverna do Marujo (o Gaspar cura, a Lia canta) e o Armazém Naval do Rufino (loja).
+
+### S-213 · Área do mapa: Área da tela (503×363 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:44:12 · **Mapa:** Porto das Gaivotas (tile [295, 230])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** aumentar quantidade de coqueiros e tornar melhor esteticamente
+- ![print](img/S-213.png)
+- **Resposta do Claude:** Cerca de 36 coqueiros novos, com tronco afinando, folhas de verdade com folíolos e cachos de coco, longe das casas e do passeio.
+
+### S-214 · Área do mapa: Área da tela (1009×218 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:44:21 · **Mapa:** Porto das Gaivotas (tile [261, 246])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorar estetica das casas
+- ![print](img/S-214.png)
+- **Resposta do Claude:** As casas do porto foram refeitas (8 na beira do cais e 4 atrás): base de pedra, enxaimel, janelas com venezianas pintadas e floreiras, portas com moldura e degraus, varandas e chaminés.
+
+### S-215 · Área do mapa: Área da tela (277×61 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:45:17 · **Mapa:** Porto das Gaivotas (tile [273, 295])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** tem uns pinos aleatorios aqui que nao fazem sentio, precisa ser alho mais realista
+- ![print](img/S-215.png)
+- **Resposta do Claude:** Os pinos aleatórios do píer saíram: as estacas ficam rentes embaixo das tábuas, com cabeços de amarração de ferro fundido (alguns com corda), guarda-corpo de corda e botes amarrados ao lado.
+
+### S-216 · Área do mapa: Área da tela (919×339 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:45:59 · **Mapa:** Porto das Gaivotas (tile [275, 307])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao ta fisicamente realistater agua de um lado que vai ate certo local e do lado direito a agua é menor. E esse barco com areia dentro tbm nao ta legal
+- ![print](img/S-216.png)
+- **Resposta do Claude:** A água agora é igual dos dois lados: um cais de pedra reto de ~140 m, com pedras de capeamento, argolas de amarração e muros nas pontas, água funda logo depois da borda e sem cair no mar (só há passagem pela prancha, pelos píeres e pelo quebra-mar). Nada de barco com areia dentro.
+
+### S-217 · Área do mapa: Área da tela (1331×277 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:47:18 · **Mapa:** Porto das Gaivotas (tile [264, 264])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** tanto a estetica dos npcs nao ta legal, quanto a posicao. nunca pode ter npcs olhando pro 'nada'. Precisam sempre estar posicionados em um local em qie pessoas estariam e nao soltos do nada. Em geral teriam que estar perto de objetos e de costas pra parede e nunca defretne olhando pra parede. Vc tem que melhorar o posicionamento dos npcs como umtodo. Nessas novas cidasdes que vc anda criando
+- ![print](img/S-217.png)
+- **Resposta do Claude:** Todo NPC do porto foi reposicionado com a regra nova: cada um fica junto de algo que explica por que ele está ali (balcão, banca, porta, prancha, timão, bote em conserto, mesa), de costas para a parede ou o objeto e virado para onde as pessoas chegam, nunca solto no vazio nem de cara para a parede. A regra vale para as cidades novas.
+
+### S-218 · Área do mapa: Área da tela (2234×655 px) (sobre: Minimapa)
+- **Status:** feito · **Quando:** 2026-11-08T18:48:05 · **Mapa:** Porto das Gaivotas (tile [185, 312])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** gosto da ideia de deserto, mas nao acho que a cidade da água seja a mais inteligente pra estar colada no desetto. Esse posicionamento estrategico entre as cidades precisa ser mais inteligente como um roso pera nao ficar estranho
+- ![print](img/S-218.png)
+- **Resposta do Claude:** Entre o porto e o deserto agora há uma faixa verde de litoral, e a areia e o capim das dunas não chegam mais até a cidade.
+
+### S-219 · Interface: Área de 712×212 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-08T18:51:12 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** repara que parte de baixo ta cortada e isso nao é nada legal. Melhore o grafico desse circulo de baixo tambem
+- ![print](img/S-219.png)
+- **Resposta do Claude:** Na vitrine e no criador nada mais fica cortado embaixo (o enquadramento tem margem para os pés e o pedestal), e o círculo virou um pedestal de luz com anéis e runas gravadas, menor e mais bonito.
+
+### S-220 · Interface: Área de 381×516 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-08T18:51:48 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** esse cajado ta excessivamente grande. e na oé assm que segura um cajado. Essas rodelas em volta tbm nao existe, nao pode ser assim, ta ridiculo
+- ![print](img/S-220.png)
+- **Resposta do Claude:** O cajado agora tem tamanho de cajado (~1,5 m), é de madeira torcida com um cristal preso em garras de madeira e é segurado de lado, com o pé perto do chão. As rodelas em volta sumiram.
+
+### S-221 · Área do mapa: Área da tela (807×662 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:53:05 · **Mapa:** Dunas de Sal-Rubro (tile [87, 277])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhore consideravelmente o gráfico disso, tornando mais realistas. Ta tudo muito com forma geométrica. da pra melhorar muuuuito esse gráfico pra que nao fique tudo como bolotas. olha esse pe e braços ridiculos.   unica cosia que ficou razoavel foram as asas
+- ![print](img/S-221.png)
+- **Resposta do Claude:** Kharzûl refeito: corpo musculoso numa peça só e lisa (peitoral, abdômen, ombros, braços grossos), mãos com dedos e garras, pernas de fera com três dedos e esporões, espinhos nas costas e pele de basalto rachado com veias de magma que pulsam em alguns pontos. Golpe do cutelo em três tempos e boca que abre no rugido. As asas foram mantidas.
+
+### S-222 · Área do mapa: Área da tela (244×171 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:53:38 · **Mapa:** Dunas de Sal-Rubro (tile [63, 227])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou meio parecido com uma lagosta ou caranguejo, mas precisa ser muito mais um escorpiao
+- ![print](img/S-222.png)
+- **Resposta do Claude:** O escorpião virou escorpião de verdade: corpo baixo e achatado, carapaça com olhos, cauda fina segmentada arqueada sobre as costas com ferrão curvo, pinças finas e 8 patas finas abertas para os lados.
+
+### S-223 · Área do mapa: Área da tela (297×263 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:55:08 · **Mapa:** Dunas de Sal-Rubro (tile [52, 288])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** patas muito grudadas. Pode ser menor tbmessa formiga. E menos 'geometrica'. Mais realista
+- ![print](img/S-223.png)
+- **Resposta do Claude:** Formiga menor e mais realista: cada par de patas sai de um ponto do tórax e abre para os lados (fêmur, tíbia e tarso), corpo liso com cabeça em coração, tórax arqueado e listras pintadas no abdômen.
+
+### S-224 · Área do mapa: Área da tela (348×127 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:56:19 · **Mapa:** Dunas de Sal-Rubro (tile [14, 297])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** achei essa lagarto muito exageradamente grande. Podia tambem ter pernas enos parecidas com um ser humano. E isso que parece uma juba pode deixar bem mais interessante tbm, ficou esquisito. Mas essas patar bem ridiculas. So o rostinho que eu curti mesmo
+- ![print](img/S-224.png)
+- **Resposta do Claude:** Lagarto-de-Sal menor, com patas de réptil de verdade (cotovelo para fora, dedos longos em leque, nada de perna humana) e babado novo: dois leques de membrana fina e translúcida, laranja queimado no centro e turquesa na borda, com espinhos escuros, que abrem quando ele fica bravo. O rostinho que você gostou ficou igual.
+
+### S-225 · Área do mapa: Área da tela (301×285 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:57:28 · **Mapa:** Dunas de Sal-Rubro (tile [-28, 269])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostei mas ta muito parecio com frango. Quero mais parecido com o peco peco e com o bicho dla do final fantsy. Gostie de estar mais realista mas as asas tao parecendo um frango depenado. Eu gostaria e ter penas muito mais evidenes na pelagem e ter penas brancas e laranjas, algo mais bonito, ficou muito parecido com galinha e as pernas achei muito tortas
+- ![print](img/S-225.png)
+- **Resposta do Claude:** Trotavento com plumagem branca e laranja de verdade (cerca de 1.600 penas em camadas), asas cheias de penas com primárias brancas de ponta laranja, penacho longo para trás no lugar da crista de galo, e pernas mais retas e fortes com coxa emplumada. Vale para o monstro e a montaria.
+
+### S-226 · Área do mapa: Área da tela (474×335 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:58:50 · **Mapa:** Campos de Valcinza (tile [-206, 267])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorou muuuito mas a boca de cone e o ataque com 2 pernas ta ridiculo ainda. Prefiro que ele atqeu mordendo. E chefue mais perto pra morder e nao dar 2 chutes com as pernas
+- ![print](img/S-226.png)
+- **Resposta do Claude:** Lobo: focinho largo, alto e rombudo, com mandíbula arredondada (adeus cone). E o ataque agora é mordida: as patas ficam plantadas, as de trás empurram, o corpo avança baixo, o pescoço estica e a boca abre e fecha. Sem os chutes.
+
+### S-227 · Área do mapa: Área da tela (845×333 px)
+- **Status:** feito · **Quando:** 2026-11-08T18:59:31 · **Mapa:** Vale da Geada (tile [-344, 158])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ja falei que nao tem sentido tanta grama assim na neve. Pode ter uns pedacinhos de grama mas nao generealizado assim
+- ![print](img/S-227.png)
+- **Resposta do Claude:** No Vale da Geada a grama agora só nasce nas manchas sem neve, nada de grama espalhada sobre a neve.
+
+### S-228 · Área do mapa: Área da tela (1701×138 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:00:00 · **Mapa:** Vale da Geada (tile [-357, 52])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esses pedaços de gelo ficaram meio bugados e voando, cuidado com isso
+- ![print](img/S-228.png)
+- **Resposta do Claude:** Os montes de neve da fortaleza agora assentam no ponto mais baixo do chão, crescem para cobrir encostas e não aparecem onde é íngreme demais: nada flutuando.
+
+### S-229 · Área do mapa: Área da tela (1466×851 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:00:12 · **Mapa:** Vale da Geada (tile [-340, 66])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esse chao cheio de quadrados nao ta legal
+- ![print](img/S-229.png)
+- **Resposta do Claude:** O quadriculado vinha do ruído do lago congelado no terreno; o chão foi suavizado e o lago ganhou uma camada de gelo de verdade, com rachaduras ramificadas, bolhas presas e neve soprada nas bordas.

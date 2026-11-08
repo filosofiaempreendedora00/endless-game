@@ -8510,9 +8510,10 @@
       "sp": "38/38"
     },
     "id": "S-178",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:04:49",
-    "imagem": "img/S-178.png"
+    "imagem": "img/S-178.png",
+    "resposta": "Pedrafunda foi refeita como uma cidade antiga murada no espírito da Troia da Odisseia, mas de anões: muralha circular de 58 m com 9 torres e seteiras acesas, portão monumental com torres de 22 m e portas de bronze, rua calçada com estátuas e braseiros, ágora com a forja de lava, pórtico de colunas e a ferraria do Brakar, cidade baixa com 17 casas e a taverna Bigorna Bêbada, e acrópole em dois terraços com escadarias (Templo da Forja, Santuário dos Ancestrais e Salão do Rei). Nada mais fica dentro da rocha. E os anões agora são anões de verdade: cabeça grande, tronco curto e largo, ombros enormes, braços grossos, mãos e pés grandes e pernas curtas e fortes (vale para os NPCs e para quem cria um anão). Cada NPC está fazendo algo, perto do que faz, de costas para a parede."
   },
   {
     "texto": "resolver bugs de grama em cima do concreto aqui. Dentro do castelo precisa ser full concreto mesmo sem grama",
@@ -8554,9 +8555,10 @@
       "sp": "38/38"
     },
     "id": "S-179",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:05:31",
-    "imagem": "img/S-179.png"
+    "imagem": "img/S-179.png",
+    "resposta": "O calçamento do pátio do castelo agora acompanha o terreno (inclusive a passagem sob o portão) e não nasce mais grama dentro das muralhas nem no fosso."
   },
   {
     "texto": "nao acho que casa com chafariz aqui. Podia ter aquele rio em volta do castelo como tinha antigamente como protecao.",
@@ -8598,9 +8600,10 @@
       "sp": "38/38"
     },
     "id": "S-180",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:05:57",
-    "imagem": "img/S-180.png"
+    "imagem": "img/S-180.png",
+    "resposta": "O chafariz saiu: o castelo agora tem um fosso de água em volta das muralhas, com margens de pedra e uma ponte de pedra com parapeito, que é a única entrada."
   },
   {
     "texto": "o portal aqui bugou. Precisa esta r evidente, nao denrto de escada",
@@ -8644,9 +8647,10 @@
       "sp": "38/38"
     },
     "id": "S-181",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:06:21",
-    "imagem": "img/S-181.png"
+    "imagem": "img/S-181.png",
+    "resposta": "A escadaria alta da torre virou um degrau baixo, e o portal fica no chão do pátio, bem na frente da porta, fácil de ver."
   },
   {
     "texto": "essa chama precisava ser beeem mais realista do que está",
@@ -8688,9 +8692,10 @@
       "sp": "38/38"
     },
     "id": "S-182",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:06:36",
-    "imagem": "img/S-182.png"
+    "imagem": "img/S-182.png",
+    "resposta": "Chamas novas no castelo inteiro: cinco camadas de fogo que tremulam, com brasas subindo, e braseiros com toras em brasa."
   },
   {
     "texto": "aqui por dentro dicou tudo com parede branca bugada, precisa consertar isso. E o gráfico do tapeta aqui precia melgorar tbm.",
@@ -8739,9 +8744,10 @@
       "sp": "38/38"
     },
     "id": "S-183",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:07:18",
-    "imagem": "img/S-183.png"
+    "imagem": "img/S-183.png",
+    "resposta": "O \"branco bugado\" eram as caixas invisíveis que seguram a câmera aparecendo por engano; agora elas não desenham nada (e a regra vale para todas as salas). Os tapetes ganharam trama de tecido com faixas, medalhões, desgaste, espessura e franja."
   },
   {
     "texto": "gostei ds ideias das armaduras mas precisam serr muito melhores",
@@ -8783,9 +8789,10 @@
       "sp": "38/38"
     },
     "id": "S-184",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:07:28",
-    "imagem": "img/S-184.png"
+    "imagem": "img/S-184.png",
+    "resposta": "As armaduras de exposição viraram armaduras completas de placas: couraça com quilha e rebites, gorjal, ombreiras em camadas, braçais, manoplas, saia de placas sobre malha, grevas e elmo fechado com viseira e pluma. Seis delas ladeiam o vestíbulo."
   },
   {
     "texto": "tem que ter algo na lore aqui de falar de espadas de grandes guerreiros e blablabla, e mostrar as espadas fodas. Inspirar muito em assassins creed aqui pra construir isso",
@@ -8876,9 +8883,10 @@
       "sp": "38/38"
     },
     "id": "S-185",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:08:08",
-    "imagem": "img/S-185.png"
+    "imagem": "img/S-185.png",
+    "resposta": "Novo Salão das Lâminas, no espírito de Assassin's Creed: seis espadas lendárias em molduras de veludo iluminadas, cada uma com placa de história (Aurora de Kael, Dente do Inverno, Juramento de Valcinza, Lâmina Silente, Brasa Eterna e Última Promessa), uma placa de entrada e a Dagna como Guardiã das Lâminas."
   },
   {
     "texto": "preciso que tudo isso aqui seja muuuuuito inspirado no castelo la principal onde ocorre o game of thrones, aquele que mais aparece cenas e tal. Só o trono que nao pode ser copia, mas todo o restante, pode ser o mais proximo possivel que vc conseguir.",
@@ -8928,9 +8936,10 @@
       "sp": "38/38"
     },
     "id": "S-186",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:09:00",
-    "imagem": "img/S-186.png"
+    "imagem": "img/S-186.png",
+    "resposta": "A sala do trono foi refeita no espírito do grande salão da Fortaleza Vermelha: colunas agrupadas com bases e capitéis, arcos, janelas altas pontiagudas, um estrado largo de quatro degraus com tapete subindo, rosácea atrás do trono, grandes estandartes e tochas nas colunas. O trono é original."
   },
   {
     "texto": "aqui precisamos de outros modelos, com armaduras de verdade. e O rei precisa ter muuuuuito mais cara de rei. E repare que te mmulher dentro da pedra ali",
@@ -8977,9 +8986,10 @@
       "sp": "38/38"
     },
     "id": "S-187",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:09:30",
-    "imagem": "img/S-187.png"
+    "imagem": "img/S-187.png",
+    "resposta": "Agora há quatro guardas no castelo (os de fora usam armadura de verdade). O rei ganhou coroa, gola de arminho, manto vermelho e cetro presos ao corpo, e a rainha agora fica de pé no estrado ao lado do trono, não mais dentro do degrau."
   },
   {
     "texto": "gostei da ideia d biblioteca, mas melgorar muuuito esse apostento e transformar em uma biblioteca foda de verdade. Esse mapa mundi tbm ali, ou melhor globo, precisa ser foda tbm e realista representar o mapa do local sempre e nao o mapa mundi como um todo como o da vida real. Seria o desse universo aqui mesmo",
@@ -9069,9 +9079,10 @@
       "sp": "38/38"
     },
     "id": "S-188",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:10:36",
-    "imagem": "img/S-188.png"
+    "imagem": "img/S-188.png",
+    "resposta": "Biblioteca de verdade: estantes de dois andares com mezanino em L, balaustrada torneada, escada com patamar e escadas de correr, mesas de leitura com livros, tinteiro e velas, atril e candelabros. A mesa de mapas e o globo de latão (que gira devagar) mostram o mundo de Aethra, desenhado a partir do terreno de verdade: mar, costa, montanhas, cores do chão e nomes das regiões."
   },
   {
     "texto": "como estou dentro de um local, o mapa precisa se adpartar pra eu saber exatamente onde vou. Nao posso permanecer no mapa mundi",
@@ -9117,9 +9128,10 @@
       "sp": "38/38"
     },
     "id": "S-189",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:11:03",
-    "imagem": "img/S-189.png"
+    "imagem": "img/S-189.png",
+    "resposta": "Dentro de prédios o minimapa e o mapa (G) mostram a planta do lugar (paredes, móveis, colunas, saídas) com você nela, e não mais o mapa do mundo. Vale para o castelo, a taverna, o estábulo, a Arena e as outras salas; a masmorra já mostrava o andar."
   },
   {
     "texto": "melhorar fogo e obviamente esse aposento como um todo",
@@ -9163,9 +9175,10 @@
       "sp": "38/38"
     },
     "id": "S-190",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:11:19",
-    "imagem": "img/S-190.png"
+    "imagem": "img/S-190.png",
+    "resposta": "O quarto real ganhou fogo de verdade na lareira, duas poltronas com mesinha, tapeçaria e candelabros; as velas e tochas tremulam juntas."
   },
   {
     "texto": "nao sei se isso é padrao de catelo mas achei beem estranho. Precisaria mehorar isso pra ser mais real",
@@ -9207,9 +9220,10 @@
       "sp": "38/38"
     },
     "id": "S-191",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:12:04",
-    "imagem": "img/S-191.png"
+    "imagem": "img/S-191.png",
+    "resposta": "As duas \"caixas de pedra\" do pátio viraram casas de verdade encostadas na muralha: térreo de pedra, andar de cima em enxaimel, telhado de ardósia, chaminé, porta em arco e janelas com moldura."
   },
   {
     "texto": "o ato de atacar, precisa sair som do s golpes. E a animacao de ataque precisa melhorar muito.Tb nao quero que, se eu tentar atacar o 'ar' ele titubeie e pare. O ataque do 'anda'precisa ser o mesmo de como se eu atacasse algum objeto",
@@ -9253,9 +9267,10 @@
       "sp": "25/25"
     },
     "id": "S-192",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:14:19",
-    "imagem": "img/S-192.png"
+    "imagem": "img/S-192.png",
+    "resposta": "Golpes com som de verdade: lufada da lâmina cortando o ar, golpe pesado para 2 mãos, estocada para adaga, corda e flecha para o arco, e uma pancada quando acerta. E atacar o \"ar\" agora é exatamente o mesmo golpe de quando você acerta algo (mesma animação, tempo e som), sem titubear: só não dá dano."
   },
   {
     "texto": "precisa se parecer mais uma freira ou santa e nao uma vagabunda. Precisa ser uma pegada mais priest",
@@ -9299,9 +9314,10 @@
       "sp": "25/25"
     },
     "id": "S-193",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:14:55",
-    "imagem": "img/S-193.png"
+    "imagem": "img/S-193.png",
+    "resposta": "A Irmã Clara (e a Irmã Mirela, de Pedraclara) agora usam hábito de freira: véu preto, touca branca emoldurando o rosto, túnica longa com dobras, escapulário branco, cordão na cintura e cruz dourada, com o cabelo coberto."
   },
   {
     "texto": "precisa parecer muito mais feno e o ambiente inteiro interno precisa parecer mais um estábulo. seinto que falta muito detalhe nesse ambiente interior, na lampada, no chao, no curral... pra deixar tudo muito mais detalhado e realista",
@@ -9343,9 +9359,10 @@
       "sp": "25/25"
     },
     "id": "S-194",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:15:53",
-    "imagem": "img/S-194.png"
+    "imagem": "img/S-194.png",
+    "resposta": "O estábulo ficou de estábulo: fardos de feno de verdade (palha com fios, cantos gastos, barbante e fiapos soltos), baias com tábuas de madeira com veios, postes arredondados, manjedoura com feno, cocho com água e cama de palha irregular. Os lampiões viraram lanternas de ferro com vidro, vela acesa tremulando e corrente (vale para a taverna também), e paredes, vigas, teto e chão de todas as salas ganharam reboco com manchas e madeira com veios."
   },
   {
     "texto": "o escudo ta mal feito e flutuando demais no braço. Precisa melhorar ele. E preciso de uma armadura simples e nao de capa como guerreiro",
@@ -9387,9 +9404,10 @@
       "sp": "23/23"
     },
     "id": "S-195",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:16:59",
-    "imagem": "img/S-195.png"
+    "imagem": "img/S-195.png",
+    "resposta": "O Guerreiro agora usa uma armadura simples (peitoral de aço moldado ao corpo, placas de couro, ombreiras e braçadeiras) e não tem mais capa. O escudo foi refeito e fica justo no antebraço. As peças de armadura agora são moldadas no corpo de verdade e acompanham os ossos nas animações."
   },
   {
     "texto": "preciso que o meu mouse, meu cursor, direcione pra onde estou focando com a camera, de forma que eu mei oque fixe um local, segure o botao esquerdo do mouse e consiga ir andando com o WASD pra acertar meus inimigos de forma precisa",
@@ -9431,9 +9449,10 @@
       "sp": "23/23"
     },
     "id": "S-196",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:18:05",
-    "imagem": "img/S-196.png"
+    "imagem": "img/S-196.png",
+    "resposta": "Segurando o botão esquerdo, o personagem fica virado para onde o cursor aponta e você anda com WASD (A/D vão de lado em vez de girar), atacando enquanto se move. Assim dá para fixar um ponto e ir acertando com precisão."
   },
   {
     "texto": "ficou ainda a boca de fora, nao ficou legal. E nao podia ser campones se ta de elmo e sim outra roupa",
@@ -9485,9 +9504,10 @@
       "sp": "25/25"
     },
     "id": "S-197",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:32:03",
-    "imagem": "img/S-197.png"
+    "imagem": "img/S-197.png",
+    "resposta": "O Guarda Tobias (e o Bastião) usam roupa de guarda: cota de malha, tabardo azul com uma torre, ombreiras e grevas. O elmo de ferro ficou um pouco maior e mais baixo para todo mundo, então o rosto não escapa mais."
   },
   {
     "texto": "tirar essa caixa do meio do camino, ou colocar mais prox ali da feirante",
@@ -9529,9 +9549,10 @@
       "sp": "25/25"
     },
     "id": "S-198",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:32:51",
-    "imagem": "img/S-198.png"
+    "imagem": "img/S-198.png",
+    "resposta": "A caixa do meio do caminho saiu da praça."
   },
   {
     "texto": "nao quero que afunda TANTO quando eu esteja acima e sim so um pouquinho entre agua",
@@ -9575,9 +9596,10 @@
       "sp": "25/25"
     },
     "id": "S-199",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:34:09",
-    "imagem": "img/S-199.png"
+    "imagem": "img/S-199.png",
+    "resposta": "A vitória-régia agora fica por cima da água e afunda só um tiquinho quando você pisa, com os pés em cima da folha."
   },
   {
     "texto": "nao quero que a arma padrao do arqueiro seja uma besta e sim um arco. E o movimento de disparo de flechas desse personagem precisa ser perfeito",
@@ -9619,9 +9641,10 @@
       "sp": "27/27"
     },
     "id": "S-200",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:35:13",
-    "imagem": "img/S-200.png"
+    "imagem": "img/S-200.png",
+    "resposta": "O Arqueiro agora usa um arco recurvo de verdade na mão esquerda (o Caçador e o Bardo também; nenhuma classe usa besta). O disparo tem mira e soltura, com som de corda e flecha cortando o ar."
   },
   {
     "texto": "o ladino tem que ter roupas mais parecidas com a de um gatuno do ragnarok e nao manter o campones",
@@ -9665,9 +9688,10 @@
       "sp": "24/24"
     },
     "id": "S-201",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:35:54",
-    "imagem": "img/S-201.png"
+    "imagem": "img/S-201.png",
+    "resposta": "O Ladino ganhou roupa de gatuno: colete de couro justo, braçadeiras, máscara de pano no rosto, faixa na cabeça e bolsinhas no cinto."
   },
   {
     "texto": "ele tem que atacasr com um FACA E MAP [ARECER.O VOLVERINE. ELE PRECISA TER 1 ADAGA COMO ATAQUE.E pode ter espaço pra u m escudo como broquel, mas esse so pode aparecer se eu tiver de fato o equipamenteo equipado",
@@ -9711,9 +9735,10 @@
       "sp": "24/24"
     },
     "id": "S-202",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:36:44",
-    "imagem": "img/S-202.png"
+    "imagem": "img/S-202.png",
+    "resposta": "O Ladino ataca com uma adaga só, lâmina para a frente e golpes de estocada (nada de Wolverine; as facas e o machado extras saíram de todas as classes). E agora vale para todas as classes: escudo ou broquel só aparece se estiver equipado de verdade (madeira, broquel de aço ou o escudo do Paladino com o sol)."
   },
   {
     "texto": "o nome desse nao pode ser runico e sim  cavalaiero. E tanto ele quato o paladin podem ter montarias proprias que seria naquele bicho analogo ao peco peco que flaei pra vc criar. E obviamente isso é uma skill e nao daria pra usar montaria normal enquanto tivesse montado nesse monstro",
@@ -9760,9 +9785,10 @@
       "sp": "24/24"
     },
     "id": "S-203",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:37:45",
-    "imagem": "img/S-203.png"
+    "imagem": "img/S-203.png",
+    "resposta": "\"Cavaleiro Rúnico\" agora se chama só Cavaleiro. Cavaleiro e Paladino ganharam a habilidade Montaria de Guerra: chamam o próprio Trotavento (a ave corredora) e lutam montados, andando 25% mais rápido. Enquanto estão nela, a montaria comum (M) fica bloqueada; usar a habilidade de novo desmonta."
   },
   {
     "texto": "esquece isso de parecer uma fada. Aqui até ok ter capa mas precisa ser muuuito mais realista, parecendo que tenha efeito fisico mesmo e nao um retangulozao. Precisa ser tudo muito melhor e ter uma armadura",
@@ -9806,9 +9832,10 @@
       "sp": "27/27"
     },
     "id": "S-204",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:38:23",
-    "imagem": "img/S-204.png"
+    "imagem": "img/S-204.png",
+    "resposta": "O Paladino perdeu as asas e a auréola de fada: usa armadura leve de placas, tabardo branco com sol dourado e uma capa de tecido com física de verdade (presa nos ombros, com gravidade e inércia, encostando nas costas e nas pernas)."
   },
   {
     "texto": "preciso rter animacoes de atqeus diferntes entre as classes. Nao posso fazer com que todos ataquem da exatae mesma forma",
@@ -9852,9 +9879,10 @@
       "sp": "27/27"
     },
     "id": "S-205",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:38:55",
-    "imagem": "img/S-205.png"
+    "imagem": "img/S-205.png",
+    "resposta": "Cada classe ataca de um jeito: o Aprendiz alterna socos e espada, o Guerreiro dá golpes rápidos de espada, o Cavaleiro e o Paladino golpes pesados mais lentos com avanço do corpo, o Ladino e o Executor estocadas rápidas de adaga, o Arqueiro e o Caçador miram e disparam, e os magos e o Bardo conjuram. Cada linha tem som próprio."
   },
   {
     "texto": "nao existe capa aqui e esse instrumento ficou minusculo, na pode isso. Precisa ser algo beeeeem melhor",
@@ -9898,9 +9926,10 @@
       "sp": "31/31"
     },
     "id": "S-206",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:39:36",
-    "imagem": "img/S-206.png"
+    "imagem": "img/S-206.png",
+    "resposta": "O Bardo não tem mais capa, e o alaúde agora tem tamanho de verdade (~85 cm), levado nas costas."
   },
   {
     "texto": "gostaria de outros nomes mais inspirados ali no algoz e desordeiro do ragnarok, mas sem deixar escrachado que é o mesa coisa. Mas em relacao às classes pode ser muito parecido mesmo. So odiei isso de saqueador por exemplo",
@@ -9949,9 +9978,10 @@
       "sp": "25/25"
     },
     "id": "S-207",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:40:37",
-    "imagem": "img/S-207.png"
+    "imagem": "img/S-207.png",
+    "resposta": "Nomes novos no espírito do Algoz e do Desordeiro, sem copiar: Lâmina Sombria virou Executor e Saqueador virou Arruaceiro."
   },
   {
     "texto": "aqui ficou feio e aleatorio assim. Prefiro que tenha um navio aqui que eu possa entrar e explorar. E tenha npcs dentro do navio. Pode se inspirar no que exist em alberta. Capriche nesse navio por favor. E nao deixe bugs. Tbm nao quero agua dentro dos barcos e navios. Cuidado com ios bugs squi dessa cidade",
@@ -9993,9 +10023,10 @@
       "sp": "25/25"
     },
     "id": "S-208",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:42:06",
-    "imagem": "img/S-208.png"
+    "imagem": "img/S-208.png",
+    "resposta": "O Porto agora tem o navio Gaivota Dourada atracado no cais: suba pela prancha e ande no convés (cabine do capitão, timão, 3 mastros com velas recolhidas e cordame, cesto da gávea, canhões, cabrestante, barris e uma gaivota dourada na proa), com o Baltazar, o Tico e o Nilo a bordo. A escotilha leva ao porão (a Odete vende, o Bóris cura, a Ilka é a navegadora). Não há mais água nem areia dentro de barco nenhum, e o veleiro e o galeão \"aleatórios\" saíram."
   },
   {
     "texto": "gosto dessa ideia de farol mas claramente ta mal posicionado aqui. Precisa pensar melhor",
@@ -10042,9 +10073,10 @@
       "sp": "25/25"
     },
     "id": "S-209",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:42:32",
-    "imagem": "img/S-209.png"
+    "imagem": "img/S-209.png",
+    "resposta": "O farol agora fica na boca do porto, no fim de um quebra-mar de pedras com caminho para andar e uma plataforma com parapeito, com a Lena na porta."
   },
   {
     "texto": "ficou tudo muito quadradao aqui, nao ta legal",
@@ -10086,9 +10118,10 @@
       "sp": "25/25"
     },
     "id": "S-210",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:42:50",
-    "imagem": "img/S-210.png"
+    "imagem": "img/S-210.png",
+    "resposta": "O porto ficou bem menos quadradão: casas com base de pedra, enxaimel, beirais, cumeeiras, chaminés, janelas com venezianas pintadas e floreiras, algumas com varanda e anexos em L, calçamento de pedras irregulares no passeio e na praça, terra batida entre as casas e uma âncora na praça."
   },
   {
     "texto": "deixar essas barraquinhas mais proximas e dar detalhes pra esses peixes e não deixar tudo assim aleatorio.",
@@ -10138,9 +10171,10 @@
       "sp": "25/25"
     },
     "id": "S-211",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:43:26",
-    "imagem": "img/S-211.png"
+    "imagem": "img/S-211.png",
+    "resposta": "As bancas de peixe ficaram juntas, lado a lado, com gelo, peixes de verdade (cauda, barbatanas, olho, dorso escuro e barriga prateada), caixas de peixe, escamas, peixes pendurados e toldos listrados."
   },
   {
     "texto": "algumas das cases podiam ter portas pra coisas internas com npcs e coisa uteis la dentro",
@@ -10192,9 +10226,10 @@
       "sp": "25/25"
     },
     "id": "S-212",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:43:57",
-    "imagem": "img/S-212.png"
+    "imagem": "img/S-212.png",
+    "resposta": "Duas casas do porto agora têm porta com interior: a Taverna do Marujo (o Gaspar cura, a Lia canta) e o Armazém Naval do Rufino (loja)."
   },
   {
     "texto": "aumentar quantidade de coqueiros e tornar melhor esteticamente",
@@ -10239,9 +10274,10 @@
       "sp": "25/25"
     },
     "id": "S-213",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:44:12",
-    "imagem": "img/S-213.png"
+    "imagem": "img/S-213.png",
+    "resposta": "Cerca de 36 coqueiros novos, com tronco afinando, folhas de verdade com folíolos e cachos de coco, longe das casas e do passeio."
   },
   {
     "texto": "melhorar estetica das casas",
@@ -10286,9 +10322,10 @@
       "sp": "25/25"
     },
     "id": "S-214",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:44:21",
-    "imagem": "img/S-214.png"
+    "imagem": "img/S-214.png",
+    "resposta": "As casas do porto foram refeitas (8 na beira do cais e 4 atrás): base de pedra, enxaimel, janelas com venezianas pintadas e floreiras, portas com moldura e degraus, varandas e chaminés."
   },
   {
     "texto": "tem uns pinos aleatorios aqui que nao fazem sentio, precisa ser alho mais realista",
@@ -10330,9 +10367,10 @@
       "sp": "25/25"
     },
     "id": "S-215",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:45:17",
-    "imagem": "img/S-215.png"
+    "imagem": "img/S-215.png",
+    "resposta": "Os pinos aleatórios do píer saíram: as estacas ficam rentes embaixo das tábuas, com cabeços de amarração de ferro fundido (alguns com corda), guarda-corpo de corda e botes amarrados ao lado."
   },
   {
     "texto": "nao ta fisicamente realistater agua de um lado que vai ate certo local e do lado direito a agua é menor. E esse barco com areia dentro tbm nao ta legal",
@@ -10377,9 +10415,10 @@
       "sp": "25/25"
     },
     "id": "S-216",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:45:59",
-    "imagem": "img/S-216.png"
+    "imagem": "img/S-216.png",
+    "resposta": "A água agora é igual dos dois lados: um cais de pedra reto de ~140 m, com pedras de capeamento, argolas de amarração e muros nas pontas, água funda logo depois da borda e sem cair no mar (só há passagem pela prancha, pelos píeres e pelo quebra-mar). Nada de barco com areia dentro."
   },
   {
     "texto": "tanto a estetica dos npcs nao ta legal, quanto a posicao. nunca pode ter npcs olhando pro 'nada'. Precisam sempre estar posicionados em um local em qie pessoas estariam e nao soltos do nada. Em geral teriam que estar perto de objetos e de costas pra parede e nunca defretne olhando pra parede. Vc tem que melhorar o posicionamento dos npcs como umtodo. Nessas novas cidasdes que vc anda criando",
@@ -10434,9 +10473,10 @@
       "sp": "25/25"
     },
     "id": "S-217",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:47:18",
-    "imagem": "img/S-217.png"
+    "imagem": "img/S-217.png",
+    "resposta": "Todo NPC do porto foi reposicionado com a regra nova: cada um fica junto de algo que explica por que ele está ali (balcão, banca, porta, prancha, timão, bote em conserto, mesa), de costas para a parede ou o objeto e virado para onde as pessoas chegam, nunca solto no vazio nem de cara para a parede. A regra vale para as cidades novas."
   },
   {
     "texto": "gosto da ideia de deserto, mas nao acho que a cidade da água seja a mais inteligente pra estar colada no desetto. Esse posicionamento estrategico entre as cidades precisa ser mais inteligente como um roso pera nao ficar estranho",
@@ -10486,9 +10526,10 @@
       "sp": "25/25"
     },
     "id": "S-218",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:48:05",
-    "imagem": "img/S-218.png"
+    "imagem": "img/S-218.png",
+    "resposta": "Entre o porto e o deserto agora há uma faixa verde de litoral, e a areia e o capim das dunas não chegam mais até a cidade."
   },
   {
     "texto": "repara que parte de baixo ta cortada e isso nao é nada legal. Melhore o grafico desse circulo de baixo tambem",
@@ -10517,9 +10558,10 @@
     "mapa": null,
     "jogador": null,
     "id": "S-219",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:51:12",
-    "imagem": "img/S-219.png"
+    "imagem": "img/S-219.png",
+    "resposta": "Na vitrine e no criador nada mais fica cortado embaixo (o enquadramento tem margem para os pés e o pedestal), e o círculo virou um pedestal de luz com anéis e runas gravadas, menor e mais bonito."
   },
   {
     "texto": "esse cajado ta excessivamente grande. e na oé assm que segura um cajado. Essas rodelas em volta tbm nao existe, nao pode ser assim, ta ridiculo",
@@ -10548,9 +10590,10 @@
     "mapa": null,
     "jogador": null,
     "id": "S-220",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:51:48",
-    "imagem": "img/S-220.png"
+    "imagem": "img/S-220.png",
+    "resposta": "O cajado agora tem tamanho de cajado (~1,5 m), é de madeira torcida com um cristal preso em garras de madeira e é segurado de lado, com o pé perto do chão. As rodelas em volta sumiram."
   },
   {
     "texto": "melhore consideravelmente o gráfico disso, tornando mais realistas. Ta tudo muito com forma geométrica. da pra melhorar muuuuito esse gráfico pra que nao fique tudo como bolotas. olha esse pe e braços ridiculos.   unica cosia que ficou razoavel foram as asas",
@@ -10624,9 +10667,10 @@
       "sp": "25/25"
     },
     "id": "S-221",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:53:05",
-    "imagem": "img/S-221.png"
+    "imagem": "img/S-221.png",
+    "resposta": "Kharzûl refeito: corpo musculoso numa peça só e lisa (peitoral, abdômen, ombros, braços grossos), mãos com dedos e garras, pernas de fera com três dedos e esporões, espinhos nas costas e pele de basalto rachado com veias de magma que pulsam em alguns pontos. Golpe do cutelo em três tempos e boca que abre no rugido. As asas foram mantidas."
   },
   {
     "texto": "ficou meio parecido com uma lagosta ou caranguejo, mas precisa ser muito mais um escorpiao",
@@ -10670,9 +10714,10 @@
       "sp": "25/25"
     },
     "id": "S-222",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:53:38",
-    "imagem": "img/S-222.png"
+    "imagem": "img/S-222.png",
+    "resposta": "O escorpião virou escorpião de verdade: corpo baixo e achatado, carapaça com olhos, cauda fina segmentada arqueada sobre as costas com ferrão curvo, pinças finas e 8 patas finas abertas para os lados."
   },
   {
     "texto": "patas muito grudadas. Pode ser menor tbmessa formiga. E menos 'geometrica'. Mais realista",
@@ -10716,8 +10761,1010 @@
       "sp": "25/25"
     },
     "id": "S-223",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T18:55:08",
-    "imagem": "img/S-223.png"
+    "imagem": "img/S-223.png",
+    "resposta": "Formiga menor e mais realista: cada par de patas sai de um ponto do tórax e abre para os lados (fêmur, tíbia e tarso), corpo liso com cabeça em coração, tórax arqueado e listras pintadas no abdômen."
+  },
+  {
+    "texto": "achei essa lagarto muito exageradamente grande. Podia tambem ter pernas enos parecidas com um ser humano. E isso que parece uma juba pode deixar bem mais interessante tbm, ficou esquisito. Mas essas patar bem ridiculas. So o rostinho que eu curti mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (348×127 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Brasinha": 1,
+          "Lagarto-de-Sal": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lagarto-de-Sal",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        14,
+        297
+      ],
+      "pos": [
+        14,
+        297
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-224",
+    "status": "feito",
+    "criadoEm": "2026-11-08T18:56:19",
+    "imagem": "img/S-224.png",
+    "resposta": "Lagarto-de-Sal menor, com patas de réptil de verdade (cotovelo para fora, dedos longos em leque, nada de perna humana) e babado novo: dois leques de membrana fina e translúcida, laranja queimado no centro e turquesa na borda, com espinhos escuros, que abrem quando ele fica bravo. O rostinho que você gostou ficou igual."
+  },
+  {
+    "texto": "gostei mas ta muito parecio com frango. Quero mais parecido com o peco peco e com o bicho dla do final fantsy. Gostie de estar mais realista mas as asas tao parecendo um frango depenado. Eu gostaria e ter penas muito mais evidenes na pelagem e ter penas brancas e laranjas, algo mais bonito, ficou muito parecido com galinha e as pernas achei muito tortas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (301×285 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Trotavento Selvagem": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Trotavento Selvagem",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -28,
+        269
+      ],
+      "pos": [
+        -28,
+        269
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-225",
+    "status": "feito",
+    "criadoEm": "2026-11-08T18:57:28",
+    "imagem": "img/S-225.png",
+    "resposta": "Trotavento com plumagem branca e laranja de verdade (cerca de 1.600 penas em camadas), asas cheias de penas com primárias brancas de ponta laranja, penacho longo para trás no lugar da crista de galo, e pernas mais retas e fortes com coxa emplumada. Vale para o monstro e a montaria."
+  },
+  {
+    "texto": "melhorou muuuito mas a boca de cone e o ataque com 2 pernas ta ridiculo ainda. Prefiro que ele atqeu mordendo. E chefue mais perto pra morder e nao dar 2 chutes com as pernas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (474×335 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Alfa": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Alfa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        -206,
+        267
+      ],
+      "pos": [
+        -206,
+        267
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-226",
+    "status": "feito",
+    "criadoEm": "2026-11-08T18:58:50",
+    "imagem": "img/S-226.png",
+    "resposta": "Lobo: focinho largo, alto e rombudo, com mandíbula arredondada (adeus cone). E o ataque agora é mordida: as patas ficam plantadas, as de trás empurram, o corpo avança baixo, o pescoço estica e a boca abre e fecha. Sem os chutes."
+  },
+  {
+    "texto": "ja falei que nao tem sentido tanta grama assim na neve. Pode ter uns pedacinhos de grama mas nao generealizado assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (845×333 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vale da Geada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -344,
+        158
+      ],
+      "pos": [
+        -344,
+        158
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-227",
+    "status": "feito",
+    "criadoEm": "2026-11-08T18:59:31",
+    "imagem": "img/S-227.png",
+    "resposta": "No Vale da Geada a grama agora só nasce nas manchas sem neve, nada de grama espalhada sobre a neve."
+  },
+  {
+    "texto": "esses pedaços de gelo ficaram meio bugados e voando, cuidado com isso",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1701×138 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Hask",
+          "Intendente Mornas",
+          "Edran",
+          "Pip",
+          "Ylva"
+        ],
+        "cenario": {
+          "Pinheiro com neve": 6,
+          "Rocha": 3,
+          "sarilho": 1,
+          "salao_comunal": 1,
+          "alojamento": 2,
+          "corvaria": 1,
+          "patio_de_treino": 1,
+          "neve": 1,
+          "Barril": 1,
+          "Mastro com estandarte": 1
+        },
+        "centro": "Chão — Vale da Geada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -357,
+        52
+      ],
+      "pos": [
+        -357,
+        52
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-228",
+    "status": "feito",
+    "criadoEm": "2026-11-08T19:00:00",
+    "imagem": "img/S-228.png",
+    "resposta": "Os montes de neve da fortaleza agora assentam no ponto mais baixo do chão, crescem para cobrir encostas e não aparecem onde é íngreme demais: nada flutuando."
+  },
+  {
+    "texto": "esse chao cheio de quadrados nao ta legal",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1466×851 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vale da Geada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -340,
+        66
+      ],
+      "pos": [
+        -340,
+        66
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-229",
+    "status": "feito",
+    "criadoEm": "2026-11-08T19:00:12",
+    "imagem": "img/S-229.png",
+    "resposta": "O quadriculado vinha do ruído do lago congelado no terreno; o chão foi suavizado e o lago ganhou uma camada de gelo de verdade, com rachaduras ramificadas, bolhas presas e neve soprada nas bordas."
+  },
+  {
+    "texto": "queria melhorar muuuuito esse animal parecendo mais um pegasus. Melhorar MUITO esse grafico, que ainda ta muito baixo. QUero penas, rosto mais realistas, perna nao torta, rabo de cabalo, asas maiores. que nao pareçam morcego...",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (360×230 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Fungolino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -34,
+        25
+      ],
+      "pos": [
+        -34,
+        25
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "103/126",
+      "sp": "15/25"
+    },
+    "id": "S-230",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:01:57",
+    "imagem": "img/S-230.png"
+  },
+  {
+    "texto": "a mestra das classes precisa ter uma fisionomia unica, nao com chapeu e cajado, e sim algo mais unico e parecido com o ragnarok online, roupas mais especiais e feicao mais amigavel",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (298×311 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Mestra Ivra"
+        ],
+        "cenario": {},
+        "centro": "Mestra Ivra",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -78,
+        14
+      ],
+      "pos": [
+        -78,
+        14
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Lâmina Sombria",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "21/25"
+    },
+    "id": "S-231",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:03:21",
+    "imagem": "img/S-231.png"
+  },
+  {
+    "texto": "nao quero que o menu de master dê essas possibilidades , e sim o mapa. Nao quero todos npcs e tudo mais",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"👑 Painel do Mestre\"",
+      "nome": "Área de 553×704 px em Janela \"👑 Painel do Mestre\" — \"🫧 Bolhinha · Nv. 1 · 📍 Vila de Alvorada · 📍 Campos de Verdelume · 📍 Bosque Sussurrante · 📍 Ruínas de Kael · 📍 Coli\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"👑 Painel do Mestre\""
+        ],
+        "textos": [
+          "🫧 Bolhinha",
+          "Nv. 1",
+          "📍 Vila de Alvorada",
+          "📍 Campos de Verdelume",
+          "📍 Bosque Sussurrante",
+          "📍 Ruínas de Kael",
+          "📍 Colinas de Âmbar",
+          "📍 Cidadela de Pedraclara",
+          "📍 Dunas de Sal-Rubro",
+          "📍 Vale da Geada"
+        ],
+        "area": [
+          1414,
+          258,
+          1967,
+          962
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-232",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:07:49",
+    "imagem": "img/S-232.png"
+  },
+  {
+    "texto": "gostaria que enquanto o boto esquerdo do mouse esteja sendo pressionado, que o cursor funcione como um alvo, nao colorido como emoji e sim algo que deixe claro onde está sendo mirado. E essa mecânica de atacar e poder anr enquanto seguraa, e tbm lidar com range e etc, hit box, a forma de andar... tudo isso precisa ser melhorado pra que seja mais fiel à realidade. E tambem quero sons de ataque com laminas, espadas etc. Precisa sair som pra ficar initivo quando um golpe acertou e quando deu miss. E o Miss tbm tem que aparecer. quando vc acera o nada, fora do range",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (294×210 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Executor)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -72,
+        29
+      ],
+      "pos": [
+        -72,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-233",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:13:53",
+    "imagem": "img/S-233.png"
+  },
+  {
+    "texto": "quando eu tiver com o botao esquerdo selecionado e mover o cursor, tbm tem que fazer com que eu consiga mover a camera cmo um todo, mesmo que de forma mais 'devagar', como se com o mouse mais 'pesado' e nao leve. E esse pesado ou leve pode ser mudado tbm nas configuracoes. Pesado ou leve de ataque no caso",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (170×76 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -73,
+        29
+      ],
+      "pos": [
+        -73,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-234",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:15:18",
+    "imagem": "img/S-234.png"
+  },
+  {
+    "texto": "gostei que resolver os bugs. So acho que ficou muito espaço vazio do lado direito de forma desnecessaria",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Seleção de personagens",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Palco do personagem",
+      "nome": "Área de 973×683 px em Palco do personagem — \"‹ · arraste ou / para girar · rodinha aproxi · A · D · ← · → · ›\"",
+      "codigo": "js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)",
+      "detalhes": {
+        "interface": [
+          "Palco do personagem"
+        ],
+        "textos": [
+          "‹",
+          "arraste ou / para girar · rodinha aproxi",
+          "A",
+          "D",
+          "←",
+          "→",
+          "›"
+        ],
+        "area": [
+          1025,
+          273,
+          1998,
+          956
+        ]
+      }
+    },
+    "mapa": null,
+    "jogador": null,
+    "id": "S-235",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:17:20",
+    "imagem": "img/S-235.png"
+  },
+  {
+    "texto": "me incomoda muito o fato de meu modelo ir 'slidando' pro lado quando eu to atacando. Preciso que as pernas se mexam se e utiver andando pro lado, de forma real. Precisa ser mais realista isso. E eu preciso me mover mais devagar enquanto eu estiver atacando, obrigatoriamente, pra ser real. Estilo wow",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (370×249 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -74,
+        29
+      ],
+      "pos": [
+        -74,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-236",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:18:41",
+    "imagem": "img/S-236.png"
+  },
+  {
+    "texto": "clicando no mosntro gostaria de uma pup-up na tela tal que eu consiga mexer nele 360 e ver com mais detalhes, dar zoom e etc",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"📖 Bestiário\"",
+      "nome": "Área de 145×123 px em Janela \"📖 Bestiário\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"📖 Bestiário\""
+        ],
+        "textos": [],
+        "area": [
+          1590,
+          111,
+          1735,
+          234
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-237",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:20:41",
+    "imagem": "img/S-237.png"
+  },
+  {
+    "texto": "nao gostei desse nome",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"📖 Bestiário\"",
+      "nome": "Área de 133×40 px em Janela \"📖 Bestiário\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"📖 Bestiário\""
+        ],
+        "textos": [],
+        "area": [
+          1702,
+          141,
+          1835,
+          181
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-238",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:21:05",
+    "imagem": "img/S-238.png"
+  },
+  {
+    "texto": "esse hat de urso aqui ainda icou zoado, muito estrsnho",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (145×129 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Casa": 1,
+          "Caixote": 2
+        },
+        "centro": "Bento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -61,
+        13
+      ],
+      "pos": [
+        -61,
+        13
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-239",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:22:24",
+    "imagem": "img/S-239.png"
+  },
+  {
+    "texto": "está com muito lag ao arrastar",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 333×323 px em Janela \"✦ Loja de Auroras\" — \"Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [
+          "Capitão Bravo",
+          "<Mestre da Arena (PvP)>",
+          "arraste para girar"
+        ],
+        "area": [
+          1811,
+          192,
+          2144,
+          515
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-240",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:23:08",
+    "imagem": "img/S-240.png"
+  },
+  {
+    "texto": "nao quero isso de aureola. So roupa mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 321×313 px em Janela \"✦ Loja de Auroras\" — \"Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [
+          "Capitão Bravo",
+          "<Mestre da Arena (PvP)>",
+          "arraste para girar"
+        ],
+        "area": [
+          1822,
+          195,
+          2143,
+          508
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-241",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:23:22",
+    "imagem": "img/S-241.png"
+  },
+  {
+    "texto": "a forma de sentar em montaria precisa ser melhorada MUITO ainda. O cavalo ainda está muito amador, mas preciso que isso de a pessoa sentar direito serja feita com muito esmero, pois sera util pra todas as montarias",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 299×266 px em Janela \"✦ Loja de Auroras\" — \"Capitão Bravo · <Mestre da Arena (PvP)>\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [
+          "Capitão Bravo",
+          "<Mestre da Arena (PvP)>"
+        ],
+        "area": [
+          1842,
+          217,
+          2141,
+          483
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-242",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:24:23",
+    "imagem": "img/S-242.png"
+  },
+  {
+    "texto": "prefiro que seja um tigre siberiano aqui e nao uma onça. E precisa melhorar esassas pernas pq tao feias",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 266×227 px em Janela \"✦ Loja de Auroras\" — \"Capitão Bravo\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [
+          "Capitão Bravo"
+        ],
+        "area": [
+          1837,
+          235,
+          2103,
+          462
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-243",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:25:01",
+    "imagem": "img/S-243.png"
+  },
+  {
+    "texto": "cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 301×352 px em Janela \"✦ Loja de Auroras\" — \"Capitão Bravo · <Mestre da Arena (PvP)> · Trotavento · Rara · mesma velocidade das outras\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [
+          "Capitão Bravo",
+          "<Mestre da Arena (PvP)>",
+          "Trotavento",
+          "Rara · mesma velocidade das outras"
+        ],
+        "area": [
+          1823,
+          196,
+          2124,
+          548
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-244",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T19:25:57",
+    "imagem": "img/S-244.png"
   }
 ]

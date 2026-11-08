@@ -105,13 +105,13 @@ const CLASSES = {
     desc: 'Rápido e evasivo. Ataques duplos, veneno e muita esquiva.',
   },
   cavaleiro_runico: {
-    name: 'Cavaleiro Rúnico', tier: 2, parent: 'guerreiro', icon: '⚜️', color: '#8e2f2f', accent: '#ffcf5a', hat: 'helm', cape: true,
-    hpMod: 2.1, spMod: 0.9, skills: ['lamina_runica', 'furia_de_batalha'], next: [], gift: [['espada_longa', 1]],
+    name: 'Cavaleiro', tier: 2, parent: 'guerreiro', icon: '⚜️', color: '#8e2f2f', accent: '#ffcf5a', hat: 'helm', cape: true,
+    hpMod: 2.1, spMod: 0.9, skills: ['lamina_runica', 'furia_de_batalha', 'montaria_de_guerra'], next: [], gift: [['espada_longa', 1]],
     desc: 'Guerreiro que grava runas na lâmina. Dano físico devastador em um único alvo.',
   },
   guardiao_sagrado: {
     name: 'Paladino', tier: 2, parent: 'guerreiro', icon: '🛡️', color: '#d8d2c0', accent: '#e8c040', hat: 'helm', cape: true,
-    hpMod: 2.2, spMod: 1.1, skills: ['julgamento', 'escudo_sagrado'], next: [], gift: [['elmo_de_ferro', 1]],
+    hpMod: 2.2, spMod: 1.1, skills: ['julgamento', 'escudo_sagrado', 'montaria_de_guerra'], next: [], gift: [['elmo_de_ferro', 1]],
     desc: 'Paladino da luz: armadura branca e dourada, escudo abençoado e asas de luz. Resistente ao extremo, com dano Sagrado em área — perfeito contra Sombra.',
   },
   arquimago: {
@@ -135,12 +135,12 @@ const CLASSES = {
     desc: 'Bardo errante com alaúde e chapéu de pena. Canções que fortalecem e notas que atordoam inimigos ao redor.',
   },
   lamina_sombria: {
-    name: 'Lâmina Sombria', tier: 2, parent: 'ladino', icon: '🌑', color: '#2a2233', accent: '#9a6bff', hat: 'hood', cape: true,
+    name: 'Executor', tier: 2, parent: 'ladino', icon: '🌑', color: '#2a2233', accent: '#9a6bff', hat: 'hood', cape: true,
     hpMod: 1.5, spMod: 1.0, skills: ['golpe_sombrio', 'danca_das_laminas'], next: [], gift: [['garras_gemeas', 1]],
     desc: 'Assassino das sombras. Críticos garantidos e uma dança de lâminas mortal.',
   },
   saqueador: {
-    name: 'Saqueador', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#ffd84a', hat: 'hood',
+    name: 'Arruaceiro', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#ffd84a', hat: 'hood',
     hpMod: 1.5, spMod: 1.0, skills: ['roubar', 'golpe_traicoeiro'], next: [], gift: [['adaga_afiada', 1]],
     desc: 'Oportunista. Rouba itens dos monstros e golpeia com traição baseada em Agilidade.',
   },
@@ -233,6 +233,11 @@ const SKILLS = {
     bonuses: lv => ({ flee: lv * 3, moveSpeedPct: lv }), desc: lv => `+${lv * 3} Esquiva e +${lv}% de velocidade de movimento.`,
   },
   // Cavaleiro Rúnico
+  // S-203: Cavaleiro e Paladino montam o Trotavento de guerra (ave corredora) — dá para lutar montado; montaria comum fica bloqueada enquanto isso
+  montaria_de_guerra: {
+    name: 'Montaria de Guerra', icon: '🐦', type: 'active', target: 'self', maxLv: 1, sp: () => 20, cd: 3000, fx: 'aura', fxColor: '#ffcf5a',
+    effect: { kind: 'warmount' }, desc: () => 'Chama (ou dispensa) o seu Trotavento de guerra: luta montado, anda 25% mais rápido e não cai da sela ao atacar. Enquanto montado nele, a montaria comum (M) fica bloqueada.',
+  },
   lamina_runica: {
     name: 'Lâmina Rúnica', icon: '🗡️', type: 'active', target: 'enemy', maxLv: 10, range: 'weapon', sp: lv => 18 + lv * 2, cd: 800, fx: 'runic',
     effect: { kind: 'damage', dmg: 'phys', mult: lv => 2 + lv * 0.4, ignoreDef: 0.5 },

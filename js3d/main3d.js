@@ -8,17 +8,18 @@ import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, PORT, DWARF, ELF, CASTLE, treeAllowed } from './world3d.js';
 import { buildCities, deckAt, FROST } from './cities3d.js';
-import { buildCastle } from './castle3d.js';
+import { buildPortCity, buildMerchants } from './port3d.js';
+import { buildCastle, castleMap } from './castle3d.js';
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow } from './looks3d.js';
+import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { buildCatacombs as buildDungeon, FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
-import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel } from './village3d.js';
+import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
 import { loadHumans, makeHuman, shareSkeletons } from './humans3d.js';
 
@@ -58,6 +59,45 @@ const sky = buildSky(); scene.add(sky);
 scene.add(camera); // a câmera fica na cena: as mãos da 1ª pessoa são filhas dela
 { const ch = document.createElement('div'); ch.id = 'crosshair'; ch.className = 'hidden'; ch.innerHTML = '<i></i><i></i><i></i><i></i><b></b>'; document.body.appendChild(ch); }
 const terrain = buildTerrain(); scene.add(terrain);
+/* Auditoria: detalhe do terreno no shader — montanhas com rocha estratificada, fendas e variação de tom nas encostas,
+   areia com marcas de vento, neve com brilho e manchas, e variação grande de cor no chão (nada de massa lisa e chapada). */
+function terrainDetail(mat, strong = 1) {
+  mat.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos; varying vec3 vWNor;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz; vWNor = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vWPos; varying vec3 vWNor;
+float th(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float tn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(th(i), th(i + vec2(1,0)), f.x), mix(th(i + vec2(0,1)), th(i + vec2(1,1)), f.x), f.y); }
+float tfbm(vec2 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 5; k++) { v += a * tn(p); p *= 2.03; a *= 0.5; } return v; }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+{
+  vec3 N = normalize(vWNor); float steep = 1.0 - smoothstep(0.55, 0.86, N.y);
+  vec3 base = diffuseColor.rgb; float lum = dot(base, vec3(0.299, 0.587, 0.114));
+  float macro = tfbm(vWPos.xz * 0.012); float meso = tfbm(vWPos.xz * 0.09);
+  // variação grande de tom em todo o chão (quebra a cor lisa)
+  diffuseColor.rgb *= 0.86 + macro * 0.22 + (meso - 0.5) * 0.10 * ${strong.toFixed(2)};
+  // rocha: estratos (camadas) que seguem a altura, fendas escuras e liquens nas encostas íngremes
+  vec2 rp = vec2(vWPos.x + vWPos.z, vWPos.y);
+  float strata = smoothstep(0.2, 0.8, sin(vWPos.y * 0.9 + tfbm(rp * 0.08) * 9.0 + tfbm(rp * 0.5) * 2.0) * 0.5 + 0.5);
+  float cracks = smoothstep(0.62, 0.7, tfbm(vec2(vWPos.x * 0.5 + vWPos.z * 0.5, vWPos.y * 1.6)));
+  vec3 rock = mix(vec3(0.42, 0.40, 0.37), vec3(0.62, 0.59, 0.54), strata) * (0.8 + tfbm(rp * 0.6) * 0.4);
+  rock = mix(rock, vec3(0.18, 0.17, 0.16), cracks * 0.7);
+  rock = mix(rock, vec3(0.38, 0.45, 0.28), smoothstep(0.65, 0.8, tfbm(rp * 0.3 + 7.0)) * 0.35);
+  bool snowy = lum > 0.78 && base.b > base.r * 0.95;
+  if (snowy) rock = mix(rock, vec3(0.92, 0.95, 1.0), smoothstep(0.3, 0.75, N.y) * 0.8);
+  diffuseColor.rgb = mix(diffuseColor.rgb, rock * (0.75 + lum * 0.45), steep * 0.85);
+  // areia: marcas de vento finas
+  float sandy = smoothstep(0.08, 0.2, base.r - base.b) * smoothstep(0.55, 0.7, lum) * (1.0 - steep);
+  float rip = sin(vWPos.x * 2.3 + vWPos.z * 1.1 + tn(vWPos.xz * 0.3) * 6.0) * 0.5 + 0.5;
+  diffuseColor.rgb *= 1.0 - sandy * (0.06 - rip * 0.1);
+  // neve no plano: brilho leve e manchas de neve mais densa
+  if (snowy) diffuseColor.rgb *= 0.96 + tn(vWPos.xz * 0.8) * 0.06 + step(0.985, th(floor(vWPos.xz * 6.0))) * 0.15;
+}`);
+  };
+  mat.needsUpdate = true;
+}
+{ let tm = null; terrain.traverse(o => { if (!tm && o.isMesh) tm = o.material; }); if (tm) terrainDetail(tm, 1); }
 scene.add(buildWater());
 scene.add(buildSea()); // S-117: o mar do litoral (canto sudeste)
 scene.add(buildGrass(mulberry(99)));
@@ -105,7 +145,7 @@ function bbox(name) {
 }
 const colliders = [];
 function freeAt(x, z, r) { return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); }
-const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, crate_A: 0.55, crate_B: 0.55, sack: 0.55, weaponrack: 0.55, lumber: 0.5, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
+const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, crate_A: 0.55, crate_B: 0.55, sack: 0.55, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
 const occluders = []; // objetos que bloqueiam a câmera
 const placed = []; // todos os objetos de cenário (sugestões identificam o modelo)
 // junta as peças fixas de um objeto (mesmo material) numa malha só: bem menos chamadas de desenho
@@ -134,7 +174,7 @@ function cullInteriors() {
     interiorObjs = [];
     const skip = new Set([...S.monsters.map(m => m.obj), ...S.npcs.map(n => n.obj), S.me && S.me.obj, S.pet && S.pet.obj]);
     const b = new THREE.Box3(), c = new THREE.Vector3();
-    for (const o of scene.children) { if (skip.has(o) || o.isLight || o.isCamera) continue; b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c); if (c.x > HALF + 100 && b.min.x > HALF + 50) interiorObjs.push(o); }
+    for (const o of scene.children) { if (skip.has(o) || o.isLight || o.isCamera || o.visible === false || o.userData.noRender) continue; /* não liga de volta o que nasceu escondido (bloqueadores de câmera) */ b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c); if (c.x > HALF + 100 && b.min.x > HALF + 50) interiorObjs.push(o); }
   }
   const inside = camera.position.x > HALF + 100;
   if (inside === interiorShown) return; interiorShown = inside;
@@ -204,7 +244,7 @@ function padUnder(x, z, y) { // folha embaixo do ponto (só conta se você está
 function updatePads(dt) {
   for (const pd of S.pads || []) {
     pd.load += ((pd === S.onPad ? 1 : 0) - pd.load) * Math.min(1, dt * 8);
-    pd.mesh.position.y = LAKE.level + Math.sin(S.time * 1.3 + pd.ph) * 0.02 - pd.load * 0.07; // afunda um pouquinho quando você pisa
+    pd.mesh.position.y = LAKE.level + 0.05 + Math.sin(S.time * 1.3 + pd.ph) * 0.012 - pd.load * 0.03; // S-199: afunda só um tiquinho quando você pisa
     pd.mesh.rotation.z = Math.sin(S.time * 0.9 + pd.ph) * 0.015;
   }
 }
@@ -366,7 +406,7 @@ function dismount(silent) {
   scene.remove(S.riding.obj); S.riding = null;
   if (!silent) { ring(S.pos, 1.4, '#ffe08a'); Sound.play('click'); }
 }
-function toggleMount() { if (S.riding) dismount(); else mount(); }
+function toggleMount() { if (S.riding && S.riding.war) { log('Você está na Montaria de Guerra: use a habilidade de novo para descer.', 'warn'); return; } if (S.riding) dismount(); else mount(); }
 
 /* ---------- Mapa de Aethra (tecla G ou clique no minimapa) — para todos os jogadores ---------- */
 let mapaTimer = null;
@@ -379,7 +419,7 @@ function renderMapa() {
     <div class="muted" style="font-size:11px;margin-top:6px">★ NPCs · 💀 mini-chefes · 👑 chefe · <b class="gold">! ? ⚔</b> suas missões · a seta é você. Feche com G ou Esc.</div></div>
     <div class="mp-side"><div class="mp-h">Monstros por região</div>${regions}</div></div>`;
   body.querySelectorAll('[data-mob]').forEach(el => el.onclick = () => { UI.bestSel = el.dataset.mob; UI.open('bestiario'); UI.render_bestiario(); });
-  const cv = $('mapa-cv'), draw = () => { if (S.interior && S.interior.dungeon && dungeonMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, { whole: true, yaw: S.pos.yaw, monsters: S.monsters.filter(m => !m.dead && m.x > HALF + 100 && Math.abs(m.z - S.interior.z) < 36).map(m => ({ x: m.x, z: m.z, boss: m.def.boss })) })) return; drawAdmMap(cv); }; draw();
+  const cv = $('mapa-cv'), draw = () => { if (S.interior && !S.interior.dungeon && roomMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, true)) return; if (S.interior && S.interior.dungeon && dungeonMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, { whole: true, yaw: S.pos.yaw, monsters: S.monsters.filter(m => !m.dead && m.x > HALF + 100 && Math.abs(m.z - S.interior.z) < 36).map(m => ({ x: m.x, z: m.z, boss: m.def.boss })) })) return; drawAdmMap(cv); }; draw();
   clearInterval(mapaTimer); mapaTimer = setInterval(() => { if (!UI.wins.mapa || !document.body.contains(cv)) { clearInterval(mapaTimer); return; } draw(); }, 400);
 }
 
@@ -511,6 +551,36 @@ function refineBoardTex() {
   x.font = 'bold 20px serif'; x.fillStyle = '#8aff9a'; x.fillText('+1 a +4: SEGURO', W * 0.2, 478); x.fillStyle = '#ffd84a'; x.fillText('+5 a +7: ARRISCADO', W / 2, 478); x.fillStyle = '#ff7a5a'; x.fillText('+8 a +10: PODE QUEBRAR', W * 0.8, 478);
   x.strokeStyle = '#8a6a3a'; x.lineWidth = 10; x.strokeRect(5, 5, W - 10, H - 10);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+/* Auditoria: praças com calçamento de pedra de verdade (no lugar do chão bege liso) — disco que acompanha o terreno, pedras irregulares com relevo e borda que se mistura ao chão */
+let _cobble = null;
+function cobbleTex() {
+  if (_cobble) return _cobble;
+  const W = 1024, c = document.createElement('canvas'), b = document.createElement('canvas'); c.width = b.width = W; c.height = b.height = W;
+  const x = c.getContext('2d'), y = b.getContext('2d'); let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#6b6258'; x.fillRect(0, 0, W, W); y.fillStyle = '#202020'; y.fillRect(0, 0, W, W);
+  // pedras em "leque" (calçada portuguesa/medieval): linhas curvas de paralelepípedos
+  for (let row = 0; row < 40; row++) { const yy = row * 26 + (r() - 0.5) * 4; let xx = -r() * 30; while (xx < W) { const w = 22 + r() * 18, h = 20 + r() * 6; const cx = xx + w / 2, cy = yy + h / 2 + Math.sin(xx * 0.01 + row) * 3;
+    const tone = 120 + r() * 60, warm = r() * 18; x.fillStyle = `rgb(${tone + warm},${tone + warm * 0.6},${tone - 6})`; x.beginPath(); x.ellipse(cx, cy, w / 2 - 2, h / 2 - 2, (r() - 0.5) * 0.3, 0, 7); x.fill();
+    x.fillStyle = 'rgba(255,255,240,0.10)'; x.beginPath(); x.ellipse(cx - 2, cy - 3, w / 2 - 6, h / 2 - 7, 0, 0, 7); x.fill();
+    if (r() < 0.25) { x.fillStyle = 'rgba(70,95,45,0.35)'; x.beginPath(); x.ellipse(cx + w / 2, cy, 3, 6, 0, 0, 7); x.fill(); } // musgo entre as pedras
+    const gr = y.createRadialGradient(cx, cy - 2, 2, cx, cy, w / 2); gr.addColorStop(0, '#e0e0e0'); gr.addColorStop(0.8, '#a0a0a0'); gr.addColorStop(1, '#303030'); y.fillStyle = gr; y.beginPath(); y.ellipse(cx, cy, w / 2 - 2, h / 2 - 2, 0, 0, 7); y.fill();
+    xx += w; } }
+  const dirt = x.createRadialGradient(W / 2, W / 2, W * 0.1, W / 2, W / 2, W * 0.7); dirt.addColorStop(0, 'rgba(90,70,50,0)'); dirt.addColorStop(1, 'rgba(90,70,50,0.25)'); x.fillStyle = dirt; x.fillRect(0, 0, W, W);
+  const map = new THREE.CanvasTexture(c), bump = new THREE.CanvasTexture(b); map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, bump]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; }
+  return (_cobble = { map, bump });
+}
+function cobblePlaza(cx, cz, R, rep = 6) {
+  const geo = new THREE.CircleGeometry(R, 72, 0, Math.PI * 2), P = geo.attributes.position, cols = new Float32Array(P.count * 4);
+  // subdivide em anéis para acompanhar o relevo
+  const rings = 14, segs = 72, pos = [], uv = [], col = [], idx = [];
+  for (let i = 0; i <= rings; i++) for (let j = 0; j <= segs; j++) { const rr = R * i / rings, a = j / segs * Math.PI * 2, x = cx + Math.cos(a) * rr * (i === rings ? 1 + Math.sin(a * 5) * 0.06 : 1), z = cz + Math.sin(a) * rr * (i === rings ? 1 + Math.sin(a * 5) * 0.06 : 1);
+    pos.push(x - cx, heightAt(x, z) + 0.03, z - cz); uv.push((x - cx) / R * rep, (z - cz) / R * rep); const edge = Math.min(1, Math.max(0, (R - rr) / (R * 0.18))); col.push(1, 1, 1, edge); }
+  for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) { const A = i * (segs + 1) + j, B = A + segs + 1; idx.push(A, A + 1, B, A + 1, B + 1, B); } // virado para cima
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4)); g.setIndex(idx); g.computeVertexNormals();
+  const t = cobbleTex(), m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 3, roughness: 0.92, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  m.position.set(cx, 0, cz); m.receiveShadow = true; m.renderOrder = 1; scene.add(m); m.userData.asset = 'calcamento'; placed.push(m); m.userData.big = true;
+  return m;
 }
 /* ---------- S-120/S-121: peças da Arena ---------- */
 // textura de pedra aparelhada (tijolos de tamanhos e tons variados, argamassa funda) + mapa de relevo
@@ -722,12 +792,15 @@ function buildWorld() {
   MODELS.well = { scene: makeWell(), radius: 1.15, native: true };          // S-129
   MODELS.bucket = { scene: makeBucket(), radius: 0.22, native: true };      // S-129
   MODELS.barrel = { scene: makeBarrel(), radius: 0.43, native: true };      // S-174: barril de aduelas, aros e tampa
+  MODELS.lumber = { scene: makeLogPile(), radius: 1.1, native: true };      // auditoria: pilha de toras de verdade
+  MODELS.weaponrack = { scene: makeWeaponRack(), radius: 0.9, native: true }; // auditoria: suporte com espadas, lança e escudo
   MODELS.blacksmith = { scene: makeSmithy(), radius: 3.0, native: true };   // S-125: ferraria sem o forno gigante
   MODELS.flag_blue = { scene: makeClothFlag('blue'), radius: 0.3, native: true }; // S-131: pano ao vento
   MODELS.flag_red = { scene: makeClothFlag('red'), radius: 0.3, native: true };
   const V = VILLAGE;
   // vila: poço no centro, casas em anel virado para a praça (a leste fica a saída da estrada)
   place('well', V.x, V.z, { rot: 0, rf: 0.6 });
+  cobblePlaza(V.x, V.z, 17, 7); // auditoria: praça calçada de pedra
   const ring = [['tavern', 160, 23], ['home_A', 200, 22], ['home_B', 235, 22], ['blacksmith', 270, 23], ['home_A_red', 305, 23], ['church', 120, 25], ['home_B_red', 85, 22], ['market', 50, 22]];
   for (const [n, deg, r] of ring) {
     const a = deg * Math.PI / 180, x = V.x + Math.cos(a) * r, z = V.z + Math.sin(a) * r;
@@ -746,7 +819,7 @@ function buildWorld() {
   place('tower', V.x + 22, V.z - 9, { rf: 0.5 }); place('tower', V.x + 22, V.z + 14, { rf: 0.5 });
   place('flag_blue', V.x + 18, V.z - 6, { solid: false }); place('flag_blue', V.x + 18, V.z + 11, { solid: false });
   // feira e enfeites
-  const props = [['barrel', 6, -9], ['barrel', 7.1, -8], ['barrel', 6.2, -7.6], ['crate_A', 9, -10], ['crate_B', 9.9, -8.8], ['crate_A', 8.2, -11.2], ['wheelbarrow', -9, 7], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 1.75, 0.45], ['crate_B', 10, 11], /* S-172 balde junto do poço · S-173 sem o saco · S-174 barris detalhados e 3 caixas */ ['target_round', -6, -14], ['flag_red', 12, -12]];
+  const props = [['barrel', 6, -9], ['barrel', 7.1, -8], ['barrel', 6.2, -7.6], ['crate_A', 9, -10], ['crate_B', 9.9, -8.8], ['crate_A', 8.2, -11.2], ['wheelbarrow', -9, 7], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 1.75, 0.45], /* S-172 balde junto do poço · S-173 sem o saco · S-174 barris detalhados e 3 caixas · S-198 sem a caixa no caminho */ ['target_round', -6, -14], ['flag_red', 12, -12]];
   for (const [n, dx, dz] of props) place(n, V.x + dx, V.z + dz, { rf: 0.6 });
   // paliçada de troncos ao redor da vila (portão a leste, na estrada) — S-072
   {
@@ -818,7 +891,7 @@ function buildWorld() {
     if (Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT - 2 && !freeAt(x, z, 3)) continue;
     place((zoneWeight('geada', x, z) > 0.3 ? ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'] : ['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'])[Math.floor(rng() * (zoneWeight('geada', x, z) > 0.3 ? 4 : 6))], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
-  scene.add(buildDistantMountains());
+  { const dm = buildDistantMountains(); dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
   // nuvens
   for (let i = 0; i < 40; i++) {
     const c = place(rng() < 0.6 ? 'cloud' : 'cloud_s', (rng() * 2 - 1) * (HALF + 20), (rng() * 2 - 1) * (HALF + 20), { y: 95 + rng() * 35, scale: 3 + rng() * 3, solid: false });
@@ -839,7 +912,7 @@ const FLIGHTS = {
 };
 function worldNpc(n, x, z, yaw) {
   const ch = makeNpcHero(n);
-  ch.obj.position.set(x, heightAt(x, z), z); ch.obj.rotation.y = yaw ?? 0; ch.anim.play('Idle', { speed: 0.8 + rng() * 0.4 });
+  ch.obj.position.set(x, groundAt(x, z), z); ch.obj.rotation.y = yaw ?? 0; ch.anim.play('Idle', { speed: 0.8 + rng() * 0.4 });
   const npc = { ...n, x, z, ...ch, isNpc: true, height: 1.85, radius: 0.5 };
   ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x, z, r: 0.6 }); S.npcs.push(npc);
   return npc;
@@ -908,6 +981,7 @@ function buildFrontier() {
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
   // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
   S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera });
+  { const portCtx = { scene, place, worldNpc, roomNpc, colliders, occluders, placed, roomAnims, camera, addDoorPortal, portals }; S.port = buildPortCity(portCtx); buildMerchants(portCtx); } // S-208..S-218: Porto das Gaivotas (port3d)
   buildCastle({ scene, place, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals });
   if (S.cities && S.cities.refineBoard) { const b = S.cities.refineBoard, m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.92, b.h * 0.88), new THREE.MeshStandardMaterial({ map: refineBoardTex(), roughness: 0.9 })); m.position.set(b.x, b.y, b.z); m.rotation.y = b.yaw; m.translateZ(0.06); scene.add(m); m.userData.asset = 'tabela_refino'; placed.push(m); extraPick.push(m); } // S-124: tabela de refino na parede do ferreiro
 }
@@ -974,6 +1048,21 @@ function makeChar(model, show, height = HERO_H) {
 function attach(root, item, hand = 'r') {
   const bone = root.getObjectByName('handslot' + hand) || root.getObjectByName('handslot.' + hand);
   if (bone && MODELS[item]) bone.add(MODELS[item].scene.clone(true));
+}
+// S-205: cada linha de classe ataca de um jeito (clipes da UAL; o 2 mãos é mais lento e com avanço do corpo)
+const CLASS_ATTACK = {
+  aprendiz: { clips: ['Punch_Jab', 'Punch_Cross', 'Sword_Attack'], sound: 'swing', speed: 1.1 },
+  guerreiro: { clips: ['Sword_Attack'], sound: 'swing', speed: 1.15 }, cavaleiro_runico: { clips: ['Sword_Attack'], sound: 'heavySwing', speed: 0.85, lunge: 0.6 }, guardiao_sagrado: { clips: ['Sword_Attack'], sound: 'heavySwing', speed: 0.9, lunge: 0.4 },
+  ladino: { clips: ['Punch_Jab', 'Punch_Cross'], sound: 'stab', speed: 1.4, lunge: 0.25 }, lamina_sombria: { clips: ['Punch_Cross', 'Punch_Jab'], sound: 'stab', speed: 1.6, lunge: 0.35 }, saqueador: { clips: ['Punch_Jab', 'Sword_Attack'], sound: 'stab', speed: 1.3 },
+  arqueiro: { clips: ['Pistol_Shoot'], sound: 'bow', speed: 0.9, aim: 'Pistol_Aim_Neutral' }, cacador: { clips: ['Pistol_Shoot'], sound: 'bow', speed: 1.0, aim: 'Pistol_Aim_Neutral' }, menestrel: { clips: ['Spell_Simple_Shoot'], sound: 'bow', speed: 1.1 },
+  mago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.0 }, arquimago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.1 }, sabio_elemental: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.05 },
+};
+function attackAnim(p, me) {
+  const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
+  S.atkN = (S.atkN || 0) + 1; const clip = ca.clips[S.atkN % ca.clips.length];
+  me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: ca.speed * Math.max(1, 900 / p.d.aspd) });
+  if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
+  return ca;
 }
 const ATTACK_ANIM = { '1h': ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'], '2h': ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Chop'], dual: ['Dualwield_Melee_Attack_Slice', 'Dualwield_Melee_Attack_Stab'], ranged: ['2H_Ranged_Shoot'], cast: ['2H_Melee_Attack_Chop'] };
 
@@ -1047,10 +1136,11 @@ function actionFire() {
   S.nextAttack = t + p.d.aspd / 1000;
   vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
   if (m) { setTarget(m); playerAttack(m); return; }
-  // ninguém na mira: o golpe vai no vazio (projétil segue reto)
-  const me = S.me, list = ATTACK_ANIM[me.look.style]; me.anim.play(list[0], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); S.lockAnim = t + 0.3;
-  if (ranged) { const to = aimPoint(28); shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto); Sound.play(p.d.magicAuto ? 'magic' : 'bow'); }
-  else Sound.play('swing');
+  // S-192: no vazio o golpe é idêntico ao golpe num alvo (mesma animação, tempo e som) — só não dá dano; projétil segue reto
+  if (S.riding && !S.riding.war) dismount(true);
+  const me = S.me, ca = attackAnim(p, me); S.lockAnim = t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
+  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : 0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bow'); }
+  else Sound.play(ca.sound || 'swing');
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
 let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing';
@@ -1482,10 +1572,10 @@ const hatOf = p => (p && p.equip && p.equip.cabeca && p.equip.cabeca.id) || null
 const SKIN_HEX = { clara: '#e2b393', escura: '#8a5a3c' };
 function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   const look = normalizeLook(look0);
-  const h = makeHuman({ sex: look.sex, outfit: extra.outfit || CLASS_OUTFIT[cls] || 'campones', hair: look.hair.style, hairColor: HAIR_COLORS[look.hair.color].hex, skin: look.skin, beard: (look.beard || look.race === 'anao') && look.sex === 'm', hood: extra.hood });
+  const h = makeHuman({ race: look.race, sex: look.sex, outfit: extra.outfit || CLASS_OUTFIT[cls] || 'campones', hair: look.hair.style, hairColor: HAIR_COLORS[look.hair.color].hex, skin: look.skin, beard: (look.beard || look.race === 'anao') && look.sex === 'm', hood: extra.hood });
   h.root.userData.skin = new THREE.Color(SKIN_HEX[look.skin]);
-  const d = cls ? dressHuman(h, cls, MODELS) : { style: '1h', update: () => { } };
-  if (look.race === 'anao') h.obj.scale.set(1.08, 0.86, 1.08); else if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97);
+  const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand }) : { style: '1h', update: () => { } };
+  if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
   const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
   return { ch: h, d: hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d };
 }
@@ -1494,14 +1584,16 @@ function makeNpcHero(n) {
   const look = normalizeLook({ ...(n.look || {}), sex: (n.look && n.look.sex) || (NPC_FEMALE.has(n.id) ? 'f' : 'm') });
   const { ch } = makeHero(null, look, null, { outfit: /Knight|Barbarian|Rogue/.test(n.model) ? 'patrulheiro' : 'campones', hood: n.model === 'Rogue_Hooded' });
   for (const it of n.show || []) if (!/_Cape$/.test(it)) humanBorrow(ch.root, MODELS, n.model, it);
+  const rfx = dressNpcRole(ch, n.id, MODELS); if (rfx) ch.roleFx = rfx; // S-193/S-197: freira, guarda...
   return ch;
 }
+const offOf = p => (p && p.equip && p.equip.escudo && p.equip.escudo.id) || null; // S-202: escudo só aparece se estiver equipado
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
-  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p));
+  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p), { offhand: offOf(S.p) });
   let skinFx = null; try { skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null; } catch (e) { }
-  S.me = { hatId: hatOf(S.p), ...ch, look: { model: 'humano', show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
+  S.me = { hatId: hatOf(S.p), offId: offOf(S.p), ...ch, look: { model: 'humano', show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
   S.me.song = makeSongAura(); ch.obj.add(S.me.song);
@@ -1558,7 +1650,7 @@ function moveInput() {
   if (k.w || k.arrowup || (mouse.left && mouse.right)) fwd += 1;
   if (k.s || k.arrowdown) fwd -= 1;
   const L = k.a || k.arrowleft, R = k.d || k.arrowright;
-  if (mouse.right || isAction()) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; } // modo ação: A/D andam de lado
+  if (mouse.right || isAction() || S.fire) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; } // modo ação ou mirando (botão esquerdo): A/D andam de lado
   if (k.q_strafe) strafe -= 1;
   return { fwd, strafe, turn, any: !!(fwd || strafe) };
 }
@@ -1607,7 +1699,7 @@ function updatePlayer(dt) {
   // movimento
   const mi = moveInput();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
-  else if (S.fire) actionFire(); // S-141: segurando o botão esquerdo, ataca para onde o cursor aponta
+  else if (S.fire) { const q = aimPoint(30); P.yaw = angLerp(P.yaw, Math.atan2(q.x - P.x, q.z - P.z), Math.min(1, dt * 14)); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
   else {
     P.yaw += mi.turn * 2.6 * dt;
     if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
@@ -1615,7 +1707,7 @@ function updatePlayer(dt) {
   }
   if ((mi.any || mi.turn) && S.sitting) S.sitting = false;
   if (mi.any && S.casting) { S.casting = null; log('Conjuração cancelada.', 'warn'); $('castbar3d').classList.add('hidden'); }
-  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? MOUNT_SPEED : 1);
+  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? (S.riding.war ? 1.25 : MOUNT_SPEED) : 1);
   const inLake = !S.interior && lakeDist(P.x, P.z) < LAKE.r + 1;
   let vx = 0, vz = 0;
   if (mi.any && !S.casting) {
@@ -1645,11 +1737,12 @@ function updatePlayer(dt) {
       if (gs > SLOPE_MAX * 1.15) { const k = Math.min(6, (gs - SLOPE_MAX) * 8) * dt; r = resolve(r.x - gx / gs * k, r.z - gz / gs * k, 0.45); if (!S.slideMsg || S.time - S.slideMsg > 4) { S.slideMsg = S.time; msgOnce('slope', 'Íngreme demais para subir.'); } }
     }
   }
+  if (S.lunge && S.time - S.lunge.t < 0.2) { const k = S.lunge.d / 0.2 * dt, q = resolve(r.x + Math.sin(P.yaw) * k, r.z + Math.cos(P.yaw) * k, 0.45); r = q; } // avanço do golpe pesado
   P.x = r.x; P.z = r.z;
   const coast = !mi.any ? Math.hypot(S.vel.x, S.vel.z) : 0;
   let gy = groundAt(P.x, P.z); if (inLake) gy = Math.max(gy, LAKE.level - 0.6); // na água: afundado até a cintura
   const pad = padUnder(P.x, P.z, P.y); S.onPad = pad && P.ground ? pad : null;
-  if (pad) gy = Math.max(gy, pad.mesh.position.y + 0.06);
+  if (pad) gy = Math.max(gy, pad.mesh.position.y + 0.1); // S-199: pés em cima da folha, não dentro da água
   if (P.ground && gy < P.y - 0.3) { P.ground = false; P.vy = 0; } // saiu da beirada (ex.: da folha): cai
   if (P.ground) { P.y = gy; S.fallTop = null; }
   else {
@@ -1669,11 +1762,11 @@ function updatePlayer(dt) {
   // de frente para o alvo quando parado atacando
   if (S.autoAttack && S.target && !mi.any && !mi.turn && !mouse.right) P.yaw = angLerp(P.yaw, Math.atan2(S.target.x - P.x, S.target.z - P.z), Math.min(1, dt * 8));
   // S-151: o corpo gira para o lado em que anda (andar de lado vira corrida na diagonal; para trás, passos de ré de verdade)
-  { const moving = mi.any && !S.riding && P.ground && !isAction(); const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
+  { const moving = mi.any && !S.riding && P.ground && !isAction() && !S.fire; const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
   me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
   // animação
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
-  else if (S.riding) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
+  else if (S.riding && t >= S.lockAnim) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
   else if (!P.ground) { if (me.anim.name !== 'Jump_Start') me.anim.play('Jump_Idle'); }
   else if (S.sitting) { if (me.anim.name !== 'Sit_Floor_Idle' && me.anim.name !== 'Sit_Floor_Down') { me.anim.play('Sit_Floor_Down', { once: true }); later(0.9, () => { if (S.sitting) me.anim.play('Sit_Floor_Idle'); }); } }
@@ -1716,14 +1809,14 @@ function updatePlayer(dt) {
   }
 }
 function playerAttack(m) {
-  if (S.riding) dismount(true);
+  if (S.riding && !S.riding.war) dismount(true); // na Montaria de Guerra dá para lutar montado
   const p = S.p, me = S.me, st = me.look.style;
-  const list = ATTACK_ANIM[st]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) });
-  S.lockAnim = S.time + Math.min(0.6, p.d.aspd / 1000 * 0.8);
+  const ca = attackAnim(p, me);
+  S.lockAnim = S.time + Math.min(0.55, p.d.aspd / 1000 * 0.7);
   S.sitting = false;
   const hit = () => {
     if (m.dead) return;
-    hurtMonster(m, rollPhys(p, m, 1, 'neutro'));
+    hurtMonster(m, rollPhys(p, m, 1, 'neutro')); if (!p.d.ranged) Sound.play('impact');
     if (p.d.doubleAttack && !p.d.ranged && Math.random() * 100 < p.d.doubleAttack) later(0.15, () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 1, 'neutro')); });
   };
   if (p.d.magicAuto) { // projétil arcano do cajado
@@ -1731,8 +1824,8 @@ function playerAttack(m) {
     Sound.play('magic');
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
-  else if (p.d.ranged) { Sound.play('bow'); later(0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
-  else { Sound.play('swing'); later(0.28, hit); }
+  else if (p.d.ranged) { Sound.play(ca.sound === 'magic' ? 'magic' : 'bow'); later(0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
+  else { Sound.play(ca.sound || 'swing'); later(0.28, hit); }
 }
 function playerDie() {
   const p = S.p;
@@ -2019,6 +2112,13 @@ function executeSkill(a) {
   const anim = eff.dmg === 'magic' || eff.kind === 'heal' || eff.kind === 'buff' ? 'Spellcast_Shoot' : sk.target === 'selfAoe' ? '2H_Melee_Attack_Spin' : ATTACK_ANIM[me.look.style][0];
   me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6;
   hudDirty = true;
+  if (eff.kind === 'warmount') { // S-203
+    if (S.riding && S.riding.war) { dismount(); log('Trotavento dispensado.'); return; }
+    if (S.interior) { log('Aqui dentro não dá para montar.', 'warn'); return; }
+    if (S.riding) dismount(true);
+    const R = makeMount('trotavento'); R.war = true; R.obj.position.set(S.pos.x, S.pos.y, S.pos.z); R.obj.rotation.y = S.pos.yaw; scene.add(R.obj);
+    S.riding = R; S.sitting = false; ring(S.pos, 2, '#ffcf5a'); Sound.play('portal'); log('🐦 Montaria de Guerra: você monta no seu Trotavento e pode lutar montado.', 'lvl'); return;
+  }
   if (eff.kind === 'heal') { const v = eff.amount(lv, p); p.hp = Math.min(p.d.maxHp, p.hp + v); floatAt(me.obj.position, '+' + v, '#5fe08a', 2.2); ring(me.obj.position, 1.6, '#7dff9a'); Sound.play('heal'); return; }
   if (eff.kind === 'buff') { p.buffs[a.id] = { until: S.time + eff.dur / 1000, bonuses: eff.bonuses(lv) }; recalc(p); ring(me.obj.position, 1.8, sk.fxColor || '#ffd76a'); Sound.play('buff'); log(`${sk.name} ativada!`); return; }
   if (eff.kind === 'steal') {
@@ -2341,12 +2441,30 @@ function buildMinimap() {
 }
 // minimapa redondo: mostra a região ao seu redor (zoom com + e −)
 let mmRange = 60;
+/* S-189: planta de qualquer sala/prédio (paredes, móveis e colunas pelas colisões, a porta de saída) — minimapa e mapa G */
+function roomMap(c, W, x, z, range, whole) {
+  const I = S.interior; if (!I) return false;
+  const R = W / 2, sc = whole ? (W * 0.9) / Math.max(I.w || 2 * I.round, I.d || 2 * I.round) : R / range, cx = whole ? I.x : x, cz = whole ? I.z : z;
+  const pt = (px, pz) => [R + (px - cx) * sc, R + (pz - cz) * sc];
+  c.fillStyle = '#16120c'; c.fillRect(0, 0, W, W);
+  if (I.id === 'castelo') { castleMap(c, W, x, z, whole ? 50 : range, { yaw: S.pos.yaw, whole }); return true; }
+  c.fillStyle = '#4a3c28'; c.strokeStyle = '#c9a24a'; c.lineWidth = 2;
+  if (I.round) { const [a, b] = pt(I.x, I.z); c.beginPath(); c.arc(a, b, I.round * sc, 0, 7); c.fill(); c.stroke(); }
+  else { const [a, b] = pt(I.x - I.w / 2, I.z - I.d / 2); c.fillRect(a, b, I.w * sc, I.d * sc); c.strokeRect(a, b, I.w * sc, I.d * sc); }
+  c.fillStyle = 'rgba(20,14,8,0.85)';
+  for (const co of colliders) { if (Math.abs(co.x - I.x) > (I.w || 2 * I.round) / 2 + 2 || Math.abs(co.z - I.z) > (I.d || 2 * I.round) / 2 + 2) continue; const [a, b] = pt(co.x, co.z);
+    if (co.box) { c.save(); c.translate(a, b); c.rotate(-co.rot); c.fillRect(-co.hx * sc, -co.hz * sc, co.hx * 2 * sc, co.hz * 2 * sc); c.restore(); } else { c.beginPath(); c.arc(a, b, Math.max(1.5, co.r * sc), 0, 7); c.fill(); } }
+  for (const pt2 of portals) if (Math.abs(pt2.x - I.x) < (I.w || 2 * I.round) && Math.abs(pt2.z - I.z) < (I.d || 2 * I.round)) { const [a, b] = pt(pt2.x, pt2.z); c.fillStyle = '#7ad8ff'; c.beginPath(); c.arc(a, b, 4, 0, 7); c.fill(); }
+  if (whole) { c.font = '700 16px Cinzel, serif'; c.fillStyle = '#ffe9a8'; c.textAlign = 'center'; c.fillText(I.name || '', R, 22); const [a, b] = pt(x, z); c.fillStyle = '#fff'; c.beginPath(); c.arc(a, b, 5, 0, 7); c.fill(); }
+  return true;
+}
 function drawMinimap() {
   const cv = $('minimap'), c = cv.getContext('2d'), W = cv.width, R = W / 2;
   c.clearRect(0, 0, W, W);
   c.save(); c.beginPath(); c.arc(R, R, R - 7, 0, 7); c.clip();
   const sizePx = mmRange * 2 / 300 * WM;
-  if (!(S.interior && S.interior.dungeon && dungeonMap(c, W, S.pos.x, S.pos.z, mmRange))) { // na masmorra: planta do andar
+  if (S.interior && !S.interior.dungeon) roomMap(c, W, S.pos.x, S.pos.z, Math.min(mmRange, 40)); // S-189: dentro de prédios, a planta da sala
+  else if (!(S.interior && S.interior.dungeon && dungeonMap(c, W, S.pos.x, S.pos.z, mmRange))) { // na masmorra: planta do andar
     c.fillStyle = '#1a2a1a'; c.fillRect(0, 0, W, W);
     const MP = S.interior ? S.interior.back : S.pos; // dentro de casa: mostra a porta
     c.drawImage(worldMap, w2m(MP.x) - sizePx / 2, w2m(MP.z) - sizePx / 2, sizePx, sizePx, 0, 0, W, W);
@@ -2551,7 +2669,7 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
-    if (S.me && S.me.hatId !== hatOf(S.p)) buildPlayerModel(); // trocou o chapéu
+    if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p))) buildPlayerModel(); // trocou o chapéu ou o escudo
     updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
@@ -2648,9 +2766,13 @@ function makeStage(cv) {
   const top = new THREE.DirectionalLight('#fff1d0', 1.2); top.position.set(1, 6, 2); sc.add(key, rim, top);
   const cam = new THREE.PerspectiveCamera(28, W / H, 0.05, 50);
   // S-140: o pedestal agora é parte da cena 3D (no chão, y = 0): pés e patas sempre em cima do círculo
-  { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(255,214,130,0.55)'); g.addColorStop(0.55, 'rgba(255,200,110,0.22)'); g.addColorStop(0.8, 'rgba(255,190,90,0.08)'); g.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256);
-    x.strokeStyle = 'rgba(255,220,150,0.35)'; x.lineWidth = 3; x.beginPath(); x.arc(128, 128, 96, 0, 7); x.stroke();
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const pad = new THREE.Mesh(new THREE.CircleGeometry(1.6, 64), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); pad.rotation.x = -Math.PI / 2; pad.position.y = 0.002; pad.renderOrder = -1; sc.add(pad); }
+  { // S-219: pedestal de pedra clara com runas e brilho suave (dentro do enquadramento)
+    const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'), R = 256;
+    const glow = x.createRadialGradient(R, R, 40, R, R, R); glow.addColorStop(0, 'rgba(255,214,140,0.42)'); glow.addColorStop(0.62, 'rgba(255,200,120,0.18)'); glow.addColorStop(0.86, 'rgba(255,190,100,0.06)'); glow.addColorStop(1, 'rgba(255,190,100,0)'); x.fillStyle = glow; x.fillRect(0, 0, 512, 512);
+    x.strokeStyle = 'rgba(255,226,160,0.55)'; x.lineWidth = 3; x.beginPath(); x.arc(R, R, 196, 0, 7); x.stroke(); x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,226,160,0.35)'; x.beginPath(); x.arc(R, R, 178, 0, 7); x.stroke(); x.beginPath(); x.arc(R, R, 120, 0, 7); x.stroke();
+    x.fillStyle = 'rgba(255,230,170,0.5)'; x.font = '20px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; const runes = 'ᚨᛖᚦᚱᚨ✦ᚲᚱᛟᚾᛁᚲᚨᛊ✦';
+    for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; x.save(); x.translate(R + Math.cos(a) * 187, R + Math.sin(a) * 187); x.rotate(a + Math.PI / 2); x.fillText(runes[k % runes.length], 0, 0); x.restore(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; const pad = new THREE.Mesh(new THREE.CircleGeometry(1.15, 96), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); pad.rotation.x = -Math.PI / 2; pad.position.y = 0.002; pad.renderOrder = -1; sc.add(pad); }
   let zoomAt = new THREE.Vector3(0, 0, 0); // S-149: ponto para onde a rodinha aproxima (onde está o cursor)
   const zr = new THREE.Raycaster();
   let cur = null, pet = null, yaw = 0.35, vel = 0, drag = false, lastX = 0, t = 0, last = performance.now(), alive = true, zoom = 0, zoomT = 0, idleT = 0;
@@ -2685,7 +2807,7 @@ function makeStage(cv) {
     const th = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), wHalf = (x1 - x0) / 2 + 0.12, hHalf = h / 2 + 0.16;
     let face = HERO_H * 0.68; // altura do rosto: centro da cabeça de verdade (anão é mais baixo)
     if (cur) { const hb = new THREE.Box3(); cur.ch.obj.traverse(o => { if (o.isSkinnedMesh && o.visible && (o.name === 'PlayerHead' || /^SuperHero/i.test(o.name) || /_Head(_Hooded)?$/.test(o.name))) { o.computeBoundingBox(); hb.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); } }); if (!hb.isEmpty()) face = hb.getCenter(new THREE.Vector3()).y - 0.02; const hbone = cur.ch.root.getObjectByName('Head'); if (hbone) { const v = new THREE.Vector3(); hbone.getWorldPosition(v); face = v.y + 0.09; } } // corpo realista: mira o osso da cabeça
-    fit = { cx: (x0 + x1) / 2, cy: h / 2, dist: Math.max(hHalf / th, wHalf / (th * cam.aspect)) + depth * 0.45, face };
+    fit = { cx: (x0 + x1) / 2, cy: h / 2 - 0.08, dist: (Math.max(hHalf / th, wHalf / (th * cam.aspect)) + depth * 0.45) * 1.14, face }; // S-219: margem embaixo, nada cortado
   };
   const api = {
     setChar(obj) { if (cur) root.remove(cur.ch.obj); cur = obj; if (cur) { root.add(cur.ch.obj); cur.ch.obj.position.set(0, 0, 0); cur.ch.anim.update(0.3); } refit(); draw(0); },
@@ -2916,7 +3038,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { ruinas: 'Ruínas', calcada_antiga: 'Calçada antiga', coluna_quebrada: 'Coluna quebrada', muro_desabado: 'Muro desabado', coluna_tombada: 'Coluna gigante tombada', pedestal_vazio: 'Pedestal vazio', escombros: 'Escombros', muralha_gelida: 'A Muralha Gélida', escadaria_da_muralha: 'Escadaria da Muralha', sarilho: 'Sarilho do elevador', elevador_de_gaiola: 'Elevador de gaiola', torre_do_comandante: 'Torre do Comandante', salao_comunal: 'Salão comunal', alojamento: 'Alojamento da Vigília', corvaria: 'Corvaria', arsenal: 'Arsenal com forja', estabulo_da_vigilia: 'Estábulo da Vigília', patio_de_treino: 'Pátio de treino', portao_da_muralha: 'Portão selado da Muralha', lenha: 'Lenha empilhada', neve: 'Neve acumulada', guilda_dos_mercadores: 'Guilda dos Mercadores', armazem: 'Armazém de carga', banca_do_mercado: 'Banca do mercado', guindaste_do_cais: 'Guindaste do cais', galeao_mercante: 'Galeão mercante', noctivago: 'Noctívago (cavalo alado)', pinesnow_0: 'Pinheiro com neve', pinesnow_1: 'Pinheiro com neve', pinesnow_2: 'Pinheiro com neve', pinesnow_3: 'Pinheiro com neve', oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
+const ASSET_NAMES = { muralha_pedrafunda: 'Muralha de Pedrafunda', rua_pedrafunda: 'Rua principal de Pedrafunda', estoa_pedrafunda: 'Pórtico da ágora', acropole_pedrafunda: 'Acrópole de Pedrafunda', templo_da_forja: 'Templo da Forja', santuario_ancestrais: 'Santuário dos Ancestrais', taverna_anao: 'Taverna Bigorna Bêbada', mesas_da_taverna: 'Mesas da taverna', carroca_de_minerio: 'Carroça de minério', lago_congelado: 'Lago congelado', cais_de_pedra: 'Cais de pedra', cabeco: 'Cabeços de amarração', navio: 'Navio Gaivota Dourada', prancha: 'Prancha de embarque', quebra_mar: 'Quebra-mar do farol', estaleiro: 'Estaleiro (bote em conserto)', ancora_da_praca: 'Âncora da praça', mesa_da_capitania: 'Mesa da Capitania', toras: 'Pilha de toras', calcamento: 'Calçamento de pedra da praça', ruinas: 'Ruínas', calcada_antiga: 'Calçada antiga', coluna_quebrada: 'Coluna quebrada', muro_desabado: 'Muro desabado', coluna_tombada: 'Coluna gigante tombada', pedestal_vazio: 'Pedestal vazio', escombros: 'Escombros', muralha_gelida: 'A Muralha Gélida', escadaria_da_muralha: 'Escadaria da Muralha', sarilho: 'Sarilho do elevador', elevador_de_gaiola: 'Elevador de gaiola', torre_do_comandante: 'Torre do Comandante', salao_comunal: 'Salão comunal', alojamento: 'Alojamento da Vigília', corvaria: 'Corvaria', arsenal: 'Arsenal com forja', estabulo_da_vigilia: 'Estábulo da Vigília', patio_de_treino: 'Pátio de treino', portao_da_muralha: 'Portão selado da Muralha', lenha: 'Lenha empilhada', neve: 'Neve acumulada', guilda_dos_mercadores: 'Guilda dos Mercadores', armazem: 'Armazém de carga', banca_do_mercado: 'Banca do mercado', guindaste_do_cais: 'Guindaste do cais', galeao_mercante: 'Galeão mercante', noctivago: 'Noctívago (cavalo alado)', pinesnow_0: 'Pinheiro com neve', pinesnow_1: 'Pinheiro com neve', pinesnow_2: 'Pinheiro com neve', pinesnow_3: 'Pinheiro com neve', oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;

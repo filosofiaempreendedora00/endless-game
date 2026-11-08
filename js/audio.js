@@ -266,8 +266,14 @@ const Sound = {
       case 'hit': this.noise(t, 0.07, 0.6, 1400, 'bandpass'); this.sweep(180, 60, t, 0.09, 'sine', 0.5); break;
       case 'crit': this.noise(t, 0.1, 0.8, 1800, 'bandpass'); this.sweep(900, 1800, t, 0.12, 'square', 0.15); break;
       case 'miss': this.noise(t, 0.12, 0.25, 3000, 'highpass'); break;
-      case 'swing': this.noise(t, 0.08, 0.2, 2500, 'highpass'); break;
-      case 'bow': this.sweep(600, 200, t, 0.1, 'triangle', 0.25); break;
+      case 'swing': { // S-192: lufada do golpe (filtro que varre, como lâmina cortando o ar)
+        const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 1.6;
+        f.frequency.setValueAtTime(700, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.12); f.frequency.exponentialRampToValueAtTime(900, t + 0.24);
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.42, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.3); break; }
+      case 'heavySwing': { const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1600, t + 0.2); f.frequency.exponentialRampToValueAtTime(400, t + 0.4); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.5); break; }
+      case 'stab': { this.noise(t, 0.09, 0.3, 3800, 'bandpass'); this.sweep(900, 300, t + 0.02, 0.06, 'triangle', 0.12); break; } // estocada rápida de adaga
+      case 'impact': { this.sweep(160, 50, t, 0.12, 'sine', 0.55); this.noise(t, 0.06, 0.45, 900, 'lowpass'); const c = this.ctx, o = c.createOscillator(), g = c.createGain(); o.frequency.value = 1900 + Math.random() * 600; g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25); o.connect(g); g.connect(this.sfx); o.start(t); o.stop(t + 0.26); break; } // pancada que acerta
+      case 'bow': this.sweep(600, 200, t, 0.1, 'triangle', 0.25); this.sweep(140, 90, t, 0.18, 'sine', 0.35); this.noise(t + 0.02, 0.18, 0.12, 1800, 'bandpass'); break; // corda + flecha cortando o ar
       case 'magic': this.sweep(300, 1400, t, 0.3, 'sine', 0.35); this.sweep(450, 2000, t + 0.05, 0.25, 'triangle', 0.12); break;
       case 'fire': this.noise(t, 0.35, 0.5, 600, 'lowpass'); this.sweep(200, 90, t, 0.3, 'sawtooth', 0.12); break;
       case 'ice': this.sweep(2400, 900, t, 0.25, 'triangle', 0.25); this.noise(t, 0.15, 0.2, 5000, 'highpass'); break;

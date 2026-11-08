@@ -24,12 +24,38 @@ const mat = (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness:
 const box = (w, h, d, m, x, y, z) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = b.receiveShadow = true; return b; };
 
 // tábuas do chão com tons variados
+/* ---------- texturas pintadas em código (reboco, madeira, palha) — nada de cor chapada ---------- */
+const _tx = {};
+function canvasTex(key, W, H, paint, rep = [1, 1]) {
+  if (!_tx[key]) { const c = document.createElement('canvas'); c.width = W; c.height = H; paint(c.getContext('2d'), W, H); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; _tx[key] = t; }
+  const t = _tx[key].clone(); t.repeat.set(rep[0], rep[1]); t.needsUpdate = true; return t;
+}
+let _sd = 11; const rr = () => (_sd = (_sd * 16807) % 2147483647) / 2147483647;
+function paintPlaster(g, W, H) { // reboco: base clara, manchas suaves, rachadinhas e sujeira embaixo
+  g.fillStyle = '#e8e2d4'; g.fillRect(0, 0, W, H);
+  for (let k = 0; k < 260; k++) { const x = rr() * W, y = rr() * H, r = 6 + rr() * 40; const gr = g.createRadialGradient(x, y, 0, x, y, r); const a = rr() * 0.06; gr.addColorStop(0, `rgba(${rr() < 0.5 ? '120,100,70' : '255,250,240'},${a})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+  g.strokeStyle = 'rgba(90,75,55,0.18)'; g.lineWidth = 1; for (let k = 0; k < 10; k++) { let x = rr() * W, y = rr() * H; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 6; j++) { x += (rr() - 0.5) * 18; y += rr() * 10; g.lineTo(x, y); } g.stroke(); }
+  const d = g.createLinearGradient(0, H * 0.75, 0, H); d.addColorStop(0, 'rgba(70,55,40,0)'); d.addColorStop(1, 'rgba(70,55,40,0.22)'); g.fillStyle = d; g.fillRect(0, 0, W, H);
+}
+function paintWood(g, W, H) { // veios de madeira com nós
+  g.fillStyle = '#b0b0b0'; g.fillRect(0, 0, W, H);
+  for (let y = 0; y < H; y += 2) { const v = 150 + Math.sin(y * 0.09) * 18 + (rr() - 0.5) * 22; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(0, y, W, 2); }
+  g.strokeStyle = 'rgba(40,40,40,0.25)'; for (let k = 0; k < 40; k++) { const y = rr() * H; g.lineWidth = 0.6 + rr(); g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= W; x += 16) g.lineTo(x, y + Math.sin(x * 0.03 + k) * 3); g.stroke(); }
+  for (let k = 0; k < 4; k++) { const x = rr() * W, y = rr() * H; g.fillStyle = 'rgba(50,45,40,0.35)'; g.beginPath(); g.ellipse(x, y, 6 + rr() * 6, 3 + rr() * 2, 0, 0, 7); g.fill(); }
+}
+function paintStraw(g, W, H) { // palha: milhares de fios dourados em várias direções
+  g.fillStyle = '#b8953e'; g.fillRect(0, 0, W, H);
+  for (let k = 0; k < 4200; k++) { const x = rr() * W, y = rr() * H, a = (rr() - 0.5) * 0.9 + (k % 3 ? 0 : Math.PI / 2), l = 6 + rr() * 18, v = rr(); g.strokeStyle = v < 0.3 ? 'rgba(120,90,30,0.7)' : v < 0.8 ? 'rgba(232,200,110,0.75)' : 'rgba(255,236,160,0.8)'; g.lineWidth = 0.8 + rr() * 0.8; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+}
+const plasterMat = (color, w, h) => new THREE.MeshStandardMaterial({ color, map: canvasTex('plaster', 512, 512, paintPlaster, [Math.max(1, w / 4), Math.max(1, h / 4)]), roughness: 0.95 });
+const woodMat = (color, rep = [1, 1]) => new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(1.5), map: canvasTex('wood', 256, 256, paintWood, rep), roughness: 0.8 });
+const strawMat = rep => new THREE.MeshStandardMaterial({ map: canvasTex('straw', 512, 512, paintStraw, rep), roughness: 1 });
 function planks(w, d, color) {
   const g = new THREE.Group(), base = new THREE.Color(color);
   const n = Math.ceil(w / 0.5);
   for (let i = 0; i < n; i++) {
     const c = base.clone().offsetHSL(0, 0, ((i * 37) % 7 - 3) * 0.015);
-    const p = box(0.49, 0.1, d, mat(c), -w / 2 + 0.25 + i * 0.5, -0.05, 0); p.castShadow = false; g.add(p);
+    const p = box(0.49, 0.1, d, woodMat(c, [1, d / 2]), -w / 2 + 0.25 + i * 0.5, -0.05, 0); p.castShadow = false; p.material.map.rotation = Math.PI / 2; g.add(p);
   }
   return g;
 }
@@ -49,7 +75,7 @@ export function buildRoomShell(def) {
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); c.copy(base).offsetHSL(0, 0, ((Math.floor(x / 2) * 7 + Math.floor(z / 2) * 13) % 5) * 0.012 - 0.024); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
     fg.setAttribute('color', new THREE.BufferAttribute(col, 3)); const fm = new THREE.Mesh(fg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 })); fm.position.y = 0.01; fm.receiveShadow = true; g.add(fm);
   } else g.add(planks(w, d, def.floor));
-  const WM = mat(def.wall), BM = mat(def.beam);
+  const WM = plasterMat(def.wall, Math.max(w, d), h), BM = woodMat(def.beam, [1, 3]); // reboco pintado e madeira com veios
   const wallN = box(w, h, 0.3, WM, 0, h / 2, -d / 2), wallW = box(0.3, h, d, WM, -w / 2, h / 2, 0), wallE = box(0.3, h, d, WM, w / 2, h / 2, 0);
   // parede sul com o vão da porta no meio
   const dw = 2.4, side = (w - dw) / 2;
@@ -60,7 +86,7 @@ export function buildRoomShell(def) {
   for (let i = 0; i <= 4; i++) { const x = -w / 2 + 0.2 + i * (w - 0.4) / 4; g.add(box(0.25, h, 0.12, BM, x, h / 2, -d / 2 + 0.2)); }
   for (let i = 0; i <= 3; i++) { const z = -d / 2 + 0.2 + i * (d - 0.4) / 3; g.add(box(0.12, h, 0.25, BM, -w / 2 + 0.2, h / 2, z)); g.add(box(0.12, h, 0.25, BM, w / 2 - 0.2, h / 2, z)); }
   // teto e vigas do teto
-  const ceil = box(w, 0.2, d, mat('#4e3826'), 0, h + 0.1, 0); g.add(ceil); walls.push(ceil);
+  const ceil = box(w, 0.2, d, woodMat('#4e3826', [w / 2, d / 2]), 0, h + 0.1, 0); g.add(ceil); walls.push(ceil);
   for (let i = 0; i < 5; i++) g.add(box(0.28, 0.32, d, BM, -w / 2 + (i + 0.5) * w / 5, h - 0.16, 0));
   // janelas (vidro iluminado) nas paredes leste e oeste
   const glass = new THREE.MeshStandardMaterial({ color: '#cfe6ff', emissive: '#bfe0ff', emissiveIntensity: 0.9, roughness: 0.2 });
@@ -193,26 +219,47 @@ export function fireplace() {
   g.traverse(o => { if (o.isMesh && o.material.blending !== THREE.AdditiveBlending && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
-export function hayBale() {
-  const g = new THREE.Group(), H = mat('#d8b85a'), B = mat('#a88a3a');
-  g.add(box(1.2, 0.6, 0.7, H, 0, 0.3, 0));
-  for (const x of [-0.35, 0.35]) g.add(box(0.05, 0.62, 0.72, B, x, 0.3, 0));
+export function hayBale() { // S-194: fardo de feno de verdade — fios de palha, cantos gastos, barbante e fiapos soltos
+  const g = new THREE.Group(), geo = new THREE.BoxGeometry(1.2, 0.55, 0.62, 12, 6, 6), P = geo.attributes.position;
+  for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i), z = P.getZ(i); const ex = Math.max(0, Math.abs(x) - 0.5), ey = Math.max(0, Math.abs(y) - 0.2), ez = Math.max(0, Math.abs(z) - 0.24); const e = Math.hypot(ex, ey, ez); if (e > 0) { const k = Math.min(1, 0.08 / e); x -= Math.sign(x) * ex * (1 - k); y -= Math.sign(y) * ey * (1 - k); z -= Math.sign(z) * ez * (1 - k); } const n = (Math.sin(x * 23 + z * 17) + Math.sin(y * 31 + x * 11)) * 0.008; P.setXYZ(i, x + n, y + n, z + n); }
+  geo.computeVertexNormals();
+  const b = new THREE.Mesh(geo, strawMat([1.2, 0.6])); b.position.y = 0.275; b.castShadow = b.receiveShadow = true; g.add(b);
+  const twine = mat('#6a4a22', { roughness: 1 });
+  for (const x of [-0.32, 0.32]) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.012, 6, 32), twine); t.scale.set(1, 0.92, 1.05); t.rotation.y = Math.PI / 2; t.position.set(x, 0.275, 0); g.add(t); }
+  const loose = strawMat([0.3, 0.3]); loose.transparent = true; loose.alphaTest = 0.3;
+  for (let k = 0; k < 7; k++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.03 + rr() * 0.03, 0.12 + rr() * 0.12, 5), loose); f.position.set((rr() - 0.5) * 1.1, 0.55 + rr() * 0.02, (rr() - 0.5) * 0.5); f.rotation.set((rr() - 0.5) * 1.6, rr() * 6, (rr() - 0.5) * 1.6); g.add(f); }
   return g;
 }
-export function stall(w = 3.2, d = 3) { // baia de madeira (cercadinho)
-  const g = new THREE.Group(), W = mat('#6e4e30');
-  for (const z of [-d / 2, d / 2]) { g.add(box(0.14, 1.3, 0.14, W, -w / 2, 0.65, z)); g.add(box(0.14, 1.3, 0.14, W, w / 2, 0.65, z)); }
-  for (const y of [0.5, 1.1]) { g.add(box(0.08, 0.12, d, W, -w / 2, y, 0)); g.add(box(0.08, 0.12, d, W, w / 2, y, 0)); }
-  const straw = box(w, 0.05, d, mat('#cfae5a'), 0, 0.03, 0); straw.castShadow = false; g.add(straw);
+export function stall(w = 3.2, d = 3) { // S-194: baia de tábuas com textura, postes arredondados, manjedoura, cocho e cama de palha irregular
+  const g = new THREE.Group(), W = woodMat('#6e4e30', [1, 2]), WD = woodMat('#4e3420', [1, 2]);
+  const post = (x, z) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 1.4, 12), WD); p.position.set(x, 0.7, z); p.castShadow = true; g.add(p); const cap = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), WD); cap.position.set(x, 1.4, z); g.add(cap); };
+  for (const z of [-d / 2, d / 2]) { post(-w / 2, z); post(w / 2, z); }
+  for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) { const pl = box(0.06, 0.2, d, W, sx * w / 2, 0.22 + k * 0.27, 0); pl.rotation.x = (rr() - 0.5) * 0.01; g.add(pl); } // tábuas de lado
+  for (let k = 0; k < 4; k++) g.add(box(w, 0.2, 0.06, W, 0, 0.22 + k * 0.27, -d / 2));
+  // manjedoura com feno e cocho de água
+  const mg = new THREE.Group(); mg.position.set(-w / 4, 0.75, -d / 2 + 0.3); g.add(mg); mg.add(box(1.1, 0.06, 0.5, WD, 0, 0, 0)); for (const sz of [-1, 1]) mg.add(box(1.1, 0.3, 0.05, WD, 0, 0.15, sz * 0.23)); for (const sx of [-1, 1]) mg.add(box(0.05, 0.3, 0.5, WD, sx * 0.53, 0.15, 0));
+  const hay = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 10), strawMat([0.6, 0.6])); hay.scale.set(1.2, 0.35, 0.5); hay.position.y = 0.22; mg.add(hay);
+  const tr = new THREE.Group(); tr.position.set(w / 4, 0.25, -d / 2 + 0.35); g.add(tr); tr.add(box(0.9, 0.05, 0.42, WD, 0, -0.18, 0)); for (const sz of [-1, 1]) tr.add(box(0.9, 0.4, 0.05, WD, 0, 0, sz * 0.19)); for (const sx of [-1, 1]) tr.add(box(0.05, 0.4, 0.42, WD, sx * 0.43, 0, 0));
+  const wat = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.34), new THREE.MeshStandardMaterial({ color: '#3a5a60', roughness: 0.05, metalness: 0.3 })); wat.rotation.x = -Math.PI / 2; wat.position.y = 0.12; tr.add(wat);
+  // cama de palha irregular (borda solta), não um tapete retangular
+  const sg = new THREE.CircleGeometry(1, 40); { const P = sg.attributes.position; for (let i = 1; i < P.count; i++) { const k = 0.82 + rr() * 0.3; P.setXY(i, P.getX(i) * k, P.getY(i) * k); } }
+  const straw = new THREE.Mesh(sg, strawMat([2, 2])); straw.rotation.x = -Math.PI / 2; straw.scale.set(w * 0.5, d * 0.5, 1); straw.position.y = 0.02; straw.receiveShadow = true; g.add(straw);
   return g;
 }
-export function lantern() {
-  const g = new THREE.Group();
-  g.add(box(0.04, 0.8, 0.04, mat('#2a2a2a'), 0, 0.4, 0));
-  const glassM = new THREE.MeshStandardMaterial({ color: '#ffd27a', emissive: '#ffb84a', emissiveIntensity: 1.6 });
-  const l = box(0.2, 0.26, 0.2, glassM, 0, -0.1, 0); l.castShadow = false; g.add(l);
-  const pl = vlight('#ffc070', 3, 6, 1.6); pl.position.y = -0.2; g.add(pl);
-  return g;
+export function lantern() { // S-194: lampião de ferro com vidros, vela acesa e corrente (no lugar do cubo amarelo)
+  const g = new THREE.Group(), iron = mat('#2b2622', { metalness: 0.7, roughness: 0.45 });
+  for (let k = 0; k < 6; k++) { const l = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 6, 12), iron); l.position.y = 0.75 - k * 0.07; l.rotation.y = k % 2 ? Math.PI / 2 : 0; g.add(l); } // corrente
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.14, 6), iron); cap.position.y = 0.32; g.add(cap);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 6, 14), iron); ring.position.y = 0.42; g.add(ring);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.04, 6), iron); base.position.y = -0.02; g.add(base);
+  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.3, 5), iron); bar.position.set(Math.cos(a) * 0.12, 0.13, Math.sin(a) * 0.12); g.add(bar); }
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.1, 0.28, 6, 1, true), new THREE.MeshStandardMaterial({ color: '#ffe2a8', emissive: '#ffb860', emissiveIntensity: 0.35, transparent: true, opacity: 0.35, roughness: 0.1, side: THREE.DoubleSide, depthWrite: false })); glass.position.y = 0.13; glass.castShadow = false; g.add(glass);
+  const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.028, 0.1, 10), mat('#f2ead8')); candle.position.y = 0.05; g.add(candle);
+  const fl = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffe9a0' })); fl.scale.y = 2; fl.position.y = 0.13; g.add(fl);
+  const halo = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffb050', transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false })); halo.position.y = 0.14; g.add(halo);
+  const pl = vlight('#ffc070', 3, 6, 1.6); pl.position.y = 0.1; g.add(pl);
+  g.position.y = -0.5; const wrap = new THREE.Group(); wrap.add(g); wrap.userData.update = t => { fl.scale.set(1 + Math.sin(t * 13) * 0.08, 2 + Math.sin(t * 9.3) * 0.25, 1); halo.material.opacity = 0.3 + Math.sin(t * 11) * 0.06; };
+  return wrap;
 }
 
 /* ---------- portal: redemoinho de energia com ondas na base e partículas que sobem e evaporam ---------- */

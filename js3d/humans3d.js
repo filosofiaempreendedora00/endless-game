@@ -52,14 +52,21 @@ export const humanAnims = () => (G.anims ? G.anims.animations : []);
    alarga ombros e quadris de homem. Para elas, usamos cópias das animações só com rotação (posição só na raiz/pélvis),
    e o esqueleto mantém as proporções femininas. */
 const femClips = [];
-function animsFor(sex) {
-  const all = humanAnims(); if (sex !== 'f') return all;
+const dwarfClips = { m: [], f: [] };
+function animsFor(sex, dwarf) {
+  const all = humanAnims();
+  if (dwarf) { // S-178: anões sem trilhas de escala (as proporções de anão ficam nos ossos); elas também sem posição, como as mulheres
+    const base = sex === 'f' ? animsFor('f') : all, out = dwarfClips[sex === 'f' ? 'f' : 'm'];
+    if (out.length !== base.length) { out.length = 0; for (const c of base) out.push(new THREE.AnimationClip(c.name, c.duration, c.tracks.filter(t => !t.name.endsWith('.scale')))); }
+    return out;
+  }
+  if (sex !== 'f') return all;
   if (femClips.length !== all.length) { femClips.length = 0; for (const c of all) femClips.push(new THREE.AnimationClip(c.name, c.duration, c.tracks.filter(t => !t.name.endsWith('.position') || /^(root|pelvis)\./.test(t.name)))); }
   return femClips;
 }
 // põe o esqueleto na pose parada (Idle) para encaixar peças no lugar certo; a animação de verdade assume no quadro seguinte
 export function humanIdlePose(root) {
-  const clip = THREE.AnimationClip.findByName(animsFor(root.userData.sex), 'Idle_Loop'); if (!clip) return;
+  const clip = THREE.AnimationClip.findByName(animsFor(root.userData.sex, root.userData.dwarf), 'Idle_Loop'); if (!clip) return;
   const mx = new THREE.AnimationMixer(root), a = mx.clipAction(clip); a.play(); mx.update(0.4); root.updateMatrixWorld(true);
   // (não chame a.stop(): ao desligar, o three.js devolve os ossos à pose em T do arquivo)
 }
@@ -107,6 +114,30 @@ function mergeOutfit(scene) {
     list[0].parent.add(m); m.bind(list[0].skeleton, list[0].bindMatrix);
     for (const o of list) o.parent.remove(o);
   }
+}
+/* S-178: corpo de ANÃO (proporções no espírito dos anões de MMO): cabeça grande, tronco largo e atarracado, braços grossos,
+   pernas curtas e fortes, mãos e pés grandes. Tudo por escala nos ossos (as animações de anão não têm trilha de escala),
+   e o corpo inteiro é alargado. Depois de encurtar as pernas, desce o boneco para os pés ficarem no chão. */
+const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura]
+  thigh_l: [0.74, 1.22], thigh_r: [0.74, 1.22], calf_l: [0.86, 1.08], calf_r: [0.86, 1.08], foot_l: [1.12, 1.1], foot_r: [1.12, 1.1],
+  spine_01: [0.88, 1.2], spine_02: [0.92, 1.12], neck_01: [0.7, 1.1], // tronco curto e largo (os ombros alargam junto)
+  upperarm_l: [0.8, 1.2], upperarm_r: [0.8, 1.2], lowerarm_l: [0.9, 1.12], lowerarm_r: [0.9, 1.12], hand_l: [1.1, 1.12], hand_r: [1.1, 1.12],
+};
+function applyDwarfBody(obj, root, skel) {
+  root.userData.dwarf = true;
+  const by = n => skel.bones.find(b => b.name === n);
+  humanIdlePose(root); const foot = by('foot_l') || by('ball_l'), before = new THREE.Vector3(), after = new THREE.Vector3(); if (foot) foot.getWorldPosition(before);
+  for (const [n, [L, T]] of Object.entries(DWARF_BONES)) {
+    const b = by(n); if (!b) continue;
+    const ch = b.children.find(c => c.isBone); const ax = ch ? ch.position : new THREE.Vector3(0, 1, 0);
+    const a = Math.abs(ax.x) >= Math.abs(ax.y) && Math.abs(ax.x) >= Math.abs(ax.z) ? 'x' : Math.abs(ax.y) >= Math.abs(ax.z) ? 'y' : 'z'; // eixo do comprimento do osso
+    b.scale.set(a === 'x' ? L : T, a === 'y' ? L : T, a === 'z' ? L : T);
+  }
+  const head = by('Head'); if (head) head.scale.setScalar(1.24); // cabeçudo
+  obj.scale.set(1.16, 0.95, 1.16); // largo e robusto
+  root.updateMatrixWorld(true);
+  if (foot) { foot.getWorldPosition(after); root.position.y += (before.y * 0.95 - after.y) / 0.95; } // pés no chão
+  root.userData.dwarfDrop = root.position.y;
 }
 // todas as malhas de um personagem passam a usar UM esqueleto (antes cada peça tinha o seu: 30 atualizações por personagem a cada quadro)
 export function shareSkeletons(root) {
@@ -164,6 +195,7 @@ function graft(src, root, skeleton) {
  * Devolve { obj, root, anim (mixer com as animações), mats }
  */
 export function makeHuman(opts = {}) {
+  const dwarf = opts.race === 'anao';
   const sex = opts.sex === 'f' ? 'f' : 'm', outfit = HUMAN_OUTFITS[opts.outfit] || 'Ranger';
   const root = SkeletonUtils.clone(G[`out_${sex}_${outfit}`].scene);
   let skel = null; root.traverse(o => { if (o.isSkinnedMesh && !skel) skel = o.skeleton; });
@@ -187,7 +219,7 @@ export function makeHuman(opts = {}) {
   const mixer = new THREE.AnimationMixer(root), acts = {};
   const anim = {
     name: '', cur: null,
-    play(n, o = {}) { const list = animsFor(sex), clip = THREE.AnimationClip.findByName(list, humanAnimName(n)) || THREE.AnimationClip.findByName(list, 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
+    play(n, o = {}) { const list = animsFor(sex, dwarf), clip = THREE.AnimationClip.findByName(list, humanAnimName(n)) || THREE.AnimationClip.findByName(list, 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
       if (this.cur === a && !o.restart && !o.once) { a.setEffectiveTimeScale(o.speed || 1); this.name = n; return; }
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(o.once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = !!o.once;
       if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, o.fade ?? 0.2, false); a.play(); this.cur = a; this.name = n; },
@@ -195,6 +227,7 @@ export function makeHuman(opts = {}) {
   };
   root.userData.human = true; root.userData.sex = sex;
   if (sex === 'f') feminize(skel);
+  if (dwarf) applyDwarfBody(obj, root, skel); // S-178: anão de verdade, não um humano encolhido
   shareSkeletons(root);
   // volume fixo de 1,3 m em volta do corpo: o que está fora da tela (ou da sombra) não é desenhado
   const sph = new THREE.Sphere(new THREE.Vector3(0, 0.95, 0), 1.3);

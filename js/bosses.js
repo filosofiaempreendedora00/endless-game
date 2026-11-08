@@ -91,13 +91,13 @@ Object.assign(MONSTERS, {
   },
   formiga_ceifadora: {
     name: 'Formiga Ceifadora', lv: 27, hp: 1200, atk: [55, 72], def: 26, exp: 540, jexp: 400, element: 'terra', shape: 'ant', color: '#6a2414',
-    size: 1.35, speed: 70, aggressive: true, aggroRange: 5, race: 'Inseto', icon: '🐜',
+    size: 0.8, speed: 70, aggressive: true, aggroRange: 5, race: 'Inseto', icon: '🐜',
     drops: [['mandibula_ceifadora', 0.45], ['fragmento_ferro', 0.15], ['pocao_vermelha', 0.1]],
     card: { equip: 'botas', bonuses: { agi: 2, flee: 5 } },
   },
   lagarto_sal: {
     name: 'Lagarto-de-Sal', lv: 36, hp: 2300, atk: [82, 108], def: 34, exp: 960, jexp: 720, element: 'terra', shape: 'saltlizard', color: '#c9a06a',
-    size: 1.25, speed: 58, aggressive: true, aggroRange: 6, race: 'Fera', icon: '🦎',
+    size: 0.75, speed: 58, aggressive: true, aggroRange: 6, race: 'Fera', icon: '🦎',
     drops: [['escama_de_sal', 0.45], ['carne_assada', 0.3], ['pocao_azul', 0.05], ['colete_couro', 0.02]],
     card: { equip: 'armadura', bonuses: { def: 5, resist: { fogo: 10 } } },
   },

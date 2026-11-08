@@ -36,12 +36,22 @@ export const DWARF = { x: -288, z: -288 };     // Pedrafunda: bacia entre os pic
 export const ELF = { x: 286, z: -284 };        // Aelindra: vale de floresta antiga
 export const CASTLE = { x: -292, z: 296 };     // Castelo de Valcinza, no meio dos campos
 export const SEA = { x: 500, z: 500, r: 300, level: -0.6 }; // o mar: tudo a menos de r deste ponto (com a costa irregular)
+// S-216: o porto tem um cais de pedra reto — a linha d'água é a mesma dos dois lados (nada de praia torta no meio da cidade)
+// s = metros do centro do porto em direção ao mar; t = metros para o lado (ao longo do cais)
+export const HARBOR = (() => { const ux = SEA.x - PORT.x, uz = SEA.z - PORT.z, l = Math.hypot(ux, uz); return { x: PORT.x, z: PORT.z, ux: ux / l, uz: uz / l, quay: 30, half: 72, land: SEA.level + 1.3 }; })();
+export function harborST(x, z) { const dx = x - HARBOR.x, dz = z - HARBOR.z; return { s: dx * HARBOR.ux + dz * HARBOR.uz, t: dx * HARBOR.uz - dz * HARBOR.ux }; }
+export function harborW(x, z) { const { s, t } = harborST(x, z); return (1 - smooth(HARBOR.half, HARBOR.half + 34, Math.abs(t))) * (1 - smooth(110, 150, s)) * smooth(-90, -55, s); }
+// S-218: o porto não fica grudado no deserto — uma faixa verde de litoral (capim e arbustos) separa as dunas da cidade
+export function coastBelt(x, z) { return smooth(115, 185, Math.hypot(x - PORT.x, z - PORT.z)); }
+export function harborXZ(s, t) { return { x: HARBOR.x + HARBOR.ux * s + HARBOR.uz * t, z: HARBOR.z + HARBOR.uz * s - HARBOR.ux * t }; }
 export function seaDist(x, z) { // > 0 em terra, < 0 no mar (metros até a linha da praia)
   const a = Math.atan2(z - SEA.z, x - SEA.x);
-  return Math.hypot(x - SEA.x, z - SEA.z) - SEA.r * (1 + 0.06 * Math.sin(a * 7 + 1.3) + 0.035 * Math.sin(a * 13 + 0.4)) + (vnoise(x * 0.05, z * 0.05) - 0.5) * 8;
+  const sd = Math.hypot(x - SEA.x, z - SEA.z) - SEA.r * (1 + 0.06 * Math.sin(a * 7 + 1.3) + 0.035 * Math.sin(a * 13 + 0.4)) + (vnoise(x * 0.05, z * 0.05) - 0.5) * 8;
+  const w = harborW(x, z); if (w <= 0) return sd;
+  return sd * (1 - w) + (HARBOR.quay - harborST(x, z).s) * w;
 }
 // bacias planas das cidades novas (1 no centro, 0 fora) — tiram as montanhas e aplainam o chão
-const BASINS = [[PORT, 40, 62], [DWARF, 36, 54], [ELF, 50, 74], [CASTLE, 70, 104]];
+const BASINS = [[PORT, 40, 62], [DWARF, 66, 84], [ELF, 50, 74], [CASTLE, 70, 104]];
 export function basin(x, z) { let b = 0; for (const [c, r0, r1] of BASINS) { const d = Math.hypot(x - c.x, z - c.z); if (d < r1) b = Math.max(b, 1 - smooth(r0, r1, d)); } return b; }
 export const LAKE = { x: 18, z: 52, r: 14, level: -0.9 };
 export const ROADS = [
@@ -108,9 +118,9 @@ export function mountainMask(x, z) {
 }
 // paredões de Pedrafunda: anel de rocha alta em volta da cidade dos anões, aberto ao sul (estrada)
 export function dwarfCliff(x, z) {
-  const d = Math.hypot(x - DWARF.x, z - DWARF.z); if (d > 112) return 0;
+  const d = Math.hypot(x - DWARF.x, z - DWARF.z); if (d > 146) return 0;
   const gate = 1 - smooth(9, 18, roadDist(x, z)); // a estrada atravessa o paredão (portão de Pedrafunda)
-  return smooth(36, 48, d) * (1 - smooth(84, 112, d)) * (1 - gate);
+  return smooth(70, 84, d) * (1 - smooth(118, 146, d)) * (1 - gate); // S-178: cidade bem maior (muralha a 58 m), paredões mais para fora
 }
 export function mountainH(x, z) {
   const m = mountainMask(x, z), dcl = dwarfCliff(x, z); if (m <= 0 && dcl <= 0) return 0;
@@ -134,7 +144,7 @@ export function rockiness(x, z) {
 export function treeAllowed(x, z, opts = {}) {
   const { rock, slope, h } = rockiness(x, z);
   if (rock > (opts.maxRock ?? 0.3) || slope > (opts.maxSlope ?? 0.5) || h > 20) return false;
-  if (Math.hypot(x - DWARF.x, z - DWARF.z) < 110) return false; // cascalho de Pedrafunda
+  if (Math.hypot(x - DWARF.x, z - DWARF.z) < 146) return false; // cascalho de Pedrafunda
   if (seaDist(x, z) < 14) return false; // praia
   return true;
 }
@@ -167,6 +177,11 @@ export function heightAt(x, z) {
     const beach = SEA.level + 0.35 + Math.max(0, sd) * 0.045, k = 1 - smooth(18, 60, sd);
     h = h * (1 - k) + beach * k;
     if (sd < 0) h = SEA.level + 0.2 - Math.min(9, Math.pow(-sd, 0.9) * 0.16) + (vnoise(x * 0.1, z * 0.1) - 0.5) * 0.6;
+  } }
+  { const w = harborW(x, z); if (w > 0) { // S-216: cais de pedra — chão firme até a borda e água funda logo depois (dos dois lados igual)
+    const { s } = harborST(x, z), q = HARBOR.quay;
+    const target = s < q ? h + (HARBOR.land - h) * smooth(q - 46, q - 18, s) : SEA.level - 3.4 - Math.min(2.6, (s - q) * 0.05) + (vnoise(x * 0.1, z * 0.1) - 0.5) * 0.4;
+    h = h * (1 - w) + target * w;
   } }
   h += mountainH(x, z); // montanhas na borda
   const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 80) { const f = templeNiche(x, z) * (1 - smooth(40, 78, dt)); h = h * (1 - f) + 2 * f; } // pátio do Santuário
@@ -206,7 +221,7 @@ export function groundColor(x, z, h, slopeIn) {
   c.offsetHSL(0, 0, n);
   const far = Math.abs(x) > 140 || Math.abs(z) > 140;
   if (far) { // chão das regiões novas
-    const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
+    const bw = biome(x, z), wD = bw.dunas * coastBelt(x, z), wG = bw.geada, wC = bw.colossos;
     if (wD > 0.08) { const rip = Math.sin(x * 0.9 + Math.sin(z * 0.3) * 3) * 0.5 + 0.5, dune = Math.sin(x * 0.045 + Math.sin(z * 0.018) * 2.6) * 0.5 + 0.5; c.lerp(new THREE.Color('#e8c98c').offsetHSL(0.005, 0.05, rip * 0.06 - 0.04 + (dune - 0.5) * 0.08), smooth(0.12, 0.5, wD)); } // areia bem marcada, com marolas e sombra das dunas
     if (wG > 0.08) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); c.lerp(new THREE.Color('#f3f6f9').offsetHSL(0.55, 0.05, (patch - 0.5) * 0.06), cover * (patch > 0.6 - cover * 0.45 ? 1 : 0.35)); } // neve que vai cobrindo a grama aos poucos
     if (wC > 0.12) { // S-161: terra arrasada — chão de terra seca e cinzenta, manchas queimadas, rachaduras e pouco capim morto
@@ -217,22 +232,32 @@ export function groundColor(x, z, h, slopeIn) {
       c.lerp(dirt, k * (patch > 0.72 ? 0.7 : 0.95));
     }
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.15);
-    if (df < 1.05) c.lerp(new THREE.Color('#bfe2f0').offsetHSL(0, 0, (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.08), smooth(1.05, 0.95, df)); // gelo
+    if (df < 1.05) c.lerp(new THREE.Color('#cfe6f1').offsetHSL(0, 0, (vnoise(x * 0.05, z * 0.05) - 0.5) * 0.05), smooth(1.05, 0.95, df)); // gelo (S-229: cor lisa no chão; o desenho do gelo vem da camada de gelo por cima, sem quadriculado)
     const dc = Math.hypot(x - CITY2.x, z - CITY2.z); if (dc < 26) c.lerp(new THREE.Color('#bdb5a3').offsetHSL(0, 0, ((Math.floor(x / 2.5) + Math.floor(z / 2.5)) & 1) * 0.03), smooth(26, 22, dc)); // praça de Pedraclara
     const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 34) c.lerp(new THREE.Color('#9e998d').offsetHSL(0, 0, ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) * 0.035), smooth(34, 26, dt) * smooth(0.6, 0.95, templeNiche(x, z))); // pátio do Santuário
   }
   { const sd = seaDist(x, z); if (sd < 26) { // areia da praia (com a faixa molhada mais escura) e fundo do mar
     const wet = smooth(4, -1, sd), sand = new THREE.Color('#e3cf9c').offsetHSL(0, 0, (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.06 - wet * 0.12);
-    c.lerp(sand, smooth(26, 12, sd));
+    c.lerp(sand, smooth(26, 12, sd) * (1 - harborW(x, z))); // no porto o cais é de pedra: sem faixa de areia
     if (sd < -2) c.lerp(new THREE.Color('#9c9a72'), smooth(-2, -20, sd) * 0.8);
+  } }
+  { const dp = Math.hypot(x - PORT.x, z - PORT.z); if (dp < 190) { // S-218: litoral verde em volta do porto (capim de restinga), sem areia de deserto
+    const k = (1 - smooth(120, 190, dp)) * smooth(10, 30, seaDist(x, z)), g = new THREE.Color('#86a85a').offsetHSL(0, 0, (vnoise(x * 0.12, z * 0.12) - 0.5) * 0.08);
+    c.lerp(g, k * 0.85);
   } }
   { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150) { // S-164: chegando em Pedrafunda o chão vira cascalho e pedra (sem grama)
     const k = 1 - smooth(70, 150, dd), gr = new THREE.Color('#8b8478').lerp(new THREE.Color('#6f6a62'), vnoise(x * 0.25, z * 0.25)).offsetHSL(0, 0, (vnoise(x * 0.9, z * 0.9) - 0.5) * 0.06);
     c.lerp(gr, k * 0.9);
   } }
-  for (const [ct, rr, col, cell] of [[DWARF, 34, '#8a8073', 3.2], [ELF, 16, '#d9d4c4', 2.2], [PORT, 18, '#c7b48e', 2.5], [CASTLE, 0, '#b8b09c', 3]]) { // praças das cidades novas
+  { const w = harborW(x, z); if (w > 0.3) { const { s, t } = harborST(x, z), q = HARBOR.quay; // S-210: calçamento de pedras irregulares (nada de tabuleiro) no cais e na praça do porto
+    const inQuay = Math.abs(t) < HARBOR.half - 4 && s < q + 0.5, dP = Math.hypot(x - PORT.x, z - PORT.z);
+    const kStone = Math.max(inQuay ? smooth(q - 14, q - 12, s) : 0, dP < 20 ? smooth(20, 16, dP) : 0), kEarth = inQuay ? smooth(q - 26, q - 22, s) * (1 - kStone) : 0;
+    if (kEarth > 0) { const e = new THREE.Color('#a8916c').offsetHSL(0, -0.02, (vnoise(x * 0.35, z * 0.35) - 0.5) * 0.1 + (vnoise(x * 1.3, z * 1.3) - 0.5) * 0.05); c.lerp(e, kEarth * w * 0.9); } // rua de terra batida entre as casas e o passeio
+    if (kStone > 0) { const u = x * 0.9 + Math.sin(z * 0.7) * 0.6, v = z * 0.9 + Math.sin(x * 0.7) * 0.6, cell = vnoise(Math.floor(u * 1.4) * 1.7, Math.floor(v * 1.4) * 1.3);
+      const cob = new THREE.Color('#9d927e').offsetHSL(0.012 * (cell - 0.5), 0.02, (cell - 0.5) * 0.1 + (vnoise(x * 0.25, z * 0.25) - 0.5) * 0.12 - (vnoise(x * 0.08 + 3, z * 0.08) > 0.62 ? 0.06 : 0)); c.lerp(cob, kStone * w); } } } // calçamento com manchas de uso
+  for (const [ct, rr, col, cell] of [[DWARF, 56, '#8a8073', 0], [ELF, 16, '#d9d4c4', 2.2], [PORT, 0, '#c7b48e', 2.5], [CASTLE, 0, '#b8b09c', 3]]) { // praças das cidades novas (o porto tem calçamento próprio)
     if (!rr) continue; const d = Math.hypot(x - ct.x, z - ct.z);
-    if (d < rr) c.lerp(new THREE.Color(col).offsetHSL(0, 0, ((Math.floor(x / cell) + Math.floor(z / cell)) & 1) * 0.03 + (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.04), smooth(rr, rr - 4, d));
+    if (d < rr) c.lerp(new THREE.Color(col).offsetHSL(0, 0, (cell ? ((Math.floor(x / cell) + Math.floor(z / cell)) & 1) * 0.03 : 0) + (vnoise(x * (cell ? 0.5 : 0.12), z * (cell ? 0.5 : 0.12)) - 0.5) * 0.05), smooth(rr, rr - 4, d));
   }
   const rd = roadDist(x, z);
   if (rd < 3.2) { const stone = far && zw('colossos', x, z) > 0.3; c.lerp(new THREE.Color(stone ? '#a7a092' : '#b08c5a').offsetHSL(0, 0, stone ? ((Math.floor(x / 2) + Math.floor(z / 2.6)) & 1) * 0.04 : 0), smooth(3.2, 1.6, rd)); } // calçada antiga nos Colossos
@@ -641,15 +666,16 @@ function grassChunk(ci, cj) {
     if (lakeDist(x, z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12 || Math.hypot(x - CITY2.x, z - CITY2.z) < 27 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 31) continue;
     if (Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r * 1.05) continue;
     { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150 && rng() > smooth(75, 150, dd)) continue; } // S-164: a grama vai sumindo antes de Pedrafunda
-    if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 36 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
+    if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 64 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || (harborW(x, z) > 0.3 && harborST(x, z).s > HARBOR.quay - 14) || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
     if (mountainMask(x, z) > 0.35) continue;
     const y = heightAt(x, z);
     if (valley && y > 7) continue;
     const ruins = valley ? zoneWeight('ruinas', x, z) : 0, forest = valley ? zoneWeight('floresta', x, z) : 0;
-    const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
+    const bw = biome(x, z), wD = bw.dunas * coastBelt(x, z), wG = bw.geada, wC = bw.colossos;
     q.setFromAxisAngle(up, rng() * 6.28);
     // densidade de planta pela mistura de regiões: deserto quase nada, neve pouco, planície dos colossos capim alto (transição gradual)
     const dens = 1 - wD * 0.985 - wG * 0.8 - wC * 0.72; // S-161: Ruínas dos Colossos = terra arrasada, pouca grama
+    if (wG > 0.15) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); if (patch > 0.6 - cover * 0.45 - 0.04 || rng() < cover * 0.55) continue; } // S-227: na neve, só tufinhos onde o chão aparece (as manchas sem neve), nunca no meio da neve
     if (rng() > dens) { if ((wD > 0.5 && rng() < 0.02) || (wC > 0.4 && rng() < 0.05)) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // escombros e lascas de pedra pelo chão
     if (ruins > 0.55) {
       if (rng() < 0.5) { sc.set(0.6 + rng() * 1.4, 0.4 + rng() * 0.6, 0.6 + rng() * 1.4); m.compose(v.set(x, y + 0.03, z), q, sc); rub.push(m.clone()); continue; }
