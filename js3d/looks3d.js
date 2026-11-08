@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
+import { humanIdlePose } from './humans3d.js';
 
 export const HEADS = { Knight: 'Knight_Head', Mage: 'Mage_Head', Barbarian: 'Barbarian_Head', Rogue: 'Rogue_Head', Rogue_Hooded: 'Rogue_Head_Hooded' };
 export const ACCESSORIES = {
@@ -237,28 +238,94 @@ const EXTRAS = {
 
 // pega um acessório de outro modelo (ex.: besta do Ladino) e prende no mesmo osso
 // tamanho real de cada peça emprestada no corpo realista (maior medida, em metros)
-const HEAD_FIT = { Knight_Helmet: { y: 0.02 }, Mage_Hat: { y: 0.165 }, Barbarian_Hat: { y: 0.18 } };
-const ITEM_LEN = { '1H_Sword': 0.95, '2H_Sword': 1.35, '1H_Axe': 0.75, '2H_Axe': 1.2, '1H_Axe_Offhand': 0.75, Knife: 0.38, Knife_Offhand: 0.38, '2H_Staff': 1.65, '1H_Wand': 0.45, '1H_Crossbow': 0.6, '2H_Crossbow': 0.85, Spellbook: 0.28, Spellbook_open: 0.38, Mug: 0.16, Throwable: 0.2,
-  Round_Shield: 0.62, Rectangle_Shield: 0.75, Badge_Shield: 0.68, Spike_Shield: 0.65, Barbarian_Round_Shield: 0.64, '1H_Sword_Offhand': 0.95, Knight_Helmet: 0.3, Mage_Hat: 0.46, Barbarian_Hat: 0.3 };
+// S-128/S-130: encaixe das peças KayKit (feitas para o boneco cabeçudo) no corpo realista.
+// y = altura da base da peça acima do osso da cabeça; k = tamanho extra.
+const HEAD_FIT = { Knight_Helmet: { y: -0.03, z: 0.012 }, Mage_Hat: { y: 0.13, z: -0.01 }, Barbarian_Hat: { y: 0.08, z: -0.015 } };
+// tamanho real (maior medida, em metros) e "afinamento" das armas: as do KayKit são largas e grossas demais para mãos de verdade
+const ITEM_LEN = { '1H_Sword': 0.88, '2H_Sword': 1.3, '1H_Axe': 0.68, '2H_Axe': 1.15, '1H_Axe_Offhand': 0.68, Knife: 0.34, Knife_Offhand: 0.34, '2H_Staff': 1.65, '1H_Wand': 0.42, '1H_Crossbow': 0.6, '2H_Crossbow': 0.85, Spellbook: 0.26, Spellbook_open: 0.36, Mug: 0.16, Throwable: 0.2,
+  Round_Shield: 0.56, Rectangle_Shield: 0.62, Badge_Shield: 0.6, Spike_Shield: 0.58, Barbarian_Round_Shield: 0.58, '1H_Sword_Offhand': 0.88, Knight_Helmet: 0.29, Mage_Hat: 0.38, Barbarian_Hat: 0.31 };
+const ITEM_THIN = { '1H_Sword': 0.5, '2H_Sword': 0.55, '1H_Sword_Offhand': 0.5, Knife: 0.65, Knife_Offhand: 0.65, '1H_Axe': 0.72, '2H_Axe': 0.72, '1H_Axe_Offhand': 0.72, '1H_Wand': 0.7 };
+const _v = () => new THREE.Vector3();
+const CROSSBOW_FLIP = 1; // (testado) qual ponta da besta vai para a frente
+// S-128/S-130: debaixo de chapéu/elmo o cabelo não pode empurrar a peça para cima (ela ficava "flutuando"):
+// o cabelo curto some sob a peça; o comprido continua aparecendo por baixo (as pontas saem pela nuca)
+export function hairUnderHat(root, tight = false) {
+  root.traverse(o => { if (o.isSkinnedMesh && /^Hair_/.test(o.name) && !/Beard/.test(o.name) && (tight || !/Long/.test(o.name))) o.visible = false; });
+}
+// prende "holder" ao osso b de modo que, na pose parada, ele fique com a orientação/posição pedidas (no espaço do personagem)
+function fitToBone(root, b, holder, quatInRoot, posInRoot) {
+  const rq = root.getWorldQuaternion(new THREE.Quaternion()), bq = b.getWorldQuaternion(new THREE.Quaternion());
+  holder.quaternion.copy(bq.invert().multiply(rq.multiply(quatInRoot)));
+  const wp = posInRoot.clone(); root.localToWorld(wp); holder.position.copy(b.worldToLocal(wp));
+}
+const rootPos = (root, o) => root.worldToLocal(o.getWorldPosition(_v()));
+// caneca de madeira de verdade (aduelas, aros de ferro e alça), em pé na mão
+function tankard() {
+  const g = new THREE.Group(), wood = std('#7a5232', { roughness: 0.8 }), iron = std('#3a3632', { metalness: 0.7, roughness: 0.45 }), beer = std('#d89a2a', { roughness: 0.3 }), foam = std('#f4ecd8', { roughness: 0.9 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.047, 0.12, 20, 1, true), wood); body.position.y = 0.06; g.add(body);
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, st = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.118, 0.004), std('#5e3e24')); st.position.set(Math.cos(a) * 0.046, 0.06, Math.sin(a) * 0.046); g.add(st); } // frestas das aduelas
+  const bottom = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.008, 20), wood); bottom.position.y = 0.004; g.add(bottom);
+  for (const y of [0.02, 0.1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.0465 - (y > 0.05 ? 0.002 : 0), 0.004, 8, 28), iron); r.rotation.x = Math.PI / 2; r.position.y = y; g.add(r); }
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.041, 0.041, 0.006, 20), beer); top.position.y = 0.108; g.add(top);
+  const fo = new THREE.Mesh(new THREE.SphereGeometry(0.042, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), foam); fo.scale.y = 0.35; fo.position.y = 0.112; g.add(fo);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.007, 8, 18, Math.PI * 1.2), wood); handle.rotation.z = -Math.PI * 0.6; handle.position.set(0.05, 0.062, 0); g.add(handle);
+  return g;
+}
 // pega a peça pronta (arma, escudo, elmo) e prende no osso certo do corpo realista, no tamanho real
 export function humanBorrow(root, MODELS, model, itemName, extraScale = 1) {
-  const src = MODELS[model] && MODELS[model].scene.getObjectByName(itemName); if (!src) return null;
-  const slot = src.parent ? src.parent.name : 'handslot.r', b = bone(root, /hat|helmet/i.test(itemName) ? 'head' : slot) || root;
+  const src = MODELS[model] && MODELS[model].scene.getObjectByName(itemName); if (!src && itemName !== 'Mug') return null;
+  const slot = src && src.parent ? src.parent.name : 'handslot.r', isHead = /hat|helmet/i.test(itemName), b = bone(root, isHead ? 'head' : slot) || root;
+  const left = /\.l$|l$/.test(slot) && !isHead, isShield = /Shield/.test(itemName) && !/Sword/.test(itemName);
+  if (!isHead) humanIdlePose(root); // encaixa na pose parada (não na pose em T do arquivo)
+  root.updateMatrixWorld(true);
+  const holder = new THREE.Group(); b.add(holder);
+  if (itemName === 'Mug') { // caneca em pé na palma
+    const c = tankard(); holder.add(c);
+    const kn = bone(root, /_l$|\.l$|l$/.test(slot) ? 'middle_01_l' : 'middle_01_r'), at = kn ? rootPos(root, kn) : rootPos(root, b).add(new THREE.Vector3(0, -0.08, 0));
+    fitToBone(root, b, holder, new THREE.Quaternion(), at.add(new THREE.Vector3(0, -0.055, 0.035))); // o corpo da caneca dentro da mão fechada
+    root.userData.items = root.userData.items || {}; root.userData.items[itemName] = c; return c;
+  }
   const c = src.clone(true); c.visible = true; c.position.set(0, 0, 0); c.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(c), size = box.getSize(new THREE.Vector3()), len = Math.max(size.x, size.y, size.z) || 1;
   const k = (ITEM_LEN[itemName] || 0.6) / len * extraScale;
-  const holder = new THREE.Group(); b.add(holder); holder.add(c);
-  root.updateMatrixWorld(true); const ws = new THREE.Vector3(); b.getWorldScale(ws);
+  holder.add(c);
+  const ws = new THREE.Vector3(); b.getWorldScale(ws);
   holder.scale.setScalar(k / ws.x);
-  const isHead = /hat|helmet/i.test(itemName), left = /\.l$|l$/.test(slot) && !isHead;
+  const thin = ITEM_THIN[itemName]; if (thin) { const ax = size.x === len ? 'x' : size.y === len ? 'y' : 'z'; for (const a of ['x', 'y', 'z']) if (a !== ax) c.scale[a] *= thin; } // lâmina mais fina e estreita
   if (isHead) { // chapéu/elmo: em pé sobre a cabeça
-    const wq = new THREE.Quaternion(); b.getWorldQuaternion(wq); const rq = new THREE.Quaternion(); root.getWorldQuaternion(rq);
-    holder.quaternion.copy(wq.invert().multiply(rq));
-    const fit = HEAD_FIT[itemName] || { y: 0.16 }; holder.position.set(0, fit.y, 0.012); // base do chapéu na altura da testa (elmo desce até o queixo)
+    // (o eixo "y" do osso da cabeça não é o "para cima" do corpo: a altura é medida no espaço do personagem)
+    humanIdlePose(root);
+    const fit = HEAD_FIT[itemName] || { y: 0.16 }, hp = rootPos(root, b);
+    fitToBone(root, b, holder, new THREE.Quaternion(), hp.add(new THREE.Vector3(0, fit.y, fit.z ?? 0)));
     const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -box.min.y, -ctr.z);
-  } else if (/Staff/.test(itemName)) { // cajado em pé, apoiado no chão ao lado do corpo
-    holder.rotation.set(Math.PI, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02);
-    const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -ctr.y + size.y * 0.12, -ctr.z);
+    hairUnderHat(root);
+  } else if (isShield) { // escudo preso no antebraço, de face para fora e um pouco para a frente (como se segura de verdade)
+    const fore = bone(root, left ? 'lowerarm_l' : 'lowerarm_r') || b; fore.add(holder); holder.scale.setScalar(k / fore.getWorldScale(_v()).x);
+    const elbow = rootPos(root, fore), wrist = rootPos(root, b), side = Math.sign(wrist.x || 1);
+    const n = new THREE.Vector3(side, 0, 0.45).normalize(), up = wrist.clone().sub(elbow).multiplyScalar(-1).normalize(); up.sub(n.clone().multiplyScalar(up.dot(n))).normalize();
+    const xA = new THREE.Vector3().crossVectors(up, n), q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(xA, up, n));
+    // a face do escudo (eixo mais fino da peça) vira para fora
+    const thinAx = size.z <= size.x && size.z <= size.y ? null : size.x <= size.y ? new THREE.Euler(0, Math.PI / 2, 0) : new THREE.Euler(Math.PI / 2, 0, 0);
+    if (thinAx) q.multiply(new THREE.Quaternion().setFromEuler(thinAx));
+    fitToBone(root, fore, holder, q, elbow.clone().lerp(wrist, 0.55).add(n.clone().multiplyScalar(0.06)));
+    const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -ctr.y, -box.min.z);
+  } else if (/Crossbow/.test(itemName)) { // besta segurada pela coronha, apontando para a frente e para baixo (descansando)
+    const keys = ['x', 'y', 'z'].sort((a, b) => size[b] - size[a]), unit = a => new THREE.Vector3(a === 'x' ? 1 : 0, a === 'y' ? 1 : 0, a === 'z' ? 1 : 0);
+    const L = unit(keys[0]), W = unit(keys[1]);
+    const dir = new THREE.Vector3(0, -0.55, 1).normalize().multiplyScalar(CROSSBOW_FLIP), side = new THREE.Vector3(1, 0, 0);
+    const from = new THREE.Matrix4().makeBasis(L, W, new THREE.Vector3().crossVectors(L, W)), to = new THREE.Matrix4().makeBasis(dir, side, new THREE.Vector3().crossVectors(dir, side));
+    const q = new THREE.Quaternion().setFromRotationMatrix(to.multiply(from.invert()));
+    const kn = bone(root, left ? 'middle_01_l' : 'middle_01_r'), at = kn ? rootPos(root, kn) : rootPos(root, b);
+    fitToBone(root, b, holder, q, at);
+    const ctr = box.getCenter(new THREE.Vector3()), cv = ctr.clone(); cv[keys[0]] = box.min[keys[0]] + len * (CROSSBOW_FLIP > 0 ? 0.3 : 0.7); c.position.copy(cv.multiplyScalar(-1)); // mão na coronha (terço de trás)
+  } else if (/Staff/.test(itemName)) { // cajado em pé na mão fechada (pose parada), a ponta de cima mais longa
+    const ax = size.x === len ? new THREE.Vector3(1, 0, 0) : size.y === len ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1);
+    const q = new THREE.Quaternion().setFromUnitVectors(ax, new THREE.Vector3(0, 1, 0)).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.08));
+    const kn = bone(root, left ? 'middle_01_l' : 'middle_01_r'), at = kn ? rootPos(root, kn).lerp(rootPos(root, b), 0.35) : rootPos(root, b);
+    fitToBone(root, b, holder, q, at.add(new THREE.Vector3(0, 0, 0.012)));
+    // a ponta mais "pesada" (cabeça do cajado) fica para cima: o cabo é segurado a ~38% do comprimento
+    const ctr = box.getCenter(new THREE.Vector3()), cv = ctr.clone(), key = size.x === len ? 'x' : size.y === len ? 'y' : 'z';
+    cv[key] = box.min[key] + len * 0.38; c.position.copy(cv.multiplyScalar(-1));
   } else { // arma: o cabo na palma, a lâmina para frente (orientação do osso da mão do esqueleto realista)
     holder.rotation.set(0, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02); // (testado) a lâmina cai para frente, natural na mão parada
   }
@@ -836,14 +903,14 @@ function classHasHatOld(cls) { const L = CLASS_LOOKS[cls]; return !!(L && (L.sho
 /* ---------- CHAPÉUS: só como equipamento (topo da cabeça) — nenhuma classe tem chapéu fixo ---------- */
 // covers = esconde o topo do cabelo (o corte fica só nas laterais e atrás)
 export const HATS = {
-  bandana: { extra: 'bandana', covers: true, dy: -0.07 },
+  bandana: { extra: 'bandana', covers: true, tight: true, dy: -0.07 },
   chapeu_de_palha: { extra: 'strawHat', covers: true, dy: -0.13 },
   coroa_de_flores: { extra: 'flowerCrown', covers: false, dy: -0.09 },
   elmo_de_ferro: { borrow: ['Knight', 'Knight_Helmet'], covers: true },
   chapeu_de_mago: { borrow: ['Mage', 'Mage_Hat'], scale: 0.8, covers: true },
   chapeu_de_bardo: { extra: 'bardHat', covers: true, dy: -0.12 },
   tricornio: { extra: 'tricorn', covers: true, dy: -0.15 },
-  capuz_sombrio: { extra: 'shadowHood', covers: true, dy: -0.1 },
+  capuz_sombrio: { extra: 'shadowHood', covers: true, tight: true, dy: -0.1 },
   tiara_arcana: { extra: 'circlet', covers: false, dy: -0.07 },
   faixa_de_penas: { extra: 'featherBand', covers: false, dy: -0.08 },
 };
@@ -855,5 +922,6 @@ export function applyHat(ch, hatId, MODELS, customHead = true) {
   if (H.extra && EXTRAS[H.extra]) EXTRAS[H.extra](ch.root, fx);
   if (hb && H.dy) for (const c of hb.children) if (!before.has(c)) { if (ch.root.userData.human) { const inner = c.children[0]; if (inner) inner.position.y += H.dy * inner.scale.y; } else c.position.y += H.dy * c.scale.y * (customHead ? 1 : 0.4); } // (em unidades do soquete) assenta o chapéu na cabeça (a cabeça nova é mais baixa)
   if (H.borrow) { const [model, item] = H.borrow; borrow(ch.root, MODELS, model, item); if (H.scale) { const o = ch.root.getObjectByName(item); if (o) o.scale.multiplyScalar(H.scale); } }
+  if (ch.root.userData.human && H.covers) hairUnderHat(ch.root, !!H.tight);
   return fx.length ? t => fx.forEach(f => f(t)) : null;
 }

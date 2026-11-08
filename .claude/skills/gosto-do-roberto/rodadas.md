@@ -21,6 +21,8 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 | Coisas flutuando | 2 | S-025/S-054 (troncos), S-109 (casa em encosta) |
 | Nomes de longe | 2 | S-096, S-116 (boneco em combate) |
 | Mascotes feios / "monte de peças" | 3 | S-093, S-110, S-111, S-112 |
+| Equipamento/chapéu mal encaixado | 3 | S-019, S-128, S-130 |
+| Coelho/Gotinha ainda "geométricos" | 2 | S-137, S-139 (depois da melhoria geral de monstros) |
 
 ## Histórico
 
@@ -145,3 +147,16 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Polígono puro chapado no chão (hexágono, retângulos coloridos como estandarte) é lido como "disforme": troque por objeto reconhecível (medalhão gravado, estandarte de tecido, cartaz).
   - Ele pede "parecido com o que dá para fazer na vitrine" — interações boas de uma tela devem valer nas outras (arrastar para girar).
 - Pedidos grandes que ficaram para a próxima rodada (chegaram durante esta): cidades por raça e no litoral (S-117), castelo gigante com interior (S-118), ícones de item sem emoji (S-122), compra/venda estilo WoW/RO (S-123), refino até +10 num ferreiro anão (S-124), forno gigante da ferraria (S-125).
+
+### Rodada 13 (S-117, S-118, S-122 a S-139), 2026-11-08
+- Pedidos grandes de sistema: missões estilo WoW com NPC da história (S-126), refino até +10 com tabela visual (S-124), compra/venda estilo WoW/RO com caixa de venda por duplo clique (S-123), ícones de item sem emoji (S-122), Loja de Auroras intuitiva com prévia (S-135, S-136), chefes grandes inspirados nos mais amados de RO/WoW/Skyrim + filtro no Bestiário (S-138).
+- Mundo: cidades por raça (anões perto das montanhas altas, elfos, cidade de praia) com NPCs da raça (S-117), castelo gigante com interior (S-118).
+- Vila objeto por objeto: ferraria sem forno gigante (S-125), poço e baldes (S-129), bandeira de pano (S-131), textura de pedra (S-132), caneca e "coisa branca" da taverna (S-133), carrinho com peças soltas (S-134).
+- Personagens: pele padrão mais clara, mulheres mais femininas (S-127), equipamentos encaixados sem "frankenstein" (S-128), chapéu flutuando e machado do Bento (S-130).
+- Monstros: Gotinha mais expressiva com rastro (S-137), coelho fofo de verdade (S-139).
+- Aprendizados:
+  - Ele pede **sistemas completos com referência** (WoW/RO) e quer entender pelo visual: tabela de refino "muito visual", preview do que vai comprar, marcadores ! e ? nas cabeças.
+  - EXP de missão = empurrãozinho; o centro do jogo é caçar monstros.
+  - Ícone = item de jogo de verdade; emoji soa amador.
+  - "Frankenstein": peças de pacotes diferentes precisam parecer feitas uma para a outra.
+  - Ele joga enquanto eu trabalho e manda sugestões novas no meio: rodadas crescem; vale dividir o trabalho por arquivos em paralelo.

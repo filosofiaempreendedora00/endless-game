@@ -560,9 +560,49 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .cc-face.on { border-color: var(--gold); background: rgba(255, 215, 106, 0.12); }
 @media (max-width: 900px) { .cc-faces { grid-template-columns: repeat(3, 1fr); } }
 /* barra de atalhos com fileiras e conjuntos (S-107) */
-#hotbar { position: relative; max-width: calc(9 * 51px + 12px); padding-right: 38px; }
-#hb-preset { position: absolute; right: 5px; top: 6px; width: 28px; height: 46px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid var(--border-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1; color: var(--gold); }
+#hotbar { position: relative; max-width: calc(9 * 51px + 62px); padding-right: 52px; }
+#hb-preset { position: absolute; right: 6px; top: 6px; width: 42px; height: 46px; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid var(--border-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1; color: var(--gold); }
 #hb-preset b { font-size: 15px; } #hb-preset small { font-size: 9px; color: var(--muted); } #hb-preset span { font-size: 7.5px; color: var(--muted); margin-top: 3px; text-align: center; }
 #hb-preset:hover { border-color: var(--border); }
 #hb-grip { position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; cursor: ns-resize; border-radius: 0 0 10px 0; background: linear-gradient(135deg, transparent 50%, rgba(255,215,106,0.55) 50%, rgba(255,215,106,0.55) 60%, transparent 60%, transparent 70%, rgba(255,215,106,0.55) 70%, rgba(255,215,106,0.55) 80%, transparent 80%); }
 #hb-grip:hover { background-color: rgba(255,215,106,0.15); }
+/* ícones de item pintados (S-122) */
+.iicon { width: 34px; height: 34px; object-fit: contain; vertical-align: middle; image-rendering: auto; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5)); pointer-events: none; }
+.iicon.sm { width: 22px; height: 22px; margin-right: 3px; }
+.iicon.xs { width: 16px; height: 16px; }
+.hslot .ic .iicon { width: 38px; height: 38px; }
+.cell .iicon { width: 36px; height: 36px; }
+.eq-ic .iicon { width: 36px; height: 36px; }
+/* loja estilo WoW/RO (S-123) */
+.sh { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sh h4 { margin: 8px 0 5px; font-family: Cinzel, serif; color: var(--gold); font-size: 12px; } .sh h4:first-child { margin-top: 0; }
+.sh-goods { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-height: 210px; overflow-y: auto; padding-right: 3px; }
+.sh-good { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; }
+.sh-good:hover { border-color: var(--border); background: rgba(255,215,106,0.08); }
+.sh-good .iicon { width: 30px; height: 30px; } .sh-good .nm { flex: 1; font-size: 11.5px; line-height: 1.15; } .sh-good .pr, .sh-row .pr { color: var(--gold); font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+.sh-box { min-height: 74px; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px dashed rgba(255,215,106,0.35); border-radius: 10px; padding: 4px; }
+.sh-row { display: flex; align-items: center; gap: 6px; padding: 3px 4px; border-radius: 6px; } .sh-row:hover { background: rgba(255,255,255,0.06); } .sh-row .nm { flex: 1; font-size: 12px; }
+.qbtns { display: flex; align-items: center; gap: 4px; } .qbtns b { min-width: 18px; text-align: center; font-size: 12px; }
+.qbtns button { width: 20px; height: 20px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: var(--text); cursor: pointer; font-weight: 800; line-height: 1; padding: 0; }
+.sh-empty { color: var(--muted); font-size: 11.5px; padding: 14px 8px; text-align: center; }
+.sh-bag { display: grid; grid-template-columns: repeat(auto-fill, 44px); gap: 4px; max-height: 190px; overflow-y: auto; }
+.sh-cell { position: relative; width: 44px; height: 44px; display: grid; place-items: center; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; user-select: none; }
+.sh-cell:hover { border-color: var(--border); } .sh-cell.junk { box-shadow: inset 0 0 0 1px rgba(160,140,100,0.25); }
+.sh-cell .qty { position: absolute; right: 3px; bottom: 1px; font-size: 10px; font-weight: 800; text-shadow: 0 1px 2px #000; } .sh-cell .eqm { position: absolute; left: 3px; top: 1px; font-size: 9px; color: var(--gold); font-weight: 800; }
+.sh-quick { display: flex; gap: 6px; margin-top: 5px; }
+.sh-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px; } .sh-foot .bad, .sh-zeny .bad { color: #ff6a6a; }
+.sh-zeny { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); text-align: right; font-size: 13px; }
+/* Loja de Auroras com prévia 3D (S-135) */
+.lj2 { display: grid; grid-template-columns: 1fr 340px; gap: 12px; }
+.lj-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 470px; overflow-y: auto; align-content: start; padding: 2px; }
+.lj-card { display: flex; gap: 8px; align-items: center; padding: 6px; border-radius: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; box-shadow: inset 3px 0 0 var(--rc); }
+.lj-card:hover { border-color: var(--rc); } .lj-card.sel { border-color: var(--rc); background: rgba(255,255,255,0.06); box-shadow: inset 3px 0 0 var(--rc), 0 0 12px -2px var(--rc); }
+.lj-card img { width: 60px; height: 60px; border-radius: 8px; background: radial-gradient(circle at 50% 60%, rgba(255,255,255,0.12), rgba(0,0,0,0.2)); }
+.lj-ct { min-width: 0; } .lj-ct .lj-n { font-size: 12.5px; font-weight: 800; } .lj-ct .lj-r { font-size: 10.5px; color: var(--rc); } .lj-st { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.lj-prev { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 14px; padding: 8px 12px 12px; background: radial-gradient(ellipse at 50% 38%, color-mix(in srgb, var(--rc) 28%, transparent), rgba(0,0,0,0.45) 70%); border: 1px solid color-mix(in srgb, var(--rc) 50%, transparent); }
+.lj-prev canvas { width: 300px; height: 300px; }
+.lj-hint { position: absolute; top: 10px; right: 12px; font-size: 10px; color: var(--muted); }
+.lj-pn { font-family: Cinzel, serif; font-size: 18px; color: #fff; } .lj-pr { font-size: 11.5px; color: var(--rc); font-weight: 800; margin-bottom: 4px; } .lj-pd { font-size: 12px; color: #ddd; margin-bottom: 10px; }
+.lj-cta { width: 100%; padding: 9px; font-size: 14px; } .lj-miss { font-size: 11px; color: #ff8a8a; margin-top: 4px; }
+@media (max-width: 760px) { .lj2 { grid-template-columns: 1fr; } }
+.bs-filt { display: flex; gap: 4px; margin: 6px 0; } .bs-filt button { flex: 1; font: inherit; font-size: 11px; padding: 3px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.3); color: var(--text); cursor: pointer; } .bs-filt button.on { border-color: var(--gold); color: var(--gold); background: rgba(255,215,106,0.1); }

@@ -142,6 +142,10 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Evidências: boneco de treino com HP infinito (S-090), God Mode mais rápido (S-089), mascote no Painel (S-075).
 - Como aplicar: ele testa o jogo de verdade e quer números (DPS) e atalhos de mestre.
 
+### 20. Sistemas de MMORPG completos e visuais ★★★★
+- Evidências: missões com NPCs que se mandam um para o outro (S-126), refino com tabela visual (S-124), loja com caixa de venda (S-123), prévia antes de comprar (S-135/S-136), chefes enormes (S-138).
+- Como aplicar: ao criar um sistema, mostre as regras na tela (tabelas, barras, marcadores), siga a ergonomia dos clássicos (duplo clique, arrastar, ! e ?) e dê recompensa sem tirar o foco de caçar monstros.
+
 ### 19. Mascotes como companheiros de verdade ★★★★
 - Evidências: tatu, bolha e raposa "monte de peças" (S-110 a S-112), ataque padrão coerente com o bicho (S-113), vida e stamina (S-114).
 - Como aplicar:
@@ -165,6 +169,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Polígono chapado no lugar de objeto (hexágono vermelho no chão, retângulos coloridos como estandarte).
 - Efeito visual ligado o tempo todo sem motivo.
 - Câmera que fica atrás de parede.
+- Emoji como ícone de item.
+- Equipamento "frankenstein" (peça que não encaixa no corpo) e chapéu flutuando.
 
 ## Checklist de entrega
 Passe pelo que você tocou antes de dizer "feito":

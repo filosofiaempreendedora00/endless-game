@@ -44,10 +44,36 @@ export function loadHumans(onEach) {
   if (loading) return loading;
   const L = new GLTFLoader();
   loading = Promise.all(Object.entries(FILES).map(([k, f]) => L.loadAsync(Q + f).then(g => { G[k] = g; if (onEach) onEach(k); })))
-    .then(() => { prepHeads(); prepMaterials(); for (const k of Object.keys(G)) if (k.startsWith('out_')) mergeOutfit(G[k].scene); return G; });
+    .then(() => { prepHeads(); prepMaterials(); for (const k of Object.keys(G)) if (k.startsWith('out_')) { if (k.startsWith('out_f_')) dropParts(G[k].scene, /Pauldron/); mergeOutfit(G[k].scene); } return G; });
   return loading;
 }
 export const humanAnims = () => (G.anims ? G.anims.animations : []);
+/* S-127: as animações trazem a POSIÇÃO de todos os ossos (medidas do esqueleto masculino). No corpo feminino isso
+   alarga ombros e quadris de homem. Para elas, usamos cópias das animações só com rotação (posição só na raiz/pélvis),
+   e o esqueleto mantém as proporções femininas. */
+const femClips = [];
+function animsFor(sex) {
+  const all = humanAnims(); if (sex !== 'f') return all;
+  if (femClips.length !== all.length) { femClips.length = 0; for (const c of all) femClips.push(new THREE.AnimationClip(c.name, c.duration, c.tracks.filter(t => !t.name.endsWith('.position') || /^(root|pelvis)\./.test(t.name)))); }
+  return femClips;
+}
+// põe o esqueleto na pose parada (Idle) para encaixar peças no lugar certo; a animação de verdade assume no quadro seguinte
+export function humanIdlePose(root) {
+  const clip = THREE.AnimationClip.findByName(animsFor(root.userData.sex), 'Idle_Loop'); if (!clip) return;
+  const mx = new THREE.AnimationMixer(root), a = mx.clipAction(clip); a.play(); mx.update(0.4); root.updateMatrixWorld(true);
+  // (não chame a.stop(): ao desligar, o three.js devolve os ossos à pose em T do arquivo)
+}
+// proporções femininas: ombros um pouco mais estreitos e braços mais finos, quadril levemente mais largo
+function feminize(skel) {
+  const by = n => skel.bones.find(b => b.name === n);
+  for (const s of ['l', 'r']) {
+    const up = by('upperarm_' + s), lo = by('lowerarm_' + s), th = by('thigh_' + s), cl = by('clavicle_' + s);
+    if (up) { up.position.multiplyScalar(0.9); up.scale.set(1, 0.88, 0.88); }
+    if (lo) lo.scale.set(1, 0.94, 0.94);
+    if (cl) cl.position.multiplyScalar(0.94);
+    if (th) th.position.x *= 1.05;
+  }
+}
 
 // recorta do corpo base só a cabeça e o pescoço (triângulos presos aos ossos Head/neck_01)
 function headOnly(mesh) {
@@ -65,6 +91,8 @@ function prepHeads() {
     if (body) body.geometry = headOnly(body);
   }
 }
+// tira peças da roupa (ex.: a ombreira pesada deixava a silhueta feminina com ombros de homem — S-127)
+function dropParts(scene, re) { const out = []; scene.traverse(o => { if (o.isSkinnedMesh && re.test(o.name)) out.push(o); }); for (const o of out) o.parent.remove(o); }
 // junta as peças da roupa que usam o mesmo material numa malha só (o capuz fica separado: ele liga/desliga)
 function mergeOutfit(scene) {
   const groups = new Map(); let skel = null, parent = null, bindM = null;
@@ -99,12 +127,25 @@ function prepMaterials() {
     const g = o.geometry; if (o.material && o.material.normalMap && g.index && g.attributes.uv && g.attributes.normal && !g.attributes.tangent) { try { g.computeTangents(); } catch (e) { o.material.normalScale.set(0.5, 0.5); } }
   });
 }
-const texCache = {};
-function skinTexture(sex, tone) {
-  const key = sex + tone; if (texCache[key]) return texCache[key];
-  const f = sex === 'm' ? (tone === 'clara' ? 'T_Superhero_Male_Light.png' : 'T_Superhero_Male_Dark.png') : (tone === 'clara' ? 'T_Superhero_Female_Light_BaseColor.png' : 'T_Superhero_Female_Dark_BaseColor.png');
-  const t = new THREE.TextureLoader().load(Q + 'base/' + f); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;
-  return (texCache[key] = t);
+/* S-127: tom de pele. As texturas do pacote têm todas o mesmo tom bronzeado/alaranjado; aqui geramos (uma vez) a versão
+   clara (padrão) e a morena a partir dela, preservando os detalhes (poros, sombras). Vale para o rosto E para braços,
+   mãos e pescoço da roupa (material "Regular"), que antes ficavam sempre escuros. */
+const SKIN_TONE = { clara: { mode: 'screen', k: [0.36, 0.55, 0.6] }, escura: { mode: 'mult', k: [0.74, 0.7, 0.7] } };
+const toneCache = new Map();
+function tonedTexture(srcTex, tone) {
+  if (!srcTex || !srcTex.image) return srcTex;
+  const key = srcTex.uuid + tone; if (toneCache.has(key)) return toneCache.get(key);
+  const img = srcTex.image, W = img.width, H = img.height, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, W, H), a = d.data, T = SKIN_TONE[tone] || SKIN_TONE.clara;
+  for (let i = 0; i < a.length; i += 4) for (let ch = 0; ch < 3; ch++) a[i + ch] = T.mode === 'screen' ? 255 - (255 - a[i + ch]) * T.k[ch] : a[i + ch] * T.k[ch];
+  x.putImageData(d, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = srcTex.flipY; t.wrapS = srcTex.wrapS; t.wrapT = srcTex.wrapT; t.anisotropy = 4;
+  toneCache.set(key, t); return t;
+}
+const skinMatCache = new Map();
+function skinMaterial(mat, tone) { // um material por (material original, tom): compartilhado entre os personagens
+  const key = mat.uuid + tone; if (skinMatCache.has(key)) return skinMatCache.get(key);
+  const m = mat.clone(); m.map = tonedTexture(mat.map, tone); m.needsUpdate = true; skinMatCache.set(key, m); return m;
 }
 // liga uma malha com pele (SkinnedMesh) de outro arquivo ao esqueleto do personagem, pelos nomes dos ossos
 function graft(src, root, skeleton) {
@@ -131,8 +172,9 @@ export function makeHuman(opts = {}) {
   const add = (srcScene, filter) => { const out = []; srcScene.traverse(o => { if (o.isSkinnedMesh && (!filter || filter(o))) { const m = graft(o, host, skel); if (m) out.push(m); } }); return out; };
   // cabeça (rosto + olhos) do corpo base, com o tom de pele escolhido
   const heads = add(G['base_' + sex].scene, o => !/Eyebrows/i.test(o.name));
-  const skinT = skinTexture(sex, opts.skin || 'clara');
-  for (const h of heads) if (/SuperHero/i.test(h.name)) { h.material = h.material.clone(); h.material.map = skinT; h.material.needsUpdate = true; }
+  const tone = opts.skin === 'escura' ? 'escura' : 'clara';
+  for (const h of heads) if (/SuperHero/i.test(h.name)) h.material = skinMaterial(h.material, tone);
+  root.traverse(o => { if (o.isSkinnedMesh && o.material && /Regular/.test(o.material.name)) o.material = skinMaterial(o.material, tone); }); // braços, mãos e pescoço
   // sobrancelhas, cabelo e barba na cor escolhida
   const hairCol = new THREE.Color(opts.hairColor || '#4a2e1a');
   const tint = arr => arr.forEach(m => { m.material = m.material.clone(); m.material.color = hairCol.clone(); m.material.needsUpdate = true; });
@@ -145,13 +187,14 @@ export function makeHuman(opts = {}) {
   const mixer = new THREE.AnimationMixer(root), acts = {};
   const anim = {
     name: '', cur: null,
-    play(n, o = {}) { const clip = THREE.AnimationClip.findByName(humanAnims(), humanAnimName(n)) || THREE.AnimationClip.findByName(humanAnims(), 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
+    play(n, o = {}) { const list = animsFor(sex), clip = THREE.AnimationClip.findByName(list, humanAnimName(n)) || THREE.AnimationClip.findByName(list, 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
       if (this.cur === a && !o.restart && !o.once) { a.setEffectiveTimeScale(o.speed || 1); this.name = n; return; }
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(o.once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = !!o.once;
       if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, o.fade ?? 0.2, false); a.play(); this.cur = a; this.name = n; },
     update(dt) { mixer.update(dt); },
   };
-  root.userData.human = true;
+  root.userData.human = true; root.userData.sex = sex;
+  if (sex === 'f') feminize(skel);
   shareSkeletons(root);
   // volume fixo de 1,3 m em volta do corpo: o que está fora da tela (ou da sombra) não é desenhado
   const sph = new THREE.Sphere(new THREE.Vector3(0, 0.95, 0), 1.3);

@@ -40,18 +40,18 @@ function insertCard(card, target) {
   saveGame(); UI.markDirty();
 }
 
-function buyItem(id, qty) {
+function buyItem(id, qty, quiet) {
   const p = G.player, cost = ITEMS[id].price * qty;
   if (p.zeny < cost) { UI.log('Zeny insuficiente.', 'warn'); Sound.play('error'); return; }
-  p.zeny -= cost; addItem(p, id, qty); Sound.play('coin');
-  UI.log(`Comprou ${ITEMS[id].name}${qty > 1 ? ' x' + qty : ''} por ${cost} z.`, 'item'); UI.markDirty();
+  p.zeny -= cost; addItem(p, id, qty); if (!quiet) Sound.play('coin');
+  if (!quiet) UI.log(`Comprou ${ITEMS[id].name}${qty > 1 ? ' x' + qty : ''} por ${cost} z.`, 'item'); UI.markDirty();
 }
 
-function sellItem(entry, qty) {
+function sellItem(entry, qty, quiet) {
   const p = G.player; qty = Math.min(qty, entry.qty);
   const v = sellPrice(entry.id) * qty;
-  p.zeny += v; removeItem(p, entry, qty); Sound.play('coin');
-  UI.log(`Vendeu ${ITEMS[entry.id].name}${qty > 1 ? ' x' + qty : ''} por ${v} z.`, 'item');
+  p.zeny += v; removeItem(p, entry, qty); if (!quiet) Sound.play('coin');
+  if (!quiet) UI.log(`Vendeu ${ITEMS[entry.id].name}${qty > 1 ? ' x' + qty : ''} por ${v} z.`, 'item');
   p.hotbar.forEach((h, i) => { if (h && h.kind === 'item' && !countItem(p, h.id) && h.id === entry.id) { /* mantém atalho esmaecido */ } });
   UI.markDirty();
 }

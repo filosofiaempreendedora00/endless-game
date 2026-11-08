@@ -70,18 +70,21 @@ export function buildRoomShell(def) {
 /* ---------- móveis ---------- */
 // --- taverna (S-077 a S-081): móveis e comida com detalhe de verdade ---
 const lathe = (pts, seg = 24) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
-const MUG_GLASS = new THREE.MeshStandardMaterial({ color: '#e8f2f0', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false });
+const MUG_GLASS = new THREE.MeshStandardMaterial({ color: '#9fbcb0', roughness: 0.06, metalness: 0.25, transparent: true, opacity: 0.34, side: THREE.DoubleSide, depthWrite: false }); // S-133: vidro grosso, menos transparente
 const MUG_BEER = new THREE.MeshStandardMaterial({ color: '#e0a020', roughness: 0.2, emissive: '#a05a00', emissiveIntensity: 0.35 });
 // caneca de vidro clara com alça, cerveja dourada e colarinho de espuma
 export function mug() {
   const g = new THREE.Group();
   const glass = MUG_GLASS, beer = MUG_BEER;
   const foam = new THREE.MeshStandardMaterial({ color: '#fff7e6', roughness: 0.9 });
-  const body = new THREE.Mesh(lathe([[0.001, 0], [0.068, 0], [0.072, 0.01], [0.074, 0.17], [0.076, 0.19], [0.07, 0.19], [0.068, 0.012], [0.001, 0.012]], 28), glass); body.renderOrder = 3; g.add(body);
+  // S-133: parede de vidro grossa (fundo pesado, borda arredondada)
+  const body = new THREE.Mesh(lathe([[0.001, 0], [0.068, 0], [0.074, 0.008], [0.077, 0.03], [0.078, 0.17], [0.079, 0.188], [0.074, 0.193], [0.068, 0.188], [0.066, 0.03], [0.06, 0.026], [0.001, 0.026]], 32), glass); body.renderOrder = 3; g.add(body);
   const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.064, 0.14, 24), beer); liquid.position.y = 0.083; g.add(liquid);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.069, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), foam); head.scale.y = 0.45; head.position.y = 0.152; g.add(head);
   const drip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 8), foam); drip.scale.set(1, 2.2, 0.6); drip.position.set(0.07, 0.165, 0.02); g.add(drip);
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 10, 24, Math.PI * 1.15), glass); handle.position.set(0.085, 0.1, 0); handle.rotation.z = -Math.PI * 0.57; g.add(handle); // alça para puxar
+  // alça grossa de vidro, presa no corpo em cima e embaixo (S-133)
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.019, 14, 28, Math.PI * 1.1), glass); handle.position.set(0.083, 0.098, 0); handle.rotation.z = -Math.PI * 0.55; handle.renderOrder = 3; g.add(handle);
+  for (const y of [0.05, 0.146]) { const j = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 10), glass); j.scale.set(1, 0.8, 1.1); j.position.set(0.08, y, 0); j.renderOrder = 3; g.add(j); }
   return g;
 }
 // pão com cortes na casca, sobre uma tábua, e uma fatia de queijo
@@ -98,6 +101,21 @@ function breadBoard() {
   return g;
 }
 const turnedLeg = h => lathe([[0.001, 0], [0.065, 0], [0.065, 0.06], [0.045, 0.1], [0.04, h * 0.45], [0.058, h * 0.5], [0.04, h * 0.55], [0.042, h - 0.08], [0.06, h - 0.04], [0.06, h], [0.001, h]], 16);
+// S-133: vela de verdade num castiçal de latão: cera com escorridos, pavio escuro e chama em gota com núcleo claro
+export function makeCandle() {
+  const c = new THREE.Group(), brass = mat('#b8913e', { metalness: 0.8, roughness: 0.32 }), wax = mat('#efe3c4', { roughness: 0.55 });
+  const dish = new THREE.Mesh(lathe([[0.001, 0], [0.075, 0], [0.08, 0.008], [0.078, 0.016], [0.07, 0.012], [0.026, 0.014], [0.024, 0.03], [0.03, 0.04], [0.001, 0.04]], 28), brass); c.add(dish);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.006, 8, 20), brass); ring.position.set(0.09, 0.012, 0); ring.rotation.x = Math.PI / 2; c.add(ring);
+  const body = new THREE.Mesh(lathe([[0.001, 0.035], [0.026, 0.035], [0.026, 0.16], [0.024, 0.172], [0.016, 0.176], [0.012, 0.168], [0.001, 0.168]], 24), wax); c.add(body);
+  for (const [a, y, l] of [[0.4, 0.15, 0.05], [2.3, 0.14, 0.08], [4.1, 0.155, 0.035]]) { const d = new THREE.Mesh(new THREE.CapsuleGeometry(0.006, l, 4, 8), wax); d.position.set(Math.cos(a) * 0.026, y - l / 2, Math.sin(a) * 0.026); c.add(d); }
+  const puddle = new THREE.Mesh(new THREE.SphereGeometry(0.034, 20, 8), wax); puddle.scale.set(1, 0.18, 1); puddle.position.y = 0.04; c.add(puddle);
+  const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.016, 6), mat('#1e1612')); wick.position.y = 0.18; c.add(wick);
+  const fl = new THREE.Group(); fl.position.y = 0.2; c.add(fl);
+  const add = (r, h, col, op) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 10), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false })); m.scale.set(1, h, 1); fl.add(m); return m; };
+  add(0.013, 2.4, '#ff9a3a', 0.55); add(0.008, 2.0, '#fff1c0', 0.95); const blue = add(0.006, 1, '#6a8aff', 0.5); blue.position.y = -0.012;
+  c.userData.update = t => { fl.scale.set(1 + Math.sin(t * 21) * 0.06, 1 + Math.sin(t * 13) * 0.1 + Math.sin(t * 29) * 0.05, 1); fl.rotation.z = Math.sin(t * 5.3) * 0.08; };
+  return c;
+}
 export function table(len = 2.2) {
   const g = new THREE.Group(), W = mat('#7a5232'), W2 = mat('#6a4628');
   for (let k = 0; k < 3; k++) { const p = new THREE.Mesh(new THREE.BoxGeometry(len, 0.08, 0.32, 4, 1, 1), k === 1 ? W2 : W); p.position.set(0, 0.86, -0.34 + k * 0.34); g.add(p); } // tampo de 3 tábuas
@@ -105,9 +123,7 @@ export function table(len = 2.2) {
   for (const sx of [-1, 1]) g.add(box(0.06, 0.08, 0.72, W2, sx * (len / 2 - 0.18), 0.2, 0)); g.add(box(len - 0.36, 0.07, 0.06, W2, 0, 0.2, 0)); // travessas
   for (let i = 0; i < 3; i++) { const m = mug(); m.position.set(-len / 3 + i * len / 3 + (i - 1) * 0.08, 0.9, i % 2 ? 0.22 : -0.24); m.rotation.y = i * 2.1; g.add(m); }
   const bb = breadBoard(); bb.position.set(0.12, 0.9, 0.02); g.add(bb);
-  const candle = new THREE.Group(); candle.position.set(-0.3, 0.9, 0.05); g.add(candle);
-  const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.14, 16), mat('#efe6d0')); wax.position.y = 0.07; candle.add(wax);
-  const wick = new THREE.Mesh(new THREE.ConeGeometry(0.015, 0.05, 12), new THREE.MeshBasicMaterial({ color: '#ffd27a' })); wick.position.y = 0.17; candle.add(wick);
+  const candle = makeCandle(); candle.position.set(-0.3, 0.9, 0.05); g.add(candle);
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }

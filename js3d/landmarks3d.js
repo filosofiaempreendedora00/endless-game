@@ -259,23 +259,38 @@ export function makeRuinWall(seed = 1, len = 7, h = 3.4) {
 }
 /* ---------- carrinho de mão (S-082): caçamba de tábuas, cabos curvos e roda com raios ---------- */
 export function makeWheelbarrow() {
+  // S-134: refeito para que tudo se encaixe — os cabos nascem no eixo da roda, a caçamba assenta sobre os cabos
+  // (inclinada junto com eles) e os pés descem dos cabos até o chão. Frente (roda) = +Z.
   const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: '#8a5a32', roughness: 0.85 }), dark = new THREE.MeshStandardMaterial({ color: '#5a3a20', roughness: 0.9 }), iron = new THREE.MeshStandardMaterial({ color: '#4a4a4e', roughness: 0.45, metalness: 0.7 });
-  const plank = (w, h, d, x, y, z, rx = 0, rz = 0, m = wood) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 1, 1), m); b.position.set(x, y, z); b.rotation.set(rx, 0, rz); b.castShadow = b.receiveShadow = true; g.add(b); };
-  // caçamba (laterais inclinadas, tábuas com frestas)
-  for (let k = 0; k < 4; k++) plank(0.62, 0.035, 0.17, 0, 0.42, -0.26 + k * 0.175, 0, 0, k % 2 ? wood : dark);
-  for (const sx of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.04, 0.16, 0.72, sx * 0.36, 0.52 + k * 0.17, 0, 0, sx * -0.35);
-  for (const sz of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.7, 0.16, 0.04, 0, 0.52 + k * 0.17, sz * 0.38, sz * 0.3, 0);
-  // cabos curvos que viram pegadores
-  for (const sx of [-1, 1]) { const c = new THREE.CatmullRomCurve3([new THREE.Vector3(sx * 0.22, 0.3, 0.62), new THREE.Vector3(sx * 0.26, 0.38, 0.1), new THREE.Vector3(sx * 0.3, 0.52, -0.55), new THREE.Vector3(sx * 0.32, 0.66, -0.95)]); const t = new THREE.Mesh(new THREE.TubeGeometry(c, 20, 0.035, 10), dark); t.castShadow = true; g.add(t); const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.18, 12), wood); grip.position.set(sx * 0.32, 0.67, -0.92); grip.rotation.x = 1.3; g.add(grip); }
-  // pés de apoio
-  for (const sx of [-1, 1]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.4, 10), dark); l.position.set(sx * 0.26, 0.2, -0.45); g.add(l); }
-  // roda com aro de ferro, cubo e raios
-  const wheel = new THREE.Group(); wheel.position.set(0, 0.24, 0.72); g.add(wheel);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 10, 32), iron); rim.rotation.y = Math.PI / 2; wheel.add(rim);
-  const tread = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 10, 32), wood); tread.rotation.y = Math.PI / 2; wheel.add(tread);
-  for (let k = 0; k < 8; k++) { const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 8), wood); sp.rotation.x = k / 8 * Math.PI; wheel.add(sp); }
+  const R = 0.22, WY = R + 0.03, WZ = 0.72, HX = 0.2; // raio da roda, altura e posição do eixo, meia-distância dos cabos no eixo
+  const handle = sx => new THREE.CatmullRomCurve3([V3(sx * HX, WY, WZ + 0.04), V3(sx * (HX + 0.03), WY + 0.1, 0.35), V3(sx * (HX + 0.07), WY + 0.21, -0.3), V3(sx * (HX + 0.1), WY + 0.37, -0.95)]);
+  const at = (c, z) => { let best = c.getPoint(0), bd = 9; for (let k = 0; k <= 60; k++) { const p = c.getPoint(k / 60), d = Math.abs(p.z - z); if (d < bd) { bd = d; best = p; } } return best; };
+  for (const sx of [-1, 1]) {
+    const c = handle(sx), t = new THREE.Mesh(new THREE.TubeGeometry(c, 32, 0.035, 12), dark); g.add(t);
+    // pegador alinhado com a ponta do cabo
+    const end = c.getPoint(1), dir = c.getTangent(1), grip = new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.16, 4, 12), wood);
+    grip.quaternion.setFromUnitVectors(V3(0, 1, 0), dir); grip.position.copy(end).addScaledVector(dir, 0.04); g.add(grip);
+    // pé: do cabo até o chão, com sapata
+    const top = at(c, -0.38), leg = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.03, top.y + 0.02, 12), dark); leg.position.set(top.x, (top.y + 0.02) / 2 - 0.01, top.z); g.add(leg);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.09), iron); foot.position.set(top.x, 0.015, top.z); g.add(foot);
+  }
+  { const a = at(handle(-1), -0.38), b = at(handle(1), -0.38), br = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, b.x - a.x, 10), dark); br.rotation.z = Math.PI / 2; br.position.set(0, a.y * 0.45, a.z); g.add(br); } // travessa entre os pés
+  // caçamba: grupo inclinado como os cabos, apoiado em cima deles
+  const p0 = at(handle(1), 0.3), p1 = at(handle(1), -0.25), pitch = Math.atan2(p0.y - p1.y, p0.z - p1.z);
+  const bin = new THREE.Group(); bin.position.set(0, (p0.y + p1.y) / 2 + 0.035 + 0.02, (p0.z + p1.z) / 2); bin.rotation.x = -pitch; g.add(bin);
+  const plank = (w, h, d, x, y, z, rx = 0, rz = 0, m = wood) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 1, 1), m); b.position.set(x, y, z); b.rotation.set(rx, 0, rz); bin.add(b); };
+  for (let k = 0; k < 4; k++) plank(0.6, 0.035, 0.18, 0, 0.018, -0.27 + k * 0.18, 0, 0, k % 2 ? wood : dark); // fundo
+  for (const sx of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.035, 0.15, 0.78 + k * 0.08, sx * (0.3 + 0.05 + k * 0.045), 0.1 + k * 0.145, 0, 0, -sx * 0.32); // laterais abertas
+  for (const sz of [-1, 1]) for (let k = 0; k < 2; k++) plank(0.66 + k * 0.1, 0.15, 0.035, 0, 0.1 + k * 0.145, sz * (0.36 + 0.05 + k * 0.045), sz * 0.32, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.32, 0.05), iron); st.position.set(sx * 0.4, 0.17, sz * 0.43); st.rotation.set(sz * 0.32, 0, -sx * 0.32); bin.add(st); } // cantoneiras de ferro
+  // roda com aro de ferro, cubo e raios, no eixo entre os cabos
+  const wheel = new THREE.Group(); wheel.position.set(0, WY, WZ); g.add(wheel);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R, 0.03, 10, 36), iron); rim.rotation.y = Math.PI / 2; wheel.add(rim);
+  const tread = new THREE.Mesh(new THREE.TorusGeometry(R - 0.025, 0.028, 10, 36), wood); tread.rotation.y = Math.PI / 2; wheel.add(tread);
+  for (let k = 0; k < 8; k++) { const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, (R - 0.03) * 2, 8), wood); sp.rotation.x = k / 8 * Math.PI; wheel.add(sp); }
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 14), iron); hub.rotation.z = Math.PI / 2; wheel.add(hub);
-  const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), iron); axle.rotation.z = Math.PI / 2; wheel.add(axle);
+  const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, HX * 2 + 0.1, 10), iron); axle.rotation.z = Math.PI / 2; wheel.add(axle);
+  for (const sx of [-1, 1]) { const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 12), iron); cap.rotation.z = Math.PI / 2; cap.position.x = sx * (HX + 0.05); wheel.add(cap); }
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }

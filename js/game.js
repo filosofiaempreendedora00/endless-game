@@ -34,7 +34,7 @@ function initRuntime(p) {
     dead: false, buffs: {}, cds: {}, atkT: -9, regenHp: 0, regenSp: 0, d: {}, repathT: 0, say: null,
   });
 }
-const SAVE_FIELDS = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'hp', 'sp'];
+const SAVE_FIELDS = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'hp', 'sp'];
 function saveGame() {
   if (!G.player || G.state === 'title') return;
   const s = {}; for (const k of SAVE_FIELDS) s[k] = G.player[k];
@@ -324,7 +324,7 @@ function pickup(d) {
   G.drops.splice(i, 1);
   addItem(p, d.id, d.qty);
   Sound.play(d.isCard ? 'card' : 'pickup');
-  UI.log(`Você obteve ${ITEMS[d.id].icon} ${ITEMS[d.id].name}${d.qty > 1 ? ' x' + d.qty : ''}.`, d.isCard ? 'card' : 'item');
+  UI.log(`Você obteve ${ITEMS[d.id].name}${d.qty > 1 ? ' x' + d.qty : ''}.`, d.isCard ? 'card' : 'item');
   if (d.isCard) saveGame();
   UI.markDirty();
 }
@@ -414,7 +414,7 @@ function executeSkill(a) {
     else if (Math.random() < eff.chance(lv) + (p.d.dex - m.def.lv) / 300) {
       const pool = m.def.drops; const [id] = pool[Math.floor(Math.random() * pool.length)];
       m.stolen = true; addItem(p, id, 1); Sound.play('coin');
-      floater(m, 'Roubou!', '#ffd84a'); UI.log(`Você roubou ${ITEMS[id].icon} ${ITEMS[id].name}!`, 'item'); UI.markDirty();
+      floater(m, 'Roubou!', '#ffd84a'); UI.log(`Você roubou ${ITEMS[id].name}!`, 'item'); UI.markDirty();
     } else { floater(m, 'Falhou', '#cfd6e0'); Sound.play('miss'); }
     m.target = p;
   } else if (eff.kind === 'damage') {

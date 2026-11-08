@@ -77,6 +77,7 @@ function recalc(p) {
     const e = p.equip[s]; if (!e) continue;
     const it = ITEMS[e.id];
     addBonus(b, { atk: it.atk || 0, matk: it.matk || 0, def: it.def || 0, mdef: it.mdef || 0 });
+    if (e.refine) addBonus(b, refineBonus(it, e.refine)); // S-124: refino
     addBonus(b, it.bonuses);
     for (const c of e.cards || []) if (c) addBonus(b, ITEMS[c].bonuses);
   }
@@ -150,3 +151,30 @@ function petGainExp(pet, amount) {
 // S-114: o mascote tem vida (HP) e, em vez de SP, stamina: correr e atacar cansam; descansando, recupera.
 const PET_HP_MOD = { ataque: 1, suporte: 0.85, guardiao: 1.6 };
 function petPower(pet) { const st = petStage(pet); return { atk: Math.round((8 + pet.lv * 3.2) * (1 + st * 0.6)), heal: 0.05 + st * 0.03, guard: 8 + st * 6, speedMult: 1 + st * 0.2, maxHp: Math.round((70 + pet.lv * 16) * (1 + st * 0.5) * (PET_HP_MOD[PETS[pet.species].role] || 1)), maxSta: 100 + st * 25, def: 5 + pet.lv + st * 10 }; }
+
+/* ---------------- Refino (S-124) ----------------
+   Armas usam Ferrolume e ganham ATQ (cajados também ATQM); armaduras, escudos, chapéus, capas e botas usam
+   Pedra-Égide e ganham DEF. Até o nível seguro (+4) nunca quebra; daí em diante cada tentativa pode quebrar o item. */
+const REFINE_MAX = 10, REFINE_SAFE = 4;
+const REFINE_CHANCE = [1, 1, 1, 1, 0.8, 0.65, 0.5, 0.35, 0.22, 0.12]; // chance de passar de +n para +n+1
+const REFINE_TYPES = ['arma', 'armadura', 'escudo', 'cabeca', 'capa', 'botas'];
+function canRefine(it) { return it && REFINE_TYPES.includes(it.type); }
+function refineMat(it) { return it.type === 'arma' ? 'ferrolume' : 'pedra_egide'; }
+function refineCost(it, lv) { return Math.round((it.type === 'arma' ? 250 : 200) * (lv + 1) * (1 + (it.lv || 1) / 40)); }
+function refineBonus(it, lv) { if (!lv) return {}; if (it.type === 'arma') return it.wtype === 'cajado' ? { atk: lv * 3, matk: lv * 5 } : { atk: lv * 6 }; return { def: lv * (it.type === 'armadura' ? 2 : 1), mdef: it.type === 'armadura' ? Math.floor(lv / 2) : 0 }; }
+function refineName(en) { const it = ITEMS[en.id]; return (en.refine ? '+' + en.refine + ' ' : '') + it.name; }
+// tenta refinar: devolve { ok, broke, msg }
+function tryRefine(p, en) {
+  const it = ITEMS[en.id], lv = en.refine || 0;
+  if (!canRefine(it)) return { ok: false, msg: 'Esse item não pode ser refinado.' };
+  if (lv >= REFINE_MAX) return { ok: false, msg: 'Já está no máximo (+10).' };
+  const mat = refineMat(it), cost = refineCost(it, lv), have = p.inventory.find(x => x.id === mat);
+  if (!have) return { ok: false, msg: `Falta ${ITEMS[mat].name}.` };
+  if (p.zeny < cost) return { ok: false, msg: `Falta zeny (${cost} z).` };
+  p.zeny -= cost; removeItem(p, have, 1);
+  if (Math.random() < REFINE_CHANCE[lv]) { en.refine = lv + 1; recalc(p); return { ok: true, msg: `Sucesso! ${refineName(en)}` }; }
+  // falhou acima do seguro: o item quebra (some, junto com as cartas)
+  for (const s of EQUIP_SLOTS) if (p.equip[s] === en) p.equip[s] = null;
+  const i = p.inventory.indexOf(en); if (i >= 0) p.inventory.splice(i, 1);
+  recalc(p); return { ok: false, broke: true, msg: `O refino falhou e ${it.name} se partiu...` };
+}

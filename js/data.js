@@ -669,4 +669,9 @@ function fmtBonuses(b) {
 }
 
 // cada item conhece o próprio id
+// materiais de refino (S-124)
+ITEMS.ferrolume = { name: 'Ferrolume', type: 'etc', icon: '✦', price: 900, iconRecipe: ['refine', { c: '#5a6a8a', c2: '#ffb85a' }], desc: 'Minério que guarda o calor das forjas dos anões. Usado para refinar armas.' };
+ITEMS.pedra_egide = { name: 'Pedra-Égide', type: 'etc', icon: '✦', price: 750, iconRecipe: ['refine', { c: '#4a7a7a', c2: '#9affe8' }], desc: 'Pedra azulada que endurece ao toque do martelo. Usada para refinar armaduras, escudos, chapéus, capas e botas.' };
 for (const id in ITEMS) ITEMS[id].id = id;
+// monstros a partir do Nv. 15 às vezes deixam cair material de refino (S-124)
+for (const id in MONSTERS) { const m = MONSTERS[id]; if (m.lv >= 15 && !m.dummy && m.drops) { const r = Math.min(0.06, 0.006 + m.lv * 0.0006) * (m.boss ? 8 : m.mini ? 3 : 1); m.drops.push(['ferrolume', +r.toFixed(4)], ['pedra_egide', +(r * 1.2).toFixed(4)]); } }

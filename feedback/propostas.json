@@ -13,7 +13,8 @@
       "S-053",
       "S-055"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:25:28"
   },
   {
     "id": "P-002",
@@ -25,7 +26,8 @@
     "evidencias": [
       "S-060"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:25:13"
   },
   {
     "id": "P-003",
@@ -40,7 +42,8 @@
       "S-054",
       "S-064"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:25:46"
   },
   {
     "id": "P-004",
@@ -53,7 +56,8 @@
       "S-002",
       "S-032"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:25:58"
   },
   {
     "id": "P-005",
@@ -81,7 +85,8 @@
       "S-076",
       "S-015"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:26:14"
   },
   {
     "id": "P-007",
@@ -95,7 +100,8 @@
       "S-037",
       "S-076"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:26:20"
   },
   {
     "id": "P-008",
@@ -108,6 +114,7 @@
       "S-038",
       "S-076"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-08T17:26:51"
   }
 ]

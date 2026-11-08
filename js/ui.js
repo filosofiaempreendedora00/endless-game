@@ -123,6 +123,7 @@ const UI = {
   },
 
   refreshHud() {
+    this.renderQuestTracker();
     const p = G.player;
     this.layoutHotbar();
     const slots = $('hotbar').children, base = hbBase();
@@ -130,9 +131,9 @@ const UI = {
       const h = p.hotbar[base + i], s = slots[i];
       let ic = '', qty = '', tip = '';
       if (h && h.kind === 'skill' && SKILLS[h.id]) { ic = SKILLS[h.id].icon; qty = p.skills[h.id] ? 'Nv' + p.skills[h.id] : ''; tip = 'skill:' + h.id; }
-      else if (h && h.kind === 'item' && ITEMS[h.id]) { ic = ITEMS[h.id].icon; qty = countItem(p, h.id); tip = 'item:' + h.id; if (!qty) s.style.opacity = 0.4; }
+      else if (h && h.kind === 'item' && ITEMS[h.id]) { ic = iconImg(h.id); qty = countItem(p, h.id); tip = 'item:' + h.id; if (!qty) s.style.opacity = 0.4; }
       s.style.opacity = h && h.kind === 'item' && !countItem(p, h.id) ? 0.4 : 1;
-      s.querySelector('.ic').textContent = ic;
+      s.querySelector('.ic').innerHTML = ic;
       s.querySelector('.qty').textContent = qty;
       if (tip) s.dataset.tip = tip; else delete s.dataset.tip;
     }
@@ -183,8 +184,8 @@ const UI = {
   open(id) {
     if (id === 'equip') { this.charTab = 'equip'; id = 'char'; } else if (id === 'char' && !this.charTab) this.charTab = 'stats';
     if (id === 'char' && this.wins.char) { this.render_char(); return; }
-    const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 390), 60, Math.min(780, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 360), 40, Math.min(720, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
-    const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: this.shopTitle || 'Loja do Bento', dialog: 'Conversa', sugestoes: '💡 Sugestões', admin: '👑 Painel do Mestre' };
+    const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 440), 50, Math.min(880, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 360), 40, Math.min(720, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [Math.max(10, innerWidth / 2 - 380), 70, Math.min(760, innerWidth - 20)], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], quests: [Math.max(10, innerWidth / 2 - 300), 70, Math.min(600, innerWidth - 20)], refino: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: this.shopTitle || 'Loja do Bento', dialog: 'Conversa', sugestoes: '💡 Sugestões', quests: '📜 Missões', refino: '⚒️ Refino de Equipamentos', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -229,14 +230,26 @@ const UI = {
         if (en && confirm(`Descartar ${ITEMS[en.id].name}${en.qty > 1 ? ' x' + en.qty : ''}? Isso não pode ser desfeito.`)) { removeItem(p, en, en.qty); this.invSel = null; this.markDirty(); }
         break;
       }
+      case 'qsel': this.qSel = ds.id; this.render_quests(); break;
+      case 'qdrop': if (confirm('Abandonar esta missão? O progresso será perdido.')) { questAbandon(p, ds.id); this.render_quests(); } break;
+      case 'rfsel': this.refSel = +ds.uid; this.render_refino(); break;
+      case 'rfgo': {
+        const all = [...EQUIP_SLOTS.map(s => p.equip[s]).filter(Boolean), ...p.inventory], en = all.find(x => x.uid === this.refSel); if (!en) break;
+        const lv = en.refine || 0; if (lv >= REFINE_SAFE && !confirm(`Refinar ${refineName(en)} para +${lv + 1}?\nChance: ${Math.round(REFINE_CHANCE[lv] * 100)}%. Se falhar, o item QUEBRA e some.`)) break;
+        const r = tryRefine(p, en); this.log(r.msg, r.ok ? 'lvl' : 'warn'); Sound.play(r.ok ? 'levelup' : r.broke ? 'death' : 'error');
+        if (typeof H3 !== 'undefined' && H3.refineFx) H3.refineFx(r.ok, r.broke);
+        this.render_refino(); this.markDirty(); break;
+      }
       case 'buy': buyItem(ds.id, e.shiftKey ? 10 : 1); break;
       case 'sell': { const en = invByUid(+ds.uid); if (en) sellItem(en, e.shiftKey ? en.qty : 1); break; }
+      case 'cartadd': case 'cartq': case 'sellq': case 'selljunk': case 'sellclear': case 'sellall': case 'buyall': this.shopAct(a, ds, e); break;
       case 'treesel': this.treeSel = ds.c; this.render_tree(); break;
       case 'treetab': this.treeTab = ds.t; this.render_tree(); break;
       case 'chartab': this.charTab = ds.t; this.render_char(); break;
       case 'skilltab': this.skillTab = ds.t; this.render_skills(); break;
       case 'petset': if (typeof H3 !== 'undefined' && H3.setPet) { H3.setPet(ds.k, +ds.st); this.render_tree(); } break;
       case 'bestsel': this.bestSel = ds.id; this.render_bestiario(); break;
+      case 'bestf': this.bestF = ds.f; this.render_bestiario(); break;
       case 'dlg': { const opt = this.dlg && this.dlg.options[+ds.i]; if (opt) opt.fn(); break; }
     }
   },
@@ -302,7 +315,7 @@ const UI = {
     let cells = list.map(en => {
       const it = ITEMS[en.id];
       const slots = EQUIP_TYPES.includes(it.type) && it.slots ? `<span class="slots">[${en.cards.filter(Boolean).length}/${it.slots}]</span>` : '';
-      return `<div class="cell ${this.invSel === en.uid ? 'sel' : ''}" data-act="sel" data-uid="${en.uid}" data-tip="inv:${en.uid}">${it.icon}${slots}${en.qty > 1 ? `<span class="qty">${en.qty}</span>` : ''}</div>`;
+      return `<div class="cell ${this.invSel === en.uid ? 'sel' : ''}" data-act="sel" data-uid="${en.uid}" data-tip="inv:${en.uid}">${iconImg(en.id)}${slots}${en.qty > 1 ? `<span class="qty">${en.qty}</span>` : ''}</div>`;
     });
     const pad = Math.max(0, 24 - cells.length);
     for (let i = 0; i < pad; i++) cells.push('<div class="cell empty"></div>');
@@ -313,8 +326,8 @@ const UI = {
       if (card) {
         const ct = ITEMS[card.id].equip;
         const targets = [];
-        for (const s of EQUIP_SLOTS) { const e = p.equip[s]; if (e && ITEMS[e.id].type === ct && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-slot="${s}">${ITEMS[e.id].icon} ${ITEMS[e.id].name} (equipado)</button>`); }
-        for (const e of p.inventory) if (ITEMS[e.id].type === ct && e.cards && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-uid="${e.uid}">${ITEMS[e.id].icon} ${ITEMS[e.id].name}</button>`);
+        for (const s of EQUIP_SLOTS) { const e = p.equip[s]; if (e && ITEMS[e.id].type === ct && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-slot="${s}">${iconImg(e.id, 'iicon sm')} ${ITEMS[e.id].name} (equipado)</button>`); }
+        for (const e of p.inventory) if (ITEMS[e.id].type === ct && e.cards && e.cards.includes(null)) targets.push(`<button class="btn" data-act="cardins" data-uid="${e.uid}">${iconImg(e.id, 'iicon sm')} ${ITEMS[e.id].name}</button>`);
         detail = `<b>${ITEMS[card.id].name}</b><div class="muted">Escolha um(a) ${SLOT_NAMES[ct]} com espaço livre:</div>
           <div class="actions">${targets.join('') || '<span class="tt-warn" style="color:#ff8a8a">Nenhum equipamento compatível com espaço livre.</span>'}<button class="btn" data-act="cancelcard">Cancelar</button></div>`;
       }
@@ -344,9 +357,9 @@ const UI = {
     const L = ['cabeca', 'armadura', 'arma', 'capa', 'acessorio'], R = ['rosto', 'boca', 'escudo', 'botas', 'acessorio2'];
     const cell = (s, side) => {
       const e = p.equip[s], it = e && ITEMS[e.id];
-      const cards = e && it.slots ? `<div class="eq-cards">${(e.cards || []).map(c => c ? `<span class="eq-card full" data-tip="item:${c}">🃏</span>` : '<span class="eq-card"></span>').join('')}</div>` : '';
+      const cards = e && it.slots ? `<div class="eq-cards">${(e.cards || []).map(c => c ? `<span class="eq-card full" data-tip="item:${c}">${iconImg(c, 'iicon xs')}</span>` : '<span class="eq-card"></span>').join('')}</div>` : '';
       return `<div class="eq-slot ${side} ${e ? 'full' : ''}" ${e ? `data-tip="equip:${s}" data-act="unequip" data-slot="${s}" title="Clique para tirar"` : ''}>
-        <div class="eq-ic">${e ? it.icon : ''}</div><div class="eq-tx"><div class="eq-name">${e ? esc(it.name) + (it.slots ? ` [${it.slots}]` : '') : '<span class="muted">—</span>'}</div><div class="eq-lab">${SLOT_LABELS[s]}</div>${cards}</div></div>`;
+        <div class="eq-ic">${e ? iconImg(e.id) : ''}</div><div class="eq-tx"><div class="eq-name">${e ? (e.refine ? `<span class="gold">+${e.refine}</span> ` : '') + esc(it.name) + (it.slots ? ` [${it.slots}]` : '') : '<span class="muted">—</span>'}</div><div class="eq-lab">${SLOT_LABELS[s]}</div>${cards}</div></div>`;
     };
     const pic = typeof H3 !== 'undefined' && H3.portrait ? H3.portrait(this.eqYaw ?? 0.42) : null;
     const d = p.d || {};
@@ -428,13 +441,55 @@ const UI = {
     const tag = $('hb-preset'); if (tag) tag.innerHTML = `<b>${(G.player.hotPreset || 0) + 1}</b><small>/3</small><span>0 troca</span>`;
   },
 
+  /* ---------- Missões (S-126) ---------- */
+  render_quests() {
+    const p = G.player, st = questState(p), act = Object.keys(st.active).filter(id => QUESTS[id]);
+    const sel = act.includes(this.qSel) ? this.qSel : act[0];
+    const list = act.map(id => { const q = QUESTS[id], ready = questReady(p, id); return `<div class="ql-item ${id === sel ? 'on' : ''}" data-act="qsel" data-id="${id}">${q.main ? '⭐' : '❗'} <span>${esc(q.name)}</span>${ready ? '<b class="gold">✔</b>' : ''}<small>Nv. ${q.lv}</small></div>`; }).join('') || '<div class="muted" style="padding:10px">Nenhuma missão ativa. Procure NPCs com <b class="gold">!</b> em cima da cabeça.</div>';
+    const soon = Object.keys(QUESTS).filter(id => questAvailable(p, id) || questSoon(p, id)).map(id => `<div class="ql-soon">${QUESTS[id].main ? '⭐' : '❗'} ${esc(QUESTS[id].name)} <span class="muted">— ${QUEST_NPC_NAMES[QUESTS[id].giver] || QUESTS[id].giver}${questSoon(p, id) ? ` · a partir do Nv. ${QUESTS[id].lv}` : ''}</span></div>`).join('');
+    let det = '';
+    if (sel) { const q = QUESTS[sel], pr = questProgress(p, sel); det = `<div class="q-title">${q.main ? '⭐ ' : ''}${esc(q.name)}</div><div class="q-text">${q.text}</div><div class="q-sec">Objetivos</div>${pr.map(x => `<div class="q-obj ${x.have >= x.need ? 'ok' : ''}">${x.have >= x.need ? '✔' : '•'} ${objText(x.o)}${x.need > 1 ? ` <b>${x.have}/${x.need}</b>` : ''}</div>`).join('')}<div class="q-sec">Entregar para</div><div>${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}</div><div class="q-sec">Recompensa</div><div class="q-rew">${questRewardText(p, q)}</div><div style="margin-top:10px"><button class="btn small" data-act="qdrop" data-id="${sel}">Abandonar</button></div>`; }
+    this.body('quests').innerHTML = `<div class="ql"><div class="ql-left"><div class="q-sec" style="margin-top:0">Ativas (${act.length})</div>${list}${soon ? `<div class="q-sec">Disponíveis</div>${soon}` : ''}<div class="muted" style="margin-top:8px;font-size:11px">Concluídas: ${st.done.length}</div></div><div class="ql-right">${det || '<div class="muted">Escolha uma missão.</div>'}</div></div>`;
+  },
+  // rastreador de missões no canto (como no WoW)
+  renderQuestTracker() {
+    const el = $('qtrack'); if (!el || typeof QUESTS === 'undefined' || !G.player) return;
+    const p = G.player, st = questState(p), act = Object.keys(st.active).filter(id => QUESTS[id]).slice(0, 4);
+    const html = act.map(id => { const q = QUESTS[id], pr = questProgress(p, id), ready = pr.every(x => x.have >= x.need); return `<div class="qt-q ${ready ? 'ready' : ''}" data-win="quests"><div class="qt-n">${q.main ? '⭐' : '❗'} ${esc(q.name)}</div>${ready ? `<div class="qt-o ok">✔ Volte para ${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}</div>` : pr.map(x => `<div class="qt-o ${x.have >= x.need ? 'ok' : ''}">${objText(x.o)}${x.need > 1 ? ` ${x.have}/${x.need}` : ''}</div>`).join('')}</div>`; }).join('');
+    if (el._h !== html) { el._h = html; el.innerHTML = html; el.style.display = html ? '' : 'none'; }
+  },
+
+  /* ---------- Refino (S-124) ---------- */
+  render_refino() {
+    const p = G.player, all = [...EQUIP_SLOTS.map(s => p.equip[s]).filter(Boolean), ...p.inventory].filter(en => canRefine(ITEMS[en.id]));
+    const sel = all.find(en => en.uid === this.refSel) || all[0]; this.refSel = sel ? sel.uid : null;
+    const list = all.map(en => { const eq = Object.values(p.equip).includes(en); return `<div class="rf-item ${sel === en ? 'on' : ''}" data-act="rfsel" data-uid="${en.uid}" data-tip="${eq ? '' : 'inv:' + en.uid}">${iconImg(en.id, 'iicon sm')}<span>${esc(refineName(en))}</span>${eq ? '<small>equipado</small>' : ''}</div>`; }).join('') || '<div class="muted" style="padding:10px">Nenhum equipamento que possa ser refinado.</div>';
+    // tabela visual: +1 a +10 com a chance de cada passo
+    const table = REFINE_CHANCE.map((c, i) => `<div class="rf-step ${i < REFINE_SAFE ? 'safe' : c >= 0.5 ? 'mid' : 'risk'} ${sel && (sel.refine || 0) === i ? 'cur' : ''}"><div class="rf-bar" style="height:${Math.round(c * 100)}%"></div><b>+${i + 1}</b><small>${Math.round(c * 100)}%</small></div>`).join('');
+    let det = '<div class="muted">Escolha um equipamento à esquerda.</div>';
+    if (sel) {
+      const it = ITEMS[sel.id], lv = sel.refine || 0, mat = refineMat(it), have = countItem(p, mat), cost = refineCost(it, lv), ch = REFINE_CHANCE[lv];
+      const nb = refineBonus(it, lv + 1), cb = refineBonus(it, lv), gain = Object.keys(nb).filter(k => nb[k]).map(k => `${{ atk: 'ATQ', matk: 'ATQM', def: 'DEF', mdef: 'DEF M.' }[k]} ${cb[k] ? '+' + cb[k] + ' → ' : ''}<b class="gold">+${nb[k]}</b>`).join(' · ');
+      det = lv >= REFINE_MAX ? `<div class="rf-big">${iconImg(sel.id)}<div><div class="rf-name">${esc(refineName(sel))}</div><div class="gold">No máximo! Lendário.</div></div></div>` : `<div class="rf-big">${iconImg(sel.id)}<div><div class="rf-name">${esc(refineName(sel))} <span class="muted">→</span> <span class="gold">+${lv + 1}</span></div><div class="muted">${gain}</div></div></div>
+        <div class="rf-req"><div>${iconImg(mat, 'iicon sm')} ${ITEMS[mat].name}: <b class="${have ? '' : 'bad'}">${have}</b> / 1</div><div>💰 ${cost.toLocaleString('pt-BR')} z <span class="muted">(você tem ${p.zeny.toLocaleString('pt-BR')})</span></div>
+        <div>Chance: <b class="${lv < REFINE_SAFE ? 'ok' : ch >= 0.5 ? 'gold' : 'bad'}">${Math.round(ch * 100)}%</b> ${lv < REFINE_SAFE ? '<span class="ok">· seguro, nunca quebra</span>' : '<span class="bad">· se falhar, o item QUEBRA</span>'}</div></div>
+        <button class="btn gold rf-go" data-act="rfgo" ${have && p.zeny >= cost ? '' : 'disabled'}>⚒️ Refinar para +${lv + 1}</button>`;
+    }
+    this.body('refino').innerHTML = `<div class="rf"><div class="rf-left"><div class="q-sec" style="margin-top:0">Seus equipamentos</div>${list}</div><div class="rf-right">
+      <div class="rf-table"><div class="rf-tt">Tabela de refino <span class="muted">— chance de passar para cada nível</span></div><div class="rf-steps">${table}</div>
+      <div class="rf-legend"><span class="safe">■ +1 a +4: seguro</span><span class="mid">■ +5 a +7: arriscado</span><span class="risk">■ +8 a +10: perigoso</span></div>
+      <div class="rf-how">⚔️ <b>Armas</b> usam <b>Ferrolume</b> e ganham ATQ (cajados também ATQM). 🛡️ <b>Armaduras, escudos, chapéus, capas e botas</b> usam <b>Pedra-Égide</b> e ganham DEF. Até +4 nunca quebra; depois, cada falha destrói o item (e as cartas nele).</div></div>
+      <div class="rf-det">${det}</div></div></div>`;
+  },
+
   /* ---------- Bestiário (wiki dos monstros) ---------- */
   render_bestiario() {
     const ids = Object.keys(MONSTERS).sort((a, b) => MONSTERS[a].lv - MONSTERS[b].lv);
     const sel = MONSTERS[this.bestSel] ? this.bestSel : ids[0], m = MONSTERS[sel];
     const where = (typeof H3 !== 'undefined' && H3.spawnInfo) ? H3.spawnInfo() : Object.fromEntries(ids.map(id => [id, Object.values(MAPS).filter(mp => (mp.spawns || []).some(sp => sp.type === id)).map(mp => mp.name)]));
     const q = (this.bestQ || '').toLowerCase();
-    const list = ids.filter(id => !q || MONSTERS[id].name.toLowerCase().includes(q) || MONSTERS[id].race.toLowerCase().includes(q) || ELEMENTS[MONSTERS[id].element].name.toLowerCase().includes(q)).map(id => {
+    const F = this.bestF || 'all'; // S-138: filtro por chefes
+    const list = ids.filter(id => F === 'all' || (F === 'boss' ? MONSTERS[id].boss : F === 'mini' ? MONSTERS[id].mini : !MONSTERS[id].boss && !MONSTERS[id].mini)).filter(id => !q || MONSTERS[id].name.toLowerCase().includes(q) || MONSTERS[id].race.toLowerCase().includes(q) || ELEMENTS[MONSTERS[id].element].name.toLowerCase().includes(q)).map(id => {
       const x = MONSTERS[id], tag = x.boss ? '<span class="bs-tag boss">Chefe</span>' : x.mini ? '<span class="bs-tag mini">Mini</span>' : '';
       const th = typeof H3 !== 'undefined' && H3.monsterThumb ? H3.monsterThumb(id) : null;
       return `<div class="bs-item ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${th ? `<img src="${th}" alt="">` : x.icon}</span><span class="bs-nm">${esc(x.name)}${tag}</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
@@ -443,21 +498,21 @@ const UI = {
     const strongVs = ELEMENT_STRONG[m.element] ? `<span style="color:${ELEMENTS[ELEMENT_STRONG[m.element]].color}">${ELEMENTS[ELEMENT_STRONG[m.element]].name}</span>` : '—';
     const size = m.size >= 1.5 ? 'Grande' : m.size <= 0.8 ? 'Pequeno' : 'Médio';
     const traits = [m.aggressive ? '😠 Agressivo (ataca ao ver você)' : '🙂 Passivo (só revida)', m.range > 2 ? '🏹 Ataca à distância' : '🗡️ Corpo a corpo', m.special === 'slam' ? '💥 Golpe no chão que atinge em área' : null, m.flee >= 40 ? '💨 Difícil de acertar' : null, m.boss ? '👑 Chefe — volta a cada ' + Math.round((m.respawn || 0) / 60000) + ' min' : m.mini ? '⭐ Mini-chefe — volta a cada ' + Math.round((m.respawn || 0) / 60000) + ' min' : null].filter(Boolean);
-    const drops = (m.drops || []).map(([id, ch]) => `<div class="bs-drop" data-tip="item:${id}"><span>${ITEMS[id].icon} ${esc(ITEMS[id].name)}</span><b>${(ch * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%</b></div>`).join('');
+    const drops = (m.drops || []).map(([id, ch]) => `<div class="bs-drop" data-tip="item:${id}"><span>${iconImg(id, 'iicon sm')} ${esc(ITEMS[id].name)}</span><b>${(ch * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%</b></div>`).join('');
     const card = ITEMS['carta_' + sel];
     const cardRate = ((m.cardRate ?? CONFIG.CARD_DROP_RATE ?? 0.01) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
     const zones = (where[sel] || []);
     const stat = (k, v) => `<div class="bs-stat"><span>${k}</span><b>${v}</b></div>`;
     const oldList = this.body('bestiario').querySelector('.bs-list'), keepScroll = oldList ? oldList.scrollTop : 0; // S-101: escolher um monstro não volta a lista para o topo
     this.body('bestiario').innerHTML = `<div class="bs">
-      <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-list">${list}</div></div>
+      <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-filt">${[['all', 'Todos'], ['boss', '👑 Chefes'], ['mini', '⭐ Mini'], ['comum', 'Comuns']].map(([k, n]) => `<button class="${F === k ? 'on' : ''}" data-act="bestf" data-f="${k}">${n}</button>`).join('')}</div><div class="bs-list">${list}</div></div>
       <div class="bs-right">
         <div class="bs-head"><div class="bs-big">${typeof H3 !== 'undefined' && H3.monsterLive ? '<canvas id="bs-live" width="200" height="200"></canvas>' : m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
         <div class="bs-stats">${stat('HP', m.hp.toLocaleString('pt-BR'))}${stat('Ataque', m.atk[0] + '–' + m.atk[1])}${stat('Defesa', m.def)}${stat('Def. Mágica', m.mdef)}${stat('Precisão', m.hit)}${stat('Esquiva', m.flee)}${stat('EXP Base', m.exp.toLocaleString('pt-BR'))}${stat('EXP Classe', m.jexp.toLocaleString('pt-BR'))}</div>
         <h4>Elemento</h4><div class="bs-p">Leva <b>+50%</b> de dano de: ${weak} · causa +50% em: ${strongVs}</div>
         <h4>Comportamento</h4><div class="bs-p">${traits.join('<br>')}</div>
         <h4>Onde encontrar</h4><div class="bs-p">${zones.length ? zones.join(', ') : '<span class="muted">Ainda não aparece no mundo.</span>'}</div>
-        <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>🃏 ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
+        <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>${iconImg(card.id, 'iicon sm')} ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
         ${card ? `<h4>Carta</h4><div class="bs-p">Encaixe em: <b>${SLOT_NAMES[card.equip]}</b><br>${fmtBonuses(card.bonuses).join(' · ')}</div>` : ''}
       </div></div>`;
     const nl = this.body('bestiario').querySelector('.bs-list'); if (nl) { nl.scrollTop = keepScroll; const on = nl.querySelector('.bs-item.on'); if (on && (on.offsetTop < nl.scrollTop || on.offsetTop + on.offsetHeight > nl.scrollTop + nl.clientHeight)) on.scrollIntoView({ block: 'nearest' }); }
@@ -479,7 +534,7 @@ const UI = {
     this.body('help').innerHTML = `<div style="line-height:1.6">
       <b class="gold">Movimento e combate</b><br>
       • <b>W A S D</b> (ou as setas) para andar, ou <b>clique no chão</b> (segure para continuar andando).<br>
-      • <b>Clique num monstro</b> para atacar automaticamente.<br>
+      • <b>Segure o botão esquerdo</b> para atacar para onde o <b>cursor</b> aponta (estilo Skyrim, sem alvo travado): corpo a corpo só acerta quem está na mira e ao alcance; flechas e magias vão até o ponto do cursor. Botão direito gira a câmera; V troca para 1ª pessoa/ombro.<br>
       • <b>Clique em itens no chão</b> para pegar (ou aperte <b>F</b>).<br>
       • <b>1–9</b>: atalhos de habilidades/itens. Habilidades de alvo pedem um clique no monstro/área.<br>
       • <b>X</b>: sentar (regenera HP/SP 2× mais rápido). <b>Roda do mouse</b>: zoom.<br><br>
@@ -503,12 +558,43 @@ const UI = {
   },
 
   /* ---------- Loja ---------- */
+  /* Loja (S-123): estilo WoW/RO — à esquerda o que o mercador vende (clique põe no carrinho),
+     à direita a sua bolsa: duplo clique manda o item para a caixa "Para vender", que mostra quanto você vai receber.
+     Nada acontece até você confirmar. */
   render_shop() {
-    const p = G.player;
-    const buy = (this.shopList || SHOP_ITEMS).map(id => { const it = ITEMS[id]; return `<div class="shop-item" data-act="buy" data-id="${id}" data-tip="item:${id}"><span class="ic">${it.icon}</span><span class="nm">${it.name}</span><span class="pr">${it.price} z</span></div>`; }).join('');
-    const sell = p.inventory.map(en => { const it = ITEMS[en.id]; return `<div class="shop-item" data-act="sell" data-uid="${en.uid}" data-tip="inv:${en.uid}"><span class="ic">${it.icon}</span><span class="nm">${it.name}${en.qty > 1 ? ' x' + en.qty : ''}</span><span class="pr">${sellPrice(en.id)} z</span></div>`; }).join('') || '<span class="muted">Nada para vender.</span>';
-    this.body('shop').innerHTML = `<div class="shop"><div><h4>Comprar</h4><div class="shop-list">${buy}</div></div><div><h4>Vender</h4><div class="shop-list">${sell}</div></div></div>
-      <div style="margin-top:8px;display:flex;justify-content:space-between"><span class="muted" style="font-size:11px">Clique = 1 • Shift+Clique = 10 (comprar) / tudo (vender)</span><b class="gold">💰 ${p.zeny.toLocaleString('pt-BR')} z</b></div>`;
+    const p = G.player, cart = this.cart || (this.cart = {}), sellBox = this.sellBox || (this.sellBox = {});
+    for (const uid in sellBox) { const en = invByUid(+uid); if (!en) delete sellBox[uid]; else sellBox[uid] = Math.min(sellBox[uid], en.qty); }
+    const goods = (this.shopList || SHOP_ITEMS).map(id => { const it = ITEMS[id]; return `<div class="sh-good" data-act="cartadd" data-id="${id}" data-tip="item:${id}">${iconImg(id)}<span class="nm">${esc(it.name)}</span><span class="pr">${it.price.toLocaleString('pt-BR')} z</span></div>`; }).join('');
+    const cartIds = Object.keys(cart).filter(id => cart[id] > 0), cartTotal = cartIds.reduce((a, id) => a + ITEMS[id].price * cart[id], 0);
+    const cartHtml = cartIds.map(id => `<div class="sh-row">${iconImg(id, 'iicon sm')}<span class="nm">${esc(ITEMS[id].name)}</span><span class="qbtns"><button data-act="cartq" data-id="${id}" data-d="-1">−</button><b>${cart[id]}</b><button data-act="cartq" data-id="${id}" data-d="1">+</button></span><span class="pr">${(ITEMS[id].price * cart[id]).toLocaleString('pt-BR')} z</span></div>`).join('') || '<div class="sh-empty">Clique nos itens do mercador para pôr no carrinho.</div>';
+    const bag = p.inventory.filter(en => !sellBox[en.uid] || sellBox[en.uid] < en.qty).map(en => { const left = en.qty - (sellBox[en.uid] || 0), eq = Object.values(p.equip).includes(en); return `<div class="sh-cell ${ITEMS[en.id].type === 'etc' ? 'junk' : ''}" data-uid="${en.uid}" data-tip="inv:${en.uid}" title="Duplo clique: colocar para vender (Shift: tudo)">${iconImg(en.id)}${left > 1 ? `<span class="qty">${left}</span>` : ''}${eq ? '<span class="eqm">E</span>' : ''}</div>`; }).join('') || '<div class="sh-empty">Bolsa vazia.</div>';
+    const sellIds = Object.keys(sellBox).filter(u => sellBox[u] > 0), sellTotal = sellIds.reduce((a, u) => { const en = invByUid(+u); return a + (en ? sellPrice(en.id) * sellBox[u] : 0); }, 0);
+    const sellHtml = sellIds.map(u => { const en = invByUid(+u); return `<div class="sh-row" data-sbuid="${u}" title="Duplo clique: devolver para a bolsa">${iconImg(en.id, 'iicon sm')}<span class="nm">${esc(ITEMS[en.id].name)}</span><span class="qbtns"><button data-act="sellq" data-uid="${u}" data-d="-1">−</button><b>${sellBox[u]}</b><button data-act="sellq" data-uid="${u}" data-d="1">+</button></span><span class="pr">${(sellPrice(en.id) * sellBox[u]).toLocaleString('pt-BR')} z</span></div>`; }).join('') || '<div class="sh-empty">Dê <b>duplo clique</b> num item da sua bolsa para colocá-lo aqui.</div>';
+    const after = p.zeny - cartTotal + sellTotal;
+    this.body('shop').innerHTML = `<div class="sh">
+      <div class="sh-col"><h4>🛒 Mercadorias</h4><div class="sh-goods">${goods}</div>
+        <h4>Carrinho</h4><div class="sh-box">${cartHtml}</div>
+        <div class="sh-foot"><span>Total: <b class="${cartTotal > p.zeny + sellTotal ? 'bad' : ''}">${cartTotal.toLocaleString('pt-BR')} z</b></span><button class="btn gold" data-act="buyall" ${cartIds.length ? '' : 'disabled'}>Comprar</button></div></div>
+      <div class="sh-col"><h4>🎒 Sua bolsa <span class="muted" style="font-weight:400">— duplo clique para vender</span></h4><div class="sh-bag">${bag}</div>
+        <div class="sh-quick"><button class="btn small" data-act="selljunk">+ Todos os materiais</button><button class="btn small" data-act="sellclear" ${sellIds.length ? '' : 'disabled'}>Limpar</button></div>
+        <h4>Para vender</h4><div class="sh-box">${sellHtml}</div>
+        <div class="sh-foot"><span>Você recebe: <b class="gold">+${sellTotal.toLocaleString('pt-BR')} z</b></span><button class="btn gold" data-act="sellall" ${sellIds.length ? '' : 'disabled'}>Vender</button></div></div>
+    </div>
+    <div class="sh-zeny">💰 Agora: <b>${p.zeny.toLocaleString('pt-BR')} z</b> → depois: <b class="${after < 0 ? 'bad' : 'gold'}">${after.toLocaleString('pt-BR')} z</b></div>`;
+    const body = this.body('shop');
+    body.querySelectorAll('.sh-cell[data-uid]').forEach(c => c.ondblclick = e => { const en = invByUid(+c.dataset.uid); if (!en) return; const eq = Object.values(p.equip).includes(en); if (eq) { this.log('Tire o item do corpo antes de vender.', 'warn'); return; } sellBox[en.uid] = e.shiftKey ? en.qty : Math.min(en.qty, (sellBox[en.uid] || 0) + 1); Sound.play('click'); this.render_shop(); });
+    body.querySelectorAll('.sh-row[data-sbuid]').forEach(c => c.ondblclick = () => { delete sellBox[c.dataset.sbuid]; this.render_shop(); });
+  },
+  shopAct(act, ds, e) {
+    const p = G.player, cart = this.cart || (this.cart = {}), sellBox = this.sellBox || (this.sellBox = {});
+    if (act === 'cartadd') { cart[ds.id] = (cart[ds.id] || 0) + (e.shiftKey ? 10 : 1); Sound.play('click'); }
+    else if (act === 'cartq') { cart[ds.id] = Math.max(0, (cart[ds.id] || 0) + (+ds.d) * (e.shiftKey ? 10 : 1)); if (!cart[ds.id]) delete cart[ds.id]; }
+    else if (act === 'sellq') { const en = invByUid(+ds.uid); if (en) { sellBox[ds.uid] = Math.max(0, Math.min(en.qty, (sellBox[ds.uid] || 0) + (+ds.d) * (e.shiftKey ? 10 : 1))); if (!sellBox[ds.uid]) delete sellBox[ds.uid]; } }
+    else if (act === 'selljunk') { for (const en of p.inventory) if (ITEMS[en.id].type === 'etc') sellBox[en.uid] = en.qty; Sound.play('click'); }
+    else if (act === 'sellclear') { this.sellBox = {}; }
+    else if (act === 'sellall') { let total = 0; for (const u of Object.keys(sellBox)) { const en = invByUid(+u); if (en && sellBox[u] > 0) { total += sellPrice(en.id) * Math.min(sellBox[u], en.qty); sellItem(en, sellBox[u], true); } } this.sellBox = {}; if (total) { Sound.play('coin'); this.log(`Vendeu tudo por ${total.toLocaleString('pt-BR')} z.`, 'item'); } }
+    else if (act === 'buyall') { const total = Object.keys(cart).reduce((a, id) => a + ITEMS[id].price * cart[id], 0); if (total > p.zeny) { this.log('Zeny insuficiente para o carrinho.', 'warn'); Sound.play('error'); } else { for (const id of Object.keys(cart)) buyItem(id, cart[id], true); this.cart = {}; Sound.play('coin'); this.log(`Compra feita: ${total.toLocaleString('pt-BR')} z.`, 'item'); } }
+    this.render_shop(); this.markDirty();
   },
 
   /* ---------- Diálogo ---------- */
@@ -533,7 +619,8 @@ const UI = {
     if (it.use) { if (it.use.hp) lines.push(`Recupera ${it.use.hp} HP`); if (it.use.sp) lines.push(`Recupera ${it.use.sp} SP`); }
     const bon = fmtBonuses(it.bonuses).map(b => `<div class="tt-b">${b}</div>`).join('');
     let cards = '';
-    if (en && en.cards && en.cards.length) cards = '<div>Espaços: ' + en.cards.map(c => c ? `<span class="gold">🃏 ${ITEMS[c].name}</span>` : '[ ]').join(' ') + '</div>' + en.cards.filter(Boolean).map(c => fmtBonuses(ITEMS[c].bonuses).map(b => `<div class="tt-b">↳ ${b}</div>`).join('')).join('');
+    if (en && en.refine) { const rb = refineBonus(it, en.refine); cards += `<div class="gold">⚒️ Refino +${en.refine}: ${Object.keys(rb).filter(k => rb[k]).map(k => `+${rb[k]} ${{ atk: 'ATQ', matk: 'ATQM', def: 'DEF', mdef: 'DEF M.' }[k]}`).join(', ')}</div>`; }
+    if (en && en.cards && en.cards.length) cards += '<div>Espaços: ' + en.cards.map(c => c ? `<span class="gold">${iconImg(c, 'iicon xs')} ${ITEMS[c].name}</span>` : '[ ]').join(' ') + '</div>' + en.cards.filter(Boolean).map(c => fmtBonuses(ITEMS[c].bonuses).map(b => `<div class="tt-b">↳ ${b}</div>`).join('')).join('');
     else if (it.slots !== undefined && EQUIP_TYPES.includes(it.type)) cards = `<div>Espaços para carta: ${it.slots}</div>`;
     let req = '';
     if (it.type === 'arma') {
@@ -543,7 +630,7 @@ const UI = {
     }
     if (it.lv > 1) req += `<div class="${G.player && G.player.baseLv >= it.lv ? 'muted' : 'tt-warn'}">Nível necessário: ${it.lv}</div>`;
     const cardInfo = it.type === 'carta' ? `<div class="muted">Monstro: ${MONSTERS[it.monster].name}</div>` : '';
-    return `<div class="tt-name">${it.icon} ${esc(it.name)}${it.slots ? ` [${it.slots}]` : ''}</div><div class="tt-type">${typeName}</div>
+    return `<div class="tt-name">${iconImg(it.id || '', 'iicon sm')} ${en && en.refine ? `<span class="gold">+${en.refine}</span> ` : ''}${esc(it.name)}${it.slots ? ` [${it.slots}]` : ''}</div><div class="tt-type">${typeName}</div>
       ${lines.map(l => `<div>${l}</div>`).join('')}${bon}${cards}${cardInfo}${req}${it.desc ? `<div class="tt-d">${esc(it.desc)}</div>` : ''}
       <div class="muted" style="margin-top:4px;font-size:11px">Venda: ${sellPrice(it.id)} z</div>`;
   },

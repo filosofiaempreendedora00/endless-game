@@ -6,7 +6,9 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, PORT, DWARF, ELF, CASTLE } from './world3d.js';
+import { buildCities, deckAt } from './cities3d.js';
+import { buildCastle } from './castle3d.js';
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
@@ -15,6 +17,7 @@ import { makeTreeTemplates } from './trees3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
+import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
 import { loadHumans, makeHuman, shareSkeletons } from './humans3d.js';
 
@@ -55,6 +58,7 @@ scene.add(camera); // a câmera fica na cena: as mãos da 1ª pessoa são filhas
 { const ch = document.createElement('div'); ch.id = 'crosshair'; ch.className = 'hidden'; ch.innerHTML = '<i></i><i></i><i></i><i></i><b></b>'; document.body.appendChild(ch); }
 const terrain = buildTerrain(); scene.add(terrain);
 scene.add(buildWater());
+scene.add(buildSea()); // S-117: o mar do litoral (canto sudeste)
 scene.add(buildGrass(mulberry(99)));
 scene.add(buildReeds(mulberry(77)));
 
@@ -100,7 +104,7 @@ function bbox(name) {
 }
 const colliders = [];
 function freeAt(x, z, r) { return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); }
-const TYPE_SCALE = { tower: 0.6, tent: 0.55, well: 0.7, windmill: 0.9, barrel: 0.55, crate_A: 0.55, crate_B: 0.55, sack: 0.55, weaponrack: 0.55, lumber: 0.5, bucket: 0.55, target_prop: 0.55, flag_blue: 0.6, flag_red: 0.6, fence: 0.75, market: 0.85 };
+const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, barrel: 0.55, crate_A: 0.55, crate_B: 0.55, sack: 0.55, weaponrack: 0.55, lumber: 0.5, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
 const occluders = []; // objetos que bloqueiam a câmera
 const placed = []; // todos os objetos de cenário (sugestões identificam o modelo)
 // junta as peças fixas de um objeto (mesmo material) numa malha só: bem menos chamadas de desenho
@@ -122,6 +126,19 @@ function bakeStatic(obj) {
 const extraPick = []; // estruturas grandes feitas em código (paliçada...) que o Q também identifica
 // cenário longe some (menos chamadas de desenho); marcos gigantes continuam visíveis de longe
 let sceneryT = 0;
+// salas, masmorra, arena e castelo ficam longe do mundo (x > HALF+100): só desenha quando você está lá dentro
+let interiorObjs = null, interiorShown = null;
+function cullInteriors() {
+  if (!interiorObjs) {
+    interiorObjs = [];
+    const skip = new Set([...S.monsters.map(m => m.obj), ...S.npcs.map(n => n.obj), S.me && S.me.obj, S.pet && S.pet.obj]);
+    const b = new THREE.Box3(), c = new THREE.Vector3();
+    for (const o of scene.children) { if (skip.has(o) || o.isLight || o.isCamera) continue; b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c); if (c.x > HALF + 100 && b.min.x > HALF + 50) interiorObjs.push(o); }
+  }
+  const inside = camera.position.x > HALF + 100;
+  if (inside === interiorShown) return; interiorShown = inside;
+  for (const o of interiorObjs) o.visible = inside;
+}
 function cullScenery() {
   if (S.time - sceneryT < 0.5) return; sceneryT = S.time;
   const x = S.interior ? S.interior.back.x : S.pos.x, z = S.interior ? S.interior.back.z : S.pos.z;
@@ -215,7 +232,7 @@ function buildFruitMarket(mk) {
 }
 
 /* ---------- chão: terreno lá fora, piso dentro das casas ---------- */
-function groundAt(x, z) { return x > HALF + 100 ? 0 : heightAt(x, z); } // salas/arena/masmorra ficam longe do mundo, com chão em y = 0
+function groundAt(x, z) { if (x > HALF + 100) return 0; const h = heightAt(x, z), d = deckAt(x, z); return d !== null && d > h ? d : h; } // salas longe do mundo com chão em y = 0; cais do porto contam como chão
 function roomAt(x, z) { for (const I of Object.values(INTERIORS)) if (Math.abs(x - I.x) < (I.round || I.w / 2) + 4 && Math.abs(z - I.z) < (I.round || I.d / 2) + 4) return I; return null; }
 
 /* ---------- portais nas portas e salas internas ---------- */
@@ -342,28 +359,70 @@ function renderMapa() {
 const AURORA_PACKS = [{ n: 500, price: 'R$ 9,90' }, { n: 1100, price: 'R$ 19,90', bonus: '+10%' }, { n: 2400, price: 'R$ 39,90', bonus: '+20%' }, { n: 6500, price: 'R$ 99,90', bonus: '+30%' }];
 function cosm() { const p = S.p; if (!p.cosmetics) p.cosmetics = { auroras: 0, skins: [], skin: null, mounts: [] }; return p.cosmetics; }
 let lojaTab = 'skins';
+/* Loja de Auroras (S-135/S-136): lista à esquerda com miniatura de verdade de cada item e, à direita,
+   uma prévia 3D grande (arraste para girar) mostrando a skin no SEU personagem ou a montaria com você em cima. */
+let lojaSel = null, lojaStop = null;
+const lojaThumbs = {};
+function lojaObj(kind, k) {
+  if (kind === 'skin') { const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: dt => ch.anim.update(dt) }; }
+  const mt = makeMount(k), g = new THREE.Group(); g.add(mt.obj);
+  const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
+  return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); } };
+}
+function lojaThumb(kind, k) {
+  const key = kind + ':' + k + ':' + S.p.cls; if (lojaThumbs[key]) return lojaThumbs[key];
+  const o = lojaObj(kind, k); o.obj.position.set(900, 0, 900); o.obj.rotation.y = 0.6; scene.add(o.obj); o.tick(0.3, 1);
+  const url = renderObj(o.obj, 120, 120); scene.remove(o.obj); return (lojaThumbs[key] = url);
+}
+function lojaLive(kind, k, cv) {
+  const o = lojaObj(kind, k); o.obj.position.set(940, 0, 900); scene.add(o.obj); o.obj.traverse(x => x.layers.enable(1)); o.tick(0.1, 0); o.obj.updateMatrixWorld(true);
+  const W = cv.width, H = cv.height, rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
+  const g = cv.getContext('2d'), img = g.createImageData(W, H), buf = new Uint8Array(W * H * 4);
+  const box = new THREE.Box3().setFromObject(o.obj), sph = box.getBoundingSphere(new THREE.Sphere()), cam = new THREE.PerspectiveCamera(30, W / H, 0.05, 80); cam.layers.set(1);
+  let t = 0, last = performance.now(), alive = true, spin = 0.6, drag = null;
+  cv.style.cursor = 'grab';
+  cv.onpointerdown = e => { if (e.button !== 0 || FB.picking || FB.box) return; e.preventDefault(); drag = e.clientX; cv.style.cursor = 'grabbing'; try { cv.setPointerCapture(e.pointerId); } catch (er) { } };
+  cv.onpointermove = e => { if (drag === null) return; spin += (e.clientX - drag) * 0.012; drag = e.clientX; };
+  cv.onpointerup = cv.onpointercancel = () => { drag = null; cv.style.cursor = 'grab'; };
+  const frame = () => {
+    if (!alive || !document.body.contains(cv)) { alive = false; scene.remove(o.obj); rt.dispose(); return; }
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt; if (drag === null) spin += dt * 0.4;
+    o.obj.rotation.y = spin; o.tick(dt, t);
+    const d = sph.radius / Math.sin(15 * Math.PI / 180) * 0.92; cam.position.set(sph.center.x, sph.center.y + sph.radius * 0.25, sph.center.z + d); cam.lookAt(sph.center);
+    const bg = scene.background, fog = scene.fog, cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
+    scene.background = null; scene.fog = null; renderer.setClearColor(0, 0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, cam);
+    renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); scene.background = bg; scene.fog = fog; renderer.setClearColor(cc, ca);
+    for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);
+    g.putImageData(img, 0, 0); setTimeout(() => requestAnimationFrame(frame), 30);
+  };
+  frame(); return () => { alive = false; scene.remove(o.obj); };
+}
 function renderLoja() {
   const c = cosm(), body = UI.body('loja');
-  const tabs = `<div class="tabs"><div class="tab ${lojaTab === 'skins' ? 'on' : ''}" data-lt="skins">🎨 Skins</div><div class="tab ${lojaTab === 'montarias' ? 'on' : ''}" data-lt="montarias">🐎 Montarias</div><div class="tab ${lojaTab === 'auroras' ? 'on' : ''}" data-lt="auroras">✦ Comprar Auroras</div></div>`;
-  const head = `<div class="lj-head"><div><b class="lj-title">Loja de Auroras</b><div class="muted" style="font-size:11px">Só visual — nada aqui dá vantagem em combate.</div></div><div class="lj-bal">✦ <b>${c.auroras.toLocaleString('pt-BR')}</b> Auroras</div></div>`;
-  let grid = '';
-  if (lojaTab === 'skins') {
-    grid = `<div class="lj-grid">${Object.entries(SKINS).map(([k, sk]) => { const R = RARITY[sk.rarity], own = c.skins.includes(k), on = c.skin === k;
-      return `<div class="lj-item" style="--rc:${R.color}"><div class="lj-sw">${['body', 'legs', 'cape', 'hat'].map(q => `<i style="background:${sk.tint[q] || '#555'}"></i>`).join('')}</div><div class="lj-n">${sk.name}</div><div class="lj-r">${R.name}${sk.aura ? ' · com efeito' : ''}</div><div class="lj-d">${sk.desc}</div>
-        ${own ? `<button class="btn ${on ? '' : 'gold'}" data-skin="${k}">${on ? '✔ Usando (tirar)' : 'Usar'}</button>` : `<button class="btn gold" data-buy-skin="${k}">✦ ${sk.price.toLocaleString('pt-BR')}</button>`}</div>`; }).join('')}</div>`;
-  } else if (lojaTab === 'montarias') {
-    grid = `<div class="lj-grid">${Object.entries(MOUNTS).filter(([, m]) => m.premium).map(([k, m]) => { const R = RARITY[m.rarity], own = c.mounts.includes(k), on = S.p.mount && S.p.mount.kind === k;
-      return `<div class="lj-item" style="--rc:${R.color}"><div class="lj-sw">${[m.wool, m.mane, m.blanket, m.horn].map(x => `<i style="background:${x}"></i>`).join('')}</div><div class="lj-n">🐎 ${m.name}</div><div class="lj-r">${R.name} · mesma velocidade</div><div class="lj-d">${m.desc}</div>
-        ${own ? `<button class="btn ${on ? '' : 'gold'}" data-mnt="${k}">${on ? '✔ Montaria atual' : 'Usar'}</button>` : `<button class="btn gold" data-buy-mnt="${k}">✦ ${m.price.toLocaleString('pt-BR')}</button>`}</div>`; }).join('')}</div>
-      <div class="muted" style="font-size:11px;margin-top:6px">As montarias da loja andam na mesma velocidade das do Tomé — a diferença é só o visual. Aperte M para montar.</div>`;
-  } else {
-    grid = `<div class="lj-grid four">${AURORA_PACKS.map(pk => `<div class="lj-item pack"><div class="lj-big">✦</div><div class="lj-n">${pk.n.toLocaleString('pt-BR')} Auroras</div><div class="lj-r">${pk.bonus || '&nbsp;'}</div><button class="btn" disabled>${pk.price}</button></div>`).join('')}</div>
+  if (lojaStop) { lojaStop(); lojaStop = null; }
+  const tabs = `<div class="tabs"><div class="tab ${lojaTab === 'skins' ? 'on' : ''}" data-lt="skins">🎨 Visuais da classe</div><div class="tab ${lojaTab === 'montarias' ? 'on' : ''}" data-lt="montarias">🐆 Montarias</div><div class="tab ${lojaTab === 'auroras' ? 'on' : ''}" data-lt="auroras">✦ Comprar Auroras</div></div>`;
+  const head = `<div class="lj-head"><div><b class="lj-title">Loja de Auroras</b><div class="muted" style="font-size:11px">Só visual: nada aqui dá vantagem em combate.</div></div><div class="lj-bal">✦ <b>${c.auroras.toLocaleString('pt-BR')}</b> Auroras</div></div>`;
+  if (lojaTab === 'auroras') {
+    body.innerHTML = head + tabs + `<div class="lj-grid four">${AURORA_PACKS.map(pk => `<div class="lj-item pack"><div class="lj-big">✦</div><div class="lj-n">${pk.n.toLocaleString('pt-BR')} Auroras</div><div class="lj-r">${pk.bonus || '&nbsp;'}</div><button class="btn" disabled>${pk.price}</button></div>`).join('')}</div>
       <div class="lj-note">💳 A compra com dinheiro de verdade ainda não está ligada: precisa de um sistema de pagamento e de contas online (com servidor). Por enquanto, no seu computador, o Painel do Mestre (⌘Z) dá Auroras de teste.</div>`;
+  } else {
+    const kind = lojaTab === 'skins' ? 'skin' : 'mount';
+    const list = kind === 'skin' ? Object.entries(SKINS) : Object.entries(MOUNTS).filter(([, m]) => m.premium);
+    if (!list.some(([k]) => k === lojaSel)) lojaSel = list[0] && list[0][0];
+    const items = list.map(([k, it]) => { const R = RARITY[it.rarity], own = kind === 'skin' ? c.skins.includes(k) : c.mounts.includes(k), on = kind === 'skin' ? c.skin === k : S.p.mount && S.p.mount.kind === k;
+      return `<div class="lj-card ${k === lojaSel ? 'sel' : ''}" style="--rc:${R.color}" data-lsel="${k}"><img src="${lojaThumb(kind, k)}" alt=""><div class="lj-ct"><div class="lj-n">${it.name}</div><div class="lj-r">${R.name}</div><div class="lj-st">${on ? '✔ Em uso' : own ? 'Comprado' : `✦ ${it.price.toLocaleString('pt-BR')}`}</div></div></div>`; }).join('');
+    const it = kind === 'skin' ? SKINS[lojaSel] : MOUNTS[lojaSel], R = RARITY[it.rarity], own = kind === 'skin' ? c.skins.includes(lojaSel) : c.mounts.includes(lojaSel), on = kind === 'skin' ? c.skin === lojaSel : S.p.mount && S.p.mount.kind === lojaSel;
+    const btn = own ? (kind === 'skin' ? `<button class="btn ${on ? '' : 'gold'} lj-cta" data-skin="${lojaSel}">${on ? '✔ Usando (clique para tirar)' : 'Usar este visual'}</button>` : `<button class="btn ${on ? '' : 'gold'} lj-cta" data-mnt="${lojaSel}">${on ? '✔ Montaria atual' : 'Usar esta montaria'}</button>`)
+      : `<button class="btn gold lj-cta" ${c.auroras < it.price ? 'disabled' : ''} data-${kind === 'skin' ? 'buy-skin' : 'buy-mnt'}="${lojaSel}">Comprar por ✦ ${it.price.toLocaleString('pt-BR')}</button>${c.auroras < it.price ? `<div class="lj-miss">Faltam ✦ ${(it.price - c.auroras).toLocaleString('pt-BR')}</div>` : ''}`;
+    body.innerHTML = head + tabs + `<div class="lj2"><div class="lj-list">${items}</div><div class="lj-prev" style="--rc:${R.color}"><canvas id="lj-live" width="360" height="360"></canvas><div class="lj-hint">arraste para girar</div>
+      <div class="lj-pn">${it.name}</div><div class="lj-pr">${R.name}${kind === 'skin' ? ` · para ${CLASSES[S.p.cls].name}` : ' · mesma velocidade das outras'}</div><div class="lj-pd">${it.desc}</div>${btn}</div></div>
+      <div class="muted" style="font-size:11px;margin-top:6px">${kind === 'skin' ? 'Visuais trocam as cores e o brilho da roupa da sua classe atual; seu rosto e cabelo ficam iguais.' : 'Aperte M no mundo para montar. A prévia mostra você em cima dela.'}</div>`;
+    lojaStop = lojaLive(kind, lojaSel, $('lj-live'));
   }
-  body.innerHTML = head + tabs + grid;
   const buy = (price, fn) => { if (c.auroras < price) { log('Auroras insuficientes.', 'warn'); Sound.play('error'); return; } c.auroras -= price; fn(); Sound.play('card'); save3d(); renderLoja(); hudDirty = true; };
-  body.querySelectorAll('[data-lt]').forEach(el => el.onclick = () => { lojaTab = el.dataset.lt; Sound.play('click'); renderLoja(); });
-  body.querySelectorAll('[data-buy-skin]').forEach(el => el.onclick = () => { const k = el.dataset.buySkin; buy(SKINS[k].price, () => { c.skins.push(k); c.skin = k; buildPlayerModel(); banner('Nova skin!', SKINS[k].name); }); });
+  body.querySelectorAll('[data-lt]').forEach(el => el.onclick = () => { lojaTab = el.dataset.lt; lojaSel = null; Sound.play('click'); renderLoja(); });
+  body.querySelectorAll('[data-lsel]').forEach(el => el.onclick = () => { lojaSel = el.dataset.lsel; Sound.play('click'); renderLoja(); });
+  body.querySelectorAll('[data-buy-skin]').forEach(el => el.onclick = () => { const k = el.dataset.buySkin; buy(SKINS[k].price, () => { c.skins.push(k); c.skin = k; buildPlayerModel(); banner('Novo visual!', SKINS[k].name); }); });
   body.querySelectorAll('[data-skin]').forEach(el => el.onclick = () => { const k = el.dataset.skin; c.skin = c.skin === k ? null : k; buildPlayerModel(); Sound.play('click'); save3d(); renderLoja(); });
   body.querySelectorAll('[data-buy-mnt]').forEach(el => el.onclick = () => { const k = el.dataset.buyMnt; buy(MOUNTS[k].price, () => { c.mounts.push(k); S.p.mount = { kind: k }; if (S.riding) { dismount(true); mount(); } banner('Nova montaria!', MOUNTS[k].name); }); });
   body.querySelectorAll('[data-mnt]').forEach(el => el.onclick = () => { S.p.mount = { kind: el.dataset.mnt }; if (S.riding) { dismount(true); mount(); } Sound.play('click'); save3d(); renderLoja(); });
@@ -410,6 +469,21 @@ function buildArena() {
   const el = document.createElement('div'); el.id = 'arena-hud'; el.className = 'hidden'; document.body.appendChild(el);
 }
 const arenaFlames = [];
+// S-124: quadro pintado com a tabela de refino (na parede do Mestre Brakar, em Pedrafunda)
+function refineBoardTex() {
+  const W = 768, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3a2a1a'); g.addColorStop(1, '#22180e'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  for (let k = 0; k < 1400; k++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * W, Math.random() * H, 3 + Math.random() * 30, 1); }
+  x.fillStyle = '#ffd77a'; x.font = 'bold 44px serif'; x.textAlign = 'center'; x.fillText('⚒ REFINO DE BRAKAR ⚒', W / 2, 60);
+  x.font = 'italic 20px serif'; x.fillStyle = '#e8d4a8'; x.fillText('Ferrolume para armas (+ATQ) · Pedra-Égide para armaduras (+DEF)', W / 2, 92);
+  const ch = typeof REFINE_CHANCE !== 'undefined' ? REFINE_CHANCE : [1, 1, 1, 1, 0.8, 0.65, 0.5, 0.35, 0.22, 0.12];
+  const bw = 58, gap = 12, x0 = (W - (bw * 10 + gap * 9)) / 2, base = 400, top = 140;
+  ch.forEach((v, i) => { const bx = x0 + i * (bw + gap), h = (base - top) * v; x.fillStyle = 'rgba(0,0,0,0.4)'; x.fillRect(bx, top, bw, base - top); x.fillStyle = i < 4 ? '#4ac060' : v >= 0.5 ? '#e0b030' : '#d0402a'; x.fillRect(bx, base - h, bw, h);
+    x.fillStyle = '#fff6dc'; x.font = 'bold 24px serif'; x.fillText('+' + (i + 1), bx + bw / 2, base + 32); x.font = '18px serif'; x.fillText(Math.round(v * 100) + '%', bx + bw / 2, base - h - 8); });
+  x.font = 'bold 20px serif'; x.fillStyle = '#8aff9a'; x.fillText('+1 a +4: SEGURO', W * 0.2, 478); x.fillStyle = '#ffd84a'; x.fillText('+5 a +7: ARRISCADO', W / 2, 478); x.fillStyle = '#ff7a5a'; x.fillText('+8 a +10: PODE QUEBRAR', W * 0.8, 478);
+  x.strokeStyle = '#8a6a3a'; x.lineWidth = 10; x.strokeRect(5, 5, W - 10, H - 10);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
 /* ---------- S-120/S-121: peças da Arena ---------- */
 // textura de pedra aparelhada (tijolos de tamanhos e tons variados, argamassa funda) + mapa de relevo
 let _brickTex = null;
@@ -616,6 +690,12 @@ function buildWorld() {
   const hb = bbox('home_A'); WS = 6.5 / Math.max(0.01, hb.max.y - hb.min.y);
   MODELS.target_round = { scene: bakeStatic(makeTarget()), radius: 0.6, native: true }; // alvo de treino feito em código
   MODELS.wheelbarrow = { scene: bakeStatic(makeWheelbarrow()), radius: 0.55, native: true }; // carrinho de mão feito em código (S-082)
+  retextureKayKit(MODELS); // S-132: pedra, madeira e reboco com relevo nos prédios prontos
+  MODELS.well = { scene: makeWell(), radius: 1.15, native: true };          // S-129
+  MODELS.bucket = { scene: makeBucket(), radius: 0.22, native: true };      // S-129
+  MODELS.blacksmith = { scene: makeSmithy(), radius: 3.0, native: true };   // S-125: ferraria sem o forno gigante
+  MODELS.flag_blue = { scene: makeClothFlag('blue'), radius: 0.3, native: true }; // S-131: pano ao vento
+  MODELS.flag_red = { scene: makeClothFlag('red'), radius: 0.3, native: true };
   const V = VILLAGE;
   // vila: poço no centro, casas em anel virado para a praça (a leste fica a saída da estrada)
   place('well', V.x, V.z, { rot: 0, rf: 0.6 });
@@ -795,6 +875,10 @@ function buildFrontier() {
   const tpm = makeTemple(13), tp = landmark(tpm, 'santuario', TEMPLE.x, TEMPLE.z, 0, tpm.userData.cols, ty - 0.1);
   colliders.push({ x: TEMPLE.x, z: TEMPLE.z + 0.6, r: 15, box: true, hx: 15.2, hz: 10.4, rot: 0, name: 'santuario' });
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
+  // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
+  S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera });
+  buildCastle({ scene, place, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals });
+  if (S.cities && S.cities.refineBoard) { const b = S.cities.refineBoard, m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.92, b.h * 0.88), new THREE.MeshStandardMaterial({ map: refineBoardTex(), roughness: 0.9 })); m.position.set(b.x, b.y, b.z); m.rotation.y = b.yaw; m.translateZ(0.06); scene.add(m); m.userData.asset = 'tabela_refino'; placed.push(m); extraPick.push(m); } // S-124: tabela de refino na parede do ferreiro
 }
 // voo de grifo: libera o ponto ao conversar com o mestre-grifo dele
 function flightDialog(n) {
@@ -919,15 +1003,19 @@ function setView(v) {
   if (!isAction() && document.pointerLockElement) document.exitPointerLock();
   if (S.me) S.me.obj.visible = S.view !== 'fps';
   if (viewModel) viewModel.visible = S.view === 'fps';
-  banner(VIEW_NAMES[v], isAction() ? 'Clique para mirar · segure o botão esquerdo para atacar · Esc solta o mouse' : 'Tab ou clique escolhe o alvo · R ataca');
+  banner(VIEW_NAMES[v], isAction() ? 'Clique para mirar · segure o botão esquerdo para atacar · Esc solta o mouse' : 'Segure o botão esquerdo para atacar onde o cursor aponta · botão direito gira a câmera');
 }
 function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]); }
 // quem está na mira: raio do centro da tela; para corpo a corpo, um cone generoso à frente
 const aimRay = new THREE.Raycaster();
+// S-141: no modo clássico a mira é o CURSOR do mouse (estilo Skyrim, sem alvo travado); nos modos de ação, o centro da tela
+const mouseNdc = new THREE.Vector2(0, 0), NDC0 = new THREE.Vector2(0, 0);
+const aimNdc = () => isAction() ? NDC0 : mouseNdc;
 function aimTarget(maxRange) {
-  aimRay.setFromCamera(new THREE.Vector2(0, 0), camera);
+  aimRay.setFromCamera(aimNdc(), camera);
   const hit = aimRay.intersectObjects(hitboxes, false).find(h => { const r = h.object.userData.ref; return r && !r.isNpc && !r.dead && Math.hypot(r.x - S.pos.x, r.z - S.pos.z) <= maxRange; });
   if (hit) return hit.object.userData.ref;
+  if (!isAction()) return null; // com o cursor: só acerta quem está debaixo da mira
   let best = null, bd = 1e9;
   for (const m of [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])]) {
     if (m.dead || !m.obj.visible) continue; const d = Math.hypot(m.x - S.pos.x, m.z - S.pos.z); if (d > Math.min(maxRange, 4.5)) continue;
@@ -936,10 +1024,15 @@ function aimTarget(maxRange) {
   }
   return best;
 }
-function aimPoint(dist = 30) { aimRay.setFromCamera(new THREE.Vector2(0, 0), camera); return aimRay.ray.at(dist, new THREE.Vector3()); }
+function aimPoint(dist = 30) {
+  aimRay.setFromCamera(aimNdc(), camera);
+  if (!isAction()) { const r = aimRay.ray; for (let d = 1; d < 60; d += 0.5) { const q = r.at(d, new THREE.Vector3()); if (q.y <= groundAt(q.x, q.z) + 0.05) return q; } } // cursor: ponto do chão onde ele aponta
+  return aimRay.ray.at(dist, new THREE.Vector3());
+}
 function actionFire() {
   const p = S.p, t = S.time; if (!S.fire || p.dead || t < S.nextAttack || t < S.lockAnim || S.casting) return;
   const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : p.d.rangeTiles * TM + 1.8;
+  if (!isAction()) { const q = aimPoint(30); S.pos.yaw = Math.atan2(q.x - S.pos.x, q.z - S.pos.z); } // vira para onde o cursor aponta
   const m = aimTarget(reach);
   S.nextAttack = t + p.d.aspd / 1000;
   vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
@@ -1005,6 +1098,8 @@ const SPAWNS = [
   ['geada', 'geadinha', 11], ['geada', 'lobo_alfa', 1],
   ['colossos', 'gotinha_sombria', 8], ['colossos', 'cavaleiro_caido', 5], ['colossos', 'espectro', 5],
   ['catacumbas', 'esqueleto_vigia', 6], ['catacumbas', 'espectro', 4], ['catacumbas', 'cavaleiro_caido', 3], ['catacumbas', 'gotinha_sombria', 3], ['catacumbas', 'sentinela_silente', 1],
+  // S-138: chefes grandes, um em cada região
+  ['dunas', 'kharzul', 1], ['colossos', 'maldoran', 1], ['geada', 'vharnyr', 1], ['ruinas', 'selvara', 1],
 ];
 let SPAWN_BOSS_NEXT = false;
 function spawnPoint(zoneId) {
@@ -1077,8 +1172,8 @@ function monsterVisual(m) {
   const s = Math.max(0.6, d.size) * (d.shape === 'blob' ? 1.1 : 1);
   cr.root.scale.setScalar(s);
   const obj = new THREE.Group(); obj.add(cr.root);
-  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : 0.9) * s;
-  return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s };
+  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : 0.9) * s;
+  return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s * (d.shape === 'frostdragon' ? 1.3 : 1) };
 }
 // miniaturas e visualização animada dos monstros (Bestiário)
 const thumbCache = {};
@@ -1216,6 +1311,10 @@ const MON_SFX = {
   skeleton: { step: 'boneStep', every: 0.45, attack: 'boneAttack', pre: 'boneChatter', hurt: 'boneHit', hurtP: 1, die: 'boneDie', idle: 'boneChatter', idleEvery: 10, idleR: 16 },
   knight: { step: 'boneStep', every: 0.5, attack: 'knightSwing', pre: 'knightVoice', hurt: 'boneHit', hurtP: 1, die: 'boneDie', idle: 'knightVoice', idleEvery: 11, idleR: 26, talk: 'knightVoice' }, // S-104: o Cavaleiro Caído fala e golpeia com peso
   ghost: { attack: 'ghostWail', die: 'ghostWail', idle: 'ghostWail', idleEvery: 12, idleR: 18 },
+  demonking: { step: 'bossStep', every: 0.9, attack: 'demonRoar', pre: 'demonRoar', hurt: 'hit', die: 'death', idle: 'demonRoar', idleEvery: 14, idleR: 40 },
+  goatmage: { attack: 'magic', pre: 'goatChant', die: 'ghostWail', idle: 'goatChant', idleEvery: 15, idleR: 30 },
+  frostdragon: { step: 'bossStep', every: 1.0, attack: 'dragonBreath', pre: 'dragonRoar', hurt: 'wolfHurt', die: 'dragonRoar', idle: 'dragonRoar', idleEvery: 12, idleR: 45 },
+  lichqueen: { attack: 'lichWail', pre: 'lichWail', hurt: 'boneHit', hurtP: 1, die: 'boneDie', idle: 'lichWail', idleEvery: 10, idleR: 30 },
 };
 function monsterAttack(m) {
   { const sx = MON_SFX[m.def.shape]; if (sx && sx.attack) Sound.play(sx.attack); if (sx && sx.pre && !m.growled) { Sound.play(sx.pre); m.growled = true; } else if (sx && sx.talk && Math.random() < 0.25) later(0.5, () => Sound.play(sx.talk)); }
@@ -1254,7 +1353,7 @@ function hurtPlayer(m, raw) {
    de ~19 m para cima mata. Cair na água amortece. Montado, a montaria absorve parte. God Mode não sente. */
 const SLOPE_MAX = 1.0; // inclinação máxima para subir andando (≈ 45°)
 function fallDamage(drop, water) {
-  const p = S.p; if (!p || p.dead || drop < 5 || water || S.interior) return;
+  const p = S.p; if (!p || p.dead || drop < 5 || water || S.interior || S.pos.x > HALF + 100 || S.time - (S.tpT || -9) < 1.5) return; // salas e logo após teleporte não contam
   const k = Math.pow((drop - 5) / 14, 1.35) * (S.riding ? 0.6 : 1), dmg = Math.max(1, Math.round(p.d.maxHp * k));
   if (S.god) { floatAt(S.me.obj.position, `-${dmg} queda (imune)`, '#ffd76a', 2); return; }
   p.hp -= dmg; S.sitting = false; hudDirty = true;
@@ -1307,7 +1406,8 @@ function killMonster(m) {
   if (m.vis.anim) monAnim(m, 'Death_C_Skeletons', { once: true, fade: 0.1 });
   Sound.play((MON_SFX[d.shape] && MON_SFX[d.shape].die) || 'mdie');
   gainExp(d.exp, d.jexp);
-  for (const [id, rate] of d.drops) if (Math.random() < rate * CONFIG.DROP_RATE) { addItem(p, id, 1); log(`Saque: ${ITEMS[id].icon} ${ITEMS[id].name}`, 'item'); }
+  if (questOnKill(p, m.type)) hudDirty = true; // S-126
+  for (const [id, rate] of d.drops) if (Math.random() < rate * CONFIG.DROP_RATE) { addItem(p, id, 1); log(`Saque: ${ITEMS[id].name}`, 'item'); }
   if (Math.random() < (d.cardRate ?? CONFIG.CARD_DROP_RATE)) {
     addItem(p, 'carta_' + m.type, 1); Sound.play('card');
     banner('✨ Uma carta caiu! ✨', ITEMS['carta_' + m.type].name.toUpperCase());
@@ -1320,6 +1420,8 @@ function killMonster(m) {
 
 /* =========================== NPCs =========================== */
 const NPC3D = [
+  // S-126: o NPC da história principal fica na praça, ao sul do poço
+  { ...QUEST_GIVERS_NPC.teodoro, dx: -1, dz: -11, lines: 'Alvorada já viu muitos aventureiros partirem por aquele portão. Poucos voltaram com histórias tão boas quanto as que você ainda vai viver.' },
   // look: rosto 3D + cabelo (mesmo sistema do jogador); hat = o acessório cobre a cabeça
   { id: 'ivra', name: 'Mestra Ivra', title: 'Mentora de Classes', model: 'Mage', show: ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], dx: -8, dz: -6, hat: true, look: { race: 'elfo', face: 'gentil', hair: { style: 'longo', color: 'platinado' } } },
   { id: 'bento', name: 'Bento', title: 'Mercador', model: 'Barbarian', show: ['Mug', 'Barbarian_Hat'], dx: 9, dz: -7, hat: true, look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'castanho' }, beard: true } },
@@ -1463,7 +1565,7 @@ function resolve(x, z, r) {
   const I = x > HALF + 100 ? roomAt(x, z) : null; // vale para jogador, mascote e monstros (a masmorra tem monstros)
   if (I && I.round) { const dx = x - I.x, dz = z - I.z, d = Math.hypot(dx, dz), R = I.round - 0.6; if (d > R) { x = I.x + dx / d * R; z = I.z + dz / d * R; } }
   else if (I) { x = clamp(x, I.x - I.w / 2 + 0.6, I.x + I.w / 2 - 0.6); z = clamp(z, I.z - I.d / 2 + 0.6, I.z + I.d / 2 - 0.3); }
-  else if (x <= HALF + 100) { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); }
+  else if (x <= HALF + 100) { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); const sp = deckAt(x, z) === null ? seaPush(x, z) : null; if (sp) { x = sp.x; z = sp.z; } } // ninguém entra no mar fundo
   return { x, z };
 }
 function updatePlayer(dt) {
@@ -1482,6 +1584,7 @@ function updatePlayer(dt) {
   // movimento
   const mi = moveInput();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
+  else if (S.fire) actionFire(); // S-141: segurando o botão esquerdo, ataca para onde o cursor aponta
   else {
     P.yaw += mi.turn * 2.6 * dt;
     if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
@@ -1896,7 +1999,7 @@ function executeSkill(a) {
   if (eff.kind === 'steal') {
     const m = a.m;
     if (m.stolen) floatAt(m.obj.position, 'Nada', '#cfd6e0', m.height + 0.4);
-    else if (Math.random() < eff.chance(lv) + (p.d.dex - m.def.lv) / 300) { const [id] = m.def.drops[Math.floor(Math.random() * m.def.drops.length)]; m.stolen = true; addItem(p, id, 1); Sound.play('coin'); floatAt(m.obj.position, 'Roubou!', '#ffd84a', m.height + 0.4); log(`Você roubou ${ITEMS[id].icon} ${ITEMS[id].name}!`, 'item'); }
+    else if (Math.random() < eff.chance(lv) + (p.d.dex - m.def.lv) / 300) { const [id] = m.def.drops[Math.floor(Math.random() * m.def.drops.length)]; m.stolen = true; addItem(p, id, 1); Sound.play('coin'); floatAt(m.obj.position, 'Roubou!', '#ffd84a', m.height + 0.4); log(`Você roubou ${ITEMS[id].name}!`, 'item'); }
     else { floatAt(m.obj.position, 'Falhou', '#cfd6e0', m.height + 0.4); Sound.play('miss'); }
     m.aggro = true; return;
   }
@@ -1980,7 +2083,8 @@ function updatePlates() {
     if (e.dead && !e.isNpc) continue;
     const d = Math.hypot(e.x - P.x, e.z - P.z);
     // nomes só de perto: monstros até 13 m (ou o alvo / quem está brigando com você), NPCs até 24 m
-    const near = e.isNpc ? 24 : 13, fight = (e === S.target || (!e.isNpc && e.aggro && !e.def.dummy)) && d < 20; // nem em combate aparece de longe (S-096, S-116: no máximo 20 m)
+    const qm = e.isNpc ? questMarker(S.p, e.id) : ''; // S-126: "!" / "?" de missão, visível de mais longe (como no WoW)
+    const near = e.isNpc ? (qm && qm !== '…' ? 45 : 24) : 13, fight = (e === S.target || (!e.isNpc && e.aggro && !e.def.dummy)) && d < 20; // nem em combate aparece de longe (S-096, S-116: no máximo 20 m)
     if ((d > near && !fight) || (e.obj && !e.obj.visible)) continue;
     const s = toScreen(tmpV.set(e.x, (e.obj.position.y) + e.height + 0.45, e.z));
     if (!s.vis) continue;
@@ -1989,8 +2093,8 @@ function updatePlates() {
     const hostile = !e.isNpc && (e.def.aggressive || e.aggro);
     const color = e.isNpc ? '#7dff9a' : hostile ? '#ff6a6a' : '#ffe36a';
     const hp = e.isNpc ? '' : (e.hp < e.maxHp || e === S.target) ? `<div class="pbar"><div style="width:${e.hp / e.maxHp * 100}%"></div></div>` : '';
-    const key = `${e.isNpc ? e.name : e.def.name}|${color}|${hp}|${e === S.target}`;
-    if (el._k !== key) { el._k = key; el.innerHTML = `<span style="color:${color}">${escH(e.isNpc ? e.name : e.def.name)}</span>${e.isNpc ? `<small>&lt;${escH(e.title)}&gt;</small>` : ''}${hp}`; el.classList.toggle('sel', e === S.target); }
+    const key = `${e.isNpc ? e.name : e.def.name}|${color}|${hp}|${e === S.target}|${qm}`;
+    if (el._k !== key) { el._k = key; el.innerHTML = `${qm ? `<div class="qmark ${qm === '?' ? 'ready' : qm === '…' ? 'wait' : ''}">${qm === '…' ? '?' : qm}</div>` : ''}<span style="color:${color}">${escH(e.isNpc ? e.name : e.def.name)}</span>${e.isNpc ? `<small>&lt;${escH(e.title)}&gt;</small>` : ''}${hp}`; el.classList.toggle('sel', e === S.target); }
     el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
     el.style.opacity = fight ? 1 : Math.max(0, Math.min(1, (near - d) / 3)); // aparece suavemente ao se aproximar
     shown.add(e);
@@ -2053,7 +2157,7 @@ function interact(e, attack) {
   if (e.isNpc) {
     if (Math.hypot(e.x - S.pos.x, e.z - S.pos.z) > 5) return log('Chegue mais perto para conversar.', 'warn');
     talk(e);
-  } else if (attack) S.autoAttack = true;
+  } else if (attack && !e.dead) { S.autoAttack = true; S.pos.yaw = Math.atan2(e.x - S.pos.x, e.z - S.pos.z); S.nextAttack = Math.min(S.nextAttack, S.time); } // clique (esquerdo ou direito) num monstro: vira para ele e ataca
 }
 
 /* =========================== Diálogos (janela compartilhada com o 2D) =========================== */
@@ -2061,6 +2165,13 @@ function talk(n) {
   const p = S.p, bye = { label: 'Até logo.', fn: () => UI.close('dialog') };
   n.anim.play('Interact', { once: true, restart: true }); later(1.2, () => n.anim.play('Idle'));
   if (n.grifo) return flightDialog(n);
+  // S-126: missões primeiro (aceitar, entregar, acompanhar); "Conversar" leva às falas normais do NPC
+  if (!n._qskip) {
+    const qo = questDialog(p, n, gainExp, () => talk(n));
+    if (qo.length) { hudDirty = true; return UI.dialog(n, n.questHello || (n.id === 'teodoro' ? 'Ah, que bom te ver. Alvorada precisa de gente como você.' : 'Olá, aventureiro! Tenho algo para você.'), [...qo, { label: '💬 Conversar', fn: () => { n._qskip = true; talk(n); n._qskip = false; } }, bye]); }
+  }
+  // S-124: refinador (cidade dos anões)
+  if (n.refine) return UI.dialog(n, n.hello || 'O aço só mostra o que vale depois de apanhar do martelo. Quer arriscar?', [{ label: '⚒️ Refinar equipamento', gold: true, fn: () => { UI.close('dialog'); UI.open('refino'); } }, { label: '🛒 Comprar Ferrolume e Pedra-Égide', fn: () => { UI.close('dialog'); UI.close('shop'); UI.shopList = ['ferrolume', 'pedra_egide']; UI.shopTitle = '⚒️ Materiais de refino'; UI.open('shop'); } }, bye]);
   if (n.heals) { p.hp = p.d.maxHp; p.sp = p.d.maxSp; Sound.play('heal'); ring(S.me.obj.position, 1.6, '#7dff9a'); return UI.dialog(n, 'Descanse um pouco, viajante. Pronto: feridas fechadas e o fôlego de volta.', [bye]); }
   if (n.shopList) return UI.dialog(n, n.hello, [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.close('shop'); UI.shopList = n.shopList === 'geral' ? null : n.shopList; UI.shopTitle = n.shopTitle; UI.open('shop'); } }, bye]);
   if (n.lines) return UI.dialog(n, n.lines, [bye]);
@@ -2253,7 +2364,7 @@ addEventListener('keydown', e => {
   if (k === 'enter') { UI.setChatMin(false); $('chatinput').focus(); e.preventDefault(); return; }
   if ((k === 'arrowup' || k === 'arrowdown') && UI.wins.bestiario) { e.preventDefault(); UI.bestStep(k === 'arrowup' ? -1 : 1); return; } // S-100: com o Bestiário aberto, as setas escolhem o monstro
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); return; }
-  const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes', b: 'bestiario', o: 'loja', g: 'mapa' }[k];
+  const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes', b: 'bestiario', o: 'loja', g: 'mapa', j: 'quests' }[k];
   if (win) { if (document.pointerLockElement) document.exitPointerLock(); UI.toggle(win); return; }
   if (k === 'n') { toggleSound(); return; }
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
@@ -2261,7 +2372,7 @@ addEventListener('keydown', e => {
   if (k === 'tab') { e.preventDefault(); tabTarget(); return; }
   if (k === ' ') { e.preventDefault(); if (S.pos.ground && !S.p.dead) { S.pos.vy = 7.5; S.pos.ground = false; S.sitting = false; if (!S.riding) S.me.anim.play('Jump_Start', { once: true, restart: true, fade: 0.05 }); later(0.3, () => { if (!S.pos.ground && !S.riding) S.me.anim.play('Jump_Idle'); }); if (S.casting) { S.casting = null; $('castbar3d').classList.add('hidden'); } } return; }
   if (k === '0') { cycleHotPreset(); return; } // S-107: troca o conjunto de atalhos (3 ao todo)
-  { const dg = /^Digit([1-9])$/.exec(e.code); if (dg && (e.shiftKey || (k >= '1' && k <= '9'))) { if (isAction()) { const tg = aimTarget(40); if (tg) setTarget(tg); } useSlot(hbBase() + (e.shiftKey && hbRows() > 1 ? 9 : 0) + +dg[1] - 1); return; } } // modo ação: a habilidade vai para quem está na mira
+  { const dg = /^Digit([1-9])$/.exec(e.code); if (dg && (e.shiftKey || (k >= '1' && k <= '9'))) { { const tg = aimTarget(40); if (tg) setTarget(tg); } /* habilidade vai para quem está na mira (cursor ou centro) */ useSlot(hbBase() + (e.shiftKey && hbRows() > 1 ? 9 : 0) + +dg[1] - 1); return; } } // modo ação: a habilidade vai para quem está na mira
   if (k === 'r') { if (S.target && !S.target.isNpc && !S.target.dead) { S.autoAttack = !S.autoAttack; log(S.autoAttack ? 'Ataque automático ligado.' : 'Ataque automático desligado.'); } else msgOnce('sel', 'Selecione um inimigo (Tab).'); return; }
   if (k === 'x') { if (!S.p.dead) { if (S.riding) dismount(); S.sitting = !S.sitting; S.autoAttack = false; } return; }
   if (k === 'm') { toggleMount(); return; }
@@ -2277,10 +2388,16 @@ canvas.addEventListener('mousedown', e => {
     if (e.button === 0) S.fire = true; return;
   }
   if (e.button === 1) { e.preventDefault(); mouse.mid = true; S.lookYaw = S.lookYaw || 0; try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; } // S-115: segurar o botão do meio e arrastar = olhar o personagem por qualquer ângulo (360°)
-  if (e.button === 0) mouse.left = true; else if (e.button === 2) mouse.right = true; else return;
+  if (e.button === 0) { // S-141: botão esquerdo = atacar (segurar = continuar atacando); em NPC = conversar
+    const hit = pick(e.clientX, e.clientY);
+    if (hit && hit.isNpc) { mouse.left = true; mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = 0; return; }
+    S.fire = true; S.autoAttack = false; return;
+  }
+  if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
 });
 addEventListener('mousemove', e => {
+  mouseNdc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
   if (mouse.mid) { S.lookYaw -= e.movementX * 0.006; S.cam.pitch = clamp(S.cam.pitch + e.movementY * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; return; }
   if (!mouse.left && !mouse.right) return;
@@ -2302,8 +2419,8 @@ addEventListener('mouseup', e => {
   if (!mouse.left && !mouse.right && document.pointerLockElement) document.exitPointerLock();
   if (wasClick && S.started && e.target === canvas && !FB.picking && !FB.box) {
     const hit = pick(e.clientX, e.clientY);
-    if (hit) interact(hit, e.button === 2);
-    else if (e.button === 0) setTarget(null);
+    if (hit && hit.isNpc) interact(hit, false);
+    else if (hit && e.button === 2) setTarget(hit); // botão direito num monstro: só marca (para ver a vida/as habilidades)
   }
 });
 canvas.addEventListener('wheel', e => {
@@ -2351,7 +2468,7 @@ function toggleMenu() {
   $('m-opts').onclick = () => showSettings();
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
-const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'hp', 'sp'];
+const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'hp', 'sp'];
 function save3d() {
   if (!S.p || !HAS_SRV) return;
   const s = {}; for (const k of SAVE_FIELDS3) s[k] = S.p[k];
@@ -2406,7 +2523,7 @@ function step(dt) {
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     if (S.me && S.me.hatId !== hatOf(S.p)) buildPlayerModel(); // trocou o chapéu
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
 }
@@ -2758,7 +2875,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -2813,7 +2930,7 @@ function fbArea(x0, y0, x1, y1) {
 }
 // teleporte do Painel do Mestre
 function teleport3d(x, z) {
-  S.fallTop = null;
+  S.fallTop = null; S.tpT = S.time;
   const r = resolve(x, z, 0.5);
   if (S.interior) leaveInterior(true);
   terrainNear(r.x, r.z); cullGrass(r.x, r.z, true);
@@ -2858,7 +2975,7 @@ function installIntegration() {
   UI.render_loja = renderLoja;
   UI.render_mapa = renderMapa;
   Object.assign(H3, {
-    save: save3d, useItem: use3d, useSlot, levelFx, portrait, monsterThumb, monsterLive,
+    save: save3d, useItem: use3d, useSlot, levelFx, portrait, monsterThumb, monsterLive, refineFx: (ok, broke) => { ring(S.pos, ok ? 1.8 : 1.4, ok ? '#ffd76a' : broke ? '#ff4a3a' : '#9a9a9a'); if (ok) ring(S.pos, 1.0, '#fff6c0'); floatAt(S.me.obj.position, ok ? 'Refino bem-sucedido!' : broke ? 'Quebrou!' : 'Falhou', ok ? '#ffd76a' : '#ff6a5a', 2.4); },
     setPet: (k, st, force) => { if (!isAdmin() || (!G.god && !force)) return; const pt = newPet(k); pt.lv = st ? PET_EVOLVE[st] : 1; S.p.pet = pt; buildPet(); hudDirty = true; log(`⚡ Mascote trocado: ${petInfo(pt).name} (Nv. ${pt.lv}).`, 'sys'); save3d(); },
     spawnInfo: () => { const o = {}; for (const [zone, type] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; (o[type] = o[type] || []).includes(zn.name) || o[type].push(zn.name); } return o; }, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
     setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime((on ? 0.05 : 0.16) * Sound.mv(), Sound.ctx.currentTime, 0.2); updatePauseBar(); },
@@ -2895,6 +3012,7 @@ let admHover = null;
 function admPois() {
   const out = ZONES.map(z => ({ label: `📍 ${z.name}`, x: z.x, z: z.z + (z.id === 'vila' ? 4 : 0) }));
   out.push({ label: '🏛️ Santuário Silente', x: TEMPLE.x, z: TEMPLE.z + 26 });
+  out.push({ label: '⚒️ Pedrafunda (anões)', x: DWARF.x, z: DWARF.z + 30 }, { label: '🌙 Aelindra (elfos)', x: ELF.x, z: ELF.z + 30 }, { label: '⚓ Porto das Gaivotas', x: PORT.x - 10, z: PORT.z - 10 }, { label: '🏰 Castelo de Valcinza', x: CASTLE.x + 26, z: CASTLE.z - 50 });
   for (const n of S.npcs) if (Math.abs(n.x) < HALF) out.push({ label: `🧑 ${n.name}`, x: n.x + 2, z: n.z + 1 });
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
