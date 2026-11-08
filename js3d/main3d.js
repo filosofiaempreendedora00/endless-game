@@ -179,6 +179,7 @@ function cullInteriors() {
   }
   const inside = camera.position.x > HALF + 100;
   if (inside === interiorShown) return; interiorShown = inside;
+  if (S.distantMtn) S.distantMtn.visible = !inside; // auditoria: dentro da Arena/salas as montanhas do horizonte apareciam pretas (vistas por trás)
   for (const o of interiorObjs) o.visible = inside;
 }
 function cullScenery() {
@@ -907,7 +908,7 @@ function buildWorld() {
     if (Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT - 2 && !freeAt(x, z, 3)) continue;
     place((zoneWeight('geada', x, z) > 0.3 ? ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'] : ['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'])[Math.floor(rng() * (zoneWeight('geada', x, z) > 0.3 ? 4 : 6))], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
-  { const dm = buildDistantMountains(); dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
+  { const dm = buildDistantMountains(); S.distantMtn = dm; dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
   // nuvens (auditoria): nada de bolotas de desenho — cúmulos macios feitos de vários "puffs" com textura de névoa,
   // base mais escura e topo iluminado pelo sol, que viram sempre para a câmera e andam devagar com o vento
   { const tex = cloudPuffTex();
@@ -1001,6 +1002,11 @@ function buildFrontier() {
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
   // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
   S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera });
+  { // auditoria: as árvores anciãs de Aelindra ganham a folhagem nova (folhas de verdade) por cima da copa lisa
+    const anc = placed.filter(o => o.userData.asset === 'arvore_ancia'), tpl = MODELS.oak_2 || MODELS.oak_0;
+    if (tpl) for (const a of anc) { const bb = new THREE.Box3().setFromObject(a), H = bb.max.y - a.position.y, th = tpl.height || 9; const o = place(tpl === MODELS.oak_2 ? 'oak_2' : 'oak_0', a.position.x, a.position.z, { scale: H / th * 1.12, solid: false, y: a.position.y }); if (o) { o.userData.asset = 'arvore_ancia'; o.userData.big = true; } }
+    cobblePlaza(CITY2.x, CITY2.z, 20, 8); // praça calçada também em Pedraclara
+  }
   { const portCtx = { scene, place, worldNpc, roomNpc, colliders, occluders, placed, roomAnims, camera, addDoorPortal, portals }; S.port = buildPortCity(portCtx); buildMerchants(portCtx); } // S-208..S-218: Porto das Gaivotas (port3d)
   buildCastle({ scene, place, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals });
   if (S.cities && S.cities.refineBoard) { const b = S.cities.refineBoard, m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.92, b.h * 0.88), new THREE.MeshStandardMaterial({ map: refineBoardTex(), roughness: 0.9 })); m.position.set(b.x, b.y, b.z); m.rotation.y = b.yaw; m.translateZ(0.06); scene.add(m); m.userData.asset = 'tabela_refino'; placed.push(m); extraPick.push(m); } // S-124: tabela de refino na parede do ferreiro

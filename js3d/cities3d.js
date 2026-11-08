@@ -518,7 +518,7 @@ function ancientTree(seed, H = 36) {
     const a = r() * Math.PI * 2, rr = r() * 9, y = H * 0.72 + r() * H * 0.32, s = 5 + r() * 4;
     const g = mergeVertices(new THREE.IcosahedronGeometry(1, 4)), P = g.attributes.position, col = new Float32Array(P.count * 3), c = new THREE.Color(); // vértices unidos: folhagem lisa, sem facetas
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), yy = P.getY(i), z = P.getZ(i), n = 1 + Math.sin(x * 4 + k) * 0.12 + Math.sin(z * 5 + yy * 3) * 0.1; P.setXYZ(i, x * n, yy * n * 0.7, z * n); c.copy(leafC[0]).lerp(leafC[1], (yy + 1) / 2).lerp(leafC[2], Math.max(0, yy) * 0.5 * (0.6 + r() * 0.4)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
-    g.computeVertexNormals(); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); K.add(g, M.leaf(), Math.cos(a) * rr, y, Math.sin(a) * rr, 0, 0, 0, s, s, s);
+    g.computeVertexNormals(); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); /* auditoria: as bolotas lisas saíram; a copa agora é de folhas de verdade (main3d põe a folhagem nova por cima do tronco) */
   }
   return K;
 }
