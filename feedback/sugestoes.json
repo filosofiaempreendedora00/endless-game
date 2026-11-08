@@ -2648,5 +2648,453 @@
     "criadoEm": "2026-11-07T18:46:18",
     "imagem": "img/S-058.png",
     "resposta": "No Painel do Mestre (⌘Z) há um cartão \"Raça e aparência\" para trocar raça (Humano, Elfo, Anão) e rosto/cabelo a qualquer momento."
+  },
+  {
+    "texto": "gostaria de montarias mais erealistas e tbm ue o salto fizesse as pernas da montaria se mexerem de forma diferente. Pois ta muito esdruxulo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (449×521 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Arqueiro)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -41,
+        26
+      ],
+      "pos": [
+        -41,
+        26
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "16/23"
+    },
+    "id": "S-059",
+    "status": "feito",
+    "criadoEm": "2026-11-07T23:07:36",
+    "imagem": "img/S-059.png",
+    "resposta": "O salto das montarias ficou realista: as patas da frente dobram sob o peito, as de trás esticam para trás, o corpo empina na subida e abaixa o focinho na descida, e o rabo levanta. Os corcéis já tinham ganhado corpo de cavalo de verdade."
+  },
+  {
+    "texto": "preciso que haja aqui um NPC de pvp, e conversando com ele ele nos leve pra um mapa em que eu possa cair na porrada com outro playr. Aí preciso que vc crie tudo desse novo local, torne possivel uma briga entre players, descer hp, etc etc",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (51×57 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -58,
+        16
+      ],
+      "pos": [
+        -58,
+        16
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-060",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:31:48",
+    "imagem": "img/S-060.png"
+  },
+  {
+    "texto": "gostaria de um efeito mais real desse portal, ele ta muito 'perfeitinho'. Gostaria de ele ser melhor trabalhado com as ondas ali da pate de baixo aumentando e as particulas fluidas indo subindo e sumindo meio como se evaporassem. Preciso de algo mais legal e bem trabalhado aqui no portal",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (229×202 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Taverna": 1
+        },
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -90,
+        26
+      ],
+      "pos": [
+        -90,
+        26
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "90/90",
+      "sp": "23/23"
+    },
+    "id": "S-061",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:33:02",
+    "imagem": "img/S-061.png"
+  },
+  {
+    "texto": "preciso que o god mode nao me torne inalvejavel, no sentido dos monstros nao me colocarem como target, e sim so indestrutivel, com hp infinito",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (700×409 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -44,
+        24
+      ],
+      "pos": [
+        -44,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "117/117",
+      "sp": "20/20"
+    },
+    "id": "S-062",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:34:24",
+    "imagem": "img/S-062.png"
+  },
+  {
+    "texto": "tornar mais redondidnho aqui e mais realsta, e nao meio quadrado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (204×162 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Alvo de treino": 1
+        },
+        "centro": "Alvo de treino",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -76,
+        6
+      ],
+      "pos": [
+        -76,
+        6
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "117/117",
+      "sp": "20/20"
+    },
+    "id": "S-063",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:34:54",
+    "imagem": "img/S-063.png"
+  },
+  {
+    "texto": "minha cabeça ta dentro dos objetos e isso nao é desejavel. Seja mais rigoroso no que da pra minha box entrar ou nao entrar nos objetos ao meu redor",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (325×259 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Tenda": 1,
+          "Caixote": 1
+        },
+        "centro": "Vidro (Guerreiro)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -59,
+        30
+      ],
+      "pos": [
+        -59,
+        30
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "117/117",
+      "sp": "20/20"
+    },
+    "id": "S-064",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:36:03",
+    "imagem": "img/S-064.png"
+  },
+  {
+    "texto": "torne isso mais bonito com frutas mais reais eproporcionais. E inclua uma feirante aquitbm em que eu possa comprar frutas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1014×750 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Feira": 1,
+          "Torre": 1,
+          "Cerca": 3,
+          "Carvalho": 1,
+          "Pedra": 1
+        },
+        "centro": "Feira",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -56,
+        37
+      ],
+      "pos": [
+        -56,
+        37
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "117/117",
+      "sp": "20/20"
+    },
+    "id": "S-065",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:36:41",
+    "imagem": "img/S-065.png"
+  },
+  {
+    "texto": "Nessa classe Além Deste chapéu não está conectando a cabeça eu gostaria de fazer um combinado com você nenhuma classe inclusive nem o Mago e evoluções deve ter por padrão um chapéu eu quero que assim como o Ragnarok online o chapéu seja a única coisa que eu consiga customizar o meu personagem e portanto ele precisa ser um equipamento ou visual e não algo por padrão da classe isso vale para todas as classes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (437×445 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Saqueador)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -43,
+        24
+      ],
+      "pos": [
+        -43,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Saqueador",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "108/108",
+      "sp": "22/22"
+    },
+    "id": "S-066",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:39:18",
+    "imagem": "img/S-066.png"
+  },
+  {
+    "texto": "Gostaria de tornar as vitórias régias mais realistas e principalmente perceba que existe um triângulo ali aberto e esse triângulo não pode ser fechado com o perímetro Ou seja a parte externa é como se fosse uma pizza que tem um pedacinho aí e isso obviamente está incorreto e precisa ser corrigido Em resumo eu prefiro que você melhore o acabamento dessas vitórias Régia para que seja muito mais",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (347×172 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vitória-régia (dá para pular em cima)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        15,
+        50
+      ],
+      "pos": [
+        15,
+        50
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Caçador",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "25/25"
+    },
+    "id": "S-067",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:41:19",
+    "imagem": "img/S-067.png"
+  },
+  {
+    "texto": "vi que tem monstros que entraram na agua, mas os monstros nao podem entrar na agua. Tem que ter regra que impeça deles se aproximarem demais dos lagos sempre",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (271×152 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Coelho-Chifre": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Vitória-régia (dá para pular em cima)": 2
+        },
+        "centro": "Lago — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        17,
+        62
+      ],
+      "pos": [
+        17,
+        62
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Caçador",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "25/25"
+    },
+    "id": "S-068",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T09:42:00",
+    "imagem": "img/S-068.png"
   }
 ]

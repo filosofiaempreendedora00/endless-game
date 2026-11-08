@@ -621,7 +621,7 @@ const UI = {
         <button class="btn" id="m-help">❔ Como jogar</button>
         <button class="btn" id="m-opts">⚙️ Configurações</button>
         <button class="btn" id="m-title">🏠 Voltar ao menu principal</button>
-        <button class="btn" id="m-3d">${typeof H3 !== 'undefined' ? '🗺️ Versão clássica 2D' : '🌍 Ir para o mundo 3D'}</button>
+        ${typeof H3 !== 'undefined' ? '' : '<button class="btn" id="m-3d">🌍 Ir para o mundo 3D</button>'}
       </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente.</div></div>`;
     o.onclick = null;
     o.classList.add('show');
@@ -629,7 +629,7 @@ const UI = {
     $('m-help').onclick = () => { this.closeGameMenu(); this.open('help'); };
     $('m-opts').onclick = () => this.showSettings();
     $('m-title').onclick = () => { this.menuOpen = false; returnToTitle(); };
-    $('m-3d').onclick = () => { saveGame(); location.href = typeof H3 !== 'undefined' ? '2d.html' : 'index.html'; };
+    if ($('m-3d')) $('m-3d').onclick = () => { saveGame(); location.href = 'index.html'; };
   },
   // tela de configurações (dentro do menu Esc)
   showSettings() {

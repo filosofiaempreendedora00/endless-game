@@ -8,7 +8,7 @@ import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin } from './looks3d.js';
+import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
@@ -671,12 +671,19 @@ function spawnNpcs() {
 }
 
 /* =========================== Jogador =========================== */
+// veste o personagem com a aparência dele: cabelo personalizado (novo) ou cabeça pronta (personagens antigos)
+function dressLook(ch, cls, look = {}) {
+  const custom = !!(look && look.hair);
+  const d = dress(ch, cls, MODELS, custom ? 'Barbarian' : (look && look.head) || 'Knight');
+  if (custom) applyHair(ch, look, classHasHat(cls));
+  applyRace(ch, look && look.race);
+  return d;
+}
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
   const ch = makeChar(L.outfit, L.show);
-  const d = dress(ch, S.p.cls, MODELS, (S.p.look && S.p.look.head) || 'Knight');
-  applyRace(ch, S.p.look && S.p.look.race);
+  const d = dressLook(ch, S.p.cls, S.p.look);
   const skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null;
   S.me = { ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
@@ -754,7 +761,7 @@ function updatePlayer(dt) {
     R.obj.position.set(P.x, P.y, P.z); R.obj.rotation.y = P.yaw;
     let dy = P.yaw - (R.lastYaw ?? P.yaw); while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; R.lastYaw = P.yaw;
     R.turn = (R.turn || 0) + ((dt > 0 ? dy / dt : 0) - (R.turn || 0)) * Math.min(1, dt * 6);
-    R.animate(t, { speed: spd / (base / MOUNT_SPEED * 1.2), turn: Math.max(-4, Math.min(4, R.turn)), air: !P.ground }, dt);
+    R.animate(t, { speed: spd / (base / MOUNT_SPEED * 1.2), turn: Math.max(-4, Math.min(4, R.turn)), air: !P.ground, vy: P.vy }, dt);
     me.obj.position.y = P.y + R.saddleY + R.bodyY - 0.52;
   }
   // de frente para o alvo quando parado atacando
@@ -1435,13 +1442,11 @@ function toggleMenu() {
     <div class="menu-btns">
       <button class="btn gold" id="m-cont">▶ Continuar <span class="muted">(Esc)</span></button>
       <button class="btn" id="m-help">❔ Controles</button>
-      <button class="btn" id="m-2d">🗺️ Versão clássica 2D</button>
       <button class="btn" id="m-chars">🏠 Trocar de personagem</button>
     </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente. Seu personagem é o mesmo no 2D e no 3D.</div></div>`;
   o.classList.add('show');
   $('m-cont').onclick = toggleMenu;
   $('m-help').onclick = () => { toggleMenu(); UI.open('help'); };
-  $('m-2d').onclick = () => { save3d(); location.href = '2d.html'; };
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
 const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
@@ -1535,36 +1540,216 @@ function draw(dt) {
 window.__sim = (sec, fps = 30) => { for (let i = 0; i < sec * fps; i++) step(1 / fps); draw(1 / fps); };
 
 /* =========================== Início =========================== */
+/* =========================================================================
+   ÁREA DE PERSONAGENS — vitrine (seleção) e criador com o boneco ao vivo
+   ========================================================================= */
+const FACES = [['Knight', 'Loiro espetado'], ['Mage', 'Moreno'], ['Barbarian', 'Careca barbudo'], ['Rogue', 'Ruivo longo']]; // cabeças prontas (personagens antigos)
+const RACE_ORDER = ['humano', 'elfo', 'anao'];
+// luzes de estúdio (só na camada 1, usada pelas vitrines)
+const stageKey = new THREE.DirectionalLight('#fff3e0', 2.2), stageRim = new THREE.DirectionalLight('#9fc4ff', 1.6);
+for (const l of [stageKey, stageRim]) { l.layers.set(1); scene.add(l, l.target); }
+const STAGE_POS = new THREE.Vector3(1000, 0, 1000);
+stageKey.position.set(STAGE_POS.x + 2, 3, STAGE_POS.z + 4); stageKey.target.position.copy(STAGE_POS);
+stageRim.position.set(STAGE_POS.x - 3, 2.5, STAGE_POS.z - 3); stageRim.target.position.copy(STAGE_POS);
+function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null) {
+  const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, ch = makeChar(L.outfit, L.show);
+  const d = dressLook(ch, cls, look || {});
+  const skinFx = cosmetics && cosmetics.skin ? applySkin(ch, cosmetics.skin) : null;
+  ch.anim.play('Idle');
+  return { ch, fx: t => { d.update(t); if (skinFx) skinFx(t); } };
+}
+// palco 3D numa <canvas>: personagem girando no pedestal, arrastar gira, zoom no rosto, mascote ao lado
+function makeStage(cv) {
+  const root = new THREE.Group(); root.position.copy(STAGE_POS); scene.add(root);
+  const W = cv.width, H = cv.height, rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
+  const g = cv.getContext('2d'), img = g.createImageData(W, H), buf = new Uint8Array(W * H * 4);
+  const cam = new THREE.PerspectiveCamera(28, W / H, 0.05, 50); cam.layers.set(1);
+  let cur = null, pet = null, yaw = 0.35, vel = 0, drag = false, lastX = 0, t = 0, last = performance.now(), alive = true, zoom = 0, zoomT = 0, idleT = 0;
+  cv.onpointerdown = e => { drag = true; lastX = e.clientX; vel = 0; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; };
+  cv.onpointermove = e => { if (!drag) return; const dx = e.clientX - lastX; lastX = e.clientX; yaw += dx * 0.012; vel = dx * 0.012; idleT = 0; };
+  cv.onpointerup = () => { drag = false; cv.style.cursor = 'grab'; };
+  cv.onwheel = e => { e.preventDefault(); zoomT = Math.max(0, Math.min(1, zoomT + (e.deltaY < 0 ? 0.25 : -0.25))); };
+  cv.style.cursor = 'grab';
+  const layer1 = o => o.traverse(c => c.layers.enable(1));
+  const api = {
+    setChar(obj) { if (cur) root.remove(cur.ch.obj); cur = obj; if (cur) { root.add(cur.ch.obj); cur.ch.obj.position.set(0, 0, 0); layer1(cur.ch.obj); } draw(0); },
+    setPet(species) { if (pet) root.remove(pet.obj); pet = null; if (species && PETS[species]) { pet = makePet(species, 0); pet.obj.position.set(0.72, 0, 0.45); root.add(pet.obj); layer1(pet.obj); } draw(0); },
+    draw: () => draw(0.016),
+    setZoom(z) { zoomT = z; }, get zoom() { return zoomT; },
+    spin(d) { vel = d; idleT = 0; },
+    dispose() { alive = false; root.parent && scene.remove(root); rt.dispose(); },
+  };
+  const frame = () => {
+    if (!alive || !document.body.contains(cv)) { alive = false; scene.remove(root); rt.dispose(); return; }
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now;
+    draw(dt); requestAnimationFrame(frame);
+  };
+  function draw(dt) {
+    if (!alive) return;
+    t += dt; idleT += dt;
+    if (!drag) { yaw += vel; vel *= 0.92; if (idleT > 4) yaw += dt * 0.25; } // inércia e giro lento quando parado
+    zoom += (zoomT - zoom) * Math.min(1, dt * 8);
+    if (cur) { cur.ch.obj.rotation.y = yaw; cur.ch.anim.update(dt); cur.fx(t); }
+    if (pet) { pet.obj.rotation.y = yaw * 0.6 - 0.4; pet.animate(t, { speed: 0, turn: 0 }, dt); }
+    const ty = 0.72 + zoom * 0.48, dist = 3.7 - zoom * 2.55;
+    const ox = 0.22 * (1 - zoom); cam.position.set(STAGE_POS.x + ox, STAGE_POS.y + ty + 0.15 - zoom * 0.08, STAGE_POS.z + dist + 0.3 * (1 - zoom)); cam.lookAt(STAGE_POS.x + ox, STAGE_POS.y + ty, STAGE_POS.z);
+    const bg = scene.background, fog = scene.fog, cc = renderer.getClearColor(new THREE.Color()), ca = renderer.getClearAlpha();
+    scene.background = null; scene.fog = null; renderer.setClearColor(0, 0); renderer.setRenderTarget(rt); renderer.clear(); renderer.render(scene, cam);
+    renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); scene.background = bg; scene.fog = fog; renderer.setClearColor(cc, ca);
+    for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);
+    g.putImageData(img, 0, 0);
+  }
+  requestAnimationFrame(frame);
+  return api;
+}
+const fmtAgo = ms => { if (!ms) return '—'; const m = Math.floor((Date.now() - ms) / 60000); return m < 1 ? 'agora há pouco' : m < 60 ? `há ${m} min` : m < 1440 ? `há ${Math.floor(m / 60)} h` : `há ${Math.floor(m / 1440)} dia(s)`; };
+const lookLabel = l => l && l.hair ? `${(HAIR_STYLES[l.hair.style] || {}).name || ''} · ${(HAIR_COLORS[l.hair.color] || {}).name || ''}` : (FACES.find(f => f[0] === ((l && l.head) || 'Knight')) || [0, 'Clássico'])[1];
+const thumbCacheChars = {};
+function charThumb(s) {
+  const key = s.slug + '|' + s.cls + '|' + JSON.stringify(s.look || {}) + '|' + JSON.stringify((s.cosmetics || {}).skin || '');
+  if (thumbCacheChars[key]) return thumbCacheChars[key];
+  const pc = buildPreviewChar(s.look, s.cls, s.cosmetics); const o = pc.ch.obj; o.position.set(1100, 0, 1000); o.rotation.y = 0.35; scene.add(o); pc.ch.anim.update(0.3); pc.fx(0.5);
+  const url = renderObj(o, 140, 180); scene.remove(o);
+  return (thumbCacheChars[key] = url);
+}
+
+// ---------- vitrine de personagens ----------
+let csStage = null;
 async function chooseCharacter() {
   const o = $('overlay');
   let list = [];
   try { list = await (await fetch('/api/saves')).json(); } catch (e) { }
   list = list.filter(c => c && c.name && CLASSES[c.cls]);
-  o.innerHTML = `<div class="title-box"><h1>${GAME_TITLE}</h1><div class="sub">UM RPG DE MUNDO ABERTO • CLASSES • CARTAS</div><div class="card">
-    ${list.length ? '<label style="margin-top:0">Escolha seu personagem</label>' + list.map((c, i) => `<button class="btn ${i ? '' : 'gold'} c3" data-i="${i}" style="width:100%;padding:9px;font-size:14px;margin-bottom:5px;text-align:left">▶ <b>${escH(c.name)}</b> <span class="muted">— Nv. ${c.baseLv} ${CLASSES[c.cls].icon} ${CLASSES[c.cls].name}</span></button>`).join('')
-      : ''}
-    <div class="row"><button class="btn ${list.length ? '' : 'gold'}" id="c3-new">＋ Criar novo personagem</button></div>
-    <div class="row" style="margin-top:6px"><a class="btn" href="2d.html" style="text-align:center;text-decoration:none">🗺️ Versão clássica 2D</a></div>
-    </div><div class="ver">Seu personagem é o mesmo no 2D e no 3D • clique para ativar o som<br>Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
-  o.classList.add('show');
-  $('c3-new').onclick = () => { Sound.init(); showCreate3d(list); };
   if (!list.length) { showCreate3d(list); return; }
-  o.querySelectorAll('.c3').forEach(b => b.onclick = async () => {
-    Sound.init();
-    const s = await (await fetch('/api/save/' + list[+b.dataset.i].slug)).json();
-    startWith(s);
-  });
+  const full = await Promise.all(list.map(async c => { try { return { ...(await (await fetch('/api/save/' + c.slug)).json()), slug: c.slug }; } catch (e) { return { ...c }; } }));
+  let i = 0;
+  o.innerHTML = `<div class="cs">
+    <div class="cs-head"><h1>${GAME_TITLE}</h1><div class="sub">SEUS PERSONAGENS</div></div>
+    <div class="cs-main">
+      <button class="cs-arrow" id="cs-prev" title="Anterior (←)">‹</button>
+      <div class="cs-stage"><div class="cs-podium"></div><canvas id="cs-cv" width="520" height="620"></canvas><div class="cs-hint">arraste para girar · rodinha aproxima</div></div>
+      <button class="cs-arrow" id="cs-next" title="Próximo (→)">›</button>
+      <div class="cs-info" id="cs-info"></div>
+    </div>
+    <div class="cs-strip" id="cs-strip">${full.map((c, k) => `<div class="cs-card" data-k="${k}"><img alt=""><b>${escH(c.name)}</b><span>Nv. ${c.baseLv} · ${CLASSES[c.cls].name}</span></div>`).join('')}
+      <div class="cs-card cs-new" id="cs-new"><div class="cs-plus">＋</div><b>Novo personagem</b><span>criar do zero</span></div></div>
+    <div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0 · clique para ativar o som</div>
+  </div>`;
+  o.classList.add('show');
+  if (csStage) csStage.dispose();
+  csStage = makeStage($('cs-cv'));
+  // miniaturas aos poucos (não trava a tela)
+  full.forEach((c, k) => setTimeout(() => { const im = o.querySelector(`.cs-card[data-k="${k}"] img`); if (im) im.src = charThumb(c); }, 60 + k * 40));
+  const show = k => {
+    i = (k + full.length) % full.length; const c = full[i], cl = CLASSES[c.cls];
+    o.querySelectorAll('.cs-card[data-k]').forEach(el => el.classList.toggle('on', +el.dataset.k === i));
+    csStage.setChar(buildPreviewChar(c.look, c.cls, c.cosmetics)); csStage.setPet(c.pet && c.pet.species);
+    const race = RACES[(c.look && c.look.race) || 'humano'], pi = c.pet ? petInfo(c.pet) : null;
+    const zn = c.pos3d ? zoneAt(c.pos3d.x, c.pos3d.z) : null, bxp = Math.floor((c.baseExp || 0) / baseExpNext(c.baseLv) * 100);
+    $('cs-info').innerHTML = `<div class="cs-name">${escH(c.name)}</div>
+      <div class="cs-cls">${cl.icon} ${cl.name} <span class="muted">· ${race.icon} ${race.name}</span></div>
+      <div class="cs-bars"><div><span>Nível de Base</span><b>${c.baseLv}</b><i><u style="width:${bxp}%"></u></i></div><div><span>Nível de Classe</span><b>${c.jobLv}</b></div></div>
+      <div class="cs-grid">
+        <div><span>💰 Zeny</span><b>${(c.zeny || 0).toLocaleString('pt-BR')}</b></div>
+        <div><span>❤️ HP / 💧 SP</span><b>${c.hp || '—'} / ${c.sp || '—'}</b></div>
+        <div><span>🐾 Mascote</span><b>${pi ? `${pi.icon} ${escH(pi.name)} Nv. ${c.pet.lv}` : '—'}</b></div>
+        <div><span>🐎 Montaria</span><b>${c.mount && MOUNTS[c.mount.kind] ? MOUNTS[c.mount.kind].name : '—'}</b></div>
+        <div><span>📍 Onde está</span><b>${zn ? zn.name : 'Vila de Alvorada'}</b></div>
+        <div><span>🕒 Último jogo</span><b>${fmtAgo(c.savedAt)}</b></div>
+        <div><span>💇 Visual</span><b>${escH(lookLabel(c.look))}</b></div>
+        <div><span>✦ Auroras</span><b>${((c.cosmetics || {}).auroras || 0).toLocaleString('pt-BR')}</b></div>
+      </div>
+      <button class="btn gold cs-play" id="cs-play">▶ Entrar no mundo <span class="muted">(Enter)</span></button>
+      <button class="btn cs-del" id="cs-del">🗑 Apagar personagem</button>`;
+    $('cs-play').onclick = play;
+    $('cs-del').onclick = () => askDelete(c);
+  };
+  const play = async () => { Sound.init(); removeEventListener('keydown', keys); csStage.dispose(); csStage = null; const s = await (await fetch('/api/save/' + full[i].slug)).json(); startWith(s); };
+  const keys = e => { if (!o.querySelector('.cs')) { removeEventListener('keydown', keys); return; } if (e.key === 'ArrowLeft') show(i - 1); else if (e.key === 'ArrowRight') show(i + 1); else if (e.key === 'Enter') play(); };
+  addEventListener('keydown', keys);
+  $('cs-prev').onclick = () => { Sound.init(); Sound.play('click'); show(i - 1); };
+  $('cs-next').onclick = () => { Sound.init(); Sound.play('click'); show(i + 1); };
+  o.querySelectorAll('.cs-card[data-k]').forEach(el => { el.onclick = () => { Sound.init(); Sound.play('click'); show(+el.dataset.k); }; el.ondblclick = play; });
+  $('cs-new').onclick = () => { Sound.init(); removeEventListener('keydown', keys); csStage.dispose(); csStage = null; showCreate3d(full); };
+  const askDelete = c => {
+    const box = document.createElement('div'); box.className = 'cs-modal';
+    box.innerHTML = `<div class="card"><h3>Apagar ${escH(c.name)}?</h3><div class="muted" style="margin-bottom:8px">O personagem vai para a lixeira do projeto (saves/lixeira) e some daqui. Para confirmar, digite o nome dele:</div>
+      <input id="cs-del-name" placeholder="${escH(c.name)}"><div class="row" style="margin-top:10px"><button class="btn" id="cs-del-no">Cancelar</button><button class="btn" id="cs-del-yes" style="background:#8a2a2a" disabled>Apagar</button></div></div>`;
+    o.appendChild(box);
+    const inp = $('cs-del-name'); inp.focus(); inp.onkeydown = e => e.stopPropagation();
+    inp.oninput = () => { $('cs-del-yes').disabled = inp.value.trim() !== c.name; };
+    $('cs-del-no').onclick = () => box.remove();
+    $('cs-del-yes').onclick = async () => { await fetch('/api/save/' + c.slug, { method: 'DELETE' }); try { const l = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (l && l.name === c.name) localStorage.removeItem(SAVE_KEY); } catch (e) { } box.remove(); removeEventListener('keydown', keys); csStage.dispose(); csStage = null; chooseCharacter(); };
+  };
+  show(0);
 }
-// criação de personagem no 3D (nome obrigatório; mesmo começo do 2D)
-// criação guiada, em etapas (estilo MMO): raça → aparência → mascote → nome
-const FACES = [['Knight', 'Cabelo claro'], ['Barbarian', 'Ruivo'], ['Mage', 'Grisalho'], ['Rogue', 'Moreno']];
-const previewCache = {};
-function previewChar(race, head, cls = 'aprendiz') { // imagem do personagem de frente (para as cartas da criação)
-  const key = race + '|' + head + '|' + cls; if (previewCache[key]) return previewCache[key];
-  const L = CLASS_LOOKS[cls], ch = makeChar(L.outfit, L.show); dress(ch, cls, MODELS, head); applyRace(ch, race);
-  ch.obj.position.set(900, 0, 900); ch.obj.rotation.y = 0.35; scene.add(ch.obj); ch.anim.play('Idle'); ch.anim.update(0.4);
-  const url = renderObj(ch.obj, 220, 300); scene.remove(ch.obj);
-  return (previewCache[key] = url);
+
+// ---------- criador de personagem (ou "barbearia" do mestre, no modo edição) ----------
+function randomLook() { const pick = a => a[Math.floor(Math.random() * a.length)]; return { race: pick(RACE_ORDER), hair: { style: pick(Object.keys(HAIR_STYLES)), color: pick(Object.keys(HAIR_COLORS)) }, beard: Math.random() < 0.3 }; }
+function showCreate3d(list, opts = {}) {
+  const o = $('overlay'), edit = !!opts.edit;
+  const st = { ...DEFAULT_LOOK, ...(opts.look || {}), hair: { ...DEFAULT_LOOK.hair, ...((opts.look || {}).hair || {}) }, pet: opts.pet || null, name: '', cls: opts.cls || 'aprendiz' };
+  const PREV = ['aprendiz', 'guerreiro', 'mago', 'arqueiro', 'gatuno'].filter(k => CLASSES[k]);
+  o.innerHTML = `<div class="cc">
+    <div class="cc-stagewrap">
+      <div class="cc-stage"><div class="cs-podium"></div><canvas id="cc-cv" width="560" height="660"></canvas></div>
+      <div class="cc-tools"><button class="btn" id="cc-l" title="Girar">⟲</button><button class="btn" id="cc-zoom">🙂 Ver rosto</button><button class="btn" id="cc-r" title="Girar">⟳</button><button class="btn" id="cc-rand">🎲 Aleatório</button></div>
+      <div class="cc-prev"><span class="muted">Ver com a roupa de:</span>${PREV.map(k => `<button class="cc-chip ${k === st.cls ? 'on' : ''}" data-pc="${k}">${CLASSES[k].icon} ${CLASSES[k].name}</button>`).join('')}</div>
+    </div>
+    <div class="cc-panel">
+      <div class="cc-title">${edit ? '💈 Barbearia do Mestre' : 'Criar personagem'}</div>
+      <div class="cc-sub">${edit ? 'Mude a aparência de ' + escH(S.p.name) + ' — o resto continua igual.' : 'Monte seu aventureiro e veja ao lado como ele fica.'}</div>
+      <div class="cc-sec"><h4><b>1</b> Raça</h4><div class="cc-races">${RACE_ORDER.map(k => `<div class="cc-race" data-race="${k}"><div class="i">${RACES[k].icon}</div><div class="n">${RACES[k].name}</div><div class="h">${RACES[k].hint}</div></div>`).join('')}</div><div class="cc-note" id="cc-race-d"></div></div>
+      <div class="cc-sec"><h4><b>2</b> Corte de cabelo</h4><div class="cc-styles">${Object.entries(HAIR_STYLES).map(([k, h]) => `<button class="cc-style" data-style="${k}"><span>${h.icon}</span>${h.name}</button>`).join('')}</div></div>
+      <div class="cc-sec"><h4><b>3</b> Cor do cabelo <span class="muted" id="cc-col-n"></span></h4><div class="cc-colors">${Object.entries(HAIR_COLORS).map(([k, c]) => `<button class="cc-col" data-color="${k}" title="${c.name}" style="--c:${c.hex}"></button>`).join('')}</div>
+        <label class="cc-check"><input type="checkbox" id="cc-beard"> Barba <span class="muted">(da mesma cor do cabelo)</span></label></div>
+      ${edit ? '' : `<div class="cc-sec"><h4><b>4</b> Companheiro</h4><div class="cc-pets">${Object.entries(PETS).map(([k, p]) => `<div class="cc-pet" data-pet="${k}" style="--pc:${p.color}"><div class="i">${p.stages[0].icon}</div><div class="n">${p.stages[0].name}</div><div class="h">${p.roleIcon} ${p.roleName}</div></div>`).join('')}</div><div class="cc-note" id="cc-pet-d"></div></div>
+      <div class="cc-sec"><h4><b>5</b> Nome</h4><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?"><div class="cw-err" id="cw-err"></div></div>`}
+      <div class="cc-foot"><button class="btn" id="cc-back">← ${edit ? 'Cancelar' : list.length ? 'Meus personagens' : 'Voltar'}</button><button class="btn gold" id="cc-ok">${edit ? '✔ Salvar aparência' : '✨ Criar personagem'}</button></div>
+    </div></div>`;
+  o.classList.add('show');
+  const stage = makeStage($('cc-cv'));
+  const refresh = () => {
+    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard }, st.cls));
+    o.querySelectorAll('[data-race]').forEach(el => el.classList.toggle('on', el.dataset.race === st.race));
+    o.querySelectorAll('[data-style]').forEach(el => el.classList.toggle('on', el.dataset.style === st.hair.style));
+    o.querySelectorAll('[data-color]').forEach(el => el.classList.toggle('on', el.dataset.color === st.hair.color));
+    o.querySelectorAll('[data-pet]').forEach(el => el.classList.toggle('on', el.dataset.pet === st.pet));
+    o.querySelectorAll('[data-pc]').forEach(el => el.classList.toggle('on', el.dataset.pc === st.cls));
+    $('cc-beard').checked = !!st.beard; $('cc-col-n').textContent = '· ' + HAIR_COLORS[st.hair.color].name;
+    $('cc-race-d').textContent = RACES[st.race].desc + (st.race === 'anao' ? ' (a barba de anão vem sempre)' : '');
+    if ($('cc-pet-d')) $('cc-pet-d').textContent = st.pet ? PETS[st.pet].desc : 'Escolha quem vai te acompanhar — ele luta ao seu lado e evolui com você.';
+  };
+  const click = () => { Sound.init(); Sound.play('click'); };
+  o.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { click(); st.race = el.dataset.race; refresh(); });
+  o.querySelectorAll('[data-style]').forEach(el => el.onclick = () => { click(); st.hair = { ...st.hair, style: el.dataset.style }; refresh(); });
+  o.querySelectorAll('[data-color]').forEach(el => el.onclick = () => { click(); st.hair = { ...st.hair, color: el.dataset.color }; refresh(); });
+  o.querySelectorAll('[data-pet]').forEach(el => el.onclick = () => { click(); st.pet = el.dataset.pet; stage.setPet(st.pet); refresh(); });
+  o.querySelectorAll('[data-pc]').forEach(el => el.onclick = () => { click(); st.cls = el.dataset.pc; refresh(); });
+  $('cc-beard').onchange = e => { st.beard = e.target.checked; refresh(); };
+  $('cc-l').onclick = () => stage.spin(-0.12); $('cc-r').onclick = () => stage.spin(0.12);
+  $('cc-zoom').onclick = () => { const z = stage.zoom > 0.5 ? 0 : 1; stage.setZoom(z); $('cc-zoom').textContent = z ? '🧍 Corpo inteiro' : '🙂 Ver rosto'; };
+  $('cc-rand').onclick = () => { click(); Object.assign(st, randomLook()); refresh(); };
+  $('cc-back').onclick = () => { click(); stage.dispose(); if (edit) { o.classList.remove('show'); o.innerHTML = ''; } else if (list.length) chooseCharacter(); else showCreate3d(list); };
+  const err = m => { $('cw-err').textContent = m; Sound.play('error'); };
+  $('cc-ok').onclick = async () => {
+    const look = { race: st.race, hair: { ...st.hair }, beard: !!st.beard };
+    if (edit) { S.p.look = look; buildPlayerModel(); save3d(); stage.dispose(); o.classList.remove('show'); o.innerHTML = ''; log('💈 Aparência atualizada!', 'sys'); return; }
+    const nameEl = $('c3-name'), name = nameEl.value.trim();
+    if (!st.pet) return err('Escolha um companheiro (passo 4).');
+    if (name.length < 2) { nameEl.focus(); return err('Dê um nome ao seu personagem (pelo menos 2 letras).'); }
+    if (list.some(c => (c.slug || saveSlug(c.name)) === saveSlug(name))) { nameEl.focus(); return err('Você já tem um personagem com esse nome. Escolha outro.'); }
+    Sound.init();
+    const c = createCharacter(name, look, st.pet);
+    const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
+    Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
+    try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
+    stage.dispose(); startWith(s);
+    log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
+  };
+  if ($('c3-name')) { const n = $('c3-name'); n.addEventListener('keydown', e => { e.stopPropagation(); $('cw-err').textContent = ''; if (e.key === 'Enter') $('cc-ok').click(); }); }
+  stage.setPet(st.pet);
+  refresh();
 }
 function renderObj(obj, W, H) {
   const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
@@ -1578,63 +1763,6 @@ function renderObj(obj, W, H) {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), img = g.createImageData(W, H);
   for (let y = 0; y < H; y++) img.data.set(buf.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);
   g.putImageData(img, 0, 0); return cv.toDataURL('image/png');
-}
-function showCreate3d(list, st = { step: 0, race: null, head: 'Knight', pet: null, name: '' }) {
-  const o = $('overlay');
-  const STEPS = ['Raça', 'Aparência', 'Companheiro', 'Nome'];
-  const prog = `<div class="cw-steps">${STEPS.map((t, i) => `<div class="cw-st ${i < st.step ? 'done' : i === st.step ? 'on' : ''}"><b>${i < st.step ? '✔' : i + 1}</b>${t}</div>`).join('<i></i>')}</div>`;
-  const back = st.step > 0 ? '<button class="btn" id="cw-back">← Voltar</button>' : list.length ? '<button class="btn" id="cw-back">← Meus personagens</button>' : '<span></span>';
-  const frame = (title, sub, body, okLabel, okOn) => {
-    o.innerHTML = `<div class="title-box cw"><h1>${GAME_TITLE}</h1><div class="sub">CRIAR NOVO PERSONAGEM</div>${prog}<div class="card">
-      <div class="cw-title">${title}</div><div class="cw-sub">${sub}</div>${body}
-      <div class="cw-err" id="cw-err"></div>
-      <div class="row cw-nav">${back}<button class="btn gold" id="cw-ok" ${okOn ? '' : 'disabled'}>${okLabel}</button></div></div>
-      <div class="ver">Modelos 3D: KayKit, por Kay Lousberg (kaylousberg.com) • CC0</div></div>`;
-    o.classList.add('show');
-    $('cw-back') && ($('cw-back').onclick = () => { Sound.play('click'); if (st.step > 0) showCreate3d(list, { ...st, step: st.step - 1 }); else chooseCharacter(); });
-  };
-  const next = patch => { Sound.play('click'); showCreate3d(list, { ...st, ...patch, step: st.step + 1 }); };
-  if (st.step === 0) { // raça
-    frame('Escolha sua raça', 'Ela define a sua aparência. <span class="muted">(Por enquanto as raças são só visuais — vantagens leves virão depois.)</span>',
-      `<div class="cw-grid">${Object.entries(RACES).map(([k, r]) => `<div class="cw-card ${st.race === k ? 'sel' : ''}" data-k="${k}"><img src="${previewChar(k, st.head)}" alt=""><div class="cw-n">${r.icon} ${r.name}</div><div class="cw-h">${r.hint}</div><div class="cw-d">${r.desc}</div></div>`).join('')}</div>`,
-      'Continuar →', !!st.race);
-    o.querySelectorAll('.cw-card').forEach(c => { c.onclick = () => { Sound.play('click'); st.race = c.dataset.k; o.querySelectorAll('.cw-card').forEach(x => x.classList.toggle('sel', x === c)); $('cw-ok').disabled = false; }; c.ondblclick = () => next({ race: c.dataset.k }); });
-    $('cw-ok').onclick = () => st.race && next({});
-  } else if (st.step === 1) { // aparência
-    frame('Escolha sua aparência', `Rosto e cabelo do seu ${RACES[st.race].name.toLowerCase()}. Eles ficam iguais quando você trocar de classe — só a roupa muda.`,
-      `<div class="cw-grid four">${FACES.map(([k, n]) => `<div class="cw-card ${st.head === k ? 'sel' : ''}" data-k="${k}"><img src="${previewChar(st.race, k)}" alt=""><div class="cw-n">${n}</div></div>`).join('')}</div>`,
-      'Continuar →', true);
-    o.querySelectorAll('.cw-card').forEach(c => { c.onclick = () => { Sound.play('click'); st.head = c.dataset.k; o.querySelectorAll('.cw-card').forEach(x => x.classList.toggle('sel', x === c)); }; c.ondblclick = () => next({ head: c.dataset.k }); });
-    $('cw-ok').onclick = () => next({});
-  } else if (st.step === 2) { // mascote
-    showPetChoice('Toda jornada começa com um companheiro. Ele luta ao seu lado e evolui junto com você.', species => next({ pet: species }), () => showCreate3d(list, { ...st, step: 1 }));
-    const box = o.querySelector('.title-box'); if (box && !box.querySelector('.cw-steps')) box.querySelector('.sub')?.insertAdjacentHTML('afterend', prog);
-  } else { // nome + resumo
-    frame('Como você vai se chamar?', 'Último passo! Confira tudo e dê um nome ao seu aventureiro.',
-      `<div class="cw-sum"><img src="${previewChar(st.race, st.head)}" alt=""><div>
-        <div class="cw-line">${RACES[st.race].icon} <b>${RACES[st.race].name}</b> · ${FACES.find(f => f[0] === st.head)[1]}</div>
-        <div class="cw-line">${PETS[st.pet].stages[0].icon} Companheiro: <b>${PETS[st.pet].stages[0].name}</b></div>
-        <div class="cw-line">🌱 Classe inicial: <b>Aprendiz</b> <span class="muted">(no Nv. de Classe ${CONFIG.JOB_CHANGE_1} você escolhe seu caminho com a Mestra Ivra)</span></div>
-        <label>Nome <span style="color:#ff8a8a">*</span></label><input type="text" id="c3-name" maxlength="16" placeholder="Ex.: Lírio, Bruma, Tor..." value="${escH(st.name || '')}">
-      </div></div>`, '✨ Criar personagem', true);
-    const nameEl = $('c3-name'), err = $('cw-err');
-    const create = async () => {
-      const name = nameEl.value.trim();
-      if (name.length < 2) { err.textContent = 'Dê um nome ao seu personagem (pelo menos 2 letras).'; nameEl.focus(); Sound.play('error'); return; }
-      if (list.some(c => c.slug === saveSlug(name))) { err.textContent = 'Você já tem um personagem com esse nome. Escolha outro.'; nameEl.focus(); Sound.play('error'); return; }
-      Sound.init();
-      const c = createCharacter(name, { race: st.race, head: st.head }, st.pet);
-      const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
-      Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
-      try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
-      startWith(s);
-      log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
-    };
-    $('cw-ok').onclick = create;
-    nameEl.addEventListener('keydown', e => { e.stopPropagation(); err.textContent = ''; st.name = nameEl.value; if (e.key === 'Enter') create(); });
-    nameEl.addEventListener('input', () => { st.name = nameEl.value; });
-    setTimeout(() => nameEl.focus(), 50);
-  }
 }
 function startWith(s) {
   if (!s.pet) {
@@ -1819,7 +1947,7 @@ function adminRender() {
     </div>
     <div class="adm-card"><div class="adm-card-h">🧬 Raça e aparência</div>
       <div class="adm-chips">${Object.entries(RACES).map(([k, r]) => `<button class="adm-chip ${(p.look && (p.look.race || 'humano')) === k ? 'on' : ''}" data-race="${k}">${r.icon} ${r.name}</button>`).join('')}</div>
-      <div class="adm-chips" style="margin-top:6px">${FACES.map(([k, n]) => `<button class="adm-chip ${((p.look && p.look.head) || 'Knight') === k ? 'on' : ''}" data-head="${k}">${n}</button>`).join('')}</div>
+      <div class="adm-chips" style="margin-top:6px"><button class="adm-chip" data-barber="1">💈 Barbearia: cabelo, cor e barba (com o boneco ao vivo)</button></div>
     </div>
     <div class="adm-card"><div class="adm-card-h">🛠️ Atalhos de mestre</div>
       <div class="adm-chips">
@@ -1832,7 +1960,7 @@ function adminRender() {
   body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => ADMIN.setClass(el.dataset.cls));
   body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
   body.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { p.look = { ...(p.look || {}), race: el.dataset.race }; buildPlayerModel(); save3d(); log(`🧬 Raça trocada: ${RACES[el.dataset.race].name}.`, 'sys'); adminRender(); });
-  body.querySelectorAll('[data-head]').forEach(el => el.onclick = () => { p.look = { ...(p.look || {}), head: el.dataset.head }; buildPlayerModel(); save3d(); adminRender(); });
+  body.querySelectorAll('[data-barber]').forEach(el => el.onclick = () => { UI.close('admin'); showCreate3d([], { edit: true, look: p.look && p.look.hair ? p.look : { ...DEFAULT_LOOK, race: (p.look && p.look.race) || 'humano' }, cls: p.cls }); });
   body.querySelectorAll('[data-aur]').forEach(el => el.onclick = () => { cosm().auroras += 1000; log('✦ +1.000 Auroras (teste do mestre).', 'sys'); UI.markDirty(); save3d(); });
   body.querySelectorAll('[data-pet]').forEach(el => el.onclick = () => { for (let i = 0; i < 5; i++) petExpGain(petExpNext(p.pet.lv) * 2); hudDirty = true; UI.markDirty(); });
   body.querySelectorAll('[data-poi]').forEach(el => el.onclick = () => { const o = pois[+el.dataset.poi]; UI.close('admin'); teleport3d(o.x, o.z); log(`Teleportado: ${o.label}`); });
@@ -1878,7 +2006,7 @@ function drawAdmMap(cv) {
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { renderer, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  window.__S3 = S; window.__api = { renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();

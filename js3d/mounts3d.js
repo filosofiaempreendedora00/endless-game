@@ -93,7 +93,7 @@ export function makeMount(kind = 'lanudo') {
   let light = null;
   if (D.glow) { light = vlight(D.mane, 0.8, 4); light.position.set(0, 1.9, 0.6); obj.add(light); }
   obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  let ph = 0, gait = 0, look = 0, air = 0;
+  let ph = 0, gait = 0, look = 0, air = 0, pitch = 0;
   return {
     obj, saddleY: 1.52, name: D.name,
     animate(t, m, dt) {
@@ -103,17 +103,19 @@ export function makeMount(kind = 'lanudo') {
       ph += dt * (2 + s * 9);
       legs.forEach(({ pv, knee, front, side }) => {
         const p = ph + (front ? 0 : Math.PI) + (side > 0 ? Math.PI : 0); // trote: diagonais juntas
-        pv.rotation.x = Math.sin(p) * 0.5 * gait * (1 - air) + (front ? -0.6 : 0.5) * air;
-        knee.rotation.x = (front ? 1 : -1) * Math.max(0, Math.cos(p)) * 0.9 * gait * (1 - air) + (front ? 1.3 : -1.1) * air;
+        // no salto: dianteiras dobradas sob o peito, traseiras esticadas para trás
+        pv.rotation.x = Math.sin(p) * 0.5 * gait * (1 - air) + (front ? -0.95 : 0.75) * air;
+        knee.rotation.x = (front ? 1 : -1) * Math.max(0, Math.cos(p)) * 0.9 * gait * (1 - air) + (front ? 1.9 : -0.25) * air;
       });
       body.position.y = Math.abs(Math.sin(ph)) * 0.06 * gait * (1 - air) + Math.sin(t * 1.6) * 0.008 * (1 - gait);
-      body.rotation.x = Math.sin(ph * 2) * 0.025 * gait - air * 0.08;
+      pitch += ((m.air ? (m.vy > 0 ? 0.16 : -0.14) : 0) - pitch) * (1 - Math.exp(-dt * 7)); // sobe de nariz e desce de nariz
+      body.rotation.x = Math.sin(ph * 2) * 0.025 * gait + pitch;
       body.rotation.z = -m.turn * 0.05 * gait;
       look += ((gait > 0.2 ? -m.turn * 0.12 : Math.sin(t * 0.45) * 0.3) - look) * (1 - Math.exp(-dt * 4));
       neck.rotation.y = look; neck.rotation.x = Math.sin(ph * 2) * 0.05 * gait + (1 - gait) * Math.sin(t * 0.7) * 0.04 + air * 0.15;
       head.rotation.x = -Math.sin(ph * 2) * 0.04 * gait;
       maneParts.forEach((mp, i) => { mp.rotation.z = Math.sin(t * 3 + i * 0.6) * 0.15 * (0.3 + gait); mp.rotation.x = 0.3 * gait; });
-      tail.rotation.y = Math.sin(t * (1.5 + s * 4)) * 0.25; tail.rotation.x = 0.5 * gait + air * 0.4;
+      tail.rotation.y = Math.sin(t * (1.5 + s * 4)) * 0.25; tail.rotation.x = 0.5 * gait + air * 0.6;
       if (light) light.intensity = 0.7 + Math.sin(t * 3) * 0.15;
     },
     get bodyY() { return body.position.y; },

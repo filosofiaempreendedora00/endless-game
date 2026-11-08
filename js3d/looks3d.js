@@ -358,7 +358,7 @@ export function applyRace(ch, race) {
     for (let v = 0; v < nv; v++) { sIdx[v * 4] = hb; sW[v * 4] = 1; }
     geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(sIdx, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sW, 4));
     geo.computeVertexNormals();
-    const beard = new THREE.SkinnedMesh(geo, new THREE.MeshStandardMaterial({ color: hairColor(head).multiplyScalar(0.85), roughness: 0.9, flatShading: false }));
+    const beard = new THREE.SkinnedMesh(geo, new THREE.MeshStandardMaterial({ color: ch.root.userData.hairColor ? new THREE.Color(ch.root.userData.hairColor) : hairColor(head).multiplyScalar(0.85), roughness: 0.9, flatShading: false }));
     beard.name = 'RaceBeard'; beard.position.copy(head.position); beard.quaternion.copy(head.quaternion); beard.scale.copy(head.scale);
     beard.castShadow = true; beard.frustumCulled = false; head.parent.add(beard); beard.bind(head.skeleton, head.bindMatrix);
   }
@@ -412,3 +412,171 @@ export function applySkin(ch, id) {
     if (halo) halo.rotation.z = t;
   });
 }
+
+/* =========================================================================
+   CABELOS PERSONALIZÁVEIS — cabeça careca (Barbarian) + corte feito em código.
+   A cor do cabelo também pinta sobrancelhas e barba (no shader). O corte
+   nasce da própria forma do crânio, então encaixa certinho.
+   look = { race, hair: { style, color }, beard: true|false }
+   ========================================================================= */
+export const HAIR_STYLES = {
+  curto: { name: 'Curto', icon: '✂️' },
+  topete: { name: 'Topete', icon: '🌊' },
+  espetado: { name: 'Espetado', icon: '⚡' },
+  moicano: { name: 'Moicano', icon: '🦔' },
+  franja: { name: 'Franja', icon: '💇' },
+  rabo: { name: 'Rabo de cavalo', icon: '🎀' },
+  coque: { name: 'Coque', icon: '🍙' },
+  longo: { name: 'Longo', icon: '🌾' },
+  careca: { name: 'Careca', icon: '🥚' },
+};
+export const HAIR_COLORS = {
+  preto: { name: 'Preto', hex: '#1d1814' }, castanho_escuro: { name: 'Castanho-escuro', hex: '#3d2617' }, castanho: { name: 'Castanho', hex: '#6e4426' },
+  ruivo: { name: 'Ruivo', hex: '#a63c1a' }, acobreado: { name: 'Acobreado', hex: '#c06a30' }, loiro: { name: 'Loiro', hex: '#d8b468' },
+  platinado: { name: 'Platinado', hex: '#ece2c6' }, grisalho: { name: 'Grisalho', hex: '#9b968f' }, branco: { name: 'Branco', hex: '#f3f1ec' },
+  azul: { name: 'Azul', hex: '#2f63c4' }, rosa: { name: 'Rosa', hex: '#e27aa9' }, verde: { name: 'Verde', hex: '#3f8c4c' }, roxo: { name: 'Roxo', hex: '#6c3fae' },
+};
+export const DEFAULT_LOOK = { race: 'humano', hair: { style: 'curto', color: 'castanho' }, beard: false };
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+function taperGeo(points, r0, r1, seg = 14, radial = 10) {
+  const curve = new THREE.CatmullRomCurve3(points), g = new THREE.TubeGeometry(curve, seg, 1, radial, false);
+  const P = g.attributes.position, N = g.attributes.normal;
+  for (let i = 0; i <= seg; i++) { const u = i / seg, r = r0 + (r1 - r0) * u, c = curve.getPointAt(u); for (let j = 0; j <= radial; j++) { const k = i * (radial + 1) + j; P.setXYZ(k, c.x + N.getX(k) * r, c.y + N.getY(k) * r, c.z + N.getZ(k) * r); } }
+  g.computeVertexNormals(); return g;
+}
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// classifica (uma vez por geometria) quais vértices são "pelos" (barba/sobrancelha, em tons de cinza na textura)
+const kindCache = new WeakMap(), imgCache = new WeakMap();
+function imgData(img) { if (imgCache.has(img)) return imgCache.get(img); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d'); x.drawImage(img, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data; imgCache.set(img, d); return d; }
+function hairKinds(head) {
+  const g = head.geometry; if (kindCache.has(g)) return kindCache.get(g);
+  const P = g.attributes.position, U = g.attributes.uv, n = P.count, kind = new Float32Array(n);
+  try {
+    const img = head.material.map.image, c = { width: img.width, height: img.height }, D = imgData(img), flip = head.material.map.flipY;
+    for (let i = 0; i < n; i++) {
+      const px = Math.min(c.width - 1, Math.floor(U.getX(i) * c.width)), py = Math.min(c.height - 1, Math.floor((flip ? 1 - U.getY(i) : U.getY(i)) * c.height)), k = (py * c.width + px) * 4;
+      const r = D[k], gg = D[k + 1], b = D[k + 2], mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+      if (mx - mn < 45 && mx > 80 && mx < 200) { // tons de cinza = pelos
+        const y = P.getY(i), x = Math.abs(P.getX(i)), z = P.getZ(i);
+        kind[i] = y >= 1.69 && z > 0.22 && x < 0.37 ? 1 : 2; // 1 = sobrancelha; 2 = barba, bigode e costeletas
+      }
+    }
+  } catch (e) { }
+  kindCache.set(g, kind); return kind;
+}
+
+// pinta pelos com a cor do cabelo; sem barba, a barba vira pele e "afunda" no rosto
+function customHeadMaterial(head, hairHex, beard) {
+  const g = head.geometry.clone(), P = g.attributes.position, kind = hairKinds(head), aK = new Float32Array(P.count);
+  for (let i = 0; i < P.count; i++) {
+    aK[i] = kind[i];
+    if (kind[i] === 1) P.setY(i, 1.775 + (P.getY(i) - 1.775) * 0.55); // sobrancelhas mais finas
+    if (kind[i] === 2 && !beard) { // achata a barba na forma do queixo
+      const x = P.getX(i), y = P.getY(i), z = P.getZ(i), cy = 1.6, rx = 0.43, ry = 0.43, rz = 0.44;
+      const d = Math.sqrt((x / rx) ** 2 + ((y - cy) / ry) ** 2 + (z / rz) ** 2) || 1;
+      if (d > 1) P.setXYZ(i, x / d, cy + (y - cy) / d, z / d);
+      aK[i] = 3;
+    }
+  }
+  g.setAttribute('aKind', new THREE.BufferAttribute(aK, 1)); g.computeVertexNormals();
+  if (!beard) { // normais lisas na região da barba achatada (sem "sombra de barba")
+    const N = g.attributes.normal, n = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) if (aK[i] === 3) { n.set(P.getX(i) / 0.185, (P.getY(i) - 1.6) / 0.185, P.getZ(i) / 0.194).normalize(); N.setXYZ(i, n.x, n.y, n.z); }
+    N.needsUpdate = true;
+  }
+  kindCache.set(g, kind); head.geometry = g;
+  const m = head.material.clone(), hair = new THREE.Color(hairHex);
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uHair = { value: hair };
+    sh.vertexShader = 'attribute float aKind;\nvarying float vKind;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vKind = aKind;');
+    sh.fragmentShader = 'uniform vec3 uHair;\nvarying float vKind;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      if (vKind > 0.5 && vKind < 2.5) { float l = dot(diffuseColor.rgb, vec3(0.333)); diffuseColor.rgb = uHair * (0.55 + l * 0.9); }
+      else if (vKind > 2.5) { diffuseColor.rgb = vec3(0.871, 0.527, 0.352); }`); // pele (espaço linear)
+  };
+  m.customProgramCacheKey = () => 'hairhead';
+  head.material = m;
+}
+
+// casca de cabelo: copia os triângulos do couro cabeludo e afasta pela normal
+function capGeometry(head, opt) {
+  const src = head.geometry, P = src.attributes.position, N = src.attributes.normal, idx = src.index.array;
+  const keep = v => {
+    const x = P.getX(v), y = P.getY(v), z = P.getZ(v);
+    const front = sstep(0.05, 0.38, z), line = opt.back + (opt.front - opt.back) * front;
+    if (y < line) return false;
+    if (Math.abs(x) > 0.36 && y < 1.7 && z > -0.12 && !opt.coverEars) return false; // deixa as orelhas de fora
+    if (opt.strip && Math.abs(x) > opt.strip) return false;
+    if (opt.maxY && y > opt.maxY) return false;
+    return true;
+  };
+  const kind = hairKinds(head), pos = [], nor = [];
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = idx[t], b = idx[t + 1], c = idx[t + 2];
+    if (kind[a] || kind[b] || kind[c]) continue;
+    if (!(keep(a) && keep(b) && keep(c))) continue;
+    for (const v of [a, b, c]) { const th = opt.th * (1 + Math.max(0, P.getY(v) - 1.95) * 0.6); pos.push(P.getX(v) + N.getX(v) * th, P.getY(v) + N.getY(v) * th, P.getZ(v) + N.getZ(v) * th); nor.push(N.getX(v), N.getY(v), N.getZ(v)); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  return g;
+}
+const nonIdx = g => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (k !== 'position' && k !== 'normal') x.deleteAttribute(k); return x; };
+function hairGeometry(head, style, hat) {
+  if (style === 'careca') return null;
+  const parts = [];
+  const cap = o => parts.push(capGeometry(head, { th: 0.035, front: 1.87, back: 1.5, ...o, maxY: hat ? 1.97 : undefined }));
+  const add = g => { if (!hat) parts.push(nonIdx(g)); };
+  if (style === 'curto') cap({});
+  else if (style === 'topete') { cap({}); const q = taperGeo([V3(0, 2.02, 0.36), V3(0, 2.24, 0.3), V3(0, 2.3, 0.08), V3(0, 2.22, -0.12)], 0.15, 0.06, 16, 12); q.scale(1.7, 1, 1); add(q); }
+  else if (style === 'espetado') {
+    cap({ th: 0.045 });
+    const pts = [[0, 2.2, 0], [0.18, 2.16, 0.1], [-0.18, 2.16, 0.1], [0.2, 2.14, -0.16], [-0.2, 2.14, -0.16], [0, 2.14, 0.28], [0.32, 2.02, 0.2], [-0.32, 2.02, 0.2], [0.35, 2.0, -0.1], [-0.35, 2.0, -0.1], [0, 2.08, -0.34], [0.14, 2.12, 0.3], [-0.14, 2.12, 0.3]];
+    for (const [x, y, z] of pts) { const dir = V3(x, y - 1.7, z).normalize(), c = new THREE.ConeGeometry(0.075, 0.2, 7); c.translate(0, 0.1, 0); c.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), dir)); c.translate(x, y - 0.03, z); add(c); }
+  }
+  else if (style === 'moicano') {
+    cap({ th: 0.03, strip: 0.13, back: 1.55, front: 1.9 });
+    for (let i = 0; i < 8; i++) { const u = i / 7, z = 0.32 - u * 0.75, y = 2.18 - Math.pow(Math.abs(z + 0.02) / 0.45, 2) * 0.32, dir = V3(0, 1, z * 1.6).normalize(); const c = new THREE.ConeGeometry(0.1, 0.34 - Math.abs(u - 0.4) * 0.16, 8); c.scale(0.5, 1, 1.25); c.translate(0, 0.15, 0); c.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), dir)); c.translate(0, y, z); add(c); }
+  }
+  else if (style === 'franja') cap({ th: 0.05, front: 1.77, back: 1.32, coverEars: true });
+  else if (style === 'rabo') { cap({}); const t = taperGeo([V3(0, 1.98, -0.46), V3(0, 1.92, -0.6), V3(0, 1.62, -0.66), V3(0, 1.28, -0.58)], 0.1, 0.035, 16, 10); parts.push(nonIdx(t)); const b = new THREE.TorusGeometry(0.075, 0.025, 6, 12); b.translate(0, 1.96, -0.52); parts.push(nonIdx(b)); }
+  else if (style === 'coque') { cap({}); const s = new THREE.SphereGeometry(0.17, 16, 12); s.translate(0, 2.2, -0.3); add(s); const b = new THREE.TorusGeometry(0.11, 0.025, 6, 14); b.rotateX(1.1); b.translate(0, 2.1, -0.36); add(b); }
+  else if (style === 'longo') {
+    cap({ th: 0.045, back: 1.12, coverEars: true });
+    const back = taperGeo([V3(0, 1.55, -0.44), V3(0, 1.2, -0.46), V3(0, 0.98, -0.38)], 0.16, 0.1, 12, 12); back.scale(2.4, 1, 0.8); parts.push(nonIdx(back));
+    for (const sx of [-1, 1]) parts.push(nonIdx(taperGeo([V3(sx * 0.44, 1.78, 0.12), V3(sx * 0.47, 1.4, 0.1), V3(sx * 0.4, 1.05, 0.06)], 0.08, 0.05, 12, 10)));
+  }
+  if (!parts.length) return null;
+  return mergeGeometries(parts);
+}
+// boca simples (sorriso leve) para o rosto sem barba
+function mouthGeometry() {
+  const g = taperGeo([V3(-0.085, 1.385, 0.355), V3(-0.04, 1.362, 0.372), V3(0, 1.356, 0.376), V3(0.04, 1.362, 0.372), V3(0.085, 1.385, 0.355)], 0.013, 0.013, 16, 6);
+  return nonIdx(g);
+}
+function bindToHead(head, geo, mat, name) {
+  const n = geo.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
+  const hs = head.geometry.attributes.skinIndex, hw = head.geometry.attributes.skinWeight;
+  for (let v = 0; v < n; v++) for (let k = 0; k < 4; k++) { si[v * 4 + k] = hs.getComponent(0, k); sw[v * 4 + k] = hw.getComponent(0, k); }
+  geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+  const m = new THREE.SkinnedMesh(geo, mat); m.name = name;
+  m.position.copy(head.position); m.quaternion.copy(head.quaternion); m.scale.copy(head.scale);
+  m.castShadow = true; m.frustumCulled = false; head.parent.add(m); m.bind(head.skeleton, head.bindMatrix);
+  return m;
+}
+const hairMatCache = {};
+// aplica cabelo + cores na cabeça visível do personagem (depois de dress())
+export function applyHair(ch, look, hat = false) {
+  if (!look || !look.hair) return;
+  const head = visibleHead(ch.root); if (!head) return;
+  const col = (HAIR_COLORS[look.hair.color] || HAIR_COLORS.castanho).hex;
+  ch.root.userData.hairColor = col;
+  customHeadMaterial(head, col, !!look.beard);
+  if (!look.beard) bindToHead(head, mouthGeometry(), new THREE.MeshStandardMaterial({ color: '#7a3a32', roughness: 0.6 }), 'PlayerMouth');
+  const geo = hairGeometry(head, look.hair.style, hat); if (!geo) return;
+  geo.computeVertexNormals();
+  const mat = hairMatCache[col] || (hairMatCache[col] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.72, metalness: 0.02 }));
+  bindToHead(head, geo, mat, 'PlayerHair');
+}
+// a classe usa chapéu/elmo/capuz? (cabelo só nas laterais e atrás)
+export function classHasHat(cls) { const L = CLASS_LOOKS[cls]; return !!(L && (L.show || []).some(n => /_Hat$|_Helmet$|Hood/.test(n))) || (L && (L.extras || []).some(e => /hood|Hat|tricorn|bandana/i.test(e))); }
