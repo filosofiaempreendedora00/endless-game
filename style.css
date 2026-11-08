@@ -234,9 +234,21 @@ button { font-family: inherit; }
 /* ---- Pausa ---- */
 #pausebar { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 45; display: none; padding: 7px 16px; border-radius: 10px; background: rgba(18, 22, 38, 0.92); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); font-size: 13px; white-space: nowrap; pointer-events: none; }
 #pausebar.show { display: block; }
-body.fb-picking #hud, body.fb-picking #windows { cursor: crosshair; }
-body.fb-picking #hud *, body.fb-picking #windows * { cursor: crosshair !important; }
-body.fb-picking #hud:hover, body.fb-picking .win:hover { outline: 1px dashed rgba(255, 215, 106, 0.4); }
+body.fb-picking, body.fb-picking * { cursor: crosshair !important; }
+body.fb-picking #fbbox, body.fb-picking #fbbox *, body.fb-picking #fb-fab { cursor: default !important; }
+body.fb-picking #pausebar { z-index: 160; }
+/* contorno do que será marcado no modo Q (qualquer tela) */
+#fb-hover { position: fixed; z-index: 139; display: none; pointer-events: none; border: 2px solid #ffd76a; border-radius: 4px; background: rgba(255, 215, 106, 0.10); box-shadow: 0 0 12px rgba(255, 215, 106, 0.45); transition: left 0.06s, top 0.06s, width 0.06s, height 0.06s; }
+#fb-hover span { position: absolute; left: -2px; top: -24px; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 800; color: #ffe9a8; background: rgba(18, 22, 38, 0.92); padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border-soft); }
+#fb-hover.below span { top: auto; bottom: -24px; }
+/* botão 💡 fora do mundo (vitrine, criação, menus, carregando) */
+#fb-fab { position: fixed; right: 16px; bottom: 16px; z-index: 155; display: none; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; font: 800 13px Nunito, sans-serif; color: #ffe9a8; background: rgba(18, 22, 38, 0.88); border: 1px solid var(--gold); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); cursor: pointer; }
+#fb-fab.show { display: inline-flex; }
+#fb-fab:hover { background: rgba(40, 34, 18, 0.95); }
+#fb-fab.on { background: #ffd76a; color: #1b1406; }
+#fb-fab kbd { font: 800 11px Nunito, sans-serif; padding: 0 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.8; }
+.fb-toast { position: fixed; left: 50%; bottom: 64px; transform: translateX(-50%); z-index: 170; max-width: min(560px, calc(100vw - 32px)); padding: 9px 16px; border-radius: 10px; background: rgba(18, 22, 38, 0.95); border: 1px solid var(--gold); color: #ffe9a8; font-size: 13px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6); transition: opacity 0.5s; }
+.fb-toast.out { opacity: 0; }
 
 /* ---- Caixa de sugestão ---- */
 #fbbox { position: fixed; z-index: 150; width: 360px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); display: flex; flex-direction: column; background: var(--panel-2); border: 1px solid var(--gold); border-radius: 12px; padding: 10px 12px; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.7); }

@@ -1628,7 +1628,7 @@ function toggleMenu() {
       <button class="btn gold" id="m-cont">▶ Continuar <span class="muted">(Esc)</span></button>
       <button class="btn" id="m-help">❔ Controles</button>
       <button class="btn" id="m-chars">🏠 Trocar de personagem</button>
-    </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente. Seu personagem é o mesmo no 2D e no 3D.</div></div>`;
+    </div><div class="muted" style="margin-top:12px;font-size:11px">O jogo salva automaticamente. <b>Q</b> faz uma sugestão sobre qualquer tela.</div></div>`;
   o.classList.add('show');
   $('m-cont').onclick = toggleMenu;
   $('m-help').onclick = () => { toggleMenu(); UI.open('help'); };

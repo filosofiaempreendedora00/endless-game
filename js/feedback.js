@@ -25,30 +25,114 @@ const FB = {
     addEventListener('mouseup', e => this.onUp(e));
     // cliques na interface (HUD/janelas) também podem ser marcados
     document.addEventListener('mousedown', e => this.onUiDown(e), true);
-    document.addEventListener('click', e => { if (this.picking && this.isUi(e.target)) { e.preventDefault(); e.stopPropagation(); } }, true);
+    // no modo Q, nada da tela reage ao clique (botões, palcos 3D que giram, arrastar janela...): o clique só marca
+    // o "click" chega depois do mouseup que já abriu a caixa: ele também é engolido (senão o botão de baixo era apertado)
+    const block = e => {
+      const eat = e.type === 'click' && performance.now() - (this.pickedAt || 0) < 600 && !(e.target.closest && e.target.closest('#fbbox'));
+      if ((this.picking || eat) && (this.isUi(e.target) || eat)) { if (e.type !== 'pointerdown') e.preventDefault(); e.stopPropagation(); if (eat) this.pickedAt = 0; }
+    };
+    for (const t of ['click', 'dblclick', 'pointerdown', 'contextmenu', 'wheel']) document.addEventListener(t, block, { capture: true, passive: false });
+    // Q funciona em qualquer tela (mundo, vitrine, criação, menus, carregando); tem prioridade sobre os atalhos da tela
+    addEventListener('keydown', e => this.onKey(e), true);
+    this.makeFab();
     UI.render_sugestoes = () => this.renderList();
     addEventListener('resize', () => this.placeBox());
     this.refresh().then(() => this.flushQueue());
   },
 
   /* ---------- fluxo ---------- */
+  onKey(e) {
+    if (this.box) return; // a caixa de texto cuida das próprias teclas
+    const k = (e.key || '').toLowerCase();
+    if (this.picking) { // enquanto marca, as teclas não mexem na tela de baixo
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (k === 'escape' || k === 'q') this.cancel();
+      return;
+    }
+    if (k !== 'q' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return; // digitando (ex.: nome): use o botão 💡
+    e.preventDefault(); e.stopImmediatePropagation();
+    this.start();
+  },
+  // está jogando no mundo (e nada cobre a tela)?
+  inWorld() {
+    const o = document.getElementById('overlay');
+    return (G.state === 'play' || G.state === 'dead') && !!G.player && !(o && o.classList.contains('show'));
+  },
+  // em que tela a sugestão foi feita (e onde ela vive no código)
+  screen() {
+    const o = document.getElementById('overlay'), ld = document.getElementById('loading3d');
+    if (o && o.classList.contains('show')) {
+      if (o.querySelector('.cs-modal')) return { nome: 'Seleção de personagens — confirmar exclusão', codigo: 'js3d/main3d.js → chooseCharacter/askDelete · style.css (.cs-modal)' };
+      if (o.querySelector('.cs')) return { nome: 'Seleção de personagens', codigo: 'js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)' };
+      if (o.querySelector('.cc')) return { nome: o.querySelector('#c3-name') ? 'Criação de personagem' : 'Barbearia (editar visual)', codigo: 'js3d/main3d.js → showCreate3d · js3d/looks3d.js (cabelos, cores, raças) · style.css (.cc-*)' };
+      if (o.querySelector('#m-cont')) return { nome: 'Menu (Esc)', codigo: 'js3d/main3d.js → toggleMenu · style.css (.death-box, .menu-btns)' };
+      if (o.querySelector('#d-ok')) return { nome: 'Tela de derrota', codigo: 'js3d/main3d.js → morte do jogador (death-box)' };
+      return { nome: 'Tela inicial', codigo: 'js/ui.js (telas do overlay) · style.css' };
+    }
+    if (ld && !ld.classList.contains('hidden') && ld.offsetParent !== null) return { nome: 'Carregando', codigo: 'index.html (#loading3d) · js3d/main3d.js → boot' };
+    if (!G.player) return { nome: 'Tela inicial', codigo: 'js/ui.js · style.css' };
+    return { nome: 'Mundo', codigo: '' };
+  },
+  // botão 💡 sempre à mão fora do mundo (e quando o Q está ocupado num campo de texto)
+  makeFab() {
+    const b = document.createElement('button');
+    b.id = 'fb-fab'; b.type = 'button'; b.title = 'Fazer uma sugestão sobre esta tela (Q)'; b.innerHTML = '💡 <span>Sugestão</span> <kbd>Q</kbd>';
+    b.addEventListener('mousedown', e => e.stopPropagation(), true);
+    b.onclick = e => { e.preventDefault(); e.stopPropagation(); this.picking ? this.cancel() : this.start(); };
+    document.body.appendChild(b);
+    const tick = () => { b.classList.toggle('show', !this.inWorld() && !this.box); b.classList.toggle('on', this.picking); };
+    setInterval(tick, 400); tick();
+  },
   start() {
-    if (G.state !== 'play' && G.state !== 'dead') return;
     if (this.box) return;
     if (this.picking) { this.cancel(); return; }
     this.wasPaused = G.paused;
     this.picking = true;
     setPaused(true);
     document.body.classList.add('fb-picking');
-    Sound.play('click');
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    try { Sound.play('click'); } catch (e) { }
+    updatePauseBar();
   },
   cancel() {
-    this.picking = false; this.drag = null; this.hoverPick = null; this.hideRect();
+    this.picking = false; this.drag = null; this.hoverPick = null; this.hideRect(); this.hideHover();
     this.closeBox();
     document.body.classList.remove('fb-picking');
     setPaused(this.wasPaused);
+    updatePauseBar();
   },
-  isUi(el) { return !!(el && el.closest && el.closest('#hud, #windows') && !el.closest('#fbbox')); },
+  // tudo o que não é o mundo 3D/2D é "interface": HUD, janelas, vitrine, criador, menus, carregamento...
+  isUi(el) {
+    if (!el || !el.closest || el.closest('#fbbox, #fb-fab')) return false;
+    if (el === canvas) return !this.inWorld();
+    return el !== document.documentElement && el !== document.body;
+  },
+  // contorno do elemento que será marcado (para não haver "autoseleção" às cegas)
+  showHover(el) {
+    let h = document.getElementById('fb-hover');
+    if (!h) { h = document.createElement('div'); h.id = 'fb-hover'; h.innerHTML = '<span></span>'; document.body.appendChild(h); }
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) { h.style.display = 'none'; return; }
+    Object.assign(h.style, { display: 'block', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+    const txt = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    h.firstChild.textContent = this.regionOf(el) + (txt ? ` — "${txt}"` : '');
+    h.classList.toggle('below', r.top < 30);
+  },
+  hideHover() { const h = document.getElementById('fb-hover'); if (h) h.style.display = 'none'; },
+  // nome da parte da tela onde fica um elemento
+  regionOf(el) {
+    const win = el.closest('.win');
+    const winTitle = win ? (win.querySelector('.win-head .t') || {}).textContent : null;
+    const named = [['#status', 'Painel de status'], ['#hotbar', 'Barra de atalhos'], ['#minimap-wrap', 'Minimapa'], ['#menubar', 'Menu lateral'], ['#chat', 'Chat'], ['#buffs', 'Ícones de buff'],
+      ['#target3d', 'Quadro do alvo'], ['#castbar3d', 'Barra de conjuração'], ['#plates', 'Nome sobre a cabeça'], ['#arena-hud', 'Placar da Arena'], ['#loading3d', 'Tela de carregamento'],
+      ['.cs-modal', 'Confirmar exclusão'], ['.cs-strip', 'Faixa de personagens'], ['.cs-card', 'Cartão de personagem'], ['.cs-info', 'Ficha do personagem'], ['.cs-stage', 'Palco do personagem'], ['.cc-stage', 'Palco do personagem'], ['.cc-panel', 'Painel de criação']];
+    for (const [sel, name] of named) if (el.closest(sel)) return winTitle ? `Janela "${winTitle}" · ${name}` : (el.closest('#overlay') ? this.screen().nome + ' · ' : '') + name;
+    if (winTitle) return 'Janela "' + winTitle + '"';
+    if (el.closest('#overlay')) return this.screen().nome;
+    return 'Interface';
+  },
 
   onDown(e) {
     if (!this.picking) return;
@@ -63,13 +147,15 @@ const FB = {
     if (this.drag) {
       this.drag.ex = e.clientX; this.drag.ey = e.clientY; this.drag.ewx = w.x; this.drag.ewy = w.y;
       this.showRect(this.drag);
-      if (Math.hypot(this.drag.ex - this.drag.sx, this.drag.ey - this.drag.sy) > 12) { this.hoverPick = null; return; }
+      if (Math.hypot(this.drag.ex - this.drag.sx, this.drag.ey - this.drag.sy) > 12) { this.hoverPick = null; this.hideHover(); return; }
     }
     // destaque do que está sob o mouse (no máximo ~20x por segundo)
     const now = performance.now();
     if (now - (this._hoverT || 0) < 50) return;
     this._hoverT = now;
-    this.hoverPick = e.target === canvas ? this.pickAt(w.x, w.y) : null;
+    const ui = this.isUi(e.target);
+    if (ui) this.showHover(e.target); else this.hideHover();
+    this.hoverPick = !ui && e.target === canvas ? this.pickAt(w.x, w.y) : null;
   },
   // retângulo de seleção sobre a tela, com o tamanho escrito
   showRect(d) {
@@ -84,7 +170,8 @@ const FB = {
   onUp(e) {
     if (!this.picking || !this.drag) return;
     const d = this.drag; this.drag = null;
-    this.hideRect();
+    this.hideRect(); this.hideHover();
+    this.pickedAt = performance.now();
     let target, shot;
     if (d.ui) {
       if (Math.hypot(d.ex - d.sx, d.ey - d.sy) <= 8) return this.pickUiElement(d.el, d.ex, d.ey);
@@ -110,39 +197,54 @@ const FB = {
   onUiDown(e) {
     if (!this.picking || !this.isUi(e.target)) return;
     e.preventDefault(); e.stopPropagation();
+    if (e.button === 2) { this.cancel(); return; }
     if (e.button !== 0) return;
     // começa uma seleção: clique = o elemento exato; arrastar = a área exata dentro da janela
     this.drag = { sx: e.clientX, sy: e.clientY, ex: e.clientX, ey: e.clientY, wx: 0, wy: 0, ewx: 0, ewy: 0, ui: true, el: e.target };
   },
   pickUiElement(el, cx, cy) {
     const win = el.closest('.win');
-    const winTitle = win ? win.querySelector('.win-head .t').textContent : null;
-    const region = el.closest('#status') ? 'Painel de status' : el.closest('#hotbar') ? 'Barra de atalhos' : el.closest('#minimap-wrap') ? 'Minimapa'
-      : el.closest('#menubar') ? 'Menu lateral' : el.closest('#chat') ? 'Chat' : el.closest('#buffs') ? 'Ícones de buff' : winTitle ? 'Janela "' + winTitle + '"' : 'Interface';
-    const txt = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
-    const tip = el.closest('[data-tip]');
-    const box = (win || el.closest('#status, #hotbar, #minimap-wrap, #menubar, #chat, #buffs, #topbar') || el).getBoundingClientRect();
-    const shot = box.width * box.height > VW * VH * 0.6 ? this.capture(cx - 200, cy - 150, 400, 300) : this.capture(box.left, box.top, box.width, box.height);
+    const region = this.regionOf(el);
+    const txt = (el.textContent || el.value || el.placeholder || el.title || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const tip = el.closest('[data-tip], [title]');
+    // print: a janela/painel inteiro; numa tela cheia (vitrine, criador), o bloco em volta do elemento
+    let boxEl = win || el.closest('#status, #hotbar, #minimap-wrap, #menubar, #chat, #buffs, #target3d, #arena-hud');
+    if (!boxEl) {
+      boxEl = el;
+      for (let up = el; up && up.parentElement && up.parentElement !== document.body && up.parentElement.id !== 'overlay'; up = up.parentElement) {
+        const r = up.getBoundingClientRect(); boxEl = up;
+        if (r.width >= 220 && r.height >= 140) break;
+      }
+    }
+    const box = boxEl.getBoundingClientRect();
+    const shot = box.width * box.height > VW * VH * 0.6 ? this.capture(cx - 240, cy - 170, 480, 340) : this.capture(box.left, box.top, box.width, box.height);
+    const scr = this.screen();
+    const path = []; for (let up = el; up && up !== document.body && path.length < 5; up = up.parentElement) path.push(this.describeEl(up));
     this.openBox({
       kind: 'interface', id: region, name: region + (txt ? ` — "${txt}"` : ''),
-      codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
-      details: { elemento: el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).join('.') : ''), tooltip: tip ? tip.dataset.tip : undefined },
+      codigo: scr.codigo || 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
+      details: { elemento: this.describeEl(el), caminho: path.reverse().join(' > '), tooltip: tip ? (tip.dataset.tip || tip.title) : undefined },
     }, cx, cy, shot);
+  },
+  describeEl(el) {
+    return el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).join('.') : '');
   },
   // área arrastada sobre janelas/HUD: lista o que ficou dentro do retângulo
   pickUiArea(x0, y0, x1, y1) {
     const inside = r => r.width && r.left >= x0 - 2 && r.right <= x1 + 2 && r.top >= y0 - 2 && r.bottom <= y1 + 2;
     const texts = [];
-    document.querySelectorAll('#hud *, #windows *').forEach(el => {
+    document.querySelectorAll('#hud *, #windows *, #overlay.show *, #plates *, #loading3d *').forEach(el => {
       if (el.closest('#fbbox') || texts.length >= 10) return;
       const own = [...el.childNodes].filter(n => n.nodeType === 3).map(n => n.nodeValue.trim()).join(' ').trim();
       if (own && inside(el.getBoundingClientRect()) && !texts.includes(own)) texts.push(own.slice(0, 40));
     });
     const ui = this.uiInRect(x0, y0, x1, y1);
+    const scr = this.screen();
+    if (!ui.length && scr.nome !== 'Mundo') ui.push(scr.nome);
     const region = ui[0] || 'Interface';
     return {
       kind: 'interface', id: region, name: `Área de ${Math.round(x1 - x0)}×${Math.round(y1 - y0)} px em ${ui.join(', ') || 'Interface'}${texts.length ? ` — "${texts.join(' · ').slice(0, 120)}"` : ''}`,
-      codigo: 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
+      codigo: scr.codigo || 'js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)',
       details: { interface: ui, textos: texts, area: [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)] },
     };
   },
@@ -152,8 +254,12 @@ const FB = {
     const parts = [['#status', 'Painel de status'], ['#hotbar', 'Barra de atalhos'], ['#buffs', 'Ícones de buff'], ['#minimap-wrap', 'Minimapa'], ['#menubar', 'Menu lateral'], ['#chat', 'Chat']];
     const out = [];
     const hit = el => { const r = el.getBoundingClientRect(); return r.width && r.left < x1 && r.right > x0 && r.top < y1 && r.bottom > y0; };
-    for (const [sel, name] of parts) { const el = document.querySelector(sel); if (el && el.offsetParent !== null && hit(el)) out.push(name); }
-    document.querySelectorAll('#windows .win').forEach(w => { if (hit(w)) out.push('Janela "' + w.querySelector('.win-head .t').textContent + '"'); });
+    const vis = el => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden'; // offsetParent é null em position:fixed
+    for (const [sel, name] of parts) { const el = document.querySelector(sel); if (el && vis(el) && hit(el)) out.push(name); }
+    if (!this.inWorld()) for (const [sel, name] of [['.cs-stage, .cc-stage', 'Palco do personagem'], ['.cs-info', 'Ficha do personagem'], ['.cs-strip', 'Faixa de personagens'], ['.cc-panel', 'Painel de criação']]) {
+      const el = document.querySelector('#overlay.show ' + sel.split(', ').join(', #overlay.show ')); if (el && hit(el)) out.push(name);
+    }
+    document.querySelectorAll('#windows .win').forEach(w => { if (vis(w) && hit(w)) out.push('Janela "' + ((w.querySelector('.win-head .t') || {}).textContent || '?') + '"'); });
     return out;
   },
 
@@ -247,7 +353,7 @@ const FB = {
   // copia as partes visíveis da interface que cruzam o retângulo para um SVG (foreignObject)
   uiSvg(x, y, w, h) {
     const PROPS = ['display', 'box-sizing', 'width', 'height', 'min-width', 'min-height', 'max-width', 'max-height', 'margin', 'padding', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-radius', 'background-color', 'background-image', 'color', 'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-align', 'text-transform', 'text-shadow', 'text-overflow', 'text-decoration', 'white-space', 'word-break', 'overflow', 'opacity', 'box-shadow', 'flex-direction', 'flex-wrap', 'flex', 'flex-grow', 'flex-shrink', 'flex-basis', 'align-items', 'align-self', 'justify-content', 'gap', 'grid-template-columns', 'grid-template-rows', 'grid-column', 'grid-row', 'vertical-align', 'position', 'left', 'top', 'right', 'bottom', 'transform', 'z-index', 'visibility', 'list-style', 'object-fit', 'filter', 'outline'];
-    const SEL = '#plates > *, #topbar, #minimap-wrap, #menubar, #chat, #mybars, #target3d, #windows .win, #overlay.show > *, #banner, #castbar3d';
+    const SEL = '#plates > *, #topbar, #minimap-wrap, #menubar, #chat, #mybars, #target3d, #arena-hud, #windows .win, #overlay.show > *, #banner, #castbar3d, #loading3d';
     const hit = r => r.width && r.height && r.left < x + w && r.right > x && r.top < y + h && r.bottom > y;
     const tops = [...document.querySelectorAll(SEL)].filter(el => el.offsetParent !== null || getComputedStyle(el).position === 'fixed').filter(el => {
       const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden' && +cs.opacity > 0.02 && hit(el.getBoundingClientRect());
@@ -280,13 +386,13 @@ const FB = {
   openBox(target, sx, sy, shot) {
     this.picking = false;
     document.body.classList.remove('fb-picking');
-    this.cur = { target, shot };
+    this.cur = { target, shot, tela: this.screen() };
     const b = document.createElement('div');
     b.id = 'fbbox';
     const tl = target.tile ? ` · tile (${target.tile[0]}, ${target.tile[1]})` : '';
     // estrutura: cabeçalho + miolo rolável + botões sempre visíveis embaixo
     b.innerHTML = `<div class="fb-head">💡 Sugestão sobre <b>${FB_KIND[target.kind]}</b>: ${esc(target.name)}</div>
-      <div class="fb-meta">${esc(G.map.def.name)}${tl}</div>
+      <div class="fb-meta">${esc(this.cur.tela.nome === 'Mundo' ? ((G.map && G.map.def && G.map.def.name) || 'Mundo') : 'Tela: ' + this.cur.tela.nome)}${this.cur.tela.nome === 'Mundo' ? tl : ''}</div>
       <div class="fb-scroll">
         ${shot ? `<img class="fb-shot" src="${shot}" alt="">` : ''}
         <div class="fb-ta">
@@ -435,20 +541,21 @@ const FB = {
   async submit(text, cat) {
     text = (text || '').trim();
     if (!text) { this.box.querySelector('#fb-text').focus(); Sound.play('error'); return; }
-    const { target, shot } = this.cur;
-    const p = G.player;
+    const { target, shot, tela } = this.cur;
+    const p = G.player && G.player.d ? G.player : null, inMap = tela.nome === 'Mundo' || (p && G.map && G.map.def);
     const rec = {
-      texto: text, categoria: cat || null, versao: GAME_VERSION,
+      texto: text, categoria: cat || null, versao: GAME_VERSION, tela: tela.nome,
       alvo: { tipo: target.kind, rotulo: FB_KIND[target.kind], id: target.id, nome: target.name, codigo: target.codigo, detalhes: target.details },
-      mapa: { id: G.mapId, nome: G.map.def.name, tile: target.tile || null, pos: [Math.round(target.x || 0), Math.round(target.y || 0)] },
-      jogador: { nome: p.name, classe: CLASSES[p.cls].name, nivelBase: p.baseLv, nivelClasse: p.jobLv, hp: `${p.hp}/${p.d.maxHp}`, sp: `${p.sp}/${p.d.maxSp}` },
+      mapa: inMap ? { id: G.mapId, nome: G.map.def.name, tile: target.tile || null, pos: [Math.round(target.x || 0), Math.round(target.y || 0)] } : null,
+      jogador: p ? { nome: p.name, classe: CLASSES[p.cls].name, nivelBase: p.baseLv, nivelClasse: p.jobLv, hp: `${p.hp}/${p.d.maxHp}`, sp: `${p.sp}/${p.d.maxSp}` } : null,
       screenshot: shot || undefined,
     };
     this.cancel();
     const id = await this.send(rec);
-    Sound.play('coin');
-    if (id) UI.log(`💡 Sugestão ${id} salva! Quando quiser, peça ao Claude para aplicar suas sugestões.`, 'card');
-    else UI.log('💡 Sugestão guardada no navegador (servidor não encontrado). Rode "python3 server.py" para enviá-la ao projeto.', 'warn');
+    try { Sound.play('coin'); } catch (e) { }
+    const msg = id ? `💡 Sugestão ${id} salva! Quando quiser, peça ao Claude para aplicar suas sugestões.` : '💡 Sugestão guardada no navegador (servidor não encontrado). Rode "python3 server.py" para enviá-la ao projeto.';
+    UI.log(msg, id ? 'card' : 'warn');
+    if (!this.inWorld()) this.toast(msg); // fora do mundo o chat não aparece
     this.refresh();
   },
   async send(rec) {
@@ -468,6 +575,10 @@ const FB = {
       catch (err) { delete rec.screenshot; try { localStorage.setItem(FB_QUEUE_KEY, JSON.stringify(q)); } catch (e2) { } }
       return null;
     }
+  },
+  toast(msg) {
+    const t = document.createElement('div'); t.className = 'fb-toast'; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(() => t.classList.add('out'), 3200); setTimeout(() => t.remove(), 3800);
   },
   queue() { try { return JSON.parse(localStorage.getItem(FB_QUEUE_KEY)) || []; } catch (e) { return []; } },
   async refresh() {
@@ -496,7 +607,7 @@ const FB = {
   renderWorld(c, t) {
     // marcadores das sugestões pendentes deste mapa (visíveis com o jogo pausado)
     if (G.paused) {
-      const pins = this.list.filter(s => s.status !== 'feito' && s.mapa && s.mapa.id === G.mapId)
+      const pins = this.list.filter(s => s.status !== 'feito' && s.mapa && s.mapa.id === G.mapId && s.mapa.pos)
         .concat(this.queue().filter(s => s.mapa && s.mapa.id === G.mapId));
       for (const s of pins) {
         const [x, y] = s.mapa.pos;
@@ -529,7 +640,7 @@ const FB = {
       : '<span style="color:#ff8a8a">● Sem servidor — novas sugestões ficam no navegador até você rodar <b>python3 server.py</b></span>';
     const rows = all.map(s => `<div class="fb-row ${s.status === 'feito' ? 'done' : ''}">
         <div><b class="gold">${esc(s.id)}</b> <span class="fb-badge ${s.status === 'feito' ? 'ok' : ''}">${esc(s.status)}</span>
-        <span class="muted">${esc((s.alvo && s.alvo.rotulo) || '')}: ${esc((s.alvo && s.alvo.nome) || '')} · ${esc((s.mapa && s.mapa.nome) || '')}</span>${s.categoria ? ` <span class="tag">${esc(s.categoria)}</span>` : ''}</div>
+        <span class="muted">${esc((s.alvo && s.alvo.rotulo) || '')}: ${esc((s.alvo && s.alvo.nome) || '')} · ${esc((s.mapa && s.mapa.nome) || s.tela || '')}</span>${s.categoria ? ` <span class="tag">${esc(s.categoria)}</span>` : ''}</div>
         <div class="fb-txt">${esc(s.texto)}</div>
         ${s.resposta ? `<div class="fb-resp">🤖 ${esc(s.resposta)}</div>` : ''}</div>`).join('') || '<div class="muted">Nenhuma sugestão ainda. Aperte <b>Q</b> e clique em algo do jogo!</div>';
     UI.body('sugestoes').innerHTML = `<div style="margin-bottom:6px">${srv}</div>

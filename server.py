@@ -146,6 +146,8 @@ def write_md(items):
         meta = [f"**Status:** {s.get('status')}", f"**Quando:** {s.get('criadoEm', '?')}"]
         if s.get('categoria'):
             meta.append(f"**Categoria:** {s['categoria']}")
+        if s.get('tela') and s.get('tela') != 'Mundo':
+            meta.append(f"**Tela:** {s['tela']}")
         if s.get('mapa'):
             meta.append(f"**Mapa:** {s['mapa'].get('nome')} (tile {s['mapa'].get('tile')})")
         lines.append('- ' + ' · '.join(meta))

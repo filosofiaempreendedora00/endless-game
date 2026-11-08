@@ -756,10 +756,11 @@ function setPaused(on) {
 function togglePause() { if (FB.picking || FB.box) return; setPaused(!G.paused); }
 function updatePauseBar() {
   const b = document.getElementById('pausebar');
-  if (!G.paused) { b.classList.remove('show'); return; }
-  b.innerHTML = FB.picking
-    ? '💡 <b>Modo sugestão</b> — clique em algo ou arraste para marcar uma área · <b>Esc</b> cancela'
-    : FB.box ? '💡 <b>Escrevendo sugestão</b> — o jogo está pausado'
+  const fb = typeof FB !== 'undefined' && (FB.picking || FB.box);
+  if (!G.paused && !fb) { b.classList.remove('show'); return; }
+  const world = FB.inWorld();
+  b.innerHTML = FB.picking ? `💡 <b>Modo sugestão</b> — clique em ${world ? 'algo do mundo ou de uma janela' : 'qualquer coisa desta tela'} ou arraste para marcar uma área · <b>Esc</b> cancela`
+    : FB.box ? '💡 <b>Escrevendo sugestão</b>' + (world ? ' — o jogo está pausado' : '')
       : '⏸ <b>Jogo pausado</b> — <b>P</b> continua · <b>Q</b> faz uma sugestão';
   b.classList.add('show');
 }

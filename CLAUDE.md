@@ -11,6 +11,8 @@ Projeto pessoal de longo prazo do Roberto: um RPG de mundo aberto 3D no navegado
 - Em testes, não carregue o personagem dele: uma sessão aberta salva por cima (o mais recente vence).
 
 ## Sugestões do Roberto (tecla Q no jogo)
+- **Skill `gosto-do-roberto`** (`.claude/skills/gosto-do-roberto/`): perfil vivo do gosto dele, destilado das sugestões. Leia `perfil.md` antes de implementar qualquer sugestão ou mudança visual/de jogo, e **atualize a skill ao fim de cada rodada** (rodadas.md, perfil.md, propostas.md). Quando ele pedir ideias, proponha a partir dela.
+- O Q funciona em **todas as telas** (mundo, janelas, vitrine, criador, menu Esc, carregando); fora do mundo há o botão 💡 no canto. Toda tela/janela nova precisa continuar funcionando com o Q (clique exato, área arrastada e print). O registro traz `tela` (e `mapa`/`jogador` podem ser `null` fora do mundo).
 Quando ele pedir para aplicar as sugestões:
 1. Leia `feedback/sugestoes.json` (itens com `status: "pendente"`) e veja o print em `feedback/<imagem>`.
 2. Cada item traz `alvo.codigo` (onde mexer), `alvo.detalhes`, `mapa` e o estado do `jogador`. Implemente o pedido.
