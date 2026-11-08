@@ -174,3 +174,11 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - "Nunca pode ter um bug assim pros meus jogadores": ele já pensa em lançar; qualidade de borda de mundo e de primeira impressão importa.
   - Regras de bom senso natural: flores em touceiras, árvores só em terra, neve que assenta em cima.
   - Animações sem deslizar são obrigatórias para tudo que anda.
+
+### Rodada 15 (S-178 a S-229) e 16 (S-230 a S-244) + auditoria autônoma, 2026-11-08
+- Rodada 15: castelo no espírito da Fortaleza Vermelha (GoT) com Salão das Lâminas (Assassin's Creed) e biblioteca com globo do próprio mundo; porto com navio explorável; Pedrafunda como Troia da Odisseia com anões de verdade; roupas de classe sem "frankenstein"; ataques diferentes por classe; Montaria de Guerra.
+- Rodada 16: mira no cursor com "Errou", câmera "pesada" ao atacar (configurável), golpe só no tronco andando, pernas sem deslizar ao mirar de lado, visualizador 360°, prévias sem lag, Ivra única, chapéu do Bento, skins sem auréola, pégaso no lugar do Noctívago, sentar direito em montarias, tigre siberiano.
+- Auditoria (ele pediu: "identifique gargalos claros que eu pediria", sem perguntar): rocha estratificada nas montanhas e detalhe no terreno, nuvens macias, árvores com folhas/agulhas e casca, praça calçada, casas da vila no estilo do porto, ícones pintados no menu, taverna com porta/fogo/balcão, toras e suporte de armas.
+- Aprendizados:
+  - Quando ele delega ("eu confio em você"), priorize o que ele mais repete: realismo das formas (nada de bolota/cone/caixa), coisas flutuando, emojis, lag e animação deslizando.
+  - "Terra arrasada", "escombros", "Troia", "Fortaleza Vermelha": referência de cinema/série = clima e escala, não cópia.

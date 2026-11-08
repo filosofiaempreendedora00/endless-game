@@ -8,11 +8,12 @@ import { vlight } from './lights3d.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 
 export const MOUNTS = {
-  lanudo: { name: 'Corcel Lanudo', desc: 'Lã creme, calmo e confiável.', wool: '#efe3c8', skin: '#8a6a4a', horn: '#d8c9a8', mane: '#c9b48a', blanket: '#b8403a' },
-  noturno: { name: 'Corcel da Noite', desc: 'Lã escura com crina que brilha em azul.', wool: '#3a3848', skin: '#22202a', horn: '#9aa6c8', mane: '#5ab0ff', blanket: '#2f4f9a', glow: true },
-  real: { name: 'Corcel Real', premium: true, price: 900, rarity: 'epica', desc: 'Lã branca como nuvem e crina dourada que brilha.', wool: '#f6f2ea', skin: '#c9b48a', horn: '#ffd76a', mane: '#ffd76a', blanket: '#6a2a8a', glow: true },
-  estelar: { name: 'Corcel Estelar', premium: true, price: 1800, rarity: 'lendaria', desc: 'Lã azul-noite e crina de luz violeta: deixa o céu com inveja.', wool: '#20264a', skin: '#141830', horn: '#cfd8ff', mane: '#b47aff', blanket: '#2a3a8a', glow: true },
-  ruivo: { name: 'Corcel Ruivo', desc: 'Pelagem cor de canela, cheio de energia.', wool: '#c9733a', skin: '#6a3a22', horn: '#efd9a8', mane: '#8a3a1a', blanket: '#3f7a3a' },
+  // S-242: cavalos de verdade (coat = pelagem, points = canelas/"meias", muzzle = focinho). wool/horn ficam para as amostras da loja.
+  lanudo: { name: 'Corcel Creme', desc: 'Pelagem creme e crina clara: calmo, forte e confiável.', coat: '#e6d8bc', points: '#8a7a64', muzzle: '#6a5a4a', wool: '#e6d8bc', skin: '#8a6a4a', horn: '#d8c9a8', mane: '#efe6d0', blanket: '#b8403a' },
+  noturno: { name: 'Corcel da Noite', desc: 'Pelagem negra azulada com crina que brilha em azul.', coat: '#2a2a36', points: '#121218', muzzle: '#1a1a22', wool: '#2a2a36', skin: '#22202a', horn: '#9aa6c8', mane: '#5ab0ff', blanket: '#2f4f9a', glow: true },
+  real: { name: 'Corcel Real', premium: true, price: 900, rarity: 'epica', desc: 'Branco tordilho como nuvem e crina dourada que brilha.', coat: '#f2f0ea', points: '#c8c4bc', muzzle: '#8a8078', dapple: true, socks: 0.3, wool: '#f2f0ea', skin: '#c9b48a', horn: '#ffd76a', mane: '#ffd76a', blanket: '#6a2a8a', glow: true },
+  estelar: { name: 'Corcel Estelar', premium: true, price: 1800, rarity: 'lendaria', desc: 'Pelagem azul-noite e crina de luz violeta: deixa o céu com inveja.', coat: '#232a52', points: '#10142c', muzzle: '#141830', wool: '#232a52', skin: '#141830', horn: '#cfd8ff', mane: '#b47aff', blanket: '#2a3a8a', glow: true },
+  ruivo: { name: 'Corcel Ruivo', desc: 'Alazão cor de canela, cheio de energia.', coat: '#b8642e', points: '#3a2014', muzzle: '#4a2a1a', wool: '#b8642e', skin: '#6a3a22', horn: '#efd9a8', mane: '#6a2a12', blanket: '#3f7a3a' },
   // S-136: grandes felinos (premium) — anatomia de felino de verdade, pelagem fina pintada (sem "espinhos")
   // S-243: no lugar do leopardo (mesmo id, para quem já comprou), um tigre siberiano
   leopardo: { name: 'Tigre Siberiano', premium: true, price: 1500, rarity: 'epica', cat: 'tigre', desc: 'Tigre enorme das neves do norte: laranja-queimado com listras negras, peito e rosto brancos e costeletas de pelo.', wool: '#d9772a', skin: '#17100b', horn: '#f7f1e6', mane: '#17100b', blanket: '#7a1f2a' },

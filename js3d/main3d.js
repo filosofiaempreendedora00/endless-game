@@ -18,6 +18,7 @@ import { makeTreeTemplates } from './trees3d.js';
 import { buildCatacombs as buildDungeon, FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
+import { riderPose } from './ride3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
 import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
@@ -435,7 +436,7 @@ function lojaObj(kind, k) {
   if (kind === 'skin') { const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: dt => ch.anim.update(dt) }; }
   const mt = makeMount(k), g = new THREE.Group(); g.add(mt.obj);
   const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
-  return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); } };
+  return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); riderPose(ch, mt, { t }); } };
 }
 function lojaThumb(kind, k) {
   const key = kind + ':' + k + ':' + S.p.cls; if (lojaThumbs[key]) return lojaThumbs[key];
@@ -1842,6 +1843,7 @@ function updatePlayer(dt) {
   // S-151: o corpo gira para o lado em que anda (andar de lado vira corrida na diagonal; para trás, passos de ré de verdade)
   { const moving = mi.any && !S.riding && P.ground && !isAction() && !S.fire; const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
   me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
+  if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (S.riding && t >= S.lockAnim) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)

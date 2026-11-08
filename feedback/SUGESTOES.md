@@ -2,33 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (4)
+## Pendentes (0)
 
-### S-230 · Área do mapa: Área da tela (360×230 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:01:57 · **Mapa:** Vila de Alvorada (tile [-34, 25])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** queria melhorar muuuuito esse animal parecendo mais um pegasus. Melhorar MUITO esse grafico, que ainda ta muito baixo. QUero penas, rosto mais realistas, perna nao torta, rabo de cabalo, asas maiores. que nao pareçam morcego...
-- ![print](img/S-230.png)
+_Nenhuma._
 
-### S-242 · Interface: Área de 299×266 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)>"
-- **Status:** pendente · **Quando:** 2026-11-08T19:24:23 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** a forma de sentar em montaria precisa ser melhorada MUITO ainda. O cavalo ainda está muito amador, mas preciso que isso de a pessoa sentar direito serja feita com muito esmero, pois sera util pra todas as montarias
-- ![print](img/S-242.png)
-
-### S-243 · Interface: Área de 266×227 px em Janela "✦ Loja de Auroras" — "Capitão Bravo"
-- **Status:** pendente · **Quando:** 2026-11-08T19:25:01 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** prefiro que seja um tigre siberiano aqui e nao uma onça. E precisa melhorar esassas pernas pq tao feias
-- ![print](img/S-243.png)
-
-### S-244 · Interface: Área de 301×352 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · Trotavento · Rara · mesma velocidade das outras"
-- **Status:** pendente · **Quando:** 2026-11-08T19:25:57 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas
-- ![print](img/S-244.png)
-
-## Feitas (240)
+## Feitas (244)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -1643,6 +1621,13 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - ![print](img/S-229.png)
 - **Resposta do Claude:** O quadriculado vinha do ruído do lago congelado no terreno; o chão foi suavizado e o lago ganhou uma camada de gelo de verdade, com rachaduras ramificadas, bolhas presas e neve soprada nas bordas.
 
+### S-230 · Área do mapa: Área da tela (360×230 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:01:57 · **Mapa:** Vila de Alvorada (tile [-34, 25])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** queria melhorar muuuuito esse animal parecendo mais um pegasus. Melhorar MUITO esse grafico, que ainda ta muito baixo. QUero penas, rosto mais realistas, perna nao torta, rabo de cabalo, asas maiores. que nao pareçam morcego...
+- ![print](img/S-230.png)
+- **Resposta do Claude:** O Noctívago virou um pégaso de verdade: cavalo realista prateado-azulado (corpo inteiro e liso com anatomia de cavalo, rosto com olhos e pálpebras, pernas retas com joelhos e cascos), crina e cauda longas e claras e asas grandes de penas (primárias, secundárias e coberteiras) que ficam dobradas junto ao corpo e de tempos em tempos se abrem e batem. Nada de asa de morcego.
+
 ### S-231 · Área do mapa: Área da tela (298×311 px)
 - **Status:** feito · **Quando:** 2026-11-08T19:03:21 · **Mapa:** Vila de Alvorada (tile [-78, 14])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
@@ -1719,3 +1704,24 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** nao quero isso de aureola. So roupa mesmo
 - ![print](img/S-241.png)
 - **Resposta do Claude:** As skins da Loja de Auroras agora são só roupa: sem auréola, sem partículas, só cores e acabamento.
+
+### S-242 · Interface: Área de 299×266 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)>"
+- **Status:** feito · **Quando:** 2026-11-08T19:24:23 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** a forma de sentar em montaria precisa ser melhorada MUITO ainda. O cavalo ainda está muito amador, mas preciso que isso de a pessoa sentar direito serja feita com muito esmero, pois sera util pra todas as montarias
+- ![print](img/S-242.png)
+- **Resposta do Claude:** Novo jeito de montar, valendo para todas as montarias: o personagem senta na sela de verdade, com as pernas abertas em volta do corpo do bicho, joelhos dobrados, pés nos estribos, mãos à frente segurando as rédeas e o tronco um pouco inclinado, acompanhando o balanço da montaria. Os cavalos foram refeitos: corpo liso com anatomia real (cernelha, garupa, pescoço arqueado, cabeça longa, joelhos, jarretes, boletos e cascos), pelagem pintada com "meias", crina de fios, cauda que balança, sela com estribos, cabeçada e rédeas, e passo, trote e galope.
+
+### S-243 · Interface: Área de 266×227 px em Janela "✦ Loja de Auroras" — "Capitão Bravo"
+- **Status:** feito · **Quando:** 2026-11-08T19:25:01 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** prefiro que seja um tigre siberiano aqui e nao uma onça. E precisa melhorar esassas pernas pq tao feias
+- ![print](img/S-243.png)
+- **Resposta do Claude:** A onça virou um tigre siberiano: laranja com listras pretas quebradas, rosto e peito brancos, manchas brancas sobre os olhos, costeletas de pelo e anéis pretos na cauda. Todos os felinos (tigre, pantera e leão) ganharam pernas novas com anatomia de verdade: escápula, cotovelo para trás, antebraço musculoso, patas largas com dedos e jarrete alto nas de trás.
+
+### S-244 · Interface: Área de 301×352 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · Trotavento · Rara · mesma velocidade das outras"
+- **Status:** feito · **Quando:** 2026-11-08T19:25:57 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas
+- ![print](img/S-244.png)
+- **Resposta do Claude:** Trotavento com pernas de ave de verdade (coxa emplumada encaixada no corpo, "joelho" invertido, tarso fino escamoso), corpo mais baixo e liso sem o lombo gigante e cauda em leque com 17 penas. Vale para a montaria e o monstro.
