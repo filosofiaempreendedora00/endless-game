@@ -496,3 +496,7 @@ export function buildMerchants(ctx) {
   W({ id: 'dolf', name: 'Dolf', title: 'Estivador', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'preto' }, beard: true },
     lines: 'Caixa pra cá, barril pra lá. Anão no porto? Ora, alguém tem que carregar o peso!' }, HARBOR.quay - 4.0, 24.4, YAW_SEA + Math.PI / 2);
 }
+
+/* Auditoria: as casas da Vila de Alvorada usam o mesmo estilo cuidado das casas do porto (base de pedra, enxaimel,
+   venezianas, floreiras, chaminé) no lugar das casinhas de desenho. Devolve { obj, box } em coordenadas locais. */
+export function villageHouse(seed, w = 7.5, d = 6.5) { const { K, box } = coastHouse(seed, w, d, true); return { obj: K.build(), box }; }

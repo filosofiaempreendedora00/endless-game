@@ -14,7 +14,8 @@ export const MOUNTS = {
   estelar: { name: 'Corcel Estelar', premium: true, price: 1800, rarity: 'lendaria', desc: 'Lã azul-noite e crina de luz violeta: deixa o céu com inveja.', wool: '#20264a', skin: '#141830', horn: '#cfd8ff', mane: '#b47aff', blanket: '#2a3a8a', glow: true },
   ruivo: { name: 'Corcel Ruivo', desc: 'Pelagem cor de canela, cheio de energia.', wool: '#c9733a', skin: '#6a3a22', horn: '#efd9a8', mane: '#8a3a1a', blanket: '#3f7a3a' },
   // S-136: grandes felinos (premium) — anatomia de felino de verdade, pelagem fina pintada (sem "espinhos")
-  leopardo: { name: 'Leopardo das Dunas', premium: true, price: 1500, rarity: 'epica', cat: 'leopardo', desc: 'Felino dourado com rosetas escuras: silencioso, ágil e elegante.', wool: '#d9a85a', skin: '#2a1e16', horn: '#f3e2c0', mane: '#3a2614', blanket: '#7a1f2a' },
+  // S-243: no lugar do leopardo (mesmo id, para quem já comprou), um tigre siberiano
+  leopardo: { name: 'Tigre Siberiano', premium: true, price: 1500, rarity: 'epica', cat: 'tigre', desc: 'Tigre enorme das neves do norte: laranja-queimado com listras negras, peito e rosto brancos e costeletas de pelo.', wool: '#d9772a', skin: '#17100b', horn: '#f7f1e6', mane: '#17100b', blanket: '#7a1f2a' },
   pantera_neve: { name: 'Pantera da Geada', premium: true, price: 1500, rarity: 'epica', cat: 'neve', desc: 'Pelagem cinza-gelo com rosetas de carvão e cauda longa e felpuda, nascida no Vale da Geada.', wool: '#d8d8d2', skin: '#3a3a40', horn: '#f4f4ee', mane: '#4a4a52', blanket: '#2a4a7a' },
   trotavento: { name: 'Trotavento', premium: true, price: 1200, rarity: 'rara', bird: 'trotavento', desc: 'Ave corredora das Dunas de Sal-Rubro: penas douradas, topete vermelho e pernas que não cansam. Não voa, mas ninguém a alcança.', wool: '#e8b648', skin: '#d98a3a', horn: '#f08a1e', mane: '#d8502a', blanket: '#2a5a7a' },
   leao: { name: 'Leão Solar', premium: true, price: 2400, rarity: 'lendaria', cat: 'leao', desc: 'Leão imponente de juba dourada que brilha ao sol: o rei das montarias.', wool: '#c99a5a', skin: '#3a2618', horn: '#ffd76a', mane: '#8a4a1e', blanket: '#5a2a8a', glow: true },
@@ -144,6 +145,7 @@ function makeOldMount(D) {
    ========================================================================= */
 const CAT = {
   leopardo: { base: '#d6a052', belly: '#f2e4c8', spot: '#24170e', inner: '#b0702a', spots: 1, eye: '#e2a52a', nose: '#7a443a' },
+  tigre: { base: '#d9772a', belly: '#f7f1e6', spot: '#17100b', inner: '#d9772a', spots: 2, eye: '#e8b43a', nose: '#c88a7a', tail: 1.15 },
   neve: { base: '#c9c8c2', belly: '#f1f0ea', spot: '#34343a', inner: '#9a9a96', spots: 1, eye: '#a8d2dc', nose: '#5a4a50', tail: 1.45, freq: 6.2 },
   leao: { base: '#c99656', belly: '#ead6ac', spot: null, inner: '#c99656', spots: 0, eye: '#d8982a', nose: '#5a3a30', mane: '#7a3e18', mane2: '#b06a2a' },
 };
@@ -180,17 +182,28 @@ function catParts(kind) {
     E([s * 0.11, 1.17, 0.96], [0.09, 0.08, 0.09], 'head', 0.05); // bochecha
     E([s * 0.105, 1.375, 0.9], [0.06, 0.066, 0.026], 'head', 0.03); // orelha
     E([s * 0.04, 1.16, 1.175], [0.05, 0.042, 0.045], 'head', 0.03); // almofada dos bigodes
-    // pata da frente: escápula, braço, antebraço, mão
-    E([s * 0.15, 0.97, 0.42], [0.08, 0.2, 0.14], 'up' + s, 0.08);
-    C([s * 0.16, 0.9, 0.43], [s * 0.15, 0.6, 0.36], 0.13, 0.09, 'up' + s);
-    C([s * 0.15, 0.6, 0.36], [s * 0.15, 0.13, 0.42], 0.088, 0.066, 'fo' + s, 0.05);
-    E([s * 0.15, 0.055, 0.46], [0.082, 0.052, 0.105], 'pa' + s, 0.05);
-    // pata de trás: coxa, perna, metatarso, pé
-    E([s * 0.14, 0.9, -0.62], [0.11, 0.24, 0.2], 'th' + s, 0.08);
-    C([s * 0.15, 0.92, -0.6], [s * 0.15, 0.58, -0.44], 0.13, 0.085, 'th' + s);
-    C([s * 0.15, 0.58, -0.44], [s * 0.15, 0.3, -0.72], 0.085, 0.06, 'sh' + s, 0.05);
-    C([s * 0.15, 0.3, -0.72], [s * 0.15, 0.08, -0.64], 0.055, 0.05, 'mt' + s, 0.04);
-    E([s * 0.15, 0.05, -0.58], [0.07, 0.045, 0.095], 'mt' + s, 0.04);
+    // pata da frente (S-243): escápula inclinada, cotovelo marcado para trás, antebraço musculoso que afina até o punho,
+    // punho (carpo), mão levemente inclinada para a frente e pata larga com dedos e almofadas
+    const th = kind === 'tigre' ? 1.12 : 1; // tigre: patas mais grossas e pesadas
+    E([s * 0.15, 0.98, 0.43], [0.085 * th, 0.21, 0.15], 'up' + s, 0.08);
+    C([s * 0.16, 0.9, 0.44], [s * 0.155, 0.63, 0.32], 0.125 * th, 0.095 * th, 'up' + s, 0.07);   // braço desce para trás até o cotovelo
+    E([s * 0.155, 0.62, 0.28], [0.06 * th, 0.07, 0.07], 'up' + s, 0.05);                          // ponta do cotovelo
+    C([s * 0.155, 0.62, 0.34], [s * 0.15, 0.2, 0.41], 0.092 * th, 0.058 * th, 'fo' + s, 0.05);     // antebraço (grosso em cima, afina)
+    E([s * 0.15, 0.48, 0.37], [0.07 * th, 0.12, 0.075 * th], 'fo' + s, 0.06);                      // músculo do antebraço
+    E([s * 0.15, 0.17, 0.42], [0.06 * th, 0.05, 0.06 * th], 'pa' + s, 0.03);                       // punho
+    C([s * 0.15, 0.16, 0.42], [s * 0.15, 0.07, 0.47], 0.055 * th, 0.06 * th, 'pa' + s, 0.03);      // mão (inclinada para a frente)
+    E([s * 0.15, 0.05, 0.49], [0.085 * th, 0.048, 0.1 * th], 'pa' + s, 0.04);                      // pata larga
+    for (let q = 0; q < 4; q++) E([s * 0.15 + (q - 1.5) * 0.034 * th, 0.035, 0.56 * 1 + (Math.abs(q - 1.5) < 1 ? 0.012 : 0)], [0.026 * th, 0.028, 0.032], 'pa' + s, 0.015); // dedos
+    // pata de trás: coxa grande, joelho para a frente, perna para trás até o jarrete (calcanhar alto e marcado), metatarso quase vertical, pé com dedos
+    E([s * 0.14, 0.92, -0.62], [0.12 * th, 0.25, 0.22], 'th' + s, 0.08);
+    C([s * 0.15, 0.94, -0.58], [s * 0.155, 0.62, -0.4], 0.14 * th, 0.09 * th, 'th' + s, 0.07);      // coxa até o joelho (para a frente)
+    C([s * 0.155, 0.62, -0.42], [s * 0.15, 0.32, -0.72], 0.09 * th, 0.055 * th, 'sh' + s, 0.05);    // perna para trás
+    E([s * 0.15, 0.5, -0.56], [0.065 * th, 0.11, 0.08 * th], 'sh' + s, 0.06);                       // panturrilha
+    E([s * 0.15, 0.31, -0.76], [0.045 * th, 0.05, 0.05], 'mt' + s, 0.03);                            // calcanhar (jarrete)
+    C([s * 0.15, 0.3, -0.72], [s * 0.15, 0.08, -0.66], 0.05 * th, 0.05 * th, 'mt' + s, 0.03);
+    E([s * 0.15, 0.05, -0.6], [0.075 * th, 0.045, 0.095 * th], 'mt' + s, 0.04);
+    for (let q = 0; q < 4; q++) E([s * 0.15 + (q - 1.5) * 0.03 * th, 0.033, -0.53 + (Math.abs(q - 1.5) < 1 ? 0.01 : 0)], [0.023 * th, 0.025, 0.028], 'mt' + s, 0.015);
+    if (kind === 'tigre') E([s * 0.15, 1.13, 0.93], [0.075, 0.095, 0.085], 'head', 0.05); // costeletas (gola de pelo do tigre)
   }
   if (kind === 'leao') { // juba: volume atrás do rosto, com a borda em tufos irregulares (fofa, sem "dreads")
     E([0, 1.2, 0.72], [0.29, 0.33, 0.2], 'neck', 0.1);
@@ -295,7 +308,20 @@ function catMaterial(kind, skinned, plain = false) {
       belly = max(belly, smoothstep(0.09, 0.15, abs(p.x)) * smoothstep(0.17, 0.12, abs(p.x)) * smoothstep(0.75, 0.3, p.y) * smoothstep(0.2, 0.9, -n.x * sign(p.x)) * 0.8);
       vec3 col = mix(uBase * (0.9 + 0.12 * smoothstep(0.3, 1.0, n.y)), uBelly, clamp(belly, 0.0, 1.0));
       col *= 0.93 + 0.1 * vn(p * vec3(70.0, 70.0, 22.0)); // fios de pelo
-      if (uSpots > 0.5) {
+      if (uSpots > 1.5) { // tigre: listras verticais tortas que afinam para a barriga, rosto branco com marcas
+        float face = smoothstep(0.86, 0.95, p.z);
+        float warp = vn(p * 5.0) * 0.6 + vn(p * 13.0) * 0.18;
+        float band = abs(fract(p.z * 8.5 + warp + abs(p.x) * 1.6 + vn(p * 3.0) * 0.5) - 0.5); // listras ao longo do corpo
+        float thick = mix(0.085, 0.02, smoothstep(0.85, 0.55, p.y)) * (0.6 + vn(p * vec3(2.0, 6.0, 2.0)) * 0.8) * (1.0 - belly);
+        float stripe = 1.0 - smoothstep(thick, thick + 0.04, band);
+        stripe *= smoothstep(0.35, 0.55, vn(vec3(p.z * 3.0, p.y * 9.0, p.x * 9.0)) + 0.35); // listras partidas, não perfeitas
+        float legs = 1.0 - smoothstep(0.4, 0.55, p.y); float lb = abs(fract(p.y * 9.0 + vn(p * 7.0) * 0.5) - 0.5); stripe = max(stripe * (1.0 - legs), legs * (1.0 - smoothstep(0.06, 0.1, lb)) * smoothstep(0.1, 0.45, p.y) * 0.8);
+        float fw = face * (smoothstep(0.06, 0.02, abs(p.x) - 0.06) * smoothstep(1.3, 1.18, p.y) + smoothstep(0.1, 0.16, abs(p.x)) * smoothstep(1.25, 1.12, p.y)); // bochechas e focinho brancos
+        col = mix(col, uBelly, clamp(fw, 0.0, 1.0));
+        float fstripe = face * (1.0 - smoothstep(0.03, 0.05, abs(fract(p.y * 18.0 + abs(p.x) * 6.0 + vn(p * 9.0) * 0.4) - 0.5))) * smoothstep(1.2, 1.32, p.y); // listras da testa
+        col = mix(col, uSpot, clamp(stripe * (1.0 - face) + fstripe * 0.8, 0.0, 1.0) * 0.92);
+        col = mix(col, uBelly * 0.98, smoothstep(0.035, 0.0, abs(p.y - 1.27) + abs(abs(p.x) - 0.07) * 1.5) * face * 0.9); // mancha branca sobre os olhos
+      } else if (uSpots > 0.5) {
         bool small = p.z > 0.82 || p.y < 0.55; // cabeça e patas: pintas pequenas e cheias
         if (small) { vec2 w = worley(p * 22.0); float s = 1.0 - smoothstep(0.2, 0.28, w.x); col = mix(col, uSpot, s * 0.9 * (1.0 - belly * 0.4)); }
         else {
@@ -363,12 +389,14 @@ function makeBigCat(D) {
   saddle.add(blob(0.07, 1, 1.3, 0.8, LEATHER, 0, 1.35, 0.14, 12));
   for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 8, 22), METAL); st.position.set(s * 0.29, 0.76, -0.1); saddle.add(st); const strap = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.42, 0.035), LEATHER); strap.position.set(s * 0.275, 0.99, -0.1); strap.rotation.z = s * 0.1; saddle.add(strap); }
   saddle.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  const seatA = new THREE.Object3D(); at('hips', seatA, 0, 1.33, -0.1); // S-242: onde o cavaleiro senta
+  if (kind === 'tigre') { const ringM = new THREE.MeshStandardMaterial({ color: '#17100b', roughness: 0.8 }); tail.forEach((g, k) => { if (k < 2) return; const r = new THREE.Mesh(new THREE.TorusGeometry((0.052 - k * 0.0028) * fl * 0.98, 0.012, 6, 18), ringM); r.position.z = -0.06; g.add(r); }); } // anéis pretos na cauda
   let light = null;
   if (D.glow) { light = vlight('#ffcf6a', 0.7, 4); light.position.set(0, 1.8, 0.8); obj.add(light); }
   let ph = 0, gait = 0, run = 0, look = 0, air = 0, pitch = 0;
   const R = n => bones[n].rotation;
   return {
-    obj, saddleY: 1.28, name: D.name,
+    obj, saddleY: 1.28, name: D.name, seat: { anchor: seatA, half: 0.27, stirrup: 0.5, reach: 0.32, footZ: -0.02 },
     animate(t, m, dt) {
       const s = m.speed;
       gait += (Math.min(1, s * 1.3) - gait) * (1 - Math.exp(-dt * 6));
@@ -411,15 +439,16 @@ const BIRD_COL = {
 };
 const BIRD_BONES = { root: [null, [0, 0, 0]], hips: ['root', [0, 1.12, -0.15]], chest: ['hips', [0, 1.18, 0.25]], neck1: ['chest', [0, 1.33, 0.44]], neck2: ['neck1', [0, 1.6, 0.52]], head: ['neck2', [0, 1.88, 0.58]], tail: ['hips', [0, 1.24, -0.55]] };
 for (const s of [-1, 1]) Object.assign(BIRD_BONES, {
-  ['wi' + s]: ['chest', [s * 0.3, 1.3, 0.18]], ['th' + s]: ['hips', [s * 0.17, 1.0, 0.0]], ['sh' + s]: ['th' + s, [s * 0.19, 0.68, 0.08]],
-  ['ta' + s]: ['sh' + s, [s * 0.19, 0.4, 0.0]], ['ft' + s]: ['ta' + s, [s * 0.19, 0.06, 0.03]],
+  // S-244: perna de ave de verdade — coxa escondida no corpo, joelho sob a barriga, "tornozelo" dobrado para trás
+  ['wi' + s]: ['chest', [s * 0.3, 1.3, 0.18]], ['th' + s]: ['hips', [s * 0.16, 1.0, -0.02]], ['sh' + s]: ['th' + s, [s * 0.17, 0.86, 0.06]],
+  ['ta' + s]: ['sh' + s, [s * 0.17, 0.5, -0.14]], ['ft' + s]: ['ta' + s, [s * 0.17, 0.06, 0.04]],
 });
 function birdParts() {
   const P = [], C = (a, b, r0, r1, bone, k = 0.06) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.07) => P.push({ c, r, bone, k });
-  E([0, 1.14, -0.06], [0.34, 0.32, 0.5], 'hips', 0.1);
-  E([0, 1.2, 0.24], [0.3, 0.33, 0.28], 'chest', 0.1);
-  E([0, 1.06, 0.12], [0.26, 0.24, 0.3], 'chest', 0.1); // peito estufado
-  E([0, 1.22, -0.5], [0.24, 0.21, 0.22], 'tail', 0.1);
+  E([0, 1.12, -0.06], [0.33, 0.27, 0.5], 'hips', 0.1);      // corpo mais baixo e liso (sem corcova)
+  E([0, 1.17, 0.24], [0.3, 0.3, 0.28], 'chest', 0.1);
+  E([0, 1.04, 0.12], [0.26, 0.23, 0.3], 'chest', 0.1); // peito estufado
+  E([0, 1.17, -0.5], [0.22, 0.17, 0.22], 'tail', 0.1);
   C([0, 1.28, 0.42], [0, 1.6, 0.52], 0.19, 0.13, 'neck1', 0.09);
   E([0, 1.36, 0.46], [0.2, 0.2, 0.17], 'neck1', 0.09); // gola fofa na base do pescoço
   C([0, 1.6, 0.52], [0, 1.86, 0.57], 0.13, 0.11, 'neck2', 0.07);
@@ -431,15 +460,15 @@ function birdParts() {
   C([0, 1.885, 0.68], [0, 1.858, 0.83], 0.045, 0.012, 'head', 0.02);  // bico (de baixo)
   for (const s of [-1, 1]) {
     E([s * 0.29, 1.24, 0.02], [0.06, 0.17, 0.3], 'wi' + s, 0.06);
-    E([s * 0.17, 0.96, 0.04], [0.13, 0.2, 0.17], 'th' + s, 0.08);
-    C([s * 0.18, 0.92, 0.04], [s * 0.19, 0.68, 0.08], 0.12, 0.08, 'th' + s, 0.06);   // coxa forte (coberta de penas)
-    C([s * 0.19, 0.68, 0.08], [s * 0.19, 0.4, 0.0], 0.07, 0.05, 'sh' + s, 0.04);     // canela reta
-    C([s * 0.19, 0.4, 0.0], [s * 0.19, 0.08, 0.03], 0.048, 0.04, 'ta' + s, 0.03);    // tarso reto e grosso
-    E([s * 0.19, 0.06, 0.04], [0.05, 0.035, 0.06], 'ft' + s, 0.03);
-    C([s * 0.19, 0.05, 0.05], [s * 0.19, 0.03, 0.25], 0.03, 0.013, 'ft' + s, 0.02);
-    C([s * 0.19, 0.05, 0.05], [s * 0.19 + 0.09, 0.03, 0.19], 0.026, 0.011, 'ft' + s, 0.02);
-    C([s * 0.19, 0.05, 0.05], [s * 0.19 - 0.09, 0.03, 0.19], 0.026, 0.011, 'ft' + s, 0.02);
-    C([s * 0.19, 0.06, 0.02], [s * 0.19, 0.03, -0.09], 0.022, 0.011, 'ft' + s, 0.02);
+    E([s * 0.16, 0.95, 0.0], [0.12, 0.16, 0.15], 'th' + s, 0.08);                    // coxa emplumada, presa ao corpo
+    C([s * 0.17, 0.88, 0.05], [s * 0.17, 0.52, -0.14], 0.07, 0.038, 'sh' + s, 0.05);   // "coxinha" (tibiotarso) descendo para trás
+    E([s * 0.17, 0.51, -0.14], [0.035, 0.038, 0.04], 'ta' + s, 0.02);                 // tornozelo (o "joelho" invertido)
+    C([s * 0.17, 0.5, -0.14], [s * 0.17, 0.08, 0.03], 0.028, 0.026, 'ta' + s, 0.02);   // tarso fino e escamoso, para a frente
+    E([s * 0.17, 0.06, 0.04], [0.04, 0.03, 0.05], 'ft' + s, 0.03);
+    C([s * 0.17, 0.05, 0.05], [s * 0.17, 0.025, 0.25], 0.024, 0.01, 'ft' + s, 0.015);
+    C([s * 0.17, 0.05, 0.05], [s * 0.17 + 0.085, 0.025, 0.2], 0.021, 0.009, 'ft' + s, 0.015);
+    C([s * 0.17, 0.05, 0.05], [s * 0.17 - 0.085, 0.025, 0.2], 0.021, 0.009, 'ft' + s, 0.015);
+    C([s * 0.17, 0.055, 0.02], [s * 0.17, 0.025, -0.08], 0.018, 0.009, 'ft' + s, 0.015);
   }
   return P;
 }
@@ -542,22 +571,24 @@ export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
   const crest = [];
   for (let k = 0; k < 7; k++) { const a = (k - 3) / 3; const f = new THREE.Mesh(featherGeo(0.24 + (1 - Math.abs(a)) * 0.16, 0.03, C.crest, C.back), FM); const g = new THREE.Group(); g.rotation.set(-2.75 + Math.abs(a) * 0.2, a * 0.35, 0); g.add(f); at('head', g, a * 0.03, 2.02, 0.55); crest.push(g); } // topete de plumas longas varrido para trás (nada de crista de galo)
   const fan = [];
-  for (let k = 0; k < 9; k++) { const a = (k - 4) / 4; const f = new THREE.Mesh(featherGeo(0.42 - Math.abs(a) * 0.08, 0.055, C.belly, k % 2 ? C.tip : C.wing), FM); const g = new THREE.Group(); g.rotation.set(-2.5 + Math.abs(a) * 0.25, a * 0.75, a * 0.3); g.add(f); at('tail', g, a * 0.08, 1.3, -0.62); fan.push(g); }
+  for (let k = 0; k < 17; k++) { const a = (k - 8) / 8; const f = new THREE.Mesh(featherGeo(0.62 - Math.abs(a) * 0.16, 0.06, C.belly, k % 2 ? C.tip : C.wing), FM); const g = new THREE.Group(); g.rotation.set(-2.55 + Math.abs(a) * 0.3, a * 0.8, a * 0.3); g.add(f); at('tail', g, a * 0.1, 1.24 + (1 - Math.abs(a)) * 0.03, -0.62); fan.push(g); } // S-244: leque de cauda cheio e longo
+  for (let k = 0; k < 9; k++) { const a = (k - 4) / 4; const f = new THREE.Mesh(featherGeo(0.34 - Math.abs(a) * 0.06, 0.05, C.base, C.tip), FM); const g = new THREE.Group(); g.rotation.set(-2.75 + Math.abs(a) * 0.15, a * 0.5, 0); g.add(f); at('tail', g, a * 0.07, 1.3, -0.55); } // coberteiras da cauda (camada de cima)
   for (const s of [-1, 1]) for (let k = 0; k < 8; k++) { const f = new THREE.Mesh(featherGeo(0.26 + k * 0.025, 0.05, C.wing, k % 2 ? C.tip : C.wing), FM); const g = new THREE.Group(); g.rotation.set(-2.75 + k * 0.05, s * (0.05 + k * 0.012), s * (0.12 + k * 0.02)); g.add(f); at('wi' + s, g, s * (0.345 - k * 0.006), 1.3 - k * 0.028, 0.05 - k * 0.035); } // asinha toda de penas: primárias brancas com pontas laranja
   // sela (só na montaria)
   if (opts.saddle !== false) {
     const LEATHER = new THREE.MeshStandardMaterial({ color: '#5a3a22', roughness: 0.55 }), METAL = new THREE.MeshStandardMaterial({ color: '#c9b07a', roughness: 0.3, metalness: 0.6 });
     const saddle = new THREE.Group(); at('hips', saddle, 0, 0, 0);
     const blanket = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.56, 28, 1, true, -Math.PI * 0.4, Math.PI * 0.8), new THREE.MeshStandardMaterial({ color: D.blanket || '#3a6a8a', roughness: 0.8, side: THREE.DoubleSide }));
-    blanket.rotation.x = Math.PI / 2; blanket.rotation.y = Math.PI; blanket.position.set(0, 1.17, 0.02); saddle.add(blanket);
-    const seat = new THREE.Mesh(taper([V(0, 0, -0.24), V(0, -0.03, -0.04), V(0, -0.02, 0.12), V(0, 0.05, 0.22)], 0.17, 0.11, 12, 14), LEATHER); seat.scale.set(1.1, 0.42, 1); seat.position.set(0, 1.47, 0.02); saddle.add(seat);
-    saddle.add(blob(0.065, 1, 1.3, 0.8, LEATHER, 0, 1.54, 0.24, 12));
+    blanket.rotation.x = Math.PI / 2; blanket.rotation.y = Math.PI; blanket.position.set(0, 1.1, 0.02); saddle.add(blanket);
+    const seat = new THREE.Mesh(taper([V(0, 0, -0.24), V(0, -0.03, -0.04), V(0, -0.02, 0.12), V(0, 0.05, 0.22)], 0.17, 0.11, 12, 14), LEATHER); seat.scale.set(1.1, 0.42, 1); seat.position.set(0, 1.42, 0.02); saddle.add(seat);
+    saddle.add(blob(0.065, 1, 1.3, 0.8, LEATHER, 0, 1.49, 0.24, 12));
     for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 8, 22), METAL); st.position.set(s * 0.37, 0.92, 0.04); saddle.add(st); const strap = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.46, 0.035), LEATHER); strap.position.set(s * 0.355, 1.16, 0.04); strap.rotation.z = s * 0.08; saddle.add(strap); }
     saddle.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   }
+  const seatA = new THREE.Object3D(); at('hips', seatA, 0, 1.45, 0.02); // S-242: onde o cavaleiro senta
   let ph = 0, gait = 0, run = 0, air = 0, look = 0, pitch = 0, blinkAt = 2, kickT = -9, lt = 0, peck = 0;
   const api = {
-    obj, saddleY: 1.45, name: D.name,
+    obj, saddleY: 1.45, name: D.name, seat: { anchor: seatA, half: 0.34, stirrup: 0.52, reach: 0.33, footZ: 0.02 },
     attack() { kickT = lt; },
     animate(t, m, dt) {
       lt = t; const s = m.speed;
@@ -585,7 +616,7 @@ export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
       R('head').x = -Math.sin(ph * 2) * 0.06 * gait - peck * 0.4 + Math.sin(t * 9) * 0.03 * peck; R('head').y = look * 0.3;
       for (const sd of [-1, 1]) { R('wi' + sd).z = sd * (Math.sin(ph * 2) * 0.08 * gait + run * 0.25 * gait + air * 0.6 + Math.max(0, Math.sin(t * 0.7 + sd)) * 0.05); R('wi' + sd).x = -air * 0.3; }
       R('tail').x = -0.1 + Math.sin(ph * 2) * 0.06 * gait + run * 0.2; R('tail').y = Math.sin(t * 2.2) * 0.08 + m.turn * 0.06;
-      fan.forEach((g, k) => { g.rotation.y += ((k - 4) / 4 * (0.75 + Math.sin(t * 1.3) * 0.05) - g.rotation.y) * 0.2; });
+      fan.forEach((g, k) => { g.rotation.y += ((k - 8) / 8 * (0.8 + Math.sin(t * 1.3) * 0.05) - g.rotation.y) * 0.2; });
       crest.forEach((g, k) => { g.rotation.x = -2.75 + Math.abs(k - 3) / 3 * 0.2 - gait * 0.2 + Math.sin(t * 3 + k) * 0.04; });
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.14; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2 + Math.random() * 3; }
       for (const l of lids) l.rotation.x = -1.6 + bl * 1.55; // olhos bem abertos (curiosos), piscam
@@ -621,8 +652,9 @@ function horseParts() {
   C([0, 1.62, 0.9], [0, 1.84, 1.04], 0.16, 0.12, 'neck', 0.08);
   E([0, 1.56, 0.78], [0.13, 0.26, 0.18], 'neck', 0.1);           // crista do pescoço
   E([0, 1.86, 1.1], [0.11, 0.12, 0.14], 'head', 0.05);           // crânio
-  C([0, 1.82, 1.14], [0, 1.6, 1.42], 0.105, 0.075, 'head', 0.05); // chanfro até o focinho
-  E([0, 1.57, 1.45], [0.078, 0.075, 0.085], 'head', 0.04);       // focinho macio
+  C([0, 1.82, 1.14], [0, 1.6, 1.42], 0.1, 0.062, 'head', 0.05); // chanfro até o focinho (afina)
+  E([0, 1.575, 1.45], [0.066, 0.07, 0.078], 'head', 0.035);      // focinho macio, estreito
+  E([0, 1.52, 1.4], [0.05, 0.035, 0.06], 'head', 0.03);           // beiço de baixo
   E([0, 1.72, 1.17], [0.1, 0.12, 0.11], 'head', 0.05);           // ganacha (bochecha)
   for (const s of [-1, 1]) {
     E([s * 0.075, 1.99, 1.06], [0.032, 0.085, 0.03], 'head', 0.02); // orelhas em pé
@@ -649,7 +681,7 @@ function horseParts() {
 let _horseGeo = null;
 function horseGeometry() { return _horseGeo || (_horseGeo = sdfSkinnedGeometry(horseParts(), HORSE_BONES, [-0.48, -0.02, -1.0], [0.96, 2.16, 2.6], 0.022)); }
 function horseMaterial(D) {
-  const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.55, metalness: 0 });
+  const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.68, metalness: 0 });
   const coat = new THREE.Color(D.coat || D.wool), dark = new THREE.Color(D.points || D.skin), muzzle = new THREE.Color(D.muzzle || D.skin);
   m.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, { uCoat: { value: coat }, uDark: { value: dark }, uMuz: { value: muzzle }, uDapple: { value: D.dapple ? 1 : 0 }, uSocks: { value: D.socks ?? 1 } });
@@ -708,7 +740,7 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 8, 28), DARK); rim.scale.set(1.3, 1, 1); eg.add(rim);
     const lid = new THREE.Mesh(new THREE.SphereGeometry(0.044, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), COATP); lid.scale.set(1.3, 1, 0.62); lid.rotation.x = -1.35; eg.add(lid); lids.push(lid);
     const brow = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 10), COATP); brow.scale.set(1.3, 0.5, 0.7); brow.position.set(0, 0.035, -0.012); eg.add(brow); // arcada sobre o olho
-    const nos = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), DARK); nos.scale.set(0.7, 1.2, 0.6); nos.rotation.set(0.3, s * 0.4, 0); at('head', nos, s * 0.05, 1.6, 1.51);
+    const nos = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.035, 4, 10), DARK); nos.rotation.set(0.5, s * 0.5, s * 0.5); at('head', nos, s * 0.042, 1.6, 1.515); // narina em vírgula
   }
   // crina: fios descendo de um lado do pescoço + topete
   const manePaths = []; let sd = 9; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -751,7 +783,7 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   let wings = null;
   if (opts.wings) {
     const WC = { coat: D.coat || D.wool, wing: D.wing || '#f4f2ee', tip: D.tip || '#c9ccd6' };
-    wings = [-1, 1].map(s => { const w = featherWing(s, WC); w.g.position.set(s * 0.2, 1.42, 0.5); bones.chest.add(w.g); w.g.position.sub(new THREE.Vector3(...HORSE_BONES.chest[1])); return { ...w, s }; });
+    wings = [-1, 1].map(s => { const w = featherWing(s, WC); w.g.scale.setScalar(1.3); w.g.position.set(s * 0.2, 1.42, 0.5); bones.chest.add(w.g); w.g.position.sub(new THREE.Vector3(...HORSE_BONES.chest[1])); return { ...w, s }; });
   }
   rig.mesh.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   saddle.visible = opts.saddle !== false; bridle.visible = opts.saddle !== false;
@@ -789,7 +821,7 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
       if (wings) { // asas dobradas junto ao corpo; abertas no ar / no salto e de vez em quando se esticam e batem
         const ft = t - flapT, open = Math.max(air, ft > 0 && ft < 3.2 ? Math.sin(Math.min(1, ft / 3.2) * Math.PI) : 0), beat = Math.sin(t * 7) * open;
         for (const w of wings) {
-          const s2 = w.s; w.g.rotation.set(0.15 - open * 0.15, s2 * (1.25 - open * 1.15), s2 * (-0.25 + open * (0.35 + beat * 0.55)));
+          const s2 = w.s; w.g.rotation.set(0.15 - open * 0.25, s2 * (1.25 - open * 1.1), s2 * (-0.25 + open * (0.75 + beat * 0.45)));
           w.fore.rotation.y = s2 * (-2.3 + open * 2.1); w.hand.rotation.y = s2 * (2.6 - open * 2.4); w.fore.rotation.z = s2 * beat * 0.25;
         }
       }
@@ -798,3 +830,8 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
     get bodyY() { return body.position.y; },
   };
 }
+
+/* S-230: Pégaso (o Noctívago dos voos) — o mesmo cavalo de verdade, pelagem prata-azulada,
+   crina e cauda claras e longas, e grandes asas de penas (nada de morcego). */
+export const PEGASUS = { name: 'Noctívago', coat: '#c9cedb', points: '#9aa0b4', muzzle: '#6a6474', mane: '#f2f2fa', wing: '#fbfbff', tip: '#b9c2dc', blanket: '#5a2a3a', socks: 0.5 };
+export function makePegasus(D = PEGASUS) { return makeHorse(D, { wings: true, saddle: false }); }

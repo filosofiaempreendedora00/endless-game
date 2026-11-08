@@ -54,6 +54,72 @@ function foliageBlob(rng, rr, detail = 4) {
   g.computeVertexNormals(); return g;
 }
 
+/* ---------- Folhagem de verdade (auditoria): cartões com folhas desenhadas uma a uma (recorte por alphaTest),
+   em vez de bolas lisas. Atlas 2×2 com 4 cachos diferentes; agulhas de pinheiro em ramos com caimento. ---------- */
+const ATLAS = {};
+function leafAtlas(kind) {
+  if (ATLAS[kind]) return ATLAS[kind];
+  const W = 1024, c = document.createElement('canvas'); c.width = c.height = W; const x = c.getContext('2d'), rng = rngOf(kind === 'leaf' ? 7 : 13);
+  for (let q = 0; q < 4; q++) {
+    const ox = (q % 2) * W / 2, oy = Math.floor(q / 2) * W / 2, S = W / 2;
+    x.save(); x.beginPath(); x.rect(ox, oy, S, S); x.clip();
+    if (kind === 'leaf') {
+      // galhinhos finos por baixo (aparecem nos vãos)
+      x.strokeStyle = '#4a3420'; x.lineCap = 'round';
+      for (let k = 0; k < 5; k++) { x.lineWidth = 2 + rng() * 2; x.beginPath(); x.moveTo(ox + S / 2, oy + S * 0.95); x.quadraticCurveTo(ox + S * (0.2 + rng() * 0.6), oy + S * 0.5, ox + S * (0.1 + rng() * 0.8), oy + S * (0.1 + rng() * 0.3)); x.stroke(); }
+      // folhas: elipses pontudas com nervura central, várias tonalidades, densas no meio e ralas na borda
+      const n = 230;
+      for (let k = 0; k < n; k++) {
+        const a = rng() * Math.PI * 2, rr = Math.pow(rng(), 0.7) * S * 0.46, px = ox + S / 2 + Math.cos(a) * rr, py = oy + S / 2 + Math.sin(a) * rr * 0.92;
+        const L = S * (0.05 + rng() * 0.035), Wd = L * (0.42 + rng() * 0.12), rot = a + (rng() - 0.5) * 1.6;
+        const tone = rng(), edge = rr / (S * 0.46);
+        const g = Math.round(95 + tone * 70 - edge * 10), r = Math.round(48 + tone * 40), b = Math.round(28 + tone * 22);
+        x.save(); x.translate(px, py); x.rotate(rot);
+        x.fillStyle = `rgb(${r},${g},${b})`; x.beginPath(); x.moveTo(-L / 2, 0); x.quadraticCurveTo(0, -Wd, L / 2, 0); x.quadraticCurveTo(0, Wd, -L / 2, 0); x.fill();
+        x.fillStyle = `rgba(255,255,220,${0.08 + tone * 0.12})`; x.beginPath(); x.moveTo(-L / 2, 0); x.quadraticCurveTo(0, -Wd, L / 2, 0); x.quadraticCurveTo(0, -Wd * 0.2, -L / 2, 0); x.fill(); // lado iluminado
+        x.strokeStyle = `rgba(30,50,20,0.45)`; x.lineWidth = 1; x.beginPath(); x.moveTo(-L / 2, 0); x.lineTo(L / 2, 0); x.stroke();
+        x.restore();
+      }
+    } else { // agulhas: ramo central com raminhos laterais cobertos de agulhas, caindo nas pontas
+      const base = q === 3 ? [38, 70, 44] : [32 + q * 4, 62 + q * 6, 40 + q * 3];
+      x.strokeStyle = '#3e2a1a'; x.lineWidth = 5; x.beginPath(); x.moveTo(ox + S / 2, oy + S); x.lineTo(ox + S / 2, oy + S * 0.04); x.stroke();
+      for (let j = 0; j < 16; j++) {
+        const yy = oy + S * (0.08 + j / 16 * 0.86), side = j % 2 ? 1 : -1, len = S * (0.18 + (1 - Math.abs(j / 16 - 0.55)) * 0.24) * (0.8 + rng() * 0.3);
+        const ex = ox + S / 2 + side * len, ey = yy - len * 0.25;
+        x.strokeStyle = '#4a3220'; x.lineWidth = 2; x.beginPath(); x.moveTo(ox + S / 2, yy); x.lineTo(ex, ey); x.stroke();
+        for (let k = 0; k < 26; k++) { const t = k / 26, bx = ox + S / 2 + (ex - ox - S / 2) * t, by = yy + (ey - yy) * t, nl = S * 0.05 * (1 - t * 0.4) * (0.7 + rng() * 0.6), tone = rng();
+          x.strokeStyle = `rgb(${base[0] + tone * 26},${base[1] + tone * 40},${base[2] + tone * 22})`; x.lineWidth = 1.6;
+          for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + side * nl * 0.35, by + sd * nl); x.stroke(); } }
+      }
+      for (let k = 0; k < 140; k++) { const px = ox + S / 2 + (rng() - 0.5) * S * 0.25, py = oy + S * (0.05 + rng() * 0.9), nl = S * 0.04, tone = rng(); x.strokeStyle = `rgb(${base[0] + tone * 26},${base[1] + tone * 40},${base[2] + tone * 22})`; x.lineWidth = 1.6; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (rng() - 0.5) * nl * 2, py - nl); x.stroke(); }
+    }
+    x.restore();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.generateMipmaps = true;
+  return (ATLAS[kind] = t);
+}
+// um cartão (quad subdividido no comprimento para poder curvar), com normais "de copa" (suaves, apontando para fora do centro)
+function card(out, o) {
+  const { cx, cy, cz, w, h, dir, up, uvq, droop = 0, center, shade } = o, seg = 3;
+  const side = new THREE.Vector3().crossVectors(dir, up).normalize(), u2 = new THREE.Vector3().crossVectors(side, dir).normalize();
+  const base = out.pos.length / 3;
+  for (let i = 0; i <= seg; i++) for (let j = 0; j <= 1; j++) {
+    const t = i / seg, sx = (j - 0.5) * w;
+    const px = cx + dir.x * h * t + side.x * sx - u2.x * droop * t * t, py = cy + dir.y * h * t + side.y * sx - u2.y * droop * t * t - droop * t * t * 0.5, pz = cz + dir.z * h * t + side.z * sx - u2.z * droop * t * t;
+    out.pos.push(px, py, pz);
+    const n = new THREE.Vector3(px - center.x, (py - center.y) * 0.8, pz - center.z).normalize().lerp(new THREE.Vector3(0, 1, 0), 0.25).normalize();
+    out.nor.push(n.x, n.y, n.z);
+    out.uv.push((uvq % 2) * 0.5 + 0.005 + j * 0.49, 0.5 - Math.floor(uvq / 2) * 0.5 + 0.005 + t * 0.49); // quadrante do atlas (base do ramo embaixo da imagem)
+    const sh = shade(px, py, pz); out.col.push(sh.r, sh.g, sh.b);
+  }
+  for (let i = 0; i < seg; i++) { const a = base + i * 2, b = a + 1, c = a + 2, d = a + 3; out.idx.push(a, b, c, b, d, c); }
+}
+function cardGeo(out) {
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out.pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(out.nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(out.uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(out.col, 3)); g.setIndex(out.idx); g.computeBoundingSphere(); return g;
+}
+const rndDir = rng => { const u = rng() * 2 - 1, a = rng() * Math.PI * 2, r = Math.sqrt(1 - u * u); return new THREE.Vector3(Math.cos(a) * r, u, Math.sin(a) * r); };
+
 /* ---------- Carvalho / árvore de folhas ---------- */
 export function oakGeometry(seed, opts = {}) {
   const rng = rngOf(seed);
@@ -70,21 +136,25 @@ export function oakGeometry(seed, opts = {}) {
     const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), to.clone().sub(from).normalize()); const br2 = new THREE.CylinderGeometry(0.05, 0.13, len, 7, 3); br2.translate(0, len / 2, 0); br2.applyQuaternion(q); br2.translate(from.x, from.y, from.z);
     parts.push(colorize(toNonIndexed(br2), (c, x, y2, z) => c.set('#5a3e28').offsetHSL(0, 0, (Math.sin(x * 9 + z * 7) * 0.5) * 0.05)));
   }
-  // copa: cachos de folhas, cada um com um tom levemente diferente (luz do sol por cima, sombra por dentro)
-  const leafDark = new THREE.Color(opts.dark ? '#1f4524' : '#2f6329'), leafLight = new THREE.Color(opts.dark ? '#4c853b' : '#86c25a');
+  // copa (auditoria): cada cacho é uma nuvem de cartões com folhas desenhadas — silhueta recortada, vãos onde o céu aparece
+  // e os galhos aparecem por dentro. Mais escuro no miolo e embaixo (sombra própria), mais claro em cima.
+  const dk = opts.dark ? 0.72 : 1, out = { pos: [], nor: [], uv: [], col: [], idx: [] }, center = new THREE.Vector3(0, cy, 0), tmp = new THREE.Color();
+  // galhinhos curtos saindo de cada ponta para dentro dos cachos
   tips.forEach(([a, d, y], i) => {
-    const rr = R * (i === 0 ? 0.82 : 0.48 + rng() * 0.32);
-    const blob = foliageBlob(rng, rr, 4); blob.scale(1, 0.8, 1);
-    blob.translate(Math.cos(a) * d, y, Math.sin(a) * d);
-    const hue = (rng() - 0.5) * 0.03, lum = (rng() - 0.5) * 0.06;
-    parts.push(colorize(toNonIndexed(blob), (c, x, y2, z) => {
-      const k = Math.min(1, Math.max(0, (y2 - (cy - R)) / (R * 2))); // escuro embaixo, claro em cima
-      const inner = Math.min(1, Math.hypot(x, z) / (R * 1.2)); // miolo da copa mais escuro
-      c.copy(leafDark).lerp(leafLight, k * 0.75 * (0.6 + inner * 0.4) + (Math.sin(x * 9 + z * 7 + y2 * 5) * 0.5 + 0.5) * 0.18).offsetHSL(hue, 0, lum);
-    }));
+    const rr = R * (i === 0 ? 0.8 : 0.5 + rng() * 0.3), ccx = Math.cos(a) * d, ccz = Math.sin(a) * d, hue = (rng() - 0.5) * 0.05;
+    const nCards = Math.round(10 + rr * 7);
+    for (let k = 0; k < nCards; k++) {
+      const dir = rndDir(rng); const along = Math.pow(rng(), 0.55); // mais cartões na casca externa do cacho
+      const px = ccx + dir.x * rr * along * 0.85, py = y + dir.y * rr * along * 0.62, pz = ccz + dir.z * rr * along * 0.85;
+      const sz = 1.0 + rng() * 0.8, out2 = new THREE.Vector3(px, py - cy * 0.15, pz).normalize(), up = new THREE.Vector3(rng() - 0.5, 1, rng() - 0.5).normalize();
+      const dirC = out2.clone().add(rndDir(rng).multiplyScalar(0.6)).normalize(); if (Math.abs(dirC.dot(up)) > 0.95) up.set(1, 0, 0);
+      card(out, { cx: px - dirC.x * sz * 0.5, cy: py - dirC.y * sz * 0.5, cz: pz - dirC.z * sz * 0.5, w: sz, h: sz, dir: dirC, up, uvq: Math.floor(rng() * 4), droop: sz * 0.12, center,
+        shade: (x, yy, z) => { const inner = Math.min(1, Math.hypot(x, (yy - cy) * 1.2, z) / (R * 1.25)), top = Math.min(1, Math.max(0, (yy - (cy - R * 0.9)) / (R * 1.8))); const v = (0.42 + inner * 0.38 + top * 0.32) * dk; return tmp.setRGB(v * (1 + hue), v, v * (1 - hue * 0.5)); } });
+    }
   });
-  const g = mergeGeometries(parts); // mantém as normais suaves de cada parte
-  return { geo: g, radius: 0.55, height: cy + R };
+  const leaf = cardGeo(out);
+  const g = mergeGeometries(parts); // tronco e galhos (sombreado liso)
+  return { geo: g, leaf, leafKind: 'leaf', radius: 0.55, height: cy + R };
 }
 
 /* ---------- Pinheiro com camadas de galhos caídos (e versão com neve, S-158) ---------- */
@@ -94,46 +164,35 @@ export function pineGeometry(seed, opts = {}) {
   const parts = [trunkGeo(rng, H * 0.4, 0.27, 0.12, '#47301f', '#6a4630')];
   const dark = new THREE.Color(opts.dark ? '#14321d' : '#1d4628'), light = new THREE.Color(opts.dark ? '#2c6339' : '#467f45');
   const snowA = new THREE.Color('#f4f8fb'), snowB = new THREE.Color('#d6e3ee');
-  const layers = 7 + Math.floor(rng() * 3), ph = rng() * 10;
+  // auditoria: camadas de galhos feitos de cartões de agulhas (ramos com caimento), em volta de um miolo escuro que dá massa
+  const layers = 8 + Math.floor(rng() * 3), out = { pos: [], nor: [], uv: [], col: [], idx: [] }, tmp = new THREE.Color(), dk = opts.dark ? 0.7 : 0.9;
   for (let i = 0; i < layers; i++) {
-    const k = i / layers, r = base * (1 - k * 0.82) * (0.92 + rng() * 0.16), y0 = H * 0.2 + k * H * 0.72, hh = H * 0.26 * (1 - k * 0.3);
-    const cone = new THREE.ConeGeometry(r, hh, opts.snow ? 30 : 22, opts.snow ? 7 : 5, false);
-    const p = cone.attributes.position, nr = 7 + Math.floor(rng() * 4), off = rng() * 6;
-    for (let j = 0; j < p.count; j++) {
-      const x = p.getX(j), y = p.getY(j), z = p.getZ(j), t = (y + hh / 2) / hh, ang = Math.atan2(z, x), rad = Math.hypot(x, z);
-      if (rad < 1e-4) continue;
-      // galhos: o contorno tem "dedos" (pontas de galho) que caem nas extremidades — ruído suave, não serrilhado
-      const fingers = Math.pow(Math.max(0, Math.sin(ang * nr + off)), 0.6) * 0.16 + Math.sin(ang * nr * 2.3 + off * 2) * 0.04;
-      const ext = 1 + fingers * (1 - t), droop = (1 - t) * (1 - t) * (0.22 + fingers * 0.9);
-      p.setXYZ(j, x * ext, y - droop * hh * 0.55, z * ext);
-    }
-    cone.rotateY(rng() * Math.PI); cone.translate(0, y0 + hh / 2, 0);
-    const g2 = mergeVertices(cone.deleteAttribute('normal').deleteAttribute('uv')); g2.computeVertexNormals(); // vértices unidos = sombreado liso (nada de facetas)
-    const N = g2.attributes.normal;
-    colorize(g2, (c, x, y, z) => {
-      const local = (y - y0) / hh;
-      c.copy(dark).lerp(light, Math.max(0, Math.min(1, local * 0.8 + (Math.sin(x * 9 + z * 7 + i) * 0.5 + 0.5) * 0.22)));
-    });
-    if (opts.snow) { // S-158: neve assentada em cima de cada camada (parte de cima e de dentro); as pontas dos galhos que caem e o lado de baixo continuam verdes
-      const col = g2.attributes.color, P = g2.attributes.position, sm = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-      for (let j = 0; j < P.count; j++) {
-        const x = P.getX(j), y = P.getY(j), z = P.getZ(j), up = N.getY(j), local = (y - y0) / hh;
-        const patch = Math.sin(x * 3.1 + ph) * Math.cos(z * 2.9 + ph) * 0.5 + Math.sin(x * 7.3 - z * 6.1 + i) * 0.3 + 0.5;
-        const cover = sm(0.18, 0.42, up) * sm(0.04, 0.3, local) * (0.45 + 0.55 * sm(0.2, 0.45, patch));
-        if (cover <= 0) continue;
-        const sc = snowA.clone().lerp(snowB, (1 - up) * 0.8 + (1 - patch) * 0.1);
-        col.setXYZ(j, col.getX(j) + (sc.r - col.getX(j)) * cover, col.getY(j) + (sc.g - col.getY(j)) * cover, col.getZ(j) + (sc.b - col.getZ(j)) * cover);
-        P.setY(j, y + cover * 0.08); // a neve tem volume (montinho fofo)
+    const k = i / layers, r = base * (1 - k * 0.85) * (0.92 + rng() * 0.16), y0 = H * 0.2 + k * H * 0.72, nb = Math.max(6, Math.round(9 + r * 4)), off = rng() * 6, center = new THREE.Vector3(0, y0, 0);
+    // miolo: cone escuro e liso (não aparece como cone: fica dentro dos ramos e só escurece os vãos)
+    const core = new THREE.ConeGeometry(r * 0.42, H * 0.2, 12, 1, true); core.translate(0, y0 + H * 0.06, 0);
+    parts.push(colorize(toNonIndexed(core.deleteAttribute('uv')), c => c.copy(dark).multiplyScalar(0.55)));
+    for (let j = 0; j < nb; j++) {
+      const a = j / nb * Math.PI * 2 + off + (rng() - 0.5) * 0.4, len = r * (0.85 + rng() * 0.3), dir = new THREE.Vector3(Math.cos(a), 0.18 - k * 0.1 + (rng() - 0.5) * 0.1, Math.sin(a)).normalize();
+      const up = new THREE.Vector3(0, 1, 0), w = len * (0.55 + rng() * 0.2), y = y0 + (rng() - 0.5) * H * 0.04;
+      for (const tilt of [0, 0.9]) { // dois cartões cruzados por ramo (volume de todos os lados)
+        const upT = up.clone().applyAxisAngle(dir, tilt);
+        card(out, { cx: Math.cos(a) * 0.1, cy: y, cz: Math.sin(a) * 0.1, w, h: len, dir, up: upT, uvq: Math.floor(rng() * 4), droop: len * (0.28 + rng() * 0.15), center,
+          shade: (x, yy, z) => { const out2 = Math.min(1, Math.hypot(x, z) / Math.max(0.3, r)), v = (0.5 + out2 * 0.4 + k * 0.15) * dk; return tmp.setRGB(v, v, v); } });
       }
-      g2.computeVertexNormals();
+      if (opts.snow) { // S-158: neve fofa assentada por cima do ramo (montinho alongado e liso), as pontas que caem ficam verdes
+        const sn = mergeVertices(new THREE.SphereGeometry(1, 12, 8)); sn.scale(len * 0.36, 0.07 + rng() * 0.05, w * 0.3);
+        const P = sn.attributes.position; for (let q = 0; q < P.count; q++) { const yy = P.getY(q); if (yy < 0) P.setY(q, yy * 0.3); P.setX(q, P.getX(q) + Math.sin(P.getZ(q) * 9 + j) * 0.03); }
+        sn.computeVertexNormals(); sn.rotateY(-a); sn.translate(Math.cos(a) * len * 0.42, y + len * 0.05, Math.sin(a) * len * 0.42);
+        parts.push(colorize(toNonIndexed(sn.deleteAttribute('uv')), (c, x, yy) => c.copy(snowA).lerp(snowB, rng() * 0.4)));
+      }
     }
-    parts.push(toNonIndexed(g2));
   }
+  const leaf = cardGeo(out);
   // ponta fina no topo
   const tip = new THREE.ConeGeometry(0.12, H * 0.12, 8); tip.translate(0, H * 0.95, 0);
   parts.push(colorize(toNonIndexed(tip), (c, x, y) => c.copy(opts.snow && y > H * 0.97 ? snowA : light)));
   const g = mergeGeometries(parts.map(q => { for (const k of Object.keys(q.attributes)) if (!['position', 'normal', 'color'].includes(k)) q.deleteAttribute(k); return q; }));
-  return { geo: g, radius: 0.45, height: H };
+  return { geo: g, leaf, leafKind: 'needle', radius: 0.45, height: H };
 }
 
 /* ---------- Toco com raízes (enterrado no chão, não flutua em encostas) ---------- */
@@ -213,9 +272,16 @@ export function rockGeometry(seed, opts = {}) {
 export function makeTreeTemplates() {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: false });
   const out = {};
-  const add = (name, { geo, radius, height }) => {
+  // folhas: alphaTest (recorte sem ordenar transparência), dois lados, e material de profundidade com o mesmo recorte para a sombra ter o desenho das folhas
+  const leafMats = {}, leafMat = kind => leafMats[kind] || (leafMats[kind] = (() => {
+    const map = leafAtlas(kind), m = new THREE.MeshStandardMaterial({ map, vertexColors: true, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.78, emissive: new THREE.Color(kind === 'leaf' ? '#0e1a06' : '#081208') });
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map, alphaTest: 0.45 });
+    return { m, dm };
+  })());
+  const add = (name, { geo, radius, height, leaf, leafKind }) => {
     const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true;
     const scene = new THREE.Group(); scene.add(m);
+    if (leaf) { const lm = leafMat(leafKind), l = new THREE.Mesh(leaf, lm.m); l.customDepthMaterial = lm.dm; l.castShadow = true; l.receiveShadow = true; scene.add(l); }
     out[name] = { scene, radius, height };
   };
   for (let i = 0; i < 5; i++) add('oak_' + i, oakGeometry(100 + i * 17));
