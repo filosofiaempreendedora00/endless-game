@@ -169,6 +169,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Polígono chapado no lugar de objeto (hexágono vermelho no chão, retângulos coloridos como estandarte).
 - Efeito visual ligado o tempo todo sem motivo.
 - Câmera que fica atrás de parede.
+- Bicho deslizando sem passos; flor solta no chão; árvore na rocha; área cinza/vazia no mapa.
+- Combate de clicar e travar o alvo (ele quer mira e habilidade).
 - Emoji como ícone de item.
 - Equipamento "frankenstein" (peça que não encaixa no corpo) e chapéu flutuando.
 

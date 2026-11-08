@@ -160,3 +160,17 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Ícone = item de jogo de verdade; emoji soa amador.
   - "Frankenstein": peças de pacotes diferentes precisam parecer feitas uma para a outra.
   - Ele joga enquanto eu trabalho e manda sugestões novas no meio: rodadas crescem; vale dividir o trabalho por arquivos em paralelo.
+
+### Rodada 14 (S-140 a S-177), 2026-11-08
+- Combate: ele quer **habilidade** (S-141, feito no fim da rodada 13): mira no cursor, sem alvo travado.
+- Mascotes de novo (S-142 a S-146): rosto expressivo, física de gelatina, fogo realista, caudas com física, casco fechado, **andar sem deslizar** em todos.
+- Mundo: árvores e flores realistas (flor só em canteiros, regra!), sem árvore em rocha, neve natural, grama sumindo perto de Pedrafunda, nunca área cinza, Ruínas dos Colossos com escombros e terra arrasada, estátuas melhor esculpidas.
+- Cidades: cidade de gelo no espírito da Patrulha da Noite (GoT), porto de mercadores no espírito de Alberta (RO), Pedrafunda povoada.
+- Masmorra com andares estilo labirinto de Morroc, chefe no 4º andar e mapa do andar.
+- Monstros: Muka, fauna de FF12, ave tipo chocobo/peco-peco (também montaria), escorpiões e formigas, morcego; Brasinha com olhos 2D e boca nova; lobo sem cara de cone.
+- Interface: Bestiário pokédex (desbloquear ao ver), mapas e quantidades por monstro, mapa com monstros por região, missões com "onde ir" no mapa e abandono explicado.
+- Aprendizados:
+  - Ele cita referências explícitas de outros jogos (GoT, Alberta, Muka, FF12, chocobo, Hagrid): siga o **espírito** com design próprio e acerte "de primeira" — ele odeia retrabalho.
+  - "Nunca pode ter um bug assim pros meus jogadores": ele já pensa em lançar; qualidade de borda de mundo e de primeira impressão importa.
+  - Regras de bom senso natural: flores em touceiras, árvores só em terra, neve que assenta em cima.
+  - Animações sem deslizar são obrigatórias para tudo que anda.

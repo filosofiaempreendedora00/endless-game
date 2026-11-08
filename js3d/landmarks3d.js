@@ -12,6 +12,45 @@ const vlightAt = (c, i, d, x, y, z) => { const L = vlight(c, i, d); L.position.s
 const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const stoneMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+/* S-161/S-162: pedra de verdade em tudo que é esculpido (colossos, ruínas, santuário, monólitos).
+   No shader, a partir da posição no mundo: relevo de erosão em 3 escalas (lascas, picotado do cinzel,
+   granulado), rachaduras finas, escorridos de chuva, sujeira nas reentrâncias e manchas de líquen.
+   Não custa geometria nenhuma — só alguns cálculos por pixel. */
+const STONE_GLSL = `
+  varying vec3 vSWP; varying vec3 vSWN;
+  float sH(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+  float sN(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(sH(i), sH(i + vec3(1,0,0)), f.x), mix(sH(i + vec3(0,1,0)), sH(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(sH(i + vec3(0,0,1)), sH(i + vec3(1,0,1)), f.x), mix(sH(i + vec3(0,1,1)), sH(i + vec3(1,1,1)), f.x), f.y), f.z); }
+  float sF(vec3 p){ float a = 0.5, s = 0.0; for (int k = 0; k < 4; k++) { s += a * sN(p); p = p * 2.03 + 17.1; a *= 0.5; } return s; }
+  float stoneH(vec3 p, out float crack, out float cav){
+    float big = sF(p * 0.35), mid = sF(p * 1.6 + 3.0), fine = sN(p * 9.0) * 0.5 + sN(p * 23.0) * 0.25;
+    float c = abs(sN(p * vec3(0.55, 0.8, 0.55) + 9.0) * 2.0 - 1.0); crack = 1.0 - smoothstep(0.0, 0.045, c) * 1.0; crack *= smoothstep(0.45, 0.6, sN(p * 0.2 + 2.0));
+    cav = smoothstep(0.62, 0.25, big * 0.6 + mid * 0.4);
+    return big * 1.2 + mid * 0.55 + fine * 0.12 - crack * 0.45;
+  }`;
+stoneMat.onBeforeCompile = sh => {
+  sh.vertexShader = 'varying vec3 vSWP; varying vec3 vSWN;\n' + sh.vertexShader.replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
+    vSWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vSWN = normalize(mat3(modelMatrix) * objectNormal);`);
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + STONE_GLSL + '\n')
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      { float crk, cav; float hh = stoneH(vSWP, crk, cav); float g = sN(vSWP * 3.1) * 0.5 + sN(vSWP * 11.0) * 0.5;
+        vec3 col = diffuseColor.rgb * (0.86 + g * 0.26);
+        col *= 1.0 - cav * 0.32;                                             // sujeira nas reentrâncias
+        col = mix(col, col * 0.42, crk * 0.85);                               // rachaduras escuras
+        float streak = sN(vec3(vSWP.x * 2.2, vSWP.y * 0.12, vSWP.z * 2.2)) * (1.0 - abs(vSWN.y)); col *= 1.0 - smoothstep(0.55, 0.85, streak) * 0.22; // escorridos de chuva
+        float lich = smoothstep(0.78, 0.84, sN(vSWP * 1.9 + 41.0)) * smoothstep(0.3, 0.7, sN(vSWP * 0.3));
+        col = mix(col, mix(vec3(0.78, 0.74, 0.52), vec3(0.62, 0.66, 0.38), sN(vSWP * 7.0)), lich * 0.55); // líquen
+        diffuseColor.rgb = col; }`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      { float crk, cav; float hh = stoneH(vSWP, crk, cav) * 0.16;
+        vec3 sp = -vViewPosition, dpx = dFdx(sp), dpy = dFdy(sp); float hx = dFdx(hh), hy = dFdy(hh);
+        vec3 r1 = cross(dpy, normal), r2 = cross(normal, dpx); float det = dot(dpx, r1);
+        vec3 gr = sign(det) * (hx * r1 + hy * r2); normal = normalize(abs(det) * normal - gr); }`)
+    .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = clamp(roughnessFactor - sN(vSWP * 4.0) * 0.12, 0.6, 1.0);`);
+};
+stoneMat.customProgramCacheKey = () => 'aethra-stone';
 
 // pedra irregular: icosaedro subdividido, deformado por ruído (erosão), com cor de pedra e musgo
 function rock(rng, rx, ry, rz, amt = 0.12) {
@@ -193,18 +232,56 @@ export function makeCampfire() {
   g.userData.update = t => fl.forEach((f, k) => { f.scale.set(1 + Math.sin(t * 10 + k) * 0.1, 1 + Math.sin(t * 13 + k * 2) * 0.2, 1); f.rotation.y = t * (k + 1); });
   return g;
 }
-/* ---------- Poleiro do grifo (placa com o emblema) ---------- */
+/* ---------- Pouso do Noctívago (S-177): poste de madeira lavrada com braço e mão-francesa,
+   estandarte de pano bordado (cavalo alado em prata sobre vinho) balançando ao vento,
+   cocho d'água, fardos de feno e o próprio Noctívago esperando ao lado ---------- */
+function roostBannerTex() {
+  const W = 256, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const gr = x.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, '#3a0c14'); gr.addColorStop(0.5, '#6a1a24'); gr.addColorStop(1, '#3a0c14'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  for (let k = 0; k < 3000; k++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,220,200'},${Math.random() * 0.05})`; x.fillRect(Math.random() * W, Math.random() * H, 1, 2 + Math.random() * 3); } // trama do tecido
+  x.strokeStyle = '#c9a24a'; x.lineWidth = 8; x.strokeRect(14, 14, W - 28, H - 70); x.strokeStyle = 'rgba(201,162,74,0.5)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 94);
+  // cavalo alado empinado, em prata (silhueta bordada)
+  x.save(); x.translate(W / 2, 240); x.fillStyle = '#dfe4ea'; x.strokeStyle = 'rgba(0,0,0,0.35)'; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(-30, 70); x.lineTo(-22, 20); x.bezierCurveTo(-30, 0, -24, -30, 0, -38); x.bezierCurveTo(10, -60, 18, -84, 36, -96); x.lineTo(54, -90); x.lineTo(40, -76); x.bezierCurveTo(30, -60, 34, -40, 26, -20); x.bezierCurveTo(30, 0, 30, 20, 18, 30); x.lineTo(30, 78); x.lineTo(20, 80); x.lineTo(6, 36); x.lineTo(-6, 40); x.lineTo(-14, 80); x.lineTo(-24, 80); x.closePath(); x.fill(); x.stroke();
+  for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(0, -30); x.bezierCurveTo(sd * 40, -80, sd * 90, -90, sd * 104, -60); x.lineTo(sd * 84, -52); x.lineTo(sd * 96, -36); x.lineTo(sd * 72, -32); x.lineTo(sd * 80, -14); x.lineTo(sd * 54, -14); x.bezierCurveTo(sd * 30, -10, sd * 12, -14, 0, -10); x.closePath(); x.fill(); x.stroke(); }
+  x.restore();
+  x.fillStyle = '#e8d49a'; x.font = 'bold 22px serif'; x.textAlign = 'center'; x.fillText('POUSO', W / 2, 400); x.font = 'italic 16px serif'; x.fillText('dos Noctívagos', W / 2, 424);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+let _roostTex = null;
 export function makeRoost() {
-  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: '#6b4a2e', roughness: 0.9 });
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 4.2, 14), wood); post.position.y = 2.1; g.add(post);
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.2, 12), wood); bar.rotation.z = Math.PI / 2; bar.position.y = 3.6; g.add(bar);
-  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const c = cv.getContext('2d');
-  c.fillStyle = '#2a3a6a'; c.fillRect(0, 0, 128, 128); c.strokeStyle = '#ffd76a'; c.lineWidth = 6; c.strokeRect(4, 4, 120, 120);
-  c.font = '70px serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🦅', 64, 70);
-  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.6, 6, 6), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 })); flag.position.set(0, 2.7, 0.06); g.add(flag);
+  const g = new THREE.Group(), rng = rngOf(91);
+  const wood = new THREE.MeshStandardMaterial({ color: '#5e3f26', roughness: 0.85 }), dark = new THREE.MeshStandardMaterial({ color: '#3e2a1a', roughness: 0.9 }), iron = new THREE.MeshStandardMaterial({ color: '#2c2a28', metalness: 0.75, roughness: 0.45 });
+  // poste de seção quadrada com quinas chanfradas e veios (ruído nos vértices), sobre base de pedras
+  const beam = (w, h, d) => { const b = new THREE.BoxGeometry(w, h, d, 2, Math.max(2, Math.round(h * 4)), 2), P = b.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setX(i, P.getX(i) * (1 + Math.sin(y * 7 + P.getZ(i) * 30) * 0.03)); P.setZ(i, P.getZ(i) * (1 + Math.sin(y * 5 + P.getX(i) * 30) * 0.03)); } b.computeVertexNormals(); return b; };
+  const post = new THREE.Mesh(beam(0.24, 4.4, 0.24), wood); post.position.y = 2.2; g.add(post);
+  const arm = new THREE.Mesh(beam(0.18, 1.7, 0.18), wood); arm.rotation.z = Math.PI / 2; arm.position.set(0.7, 4.05, 0); g.add(arm);
+  const brace = new THREE.Mesh(beam(0.12, 0.95, 0.12), dark); brace.rotation.z = Math.PI / 4; brace.position.set(0.35, 3.62, 0); g.add(brace);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.25, 4), dark); cap.rotation.y = Math.PI / 4; cap.position.y = 4.52; g.add(cap);
+  for (const y of [0.9, 3.3]) { const band = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.06, 0.27), iron); band.position.y = y; g.add(band); }
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.018, 8, 18), iron); ring.position.set(0, 1.2, 0.15); g.add(ring); // argola de amarrar
+  for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2, st = new THREE.Mesh(rock(rng, 0.16, 0.11, 0.14, 0.15), new THREE.MeshStandardMaterial({ color: '#7e7a70', roughness: 1 })); st.position.set(Math.cos(a) * 0.3, 0.06, Math.sin(a) * 0.3); g.add(st); }
+  // estandarte pendurado no braço por argolas, com bico embaixo; balança ao vento
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.1, 8), iron); rod.rotation.z = Math.PI / 2; rod.position.set(0.85, 3.86, 0); g.add(rod);
+  const BW = 0.95, BH = 1.9, pl = new THREE.PlaneGeometry(BW, BH, 10, 18); pl.translate(0, -BH / 2, 0);
+  { const P = pl.attributes.position; for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i); if (py < -BH + 0.3) P.setY(i, -BH + Math.abs(px) / (BW / 2) * 0.3); } }
+  const flag = new THREE.Mesh(pl, new THREE.MeshStandardMaterial({ map: _roostTex || (_roostTex = roostBannerTex()), side: THREE.DoubleSide, roughness: 0.8 })); flag.position.set(0.85, 3.84, 0); flag.castShadow = true; g.add(flag);
+  for (let k = 0; k < 4; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), iron); r.position.set(0.85 - BW / 2 + 0.1 + k * (BW - 0.2) / 3, 3.86, 0); g.add(r); }
   const P = flag.geometry.attributes.position, base = P.array.slice();
-  g.userData.update = t => { for (let i = 0; i < P.count; i++) P.setZ(i, base[i * 3 + 2] + Math.sin(t * 3 + base[i * 3] * 3 + base[i * 3 + 1]) * 0.05); P.needsUpdate = true; };
+  // cocho d'água e fardos de feno
+  const trough = new THREE.Group(); trough.position.set(-0.9, 0, 1.3); trough.rotation.y = 0.3; g.add(trough);
+  for (const [w, h, d, x, y, z] of [[1.6, 0.06, 0.5, 0, 0.12, 0], [1.6, 0.4, 0.06, 0, 0.32, 0.25], [1.6, 0.4, 0.06, 0, 0.32, -0.25], [0.06, 0.4, 0.5, 0.8, 0.32, 0], [0.06, 0.4, 0.5, -0.8, 0.32, 0]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood); m.position.set(x, y, z); trough.add(m); }
+  const water = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.02, 0.44), new THREE.MeshStandardMaterial({ color: '#2e4a5a', roughness: 0.05, metalness: 0.3 })); water.position.y = 0.42; trough.add(water);
+  const hayM = new THREE.MeshStandardMaterial({ color: '#c9a85a', roughness: 1 });
+  for (const [x, z, r] of [[1.0, 1.4, 0.2], [1.2, 0.8, -0.3]]) { const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 0.55, 3, 2, 2), hayM); const HP = h2.geometry.attributes.position; for (let i = 0; i < HP.count; i++) HP.setXYZ(i, HP.getX(i) + (Math.random() - 0.5) * 0.04, HP.getY(i) + (Math.random() - 0.5) * 0.04, HP.getZ(i) + (Math.random() - 0.5) * 0.04); h2.geometry.computeVertexNormals(); h2.position.set(x, 0.22, z); h2.rotation.y = r; g.add(h2); for (const bz of [-0.15, 0.15]) { const tie = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.012, 6, 16), dark); tie.scale.set(1, 0.85, 1); tie.position.set(x, 0.22, z + bz); tie.rotation.set(0, r + Math.PI / 2, 0); g.add(tie); } }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  // o Noctívago, esperando o próximo voo
+  const noc = makeNoctivago(7); noc.obj.position.set(1.0, 0, -2.6); noc.obj.rotation.y = -0.5; g.add(noc.obj);
+  g.userData.update = t => {
+    for (let i = 0; i < P.count; i++) { const hang = Math.min(1, -base[i * 3 + 1] / BH); P.setZ(i, base[i * 3 + 2] + Math.sin(t * 2.4 + base[i * 3 + 1] * 2.5 + base[i * 3] * 1.5) * 0.09 * hang + Math.sin(t * 3.9 + base[i * 3] * 6) * 0.02 * hang); }
+    P.needsUpdate = true; flag.geometry.computeVertexNormals(); noc.update(t);
+  };
+  g.userData.cols = [[0, 0, 0.35], [1.0, -2.6, 1.1], [1.3, -1.9, 0.8], [0.6, -3.4, 0.8], [-0.9, 1.3, 0.8]];
   return g;
 }
 
@@ -638,4 +715,259 @@ export function makeMist(heightAt, cx, cz, radius, count = 26, seed = 5, color =
   }
   g.userData.update = t => { for (const it of items) { it.p.position.x = it.x + Math.sin(t * 0.03 * it.sp + it.ph) * 9; it.p.position.z = it.z + Math.cos(t * 0.025 * it.sp + it.ph) * 7; } };
   return g;
+}
+
+/* =========================================================================
+   RUÍNAS DOS COLOSSOS (S-161): a planície era uma cidade antiga. Calçada de lajes
+   rachadas, colunatas quebradas, tambores de coluna caídos, muros desabados,
+   pedestais vazios e montes de escombros — terra arrasada em volta dos gigantes.
+   buildRuins(ctx) coloca tudo em grupos (um por região) com poucas malhas.
+   ctx: { scene, placed, colliders, occluders, heightAt, roadDist }
+   ========================================================================= */
+const RUIN_STONE = '#a29b8d', RUIN_DARK = '#8a8478', RUIN_MOSS = '#5d6e3a';
+function slab(rng, w, d, t) { // laje irregular, cantos gastos
+  const g = stoneBlock(rng, w, t, d); return g;
+}
+// bloco de pedra lavrada, pintado (cor por vértice)
+function carved(rng, w, h, d, base = RUIN_STONE, moss = 0.35) { return paint(stoneBlock(rng, w, h, d), base, RUIN_MOSS, moss, Math.floor(rng() * 99)); }
+// coluna com base, fuste (em tambores) e capitel; broken = parte de cima quebrada
+function ruinColumn(rng, parts, x, y, z, r, h, broken, fallen) {
+  parts.push(paint(put(stoneBlock(rng, r * 2.9, r * 0.9, r * 2.9), x, y + r * 0.35, z, 0, rng() * 0.1), RUIN_DARK, RUIN_MOSS, 0.5, 3));       // plinto
+  parts.push(paint(put(new THREE.CylinderGeometry(r * 1.15, r * 1.3, r * 0.5, 22).deleteAttribute('uv'), x, y + r * 0.95, z), RUIN_STONE, RUIN_MOSS, 0.5, 4)); // toro da base
+  const drums = Math.max(1, Math.round(h / (r * 2.2))), dh = h / drums;
+  for (let k = 0; k < drums; k++) {
+    const last = k === drums - 1, g = column(rng, r, dh * 0.995, last && broken ? Math.min(dh * 0.8, broken) : 0);
+    parts.push(paint(put(g, x, y + r * 1.2 + k * dh, z, 0, rng() * 6, 0), k % 2 ? RUIN_STONE : '#9c9588', RUIN_MOSS, 0.4, 5 + k));
+  }
+  if (!broken) { parts.push(paint(put(stoneBlock(rng, r * 2.6, r * 0.7, r * 2.6), x, y + r * 1.2 + h + r * 0.35, z), RUIN_STONE, RUIN_MOSS, 0.6, 7)); }
+  // tambores caídos ao lado (a parte que desabou)
+  for (let k = 0; k < fallen; k++) {
+    const a = rng() * Math.PI * 2, d = r * (2.2 + k * 2.3 + rng()), L = r * 2 * (0.8 + rng() * 0.5), g = column(rng, r * 0.98, L, rng() < 0.5 ? r * 0.6 : 0);
+    g.translate(0, -L / 2, 0); g.rotateZ(Math.PI / 2 + (rng() - 0.5) * 0.2); g.rotateY(a + Math.PI / 2 + (rng() - 0.5) * 0.8);
+    parts.push(paint(put(g, x + Math.cos(a) * d, y + r * 0.82, z + Math.sin(a) * d), '#9a9385', RUIN_MOSS, 0.6, 9 + k));
+  }
+}
+// muro desabado: fileiras de blocos grandes com topo em degraus quebrados e blocos caídos na frente
+function ruinWall(rng, parts, x, y, z, ry, len, h, heightAt) {
+  const cs = Math.cos(ry), sn = Math.sin(ry); let yy = 0, row = 0;
+  const top = u => h * (0.25 + 0.75 * Math.abs(Math.sin(u * 1.3 + rng() * 0.2)) * (0.6 + 0.4 * Math.sin(u * 0.4 + 1)));
+  while (yy < h) {
+    const bh = 0.55 + rng() * 0.25; let u = -len / 2 + (row % 2 ? 0.45 : 0);
+    while (u < len / 2) {
+      const bw = Math.min(0.9 + rng() * 0.8, len / 2 - u); if (bw < 0.3) break;
+      const cu = u + bw / 2; u += bw;
+      if (yy + bh > top(cu) || rng() < 0.05) continue; // borda quebrada e um ou outro bloco faltando
+      const wx = x + cu * cs, wz = z - cu * sn, gy = heightAt ? heightAt(wx, wz) - y : 0;
+      const g = stoneBlock(rng, bw - 0.05, bh - 0.04, 0.9 * (0.9 + rng() * 0.2)); g.rotateY(ry + (rng() - 0.5) * 0.04); g.translate(wx - x, gy + yy + bh / 2 - 0.2, wz - z);
+      parts.push(paint(g, rng() < 0.3 ? RUIN_DARK : RUIN_STONE, RUIN_MOSS, 0.45, row * 7 + Math.floor(cu)));
+    }
+    yy += bh; row++;
+  }
+  for (let k = 0; k < Math.round(len * 0.9); k++) { // blocos caídos na frente e atrás
+    const u = (rng() - 0.5) * len, side = (rng() < 0.6 ? 1 : -1) * (0.9 + rng() * 2.4), wx = x + u * cs + side * sn, wz = z - u * sn + side * cs, s = 0.4 + rng() * 0.5;
+    const g = stoneBlock(rng, s * 1.6, s, s * 1.1); g.rotateX(rng() * 0.6); g.rotateY(rng() * 6); g.rotateZ(rng() * 0.6);
+    g.translate(wx - x, (heightAt ? heightAt(wx, wz) - y : 0) + s * 0.35, wz - z); parts.push(paint(g, RUIN_STONE, RUIN_MOSS, 0.5, k));
+  }
+}
+// monte de escombros: lascas, blocos lavrados e pedaços de estátua
+function debrisPile(rng, parts, x, y, z, R, n, heightAt, x0, z0) {
+  for (let k = 0; k < n; k++) {
+    const a = rng() * Math.PI * 2, d = Math.pow(rng(), 0.7) * R, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, s = (0.25 + rng() * 0.7) * (1.2 - d / R * 0.6);
+    const gy = heightAt ? heightAt(px, pz) - y : 0, kind = rng();
+    let g;
+    if (kind < 0.45) g = chunk(rng, s * 1.3, s * 0.7, s);
+    else if (kind < 0.8) g = stoneBlock(rng, s * 1.8, s * 0.9, s * 1.2);
+    else g = column(rng, s * 0.6, s * 2.2, s * 0.6);
+    g.rotateX((rng() - 0.5) * 1.2); g.rotateY(rng() * 6.28); g.rotateZ((rng() - 0.5) * 1.2);
+    g.translate(px - x0, gy + (y - (heightAt ? heightAt(x0, z0) : 0)) + s * 0.3 - (1 - d / R) * 0.0, pz - z0);
+    parts.push(paint(g, rng() < 0.4 ? RUIN_DARK : RUIN_STONE, RUIN_MOSS, 0.5, k));
+  }
+}
+export function buildRuins(ctx) {
+  const { scene, placed, colliders, occluders, heightAt, roadDist } = ctx, rng = rngOf(1717), groups = [];
+  // obstáculos (estátuas, monólitos, arcos, cabeça, acampamento, santuário)
+  const avoid = [[-50, -310, 15], [78, -340, 17], [-78, -352, 18], [100, -275, 22], [-96, -246, 14], [46, -252, 9], [0, -262, 7], [0, -338, 7], [0, -212, 16], [0, -392, 34]];
+  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + 0.2; avoid.push([Math.cos(a) * 24, -300 + Math.sin(a) * 24, 3]); }
+  for (let k = 0; k < 6; k++) avoid.push([(k % 2 ? 1 : -1) * (40 + k * 17), -230 - k * 26, 3]);
+  const free = (x, z, r) => avoid.every(([ax, az, ar]) => Math.hypot(x - ax, z - az) > ar + r);
+  const cluster = (cx, cz, fill, asset = 'ruinas') => {
+    const y0 = heightAt(cx, cz), parts = [], cols = []; fill(parts, y0, cols);
+    if (!parts.length) return;
+    const m = mesh(parts), g = new THREE.Group(); g.add(m); g.position.set(cx, y0, cz); scene.add(g);
+    g.userData.asset = asset; placed.push(g); groups.push(g);
+    for (const c of cols) colliders.push({ x: c[0], z: c[1], r: c[2], name: asset });
+  };
+  // 1) calçada antiga: lajes rachadas e soltas ao longo da estrada até o Santuário (com falhas onde a terra tomou conta)
+  for (let z0 = -228; z0 > -372; z0 -= 18) cluster(0, z0 - 9, (parts, y0) => {
+    for (let z = z0; z > z0 - 18; z -= 1.25) for (let x = -5.6; x <= 5.6; x += 1.4) {
+      const px = x + (rng() - 0.5) * 0.15, pz = z + (rng() - 0.5) * 0.15; if (rng() < 0.16 + Math.abs(x) * 0.05) continue; // falhas e bordas comidas
+      const w = 1.3 + (rng() - 0.5) * 0.2, d = 1.15 + (rng() - 0.5) * 0.2, t = 0.18;
+      const g = slab(rng, w, d, t); g.rotateY((rng() - 0.5) * 0.12); g.rotateX((rng() - 0.5) * 0.06); g.rotateZ((rng() - 0.5) * 0.06);
+      g.translate(px, heightAt(px, pz) - y0 + 0.02 + (rng() < 0.12 ? 0.08 : 0), pz - (z0 - 9)); parts.push(paint(g, rng() < 0.3 ? '#8f897c' : '#a7a092', RUIN_MOSS, 0.25, Math.floor(rng() * 50)));
+    }
+  }, 'calcada_antiga');
+  // 2) colunatas quebradas dos dois lados da calçada
+  for (let z = -240; z > -382; z -= 13) for (const sx of [-1, 1]) {
+    const x = sx * (9.5 + rng() * 0.6); if (!free(x, z, 2.5)) continue;
+    const intact = rng() < 0.18, h = intact ? 9 : 2.5 + rng() * 6;
+    cluster(x, z, (parts, y0, cols) => { ruinColumn(rng, parts, 0, 0, 0, 0.75, h, intact ? 0 : 0.6 + rng() * 0.9, intact ? 0 : 1 + Math.floor(rng() * 3)); cols.push([x, z, 1.1]); }, 'coluna_quebrada');
+  }
+  // 3) muros desabados de casas e templos antigos, espalhados pela planície
+  const walls = [[-30, -268, 0.3, 11, 3.6], [-36, -276, 1.85, 7, 2.6], [32, -298, -0.4, 13, 4.2], [26, -306, 1.2, 6, 2.2], [-120, -300, 0.9, 14, 4.6], [-112, -308, 2.4, 9, 3], [128, -318, -0.2, 12, 3.8], [60, -372, 0.6, 15, 5], [-40, -372, -0.7, 10, 3.4], [-140, -262, 1.4, 9, 3], [140, -250, 0.1, 10, 3.2], [-64, -214, 0.5, 8, 2.6], [70, -222, -0.9, 9, 2.8], [-150, -346, 0.4, 12, 4]];
+  for (const [x, z, ry, len, h] of walls) { if (!free(x, z, len / 2)) continue; cluster(x, z, (parts, y0, cols) => { ruinWall(rng, parts, 0, 0, 0, ry, len, h, (wx, wz) => heightAt(x + wx, z + wz) - y0); const cs = Math.cos(ry), sn = Math.sin(ry); for (let u = -len / 2 + 1; u <= len / 2 - 1; u += 2) cols.push([x + u * cs, z - u * sn, 1.1]); }, 'muro_desabado'); }
+  // 4) colunas gigantes tombadas (o que sobrou de um templo enorme)
+  for (const [x, z, ry] of [[-22, -330, 0.4], [40, -330, -1.1], [-110, -330, 2.2], [118, -300, 0.7]]) { if (!free(x, z, 7)) continue;
+    cluster(x, z, (parts, y0, cols) => { const R = 1.5, cs = Math.cos(ry), sn = Math.sin(ry); let u = -8;
+      for (let k = 0; k < 4; k++) { const L = 3.2 + rng() * 1.2, g = column(rng, R, L, k === 3 ? 1.2 : 0); g.translate(0, -L / 2, 0); g.rotateZ(Math.PI / 2); g.rotateY(ry + (rng() - 0.5) * 0.25); const px = u * cs + (rng() - 0.5) * 0.6, pz = -u * sn; g.translate(px, heightAt(x + px, z + pz) - y0 + R * 0.85, pz); parts.push(paint(g, k % 2 ? RUIN_STONE : '#9c9588', RUIN_MOSS, 0.55, k)); cols.push([x + px, z + pz, R + 0.3]); u += L + 0.4 + rng() * 1.2; }
+      const cap = stoneBlock(rng, R * 2.8, R * 0.9, R * 2.8); cap.rotateZ(0.4); cap.translate(u * cs + 1, heightAt(x + u * cs, z - u * sn) - y0 + R * 0.6, -u * sn); parts.push(paint(cap, RUIN_STONE, RUIN_MOSS, 0.6, 77)); }, 'coluna_tombada'); }
+  // 5) pedestais vazios (a estátua caiu ou foi levada) e montes de escombros
+  for (const [x, z] of [[-60, -280], [60, -290], [-20, -360], [24, -246], [-130, -282], [132, -350], [90, -380], [-90, -386]]) { if (!free(x, z, 4)) continue;
+    cluster(x, z, (parts, y0, cols) => { parts.push(carved(rng, 4.2, 1.4, 4.2, RUIN_DARK)); parts[parts.length - 1].translate(0, 0.4, 0); parts.push(carved(rng, 3.4, 1.2, 3.4)); parts[parts.length - 1].translate(0.1, 1.5, -0.1);
+      for (const sx of [-1, 1]) { const f = chunk(rng, 0.7, 1.2, 0.8); f.translate(sx * 0.8, 2.6, 0); parts.push(paint(f, RUIN_STONE, RUIN_MOSS, 0.3, 5)); } // só os pés da estátua
+      debrisPile(rng, parts, x, y0, z, 5.5, 26, heightAt, x, z); cols.push([x, z, 2.4]); }, 'pedestal_vazio'); }
+  for (let k = 0; k < 18; k++) { const a = rng() * Math.PI * 2, d = 30 + rng() * 85, x = Math.cos(a) * d * 1.3, z = -300 + Math.sin(a) * d; if (!free(x, z, 5) || (roadDist && roadDist(x, z) < 4)) continue;
+    cluster(x, z, (parts, y0) => debrisPile(rng, parts, x, y0, z, 3.5 + rng() * 3.5, 22 + Math.floor(rng() * 18), heightAt, x, z), 'escombros'); }
+  return groups;
+}
+
+/* =========================================================================
+   NOCTÍVAGO (S-177): a montaria dos voos — criatura original, um cavalo alado da noite.
+   Corpo de cavalo esguio e ossudo (costelas marcadas, cabeça longa de crânio
+   anguloso), olhos claros sem pupila, crina esfiapada, cauda longa com tufo e
+   ASAS DE COURO com ossos de dedos e membrana que se recalcula a cada quadro
+   (dobradas no repouso; de vez em quando ele as abre e bate).
+   makeNoctivago() → { obj, update(t) }
+   ========================================================================= */
+// tubo ao longo de pontos, com seção elíptica controlada (rx, ry em função de t) e "cima" fixo
+function sweep(pts, rad, segs = 40, radial = 20, up = V3(0, 1, 0), disp = null) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => V3(...p))), pos = [], idx = [], T = new THREE.Vector3(), side = new THREE.Vector3(), upv = new THREE.Vector3();
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs, c = curve.getPointAt(t); curve.getTangentAt(t, T);
+    side.crossVectors(T, up); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize(); upv.crossVectors(side, T).normalize();
+    const [rx, ry, oy = 0] = rad(t);
+    for (let j = 0; j <= radial; j++) {
+      const a = j / radial * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a); let k = 1; if (disp) k = disp(t, a);
+      pos.push(c.x + side.x * ca * rx * k + upv.x * (sa * ry * k + oy), c.y + side.y * ca * rx * k + upv.y * (sa * ry * k + oy), c.z + side.z * ca * rx * k + upv.z * (sa * ry * k + oy));
+    }
+  }
+  for (let i = 0; i < segs; i++) for (let j = 0; j < radial; j++) { const a = i * (radial + 1) + j, b = a + radial + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+// pinta por altura/curvatura: costas um pouco mais claras, ventre e articulações mais escuros
+function hide(g, base = '#4c505e', light = '#7c8190', dark = '#272630') {
+  const P = g.attributes.position, N = g.attributes.normal, col = new Float32Array(P.count * 3), c = new THREE.Color(), b = new THREE.Color(base), l = new THREE.Color(light), d = new THREE.Color(dark);
+  for (let i = 0; i < P.count; i++) { const ny = N.getY(i), n = Math.sin(P.getX(i) * 9 + P.getZ(i) * 7) * 0.5 + 0.5; c.copy(b).lerp(ny > 0 ? l : d, Math.abs(ny) * 0.6).offsetHSL(0, 0, (n - 0.5) * 0.03); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
+}
+export function makeNoctivago(seed = 3) {
+  const rng = rngOf(seed), obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
+  const skin = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0.0 });
+  const hoofM = new THREE.MeshStandardMaterial({ color: '#141216', roughness: 0.35, metalness: 0.2 });
+  const boneM = new THREE.MeshStandardMaterial({ color: '#2a2730', roughness: 0.45 });
+  const membM = new THREE.MeshStandardMaterial({ color: '#2a1f2e', roughness: 0.65, side: THREE.DoubleSide, transparent: true, opacity: 0.93, emissive: '#1a0a22', emissiveIntensity: 0.35 });
+  const eyeM = new THREE.MeshStandardMaterial({ color: '#eef6ff', emissive: '#bfe2ff', emissiveIntensity: 1.6, roughness: 0.2 });
+  const add = (g, m = skin, parent = body) => { const me = new THREE.Mesh(g, m); me.castShadow = true; me.receiveShadow = true; parent.add(me); return me; };
+  // tronco: esguio, com costelas marcadas e ventre recolhido
+  const torso = sweep([[0, 1.48, -1.02], [0, 1.58, -0.74], [0, 1.52, -0.2], [0, 1.6, 0.3], [0, 1.46, 0.8]], t => { const s = Math.sin(Math.PI * Math.min(1, t * 1.04)); return [0.15 + 0.17 * s, 0.2 + 0.27 * s, -0.1 * s]; }, 48, 24, V3(0, 1, 0),
+    (t, a) => { const sideA = Math.abs(Math.cos(a)), below = Math.sin(a) < 0 ? 1 : 0; const ribs = t > 0.42 && t < 0.82 ? Math.max(0, Math.cos((t - 0.42) / 0.4 * Math.PI * 7)) : 0; return 1 + ribs * 0.05 * sideA - (t > 0.25 && t < 0.6 ? 0.1 * below * Math.sin((t - 0.25) / 0.35 * Math.PI) : 0); });
+  add(hide(torso));
+  // garupa e paleta (volumes de músculo seco)
+  for (const sx of [-1, 1]) { const hip = new THREE.SphereGeometry(1, 20, 14); hip.scale(0.16, 0.24, 0.3); hip.translate(sx * 0.12, 1.5, -0.68); add(hide(hip)); const sh = new THREE.SphereGeometry(1, 20, 14); sh.scale(0.12, 0.26, 0.2); sh.rotateX(-0.3); sh.translate(sx * 0.14, 1.38, 0.55); add(hide(sh)); }
+  // pescoço longo e arqueado
+  const neckG = new THREE.Group(); neckG.position.set(0, 1.6, 0.62); body.add(neckG);
+  add(hide(sweep([[0, -0.1, -0.08], [0, 0.22, 0.22], [0, 0.46, 0.44], [0, 0.62, 0.58]], t => [0.21 - t * 0.1, 0.33 - t * 0.17, 0.03], 28, 20, V3(0, 0, -1))), skin, neckG);
+  { const vert = []; for (let k = 0; k < 8; k++) { const t = k / 7, g = new THREE.SphereGeometry(1, 10, 8); g.scale(0.03, 0.04, 0.035); g.translate(0, -0.02 + t * 0.6 + 0.16 - t * 0.02, -0.14 + t * 0.62); vert.push(g); } add(hide(mergeGeometries(vert)), boneM, neckG); }
+  // cabeça: crânio longo e anguloso, órbitas fundas, maçãs do rosto ossudas, focinho estreito
+  const headG = new THREE.Group(); headG.position.set(0, 0.66, 0.6); headG.rotation.x = 0.35; neckG.add(headG);
+  { // perfil de cabeça de cavalo: ganacha larga atrás, chanfro reto e fino, focinho com narinas abertas
+    const R = t => { const k = [[0, 0.07, 0.09, 0.02], [0.12, 0.115, 0.15, -0.05], [0.26, 0.105, 0.135, -0.07], [0.45, 0.078, 0.1, -0.03], [0.75, 0.068, 0.09, -0.01], [0.92, 0.074, 0.09, -0.015], [1, 0.03, 0.04, -0.02]];
+      for (let i = 1; i < k.length; i++) if (t <= k[i][0]) { const u = (t - k[i - 1][0]) / (k[i][0] - k[i - 1][0]), s2 = u * u * (3 - 2 * u); return [k[i - 1][1] + (k[i][1] - k[i - 1][1]) * s2, k[i - 1][2] + (k[i][2] - k[i - 1][2]) * s2, k[i - 1][3] + (k[i][3] - k[i - 1][3]) * s2]; } return [0.03, 0.04, 0]; };
+    add(hide(sweep([[0, 0.05, -0.1], [0, 0.03, 0.1], [0, -0.06, 0.32], [0, -0.17, 0.54], [0, -0.22, 0.66]], R, 36, 22, V3(0, 1, 0),
+      (t, a) => 1 + (Math.abs(Math.cos(a)) > 0.75 && t > 0.1 && t < 0.32 ? 0.1 : 0) - (Math.sin(a) > 0.55 && t > 0.08 && t < 0.2 ? 0.05 : 0) + (t > 0.86 && Math.abs(Math.cos(a)) > 0.6 ? 0.12 : 0))), skin, headG);
+  }
+  for (const sx of [-1, 1]) {
+    const brow = new THREE.SphereGeometry(1, 14, 10); brow.scale(0.035, 0.03, 0.08); brow.rotateX(-0.6); brow.translate(sx * 0.095, 0.03, 0.11); add(hide(brow), skin, headG); // arco da órbita
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), eyeM); eye.scale.set(0.8, 1, 1.3); eye.position.set(sx * 0.1, 0.0, 0.1); eye.rotation.y = sx * 0.7; headG.add(eye);
+    const nos = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), hoofM); nos.scale.set(0.7, 1, 1.2); nos.position.set(sx * 0.045, -0.2, 0.655); nos.rotation.y = sx * 0.4; headG.add(nos);
+    const ear = new THREE.Group(); ear.position.set(sx * 0.06, 0.11, -0.08); ear.rotation.set(-0.35, 0, sx * -0.35); headG.add(ear); ear.userData.sx = sx;
+    const eg = new THREE.ConeGeometry(0.035, 0.16, 12, 3, true); eg.scale(1, 1, 0.5); eg.translate(0, 0.08, 0); add(hide(eg), skin, ear); (headG.userData.ears = headG.userData.ears || []).push(ear);
+  }
+  // espinha ossuda: vértebras salientes ao longo do dorso e do pescoço (o ar de criatura da noite)
+  { const vert = []; const back = new THREE.CatmullRomCurve3([V3(0, 1.62, -0.95), V3(0, 1.7, -0.6), V3(0, 1.66, -0.1), V3(0, 1.74, 0.3)]);
+    for (let k = 0; k < 14; k++) { const p = back.getPointAt(k / 13), g = new THREE.SphereGeometry(1, 10, 8); g.scale(0.035, 0.05 + (k % 2) * 0.01, 0.045); g.translate(p.x, p.y + 0.06, p.z); vert.push(g); }
+    for (const sx of [-1, 1]) { const g = new THREE.SphereGeometry(1, 12, 10); g.scale(0.06, 0.06, 0.08); g.translate(sx * 0.21, 1.66, -0.72); vert.push(g); } // pontas do quadril
+    add(hide(mergeGeometries(vert)), boneM); }
+  // crina esfiapada (fios longos e escuros caindo do topo do pescoço)
+  const maneM = new THREE.MeshStandardMaterial({ color: '#0e0d12', roughness: 0.8, side: THREE.DoubleSide });
+  const mane = []; for (let k = 0; k < 16; k++) { const t = k / 15, L = 0.22 + rng() * 0.3, w = 0.035 + rng() * 0.02, g = new THREE.PlaneGeometry(w, L, 1, 5); g.translate(0, -L / 2, 0); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const v = -P.getY(i) / L; P.setX(i, P.getX(i) * (1 - v * 0.8)); P.setZ(i, Math.sin(v * 3 + k) * 0.03); } g.computeVertexNormals();
+    const m = new THREE.Mesh(g, maneM); m.position.set((rng() - 0.5) * 0.03, 0.12 + t * 0.78, -0.12 + t * 0.5); m.rotation.set(-0.3 - t * 0.2, Math.PI / 2 + (k % 2 ? 0.3 : -0.3), 0.4 * (k % 2 ? 1 : -1)); neckG.add(m); mane.push(m); }
+  // pernas: ossudas, com joelhos e boletos marcados; cascos escuros
+  const legs = [];
+  const leg = (sx, front) => {
+    const g = new THREE.Group(); g.position.set(sx * 0.16, front ? 1.38 : 1.45, front ? 0.56 : -0.74); body.add(g);
+    const pts = front ? [[0, 0, 0], [0.01, -0.36, -0.03], [0, -0.78, 0.0], [0, -1.16, 0.03], [0, -1.33, 0.07]] : [[0, 0, 0], [0.02, -0.42, 0.16], [0, -0.78, -0.18], [0, -1.18, -0.08], [0, -1.38, -0.02]];
+    add(hide(sweep(pts, t => { const r = t < 0.45 ? (front ? 0.1 : 0.115) * (1 - t * 0.9) + 0.03 : 0.042 + (t > 0.9 ? 0.012 : 0); return [r * 0.9, r * 1.15]; }, 36, 14, V3(0, 0, 1), (t, a) => 1 + Math.exp(-Math.pow((t - 0.56) / 0.035, 2)) * 0.3 + Math.exp(-Math.pow((t - 0.86) / 0.03, 2)) * 0.35)), skin, g);
+    const hoof = new THREE.CylinderGeometry(0.045, 0.065, 0.1, 16); hoof.translate(pts[4][0], pts[4][1] - 0.04, pts[4][2]); const hm = new THREE.Mesh(hoof, hoofM); hm.castShadow = true; g.add(hm);
+    legs.push({ g, front, sx }); return g;
+  };
+  for (const sx of [-1, 1]) { leg(sx, true); leg(sx, false); }
+  // cauda longa e fina, com tufo esfiapado
+  const tailG = new THREE.Group(); tailG.position.set(0, 1.52, -1.0); body.add(tailG);
+  add(hide(sweep([[0, 0, 0], [0, -0.15, -0.25], [0, -0.55, -0.4], [0, -0.95, -0.38]], t => [0.05 - t * 0.03, 0.05 - t * 0.03], 20, 10, V3(0, 0, 1))), skin, tailG);
+  for (let k = 0; k < 9; k++) { const L = 0.35 + rng() * 0.3, g = new THREE.PlaneGeometry(0.05, L, 1, 4); g.translate(0, -L / 2, 0); const m = new THREE.Mesh(g, maneM); m.position.set(0, -0.92, -0.38); m.rotation.set((rng() - 0.5) * 0.4, rng() * 3, (rng() - 0.5) * 0.5); tailG.add(m); }
+  // ASAS: ossos (úmero, antebraço, 4 dedos) posicionados a cada quadro a partir de direções (dobrada ↔ aberta) + membrana
+  const wings = [], AX = V3(1, 0, 0);
+  for (const sx of [-1, 1]) {
+    const root = new THREE.Group(); root.position.set(sx * 0.18, 1.76, 0.24); body.add(root);
+    const mk = (len, r0, r1) => { const g = new THREE.CylinderGeometry(r1, r0, len, 10); g.rotateZ(-Math.PI / 2); g.translate(len / 2, 0, 0); const m = new THREE.Mesh(g, boneM); m.castShadow = true; root.add(m); return m; };
+    const hum = mk(0.6, 0.05, 0.034), fore = mk(0.8, 0.034, 0.022), FL = [1.05, 1.2, 1.0, 0.75], fingers = FL.map(L => ({ m: mk(L, 0.019, 0.007), L }));
+    const elbK = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), boneM), wriK = new THREE.Mesh(new THREE.SphereGeometry(0.034, 12, 10), boneM); root.add(elbK, wriK);
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.09, 8), hoofM); root.add(claw);
+    const NS = 6, strips = 5, geo = new THREE.BufferGeometry(), pos = new Float32Array(strips * (NS + 1) * 3 * 3), idx = [];
+    for (let s2 = 0; s2 < strips; s2++) for (let i = 0; i < NS; i++) for (let c = 0; c < 2; c++) { const b0 = (s2 * (NS + 1) + i) * 3 + c, b1 = (s2 * (NS + 1) + i + 1) * 3 + c; idx.push(b0, b1, b0 + 1, b1, b1 + 1, b0 + 1); }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setIndex(idx);
+    const memb = new THREE.Mesh(geo, membM); memb.castShadow = true; memb.frustumCulled = false; root.add(memb);
+    wings.push({ sx, root, hum, fore, fingers, elbK, wriK, claw, memb, pos, NS, strips });
+  }
+  obj.scale.setScalar(1.22);
+  // ---------- animação ----------
+    let flapT = -99, nextFlap = 4 + rng() * 4;
+  const D = (x, y, z) => V3(x, y, z).normalize(), mix = (a, b, k) => a.clone().lerp(b, k).normalize(), qd = new THREE.Quaternion();
+  // direções (lado direito, sx = +1): dobrada = colada ao flanco apontando para trás; aberta = esticada para o lado
+  const FOLD = { hum: D(0.35, 0.35, -1), fore: D(0.12, -0.05, 1), fing: [D(0.1, 0.05, -1), D(0.14, -0.1, -1), D(0.16, -0.25, -1), D(0.18, -0.4, -1)] };
+  const OPEN = { hum: D(1, 0.35, 0.15), fore: D(1, 0.12, -0.25), fing: [D(1, 0.45, 0.25), D(1, 0.1, -0.25), D(0.75, -0.15, -0.7), D(0.35, -0.3, -1)] };
+  const place = (m, from, dir, sx) => { m.position.copy(from); qd.setFromUnitVectors(AX, dir); m.quaternion.copy(qd); };
+  const wingPose = (w, open, flap) => {
+    const sx = w.sx, mir = v => V3(v.x * sx, v.y, v.z), rotF = v => v.clone().applyAxisAngle(V3(0, 0, 1), sx * flap); // bater: gira em torno do eixo do corpo
+    const dh = rotF(mir(mix(FOLD.hum, OPEN.hum, open))), df = rotF(mir(mix(FOLD.fore, OPEN.fore, open)));
+    const S0 = V3(0, 0, 0), E = dh.clone().multiplyScalar(0.6), W = E.clone().add(df.clone().multiplyScalar(0.8));
+    place(w.hum, S0, dh); place(w.fore, E, df); w.elbK.position.copy(E); w.wriK.position.copy(W); w.claw.position.copy(W).add(V3(0, 0.05, 0.02)); w.claw.rotation.set(0.3, 0, -sx * 0.4);
+    const tips = w.fingers.map((f, i) => { const d = rotF(mir(mix(FOLD.fing[i], OPEN.fing[i], open))); place(f.m, W, d); return W.clone().add(d.multiplyScalar(f.L)); });
+    const flank = [V3(sx * 0.02, -0.12, -0.6), V3(sx * 0.02, -0.18, -1.05)];
+    const edges = [tips[0], tips[1], tips[2], tips[3], flank[0], flank[1]], P = w.pos; let o = 0;
+    for (let s2 = 0; s2 < w.strips; s2++) {
+      const A = edges[s2], B = edges[s2 + 1], base = s2 < 4 ? W : E;
+      for (let i = 0; i <= w.NS; i++) { const u = i / w.NS;
+        for (let c = 0; c < 3; c++) { const v = c / 2, p = base.clone().lerp(A, u).lerp(base.clone().lerp(B, u), v); p.y -= Math.sin(u * Math.PI) * Math.sin(v * Math.PI) * 0.07 * open; P[o++] = p.x; P[o++] = p.y; P[o++] = p.z; } }
+    }
+    w.memb.geometry.attributes.position.needsUpdate = true; w.memb.geometry.computeVertexNormals();
+  };
+  const update = t => {
+    // respiração e peso trocando de pata
+    body.position.y = Math.sin(t * 1.4) * 0.008; body.rotation.z = Math.sin(t * 0.35) * 0.012;
+    neckG.rotation.x = Math.sin(t * 0.7) * 0.06 - 0.03; neckG.rotation.y = Math.sin(t * 0.31) * 0.18;
+    headG.rotation.x = 0.35 + Math.sin(t * 0.9 + 1) * 0.08; headG.rotation.y = Math.sin(t * 0.45) * 0.15;
+    for (const e of headG.userData.ears) e.rotation.x = -0.35 + Math.max(0, Math.sin(t * 2.3 + e.userData.sx * 2)) * 0.25 * (Math.sin(t * 0.37) > 0.6 ? 1 : 0);
+    tailG.rotation.y = Math.sin(t * 1.3) * 0.25; tailG.rotation.x = 0.1 + Math.sin(t * 0.8) * 0.06;
+    mane.forEach((m, k) => { m.rotation.z = (k % 2 ? 1 : -1) * 0.4 + Math.sin(t * 2 + k) * 0.08; });
+    legs.forEach(l => { if (!l.front && l.sx > 0) l.g.rotation.x = Math.max(0, Math.sin(t * 0.25)) * 0.12; }); // apoia uma pata de trás de vez em quando
+    // de tempos em tempos: abre as asas, bate duas vezes e recolhe
+    if (t > nextFlap) { flapT = t; nextFlap = t + 9 + rng() * 6; }
+    const k = t - flapT; let open = 0, flap = 0;
+    if (k >= 0 && k < 4.2) { open = k < 0.8 ? k / 0.8 : k > 3.4 ? (4.2 - k) / 0.8 : 1; open = open * open * (3 - 2 * open); if (k > 0.8 && k < 3.4) flap = Math.sin((k - 0.8) / 2.6 * Math.PI * 4) * 0.55 * Math.sin((k - 0.8) / 2.6 * Math.PI); }
+    open = Math.min(1, open + 0.02 + Math.sin(t * 0.6) * 0.02);
+    for (const w of wings) wingPose(w, Math.max(0, open), flap);
+  };
+  update(0);
+  return { obj, update, pose: (open, flap = 0) => { for (const w of wings) wingPose(w, open, flap); } };
 }

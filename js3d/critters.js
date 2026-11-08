@@ -4,6 +4,7 @@
    ========================================================================= */
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
+import { sdfSkinnedGeometry, sdfRig, SDF_NOISE_GLSL, makeRunnerBird } from './mounts3d.js';
 
 // sombreado suave (nada de facetas quadradas)
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, flatShading: false, ...extra });
@@ -65,17 +66,31 @@ const GOTA_VARIANTS = {
   rei: { core: '#fff2b8', glow: 1.5, extra: 'royal' }, // Gosmão: rei das gotas
 };
 let TRAIL_TEX = null;
+// manchas molhadas orgânicas: várias gotas sobrepostas com borda irregular e suave (4 variações)
 function trailTex() {
   if (TRAIL_TEX) return TRAIL_TEX;
-  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
-  const gr = g.createRadialGradient(32, 32, 4, 32, 32, 31); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(0.6, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr; g.beginPath(); for (let k = 0; k <= 24; k++) { const a = k / 24 * Math.PI * 2, r = 26 + Math.sin(a * 3) * 3 + Math.sin(a * 5 + 1) * 2; g.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } g.fill();
-  return (TRAIL_TEX = new THREE.CanvasTexture(c));
+  TRAIL_TEX = [];
+  for (let v = 0; v < 4; v++) {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); let sd = 7 + v * 31; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    g.filter = 'blur(3px)';
+    for (let k = 0; k < 9; k++) { const x = 64 + (rnd() - 0.5) * 34, y = 64 + (rnd() - 0.5) * 70, r = 12 + rnd() * 18, gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.75)'); gr.addColorStop(0.7, 'rgba(255,255,255,0.4)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); for (let q = 0; q <= 20; q++) { const a = q / 20 * Math.PI * 2, rr = r * (0.8 + rnd() * 0.35); g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.fill(); }
+    for (let k = 0; k < 6; k++) { g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.arc(64 + (rnd() - 0.5) * 90, 64 + (rnd() - 0.5) * 100, 2 + rnd() * 4, 0, 7); g.fill(); } // respingos
+    const t = new THREE.CanvasTexture(c); TRAIL_TEX.push(t);
+  }
+  return TRAIL_TEX;
 }
 export function slime(color, boss, variant = 'agua') {
   const V = GOTA_VARIANTS[variant] || GOTA_VARIANTS.agua, base = new THREE.Color(color);
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const skinM = new THREE.MeshPhysicalMaterial({ color, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.8, clearcoat: 1, clearcoatRoughness: 0.06, emissive: V.core, emissiveIntensity: 0.05 * V.glow, depthWrite: false });
+  // S-168: a ponta da gota balança como gelatina (mais forte logo depois de atacar)
+  const wob = { uWob: { value: 0 }, uWT: { value: 0 } };
+  skinM.onBeforeCompile = sh => { Object.assign(sh.uniforms, wob); sh.vertexShader = 'uniform float uWob; uniform float uWT;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    float tipk = smoothstep(0.5, 1.15, position.y);
+    transformed.x += sin(uWT * 13.0 + position.y * 7.0) * uWob * tipk * 0.09;
+    transformed.z += cos(uWT * 10.0 + position.y * 6.0) * uWob * tipk * 0.07;
+    transformed.y += sin(uWT * 16.0) * uWob * tipk * 0.025;`); };
+  skinM.customProgramCacheKey = () => 'gota-wob';
   const shell = new THREE.Mesh(DROP_GEO, skinM); shell.renderOrder = 2; body.add(shell);
   // por dentro: só um brilho difuso da cor do núcleo (volume, não forma)
   const innerM = new THREE.MeshBasicMaterial({ color: V.core, transparent: true, opacity: Math.min(0.32, 0.16 * V.glow), blending: THREE.AdditiveBlending, depthWrite: false });
@@ -85,36 +100,37 @@ export function slime(color, boss, variant = 'agua') {
   const fins = [1, -1].map(sx => { const f = new THREE.Group(); f.position.set(sx * 0.36, 0.28, 0.04); const m = new THREE.Mesh(finG, skinM); m.position.x = sx * 0.09; m.rotation.z = sx * -0.5; f.add(m); body.add(f); return f; });
   // ---------- rosto ----------
   const deep = base.clone().lerp(new THREE.Color('#0b1430'), 0.72), lidC = base.clone().lerp(new THREE.Color('#ffffff'), 0.18);
-  const scleraM = new THREE.MeshStandardMaterial({ color: '#f7fbff', roughness: 0.25 });
-  const irisM = new THREE.MeshStandardMaterial({ color: base.clone().offsetHSL(0.02, 0.15, -0.12), roughness: 0.2, emissive: base, emissiveIntensity: 0.12 });
-  const pupilM = new THREE.MeshStandardMaterial({ color: '#08101e', roughness: 0.1 });
-  const lidM = new THREE.MeshPhysicalMaterial({ color: lidC, roughness: 0.15, clearcoat: 1 });
+  // olhos "desenhados" (S-168): discos achatados colados na pele — nada de bolota translúcida aparecendo por dentro
   const darkM = new THREE.MeshStandardMaterial({ color: deep, roughness: 0.4 });
-  const mouthM = new THREE.MeshStandardMaterial({ color: '#3a1022', roughness: 0.6 });
+  const lidM = new THREE.MeshStandardMaterial({ color: lidC, roughness: 0.3 });
   const face = new THREE.Group(); body.add(face);
+  const circ = (r, c, z, basic) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 32), basic ? new THREE.MeshBasicMaterial({ color: c }) : new THREE.MeshStandardMaterial({ color: c, roughness: 0.25 })); m.position.z = z; m.renderOrder = 3; return m; };
   const eyes = [-1, 1].map(sx => {
-    const ex = sx * 0.125, ey = 0.47, ez = dropFront(ex, ey) - 0.035;
-    const g = new THREE.Group(); g.position.set(ex, ey, ez); g.rotation.y = sx * 0.28; face.add(g);
-    const scl = new THREE.Mesh(new THREE.SphereGeometry(0.07, 28, 20), scleraM); scl.scale.set(0.95, 1.1, 0.75); g.add(scl);
+    const ex = sx * 0.125, ey = 0.47, ez = dropFront(ex, ey) + 0.003;
+    const g = new THREE.Group(); g.position.set(ex, ey, ez); g.rotation.set(-0.12, sx * 0.3, 0); face.add(g);
+    const white = circ(0.064, '#fbfdff', 0); white.scale.set(0.88, 1.12, 1); g.add(white);
     const look = new THREE.Group(); g.add(look);
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.043, 24, 16), irisM); iris.scale.set(1, 1.08, 0.42); iris.position.z = 0.04; look.add(iris);
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.022, 18, 12), pupilM); pupil.scale.set(1, 1.1, 0.4); pupil.position.z = 0.054; look.add(pupil);
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.014, 0.018, 0.062); look.add(hl);
-    const hl2 = new THREE.Mesh(new THREE.SphereGeometry(0.005, 10, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl2.position.set(-0.012, -0.012, 0.06); look.add(hl2);
-    // pálpebras de cima e de baixo (cascas da cor da pele, um pouco mais opacas)
-    const lidG = new THREE.SphereGeometry(0.075, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2);
-    const up = new THREE.Mesh(lidG, lidM); up.scale.set(0.97, 1.12, 0.8); g.add(up);
-    const lo = new THREE.Mesh(lidG, lidM); lo.scale.set(0.97, -1.12, 0.8); g.add(lo);
-    // sobrancelha de água (curva)
-    const brow = new THREE.Mesh(taper([V3(-0.045, 0, 0), V3(0, 0.012, 0.01), V3(0.045, 0, 0)], 0.011, 0.007, 12, 8), darkM);
-    const bg = new THREE.Group(); bg.position.set(ex, ey + 0.1, ez + 0.035); bg.rotation.y = sx * 0.28; bg.add(brow); face.add(bg);
+    look.add(circ(0.041, base.clone().offsetHSL(0.02, 0.2, -0.18).getStyle(), 0.002)); look.children[0].scale.y = 1.08;
+    look.add(circ(0.022, '#0a0e1a', 0.004)); look.children[1].scale.y = 1.1;
+    const hl = circ(0.012, '#ffffff', 0.006, true); hl.position.set(0.014, 0.019, 0.006); look.add(hl);
+    const hl2 = circ(0.006, '#ffffff', 0.006, true); hl2.position.set(-0.012, -0.014, 0.006); look.add(hl2);
+    // pálpebra de cima (desce para piscar / ficar brava) e de baixo (sobe quando aperta o olho)
+    const upG = new THREE.CircleGeometry(0.07, 32); upG.translate(0, -0.07, 0); const up = new THREE.Mesh(upG, lidM); up.position.set(0, 0.074, 0.008); up.renderOrder = 4; up.scale.x = 0.86; g.add(up);
+    const loG = new THREE.CircleGeometry(0.07, 32); loG.translate(0, 0.07, 0); const lo = new THREE.Mesh(loG, lidM); lo.position.set(0, -0.074, 0.008); lo.renderOrder = 4; lo.scale.x = 0.86; g.add(lo);
+    const brow = new THREE.Mesh(taper([V3(-0.045, 0, 0), V3(0, 0.012, 0.004), V3(0.045, 0, 0)], 0.011, 0.007, 12, 8), darkM);
+    const bg = new THREE.Group(); bg.position.set(ex, ey + 0.1, dropFront(ex, ey + 0.1) + 0.006); bg.rotation.y = sx * 0.28; bg.add(brow); face.add(bg);
     return { g, look, up, lo, bg, sx };
   });
-  // boca: interior escuro que abre/fecha + lábio em arco (sorriso) — nada de língua de fora
-  const my = 0.33, mz = dropFront(0, my) - 0.012;
-  const mouth = new THREE.Group(); mouth.position.set(0, my, mz); face.add(mouth);
-  const inside = new THREE.Mesh(new THREE.SphereGeometry(0.05, 24, 16), mouthM); inside.scale.set(1.25, 0.2, 0.35); mouth.add(inside);
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.007, 8, 24, Math.PI * 0.9), darkM); lip.rotation.z = Math.PI + Math.PI * 0.05; lip.position.y = 0.012; mouth.add(lip);
+  // boca desenhada (S-168): sorriso em meia-lua quando fechada, boca aberta em "D" com língua quando fala/ataca, careta quando brava
+  const my = 0.33, mz = dropFront(0, my) + 0.004, mouthC = '#2a0c18';
+  const mouth = new THREE.Group(); mouth.position.set(0, my, mz); mouth.rotation.x = -0.18; face.add(mouth);
+  const smileS = new THREE.Shape(); smileS.moveTo(-0.055, 0.008); smileS.quadraticCurveTo(0, -0.04, 0.055, 0.008); smileS.quadraticCurveTo(0, -0.02, -0.055, 0.008);
+  const smile = new THREE.Mesh(new THREE.ShapeGeometry(smileS, 16), new THREE.MeshStandardMaterial({ color: mouthC, roughness: 0.5 })); smile.renderOrder = 3; mouth.add(smile);
+  const openS = new THREE.Shape(); openS.moveTo(-0.05, 0); openS.quadraticCurveTo(0, 0.012, 0.05, 0); openS.bezierCurveTo(0.05, -0.05, 0.02, -0.075, 0, -0.075); openS.bezierCurveTo(-0.02, -0.075, -0.05, -0.05, -0.05, 0);
+  const open = new THREE.Group(); mouth.add(open);
+  const hole = new THREE.Mesh(new THREE.ShapeGeometry(openS, 20), new THREE.MeshStandardMaterial({ color: '#3a0e1e', roughness: 0.6 })); hole.renderOrder = 3; open.add(hole);
+  const tongue = new THREE.Mesh(new THREE.CircleGeometry(0.026, 20, Math.PI, Math.PI), new THREE.MeshStandardMaterial({ color: '#ff7a9a', roughness: 0.5 })); tongue.scale.set(1.2, 1, 1); tongue.position.set(0, -0.052, 0.002); tongue.renderOrder = 4; open.add(tongue);
+  const inside = open, lip = smile; // nomes antigos usados na animação
   // bochechinhas brilhando de leve
   for (const sx of [-1, 1]) { const ck = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 10), new THREE.MeshBasicMaterial({ color: base.clone().lerp(new THREE.Color('#ff9ac0'), 0.6), transparent: true, opacity: 0.22, depthWrite: false })); ck.scale.set(1.2, 0.6, 0.3); ck.position.set(sx * 0.19, 0.36, dropFront(sx * 0.2, 0.37) - 0.005); ck.rotation.y = sx * 0.45; face.add(ck); }
   // ---------- detalhe de cada variante ----------
@@ -135,13 +151,18 @@ export function slime(color, boss, variant = 'agua') {
   }
   shadowAll(root); inner.castShadow = false;
   // ---------- rastro molhado que vai sumindo ----------
-  const trailM = new THREE.MeshBasicMaterial({ map: trailTex(), color: base.clone().lerp(new THREE.Color('#ffffff'), 0.15), transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-  const trail = []; let trailT = 0, trailI = 0; const wp = new THREE.Vector3(), ws = new THREE.Vector3();
+  const trailC = base.clone().lerp(new THREE.Color('#ffffff'), 0.1), TT = trailTex();
+  const trail = []; let trailT = 0, trailI = 0; const wp = new THREE.Vector3(), ws = new THREE.Vector3(), lastP = new THREE.Vector3(1e9, 0, 0);
   const dropTrail = () => {
     const scene = root.parent && root.parent.parent; if (!scene) return;
-    let d = trail[trailI % 10]; if (!d) { d = { m: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), trailM.clone()), life: 0 }; d.m.rotation.x = -Math.PI / 2; d.m.renderOrder = 1; trail.push(d); }
-    trailI++; root.getWorldPosition(wp); root.getWorldScale(ws);
-    d.m.position.set(wp.x + (Math.random() - 0.5) * 0.05 * ws.x, wp.y + 0.02, wp.z + (Math.random() - 0.5) * 0.05 * ws.x); d.m.scale.setScalar(ws.x * (0.62 + Math.random() * 0.18)); d.m.rotation.z = Math.random() * 6.3;
+    root.getWorldPosition(wp); root.getWorldScale(ws);
+    const dx = wp.x - lastP.x, dz = wp.z - lastP.z, dist = Math.hypot(dx, dz); if (lastP.x < 1e8 && dist < 0.12 * ws.x) return;
+    const head = lastP.x < 1e8 ? Math.atan2(dx, dz) : 0; lastP.copy(wp);
+    let d = trail[trailI % 24]; if (!d) { d = { m: new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: TT[trailI % 4], color: trailC, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })), life: 0 }; d.m.rotation.order = 'YXZ'; d.m.renderOrder = 1; trail.push(d); }
+    trailI++;
+    d.m.position.set(wp.x + (Math.random() - 0.5) * 0.04 * ws.x, wp.y + 0.015, wp.z + (Math.random() - 0.5) * 0.04 * ws.x);
+    d.m.rotation.set(-Math.PI / 2, 0, 0); d.m.rotation.y = head + (Math.random() - 0.5) * 0.3; // a mancha alonga no sentido em que ela anda
+    d.m.scale.set(ws.x * (0.42 + Math.random() * 0.12), ws.x * (0.7 + Math.random() * 0.2), 1);
     if (d.m.parent !== scene) scene.add(d.m); d.life = 1;
   };
   // ---------- humor e animação ----------
@@ -162,23 +183,25 @@ export function slime(color, boss, variant = 'agua') {
     let blink = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.16; blink = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 1.8 + Math.random() * 3.5; }
     if (t > lookT) { lookT = t + 0.8 + Math.random() * 2; lookX = (Math.random() - 0.5) * 0.7; lookY = (Math.random() - 0.5) * 0.35; }
     const lx = moving || angry ? 0 : lookX, ly = moving || angry ? -0.05 : lookY;
-    const openU = ouch ? 1 : Math.max(blink, 0.12 + mood * 0.42), openL = ouch ? 1 : Math.max(blink * 0.8, 0.05 + mood * 0.25); // 0 = aberto, 1 = fechado
+    const openU = ouch ? 1 : Math.max(blink, 0.02 + mood * 0.42), openL = ouch ? 1 : Math.max(blink * 0.8, mood * 0.28); // 0 = aberto, 1 = fechado
     for (const e of eyes) {
-      e.look.rotation.y += (lx - e.look.rotation.y) * Math.min(1, dt * 8); e.look.rotation.x += (-ly - e.look.rotation.x) * Math.min(1, dt * 8);
-      e.up.rotation.x = -1.35 + openU * 1.45; e.lo.rotation.x = 1.35 - openL * 1.3;
+      e.look.position.x += (lx * 0.03 - e.look.position.x) * Math.min(1, dt * 8); e.look.position.y += (ly * 0.03 - e.look.position.y) * Math.min(1, dt * 8);
+      e.up.scale.y = Math.max(0.001, openU); e.lo.scale.y = Math.max(0.001, openL * 0.8);
       e.bg.rotation.z = e.sx * (-0.05 - mood * 0.45) + (ouch ? e.sx * 0.3 : 0); e.bg.position.y = 0.57 - mood * 0.025 + Math.sin(t * 1.1) * 0.004 * (1 - mood);
       e.g.scale.setScalar(1 + (moving ? 0 : Math.sin(t * 0.9 + e.sx) * 0.02));
     }
     // boca: fala ("blub, blub") de vez em quando, abre no ataque, aperta ao apanhar, sorri tranquila
-    let open = 0.18 + Math.max(0, Math.sin(t * f)) * (moving ? 0.25 : 0);
-    if (!moving && t > talkT) { const q = t - talkT; if (q < 1.1) open = 0.2 + Math.abs(Math.sin(q * 13)) * 0.6 * Math.sin(q / 1.1 * Math.PI); else talkT = t + 3 + Math.random() * 5; }
-    open = Math.max(open, sk > 0 ? sk * 1.3 : 0, mood * 0.55); if (ouch) open = 0.9;
-    inside.scale.set(1.25 - open * 0.35 + (ouch ? 0.3 : 0), 0.15 + open * 0.95, 0.35);
-    lip.visible = open < 0.45 && !ouch; lip.scale.set(1, 1 - mood * 1.6, 1); // bravo: o sorriso vira careta
+    let op = Math.max(0, Math.sin(t * f)) * (moving ? 0.25 : 0);
+    if (!moving && t > talkT) { const q = t - talkT; if (q < 1.1) op = 0.25 + Math.abs(Math.sin(q * 13)) * 0.6 * Math.sin(q / 1.1 * Math.PI); else talkT = t + 3 + Math.random() * 5; }
+    op = Math.max(op, sk > 0 ? sk * 1.3 : 0); if (ouch) op = 0.8;
+    const isOpen = op > 0.28; open.visible = isOpen; smile.visible = !isOpen;
+    open.scale.set(1 - op * 0.15 + (ouch ? 0.15 : 0), Math.min(1.3, op), 1);
+    smile.scale.set(1 + mood * 0.1, 1 - mood * 2, 1); // bravo: o sorriso vira careta
+    wob.uWT.value = t; wob.uWob.value += ((t - at < 1.4 ? Math.max(0, 1 - (t - at) / 1.4) * 1.2 : 0) + (moving ? 0.18 : 0.06) + (ouch ? 0.6 : 0) - wob.uWob.value) * Math.min(1, dt * 10);
     for (const fx of fxs) fx(t);
     // rastro
-    if (moving) { trailT -= dt; if (trailT <= 0) { trailT = 0.32; dropTrail(); } }
-    for (const d of trail) { if (d.life <= 0) continue; d.life -= dt / 3.2; d.m.material.opacity = Math.max(0, d.life) * 0.42; d.m.scale.multiplyScalar(1 + dt * 0.04); if (d.life <= 0 && d.m.parent) d.m.parent.remove(d.m); }
+    if (moving) { trailT -= dt; if (trailT <= 0) { trailT = 0.1; dropTrail(); } }
+    for (const d of trail) { if (d.life <= 0) continue; d.life -= dt / 3.5; d.m.material.opacity = Math.pow(Math.max(0, d.life), 1.5) * 0.3; if (d.life <= 0 && d.m.parent) d.m.parent.remove(d.m); }
   } };
   return api;
 }
@@ -456,29 +479,22 @@ export function wolf(color) {
   const NOSE = mat('#141012', { roughness: 0.3 }), MOUTH = mat('#5a2a2a', { roughness: 0.6 }), TOOTH = mat('#f2ede0', { roughness: 0.4 }), INNER = mat(base.clone().lerp(new THREE.Color('#c99a8a'), 0.45), { roughness: 0.8 }), CLAW = mat('#2a2420', { roughness: 0.4 });
   const STRAND = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, side: THREE.DoubleSide });
   const tones = [base.clone().offsetHSL(0, 0, -0.18), base.clone().offsetHSL(0, -0.05, 0.12), base.clone().offsetHSL(0.02, 0.05, -0.05)];
-  // volume do corpo (por baixo da pelagem)
-  body.add(blob(0.2, 1, 1.05, 1.9, FUR, 0, 0.66, -0.04, 20));
-  body.add(blob(0.24, 1, 1.18, 1, FUR, 0, 0.66, 0.3, 18));
-  body.add(blob(0.2, 1, 0.95, 1.05, FUR, 0, 0.69, -0.36, 16));
-  body.add(blob(0.18, 0.95, 0.6, 2.0, BACK, 0, 0.78, -0.04, 16));
-  body.add(blob(0.16, 0.85, 0.6, 1.8, LIGHT, 0, 0.53, 0.06, 14));
-  bakeChildren(body);
-  // pelagem: costas, flancos, juba do pescoço e peito
-  furPatch(body, STRAND, [
-    { n: 306, c: [0, 0.7, -0.04], r: [0.2, 0.21, 0.38], len: 0.75, back: 1.2, yMin: -0.2 },
-    { n: 126, c: [0, 0.7, -0.36], r: [0.2, 0.19, 0.21], len: 0.7, back: 1.0, yMin: -0.1 },
-    { n: 216, c: [0, 0.74, 0.34], r: [0.25, 0.27, 0.22], len: 1.15, back: 0.8, yMin: -0.6 }, // juba
-  ], rng, base, tones);
+  // volume do corpo numa malha lisa (costas escuras, barriga clara) coberta de pelo macio em camadas (S-143: nada de "folhas")
+  const backC = base.clone().offsetHSL(0, 0, -0.14), lightC = base.clone().offsetHSL(0, -0.08, 0.16);
+  const torso = furBody([ell(0.2, 1, 1.05, 1.9, 0, 0.66, -0.04), ell(0.24, 1, 1.18, 1, 0, 0.66, 0.3), ell(0.2, 1, 0.95, 1.05, 0, 0.69, -0.36)]);
+  paintV(torso, (c, x, y, z) => { c.copy(base).lerp(backC, Math.max(0, Math.min(1, (y - 0.7) / 0.15))).lerp(lightC, Math.max(0, Math.min(1, (0.58 - y) / 0.12))); c.offsetHSL(0, 0, (Math.sin(x * 40 + z * 31) * Math.sin(y * 37)) * 0.02); });
+  const VCW = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+  body.add(new THREE.Mesh(torso, VCW)); shellFur(body, torso, 5, 0.035, 9);
   const neck = new THREE.Group(); neck.position.set(0, 0.78, 0.4); body.add(neck);
-  neck.add(new THREE.Mesh(taper([V3(0, -0.04, -0.06), V3(0, 0.08, 0.08), V3(0, 0.14, 0.17)], 0.15, 0.12, 8, 12), FUR));
-  furPatch(neck, STRAND, [{ n: 108, c: [0, 0.06, 0.06], r: [0.15, 0.14, 0.12], len: 1.0, back: 1.3 }], rng, base, tones);
+  { const ng = paintV(taper([V3(0, -0.06, -0.08), V3(0, 0.08, 0.08), V3(0, 0.14, 0.17)], 0.17, 0.12, 10, 14), (c, x, y) => c.copy(base).lerp(lightC, Math.max(0, Math.min(1, -y * 6)))); neck.add(new THREE.Mesh(ng, VCW)); shellFur(neck, ng, 6, 0.06, 6); } // juba fofa do pescoço
   const head = new THREE.Group(); head.position.set(0, 0.16, 0.2); head.scale.setScalar(1.18); neck.add(head);
   // cabeça esculpida numa peça só (S-097): crânio em cunha, "stop" na testa, focinho afinando, bochechas largas e máscara clara
   const hg = new THREE.SphereGeometry(1, 56, 40), HP = hg.attributes.position, sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   for (let k = 0; k < HP.count; k++) {
     let x = HP.getX(k), y = HP.getY(k), z = HP.getZ(k);
     const t = sm(0.15, 1, z); // 0 = crânio, 1 = ponta do focinho
-    let X = x * 0.125 * (1 - 0.5 * t), Y = y * 0.11 * (1 - 0.42 * t), Z = z * 0.12 + Math.pow(Math.max(0, z - 0.15) / 0.85, 1.3) * 0.2;
+    let X = x * 0.125 * (1 - 0.34 * t), Y = y * 0.11 * (1 - 0.3 * t), Z = z * 0.12 + Math.pow(Math.max(0, z - 0.15) / 0.85, 1.3) * 0.19; // S-143: focinho largo e de ponta arredondada (nada de cone)
+    if (t > 0.6) { const b = (t - 0.6) / 0.4; X *= 1 + b * 0.12; Y *= 1 + b * 0.08; }
     Y += -0.04 * t + (y > 0 ? -0.012 * Math.exp(-Math.pow((z - 0.35) / 0.15, 2)) : 0); // focinho mais baixo e o "degrau" da testa
     if (y < 0.2 && z < 0.45 && z > -0.5) X *= 1 + 0.18 * (1 - Math.abs(z)) * (1 - Math.max(0, y)); // bochechas
     if (y > 0.5) Y *= 0.92; // topo achatado
@@ -493,15 +509,30 @@ export function wolf(color) {
   const noseG = new THREE.SphereGeometry(0.017, 20, 14); noseG.scale(1.3, 0.85, 0.9); { const P = noseG.attributes.position; for (let k = 0; k < P.count; k++) if (P.getY(k) < -0.005 && Math.abs(P.getX(k)) < 0.012) P.setZ(k, P.getZ(k) - 0.006); noseG.computeVertexNormals(); } // narinas
   const nose = new THREE.Mesh(noseG, mat('#141012', { roughness: 0.25 })); nose.position.set(0, -0.03, 0.312); head.add(nose);
   // bochechas de pelo varrendo para trás (no lugar das "bolas")
-  furPatch(head, STRAND, [{ n: 126, c: [0, -0.02, 0.0], r: [0.13, 0.11, 0.12], len: 0.75, back: 1.6, yMin: -0.7 }], rng, base, tones);
+  shellFur(head, hg, 3, 0.012, 10); // pelo curto e macio no rosto
   const jaw = new THREE.Group(); jaw.position.set(0, -0.075, 0.08); head.add(jaw);
   jaw.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(0, -0.01, 0.12), V3(0, -0.005, 0.2)], 0.048, 0.028, 12, 20), LIGHT));
   jaw.add(blob(0.028, 1, 0.4, 2.2, MOUTH, 0, 0.022, 0.12, 10));
   for (const sx of [-1, 1]) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.032, 14), TOOTH); f.rotation.x = Math.PI; f.position.set(sx * 0.024, -0.068, 0.27); head.add(f); }
-  for (const sx of [-1, 1]) {
-    head.add(blob(0.021, 1.5, 0.75, 0.6, mat('#e8b04a', { emissive: '#c07010', emissiveIntensity: 0.25, roughness: 0.15 }), sx * 0.068, 0.035, 0.12, 12));
-    head.add(blob(0.009, 1, 1.25, 0.6, NOSE, sx * 0.07, 0.035, 0.133, 8));
-  }
+  // S-143: olhos amendoados expressivos — contorno escuro, íris âmbar, pupila, brilho, pálpebra e sobrancelha de pelo que franzem quando bravo
+  const IRIS = mat('#e8a83a', { emissive: '#a86010', emissiveIntensity: 0.25, roughness: 0.12 }), RIM = mat('#1a1214', { roughness: 0.5 });
+  const almond = (w, h) => { const sh = new THREE.Shape(); sh.moveTo(-w, 0); sh.quadraticCurveTo(-w * 0.2, h * 1.25, w, h * 0.15); sh.quadraticCurveTo(w * 0.1, -h * 1.05, -w, 0); return new THREE.ShapeGeometry(sh, 16); };
+  const wEyes = [-1, 1].map(sx => {
+    const g = new THREE.Group(); g.position.set(sx * 0.066, 0.037, 0.13); g.rotation.set(-0.12, sx * 0.5, sx * -0.1); head.add(g);
+    const rim = new THREE.Mesh(almond(0.03, 0.019), RIM); rim.scale.x = sx; g.add(rim);
+    const iris = new THREE.Mesh(almond(0.024, 0.015), IRIS); iris.scale.x = sx; iris.position.z = 0.0015; g.add(iris);
+    const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.0085, 16), RIM); pupil.position.set(sx * 0.002, 0.004, 0.003); g.add(pupil);
+    const hl = new THREE.Mesh(new THREE.CircleGeometry(0.0035, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(sx * 0.006, 0.009, 0.004); g.add(hl);
+    const lidG2 = new THREE.PlaneGeometry(0.07, 0.04); lidG2.translate(0, -0.02, 0); const lid = new THREE.Mesh(lidG2, mat(base.clone().offsetHSL(0, 0, -0.08), { roughness: 0.95 })); lid.position.set(0, 0.024, 0.005); lid.scale.y = 0.05; g.add(lid);
+    const brow = new THREE.Mesh(taper([V3(-0.03, 0, 0), V3(0, 0.006, 0.006), V3(0.032, 0.004, 0)], 0.009, 0.006, 10, 8), mat(base.clone().offsetHSL(0, 0, -0.16), { roughness: 0.95 })); brow.position.set(0, 0.028, 0.006); g.add(brow);
+    return { g, lid, brow, pupil, sx };
+  });
+  // rosnado: lábio de cima levanta e mostra os dentes; o focinho franze
+  const snarl = new THREE.Group(); head.add(snarl);
+  const lipL = [-1, 1].map(sx => { const l = new THREE.Mesh(taper([V3(sx * 0.03, -0.06, 0.27), V3(sx * 0.05, -0.066, 0.2), V3(sx * 0.062, -0.07, 0.12)], 0.006, 0.005, 10, 8), mat('#1a1214', { roughness: 0.5 })); snarl.add(l); return l; });
+  const teeth = new THREE.Group(); head.add(teeth);
+  for (let k = 0; k < 6; k++) { const sx = k % 2 ? 1 : -1, j = Math.floor(k / 2), tth = new THREE.Mesh(new THREE.ConeGeometry(0.0055 - j * 0.0008, 0.018 - j * 0.004, 10), TOOTH); tth.rotation.x = Math.PI; tth.position.set(sx * (0.016 + j * 0.012), -0.066, 0.262 - j * 0.035); teeth.add(tth); }
+  teeth.visible = false;
   // orelhas grossas (com espessura e borda arredondada), triangulares e levemente em concha, de dentro mais claro e peludo
   const earShape = new THREE.Shape(); earShape.moveTo(-0.055, 0); earShape.quadraticCurveTo(-0.05, 0.1, -0.006, 0.17); earShape.quadraticCurveTo(0, 0.18, 0.006, 0.17); earShape.quadraticCurveTo(0.05, 0.1, 0.055, 0); earShape.quadraticCurveTo(0, -0.012, -0.055, 0);
   const earOutG = new THREE.ExtrudeGeometry(earShape, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006, bevelSegments: 3, curveSegments: 12 });
@@ -512,14 +543,12 @@ export function wolf(color) {
   const ears = [-1, 1].map(sx => {
     const e = new THREE.Group(); e.position.set(sx * 0.07, 0.075, -0.035); e.rotation.set(-0.25, sx * 0.35, -sx * 0.25); head.add(e);
     e.add(new THREE.Mesh(earOutG, EAR_OUT)); e.add(new THREE.Mesh(earInG, EAR_IN));
-    furPatch(e, STRAND, [{ n: 26, c: [0, 0.04, 0.02], r: [0.03, 0.04, 0.01], len: 0.3, back: -0.2 }], rng, LIGHT.color.clone(), [LIGHT.color.clone(), base.clone()]); // pelinhos de dentro
     return e;
   });
   // rabo peludo
   const tail = new THREE.Group(); tail.position.set(0, 0.76, -0.52); body.add(tail);
   const tailCurve = [V3(0, 0, 0), V3(0, -0.05, -0.18), V3(0, -0.2, -0.32), V3(0, -0.36, -0.38)];
-  tail.add(new THREE.Mesh(taper(tailCurve, 0.06, 0.085, 16, 12), FUR));
-  furPatch(tail, STRAND, [{ n: 81, c: [0, -0.08, -0.22], r: [0.09, 0.12, 0.13], len: 1.1, back: -0.4 }, { n: 72, c: [0, -0.3, -0.36], r: [0.09, 0.1, 0.08], len: 1.0, back: -0.2 }], rng, base, tones);
+  { const tg = paintV(taper(tailCurve, 0.07, 0.1, 18, 14), (c, x, y) => c.copy(base).lerp(backC, Math.max(0, Math.min(1, -y * 2.5)))); tail.add(new THREE.Mesh(tg, VCW)); shellFur(tail, tg, 6, 0.055, 5); } // rabo felpudo
   tail.add(blob(0.07, 1, 1.5, 1, BACK, 0, -0.4, -0.39, 14));
   const legs = [[-0.12, 0.3, true], [0.12, 0.3, true], [-0.13, -0.36, false], [0.13, -0.36, false]].map(([x, z, front]) => {
     const pv = new THREE.Group(); pv.position.set(x, 0.62, z); body.add(pv);
@@ -531,7 +560,7 @@ export function wolf(color) {
   });
   shadowAll(root);
   const eyeMat = new THREE.MeshStandardMaterial({ color: '#e8b04a' }); // (compatível: brilha quando bravo)
-  let ph = 0, gait = 0, lt = 0, at = -9, sniff = 0;
+  let ph = 0, gait = 0, lt = 0, at = -9, sniff = 0, snarlK = 0, blinkAt = 2;
   return { root, eyeMat, attack() { at = lt; }, animate(t, moving, dt = 1 / 60) {
     lt = t; gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6);
     ph += dt * (2 + gait * 10);
@@ -547,6 +576,11 @@ export function wolf(color) {
     neck.rotation.y = Math.sin(t * 0.5) * 0.25 * (1 - gait) * (1 - sniff) * (sk ? 0 : 1) + sniff * Math.sin(t * 3) * 0.12;
     head.rotation.x = -sniff * 0.15 + Math.sin(t * 11) * 0.02 * sniff;
     jaw.rotation.x = Math.max(0, sk) * 0.75 + (moving ? 0.1 : 0) + Math.max(0, Math.sin(t * 1.3)) * 0.04 * (1 - gait);
+    // expressão: bravo = olhos estreitos, sobrancelhas franzidas, lábio levantado mostrando os dentes
+    const angry = Math.max(Math.max(0, sk), lt - at < 2.5 ? 0.8 : 0); snarlK += (angry - snarlK) * Math.min(1, dt * 6);
+    let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.14; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.5 + Math.random() * 3; }
+    for (const e of wEyes) { e.lid.scale.y = Math.max(0.05, bl, snarlK * 0.45); e.brow.rotation.z = e.sx * -snarlK * 0.5; e.brow.position.y = 0.028 - snarlK * 0.006; e.pupil.position.x = e.sx * 0.002 + Math.sin(t * 0.7) * 0.003 * (1 - gait); }
+    teeth.visible = snarlK > 0.2; snarl.position.y = snarlK * 0.012; head.scale.setScalar(1.18);
     ears.forEach((e, i) => { const tw = Math.max(0, Math.sin(t * 0.9 + i * 2.1) - 0.93) * 6; e.rotation.x = -0.15 - 0.35 * gait - Math.max(0, sk) * 0.5 + tw * 0.4; e.rotation.z = (i ? -1 : 1) * 0.22 + tw * (i ? -0.2 : 0.2); }); // orelhas mexem sozinhas
     tail.rotation.y = Math.sin(t * (2.5 + gait * 6)) * (0.3 + gait * 0.1); tail.rotation.x = 0.35 * gait - 0.05 + Math.max(0, sk) * 0.35 + Math.sin(ph) * 0.06 * gait;
   } };
@@ -903,7 +937,7 @@ export function lichQueen(color) {
   paintG(gownG, (c, x, y, z) => { c.set('#123a3a').lerp(new THREE.Color('#06141a'), 0.3 + Math.sin(Math.atan2(z, x) * 9) * 0.2).lerp(new THREE.Color('#5aa8a0'), Math.max(0, 0.25 - y) * 1.2); });
   const gown = fuse([gownG], GOWN); body.add(gown);
   const mist = new THREE.Group(); mist.position.y = 0.04; body.add(mist); // a barra do vestido vira névoa (manchas suaves, sem bolinhas)
-  const mistM = new THREE.SpriteMaterial({ map: trailTex(), color: '#5adcc8', transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false });
+  const mistM = new THREE.SpriteMaterial({ map: trailTex()[0], color: '#5adcc8', transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false });
   const mistS = Array.from({ length: 10 }, (_, k) => { const sp = new THREE.Sprite(mistM); sp.userData = { a: k / 10 * Math.PI * 2, ph: k * 0.37 }; mist.add(sp); return sp; });
   const mistFx = t => mistS.forEach(sp => { const u = sp.userData, q = (t * 0.2 + u.ph) % 1; sp.position.set(Math.cos(u.a + t * 0.2) * 0.24, q * 0.25, Math.sin(u.a + t * 0.2) * 0.24); sp.scale.setScalar(0.18 + q * 0.2); });
   // torso de ossos: costelas, coluna, clavículas
@@ -934,7 +968,7 @@ export function lichQueen(color) {
     sh.add(fuse([B(tube([V3(0, 0, 0), V3(0, -0.1, 0.01), V3(0, -0.2, 0.03)], 0.008, 0.006, 10, 6)), B(tube([V3(0, -0.2, 0.03), V3(0, -0.27, 0.06), V3(0, -0.32, 0.08)], 0.006, 0.005, 10, 6)),
       ...[0, 1, 2, 3].map(k => B(TR(tube([V3(0, 0, 0), V3(0, -0.02, 0.01), V3(0, -0.035, 0.0)], 0.003, 0.002, 6, 4), (k - 1.5) * 0.01, -0.33, 0.085)))], BONE));
     const orbit = new THREE.Group(); orbit.position.set(0, -0.36, 0.1); sh.add(orbit);
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.026, 14, 10), GLOWM('#b0fff0')); orbit.add(core); const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: trailTex(), color: '#5affd0', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.setScalar(0.14); orbit.add(halo);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.026, 14, 10), GLOWM('#b0fff0')); orbit.add(core); const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: trailTex()[0], color: '#5affd0', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false })); halo.scale.setScalar(0.14); orbit.add(halo);
     const wisps = [0, 1, 2].map(k => { const w = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), ADD('#7affe0', 0.9)); orbit.add(w); return w; });
     return { sh, orbit, core, wisps };
   };
@@ -969,6 +1003,352 @@ export function makeCritter(shape, color, boss, variant) {
     case 'goatmage': return goatMage(color);
     case 'frostdragon': return frostDragon(color);
     case 'lichqueen': return lichQueen(color);
+    case 'cactus': return cactusCritter(color);
+    case 'saltlizard': return saltLizard(color);
+    case 'scorpion': return scorpion(color);
+    case 'ant': return giantAnt(color);
+    case 'runnerbird': return wildRunner();
+    case 'bat': return cryptBat(color);
     default: return slime(color);
   }
+}
+
+/* =========================================================================
+   BICHOS DO DESERTO (S-167, S-169) — Dunas de Sal-Rubro
+   Corpos orgânicos de campo de distância (uma malha lisa com pele em ossos, como os felinos),
+   cores pintadas no material. Olhos "2D" (achatados, sem bolota translúcida).
+   ========================================================================= */
+// material pintado em espaço do objeto: fn recebe o GLSL que define `col` a partir de p (posição) e n (normal)
+function paintedMat(key, uniforms, glsl, extra = {}) {
+  const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.8, ...extra });
+  m.onBeforeCompile = sh => {
+    const decl = Object.keys(uniforms).map(k => `uniform vec3 ${k};`).join(' ');
+    for (const [k, v] of Object.entries(uniforms)) sh.uniforms[k] = { value: new THREE.Color(v) };
+    sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position; vON = normal;');
+    sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; ' + decl + '\n' + SDF_NOISE_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      vec3 p = vOP; vec3 n = normalize(vON); vec3 col = vec3(1.0);
+      ${glsl}
+      diffuseColor.rgb *= col;`);
+  };
+  m.customProgramCacheKey = () => 'pm-' + key;
+  return m;
+}
+// olho "desenhado": disco achatado escuro com brilhos, e pálpebra da cor da pele que desce para piscar
+function flatEye(parent, r, skinColor, irisColor = '#140c08', opts = {}) {
+  const g = new THREE.Group(); parent.add(g);
+  const white = new THREE.Mesh(new THREE.CircleGeometry(r, 28), new THREE.MeshStandardMaterial({ color: opts.white || '#fbf6ea', roughness: 0.35 })); white.scale.set(opts.wide || 1, opts.tall || 1.15, 1); g.add(white);
+  const iris = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 24), new THREE.MeshStandardMaterial({ color: irisColor, roughness: 0.2 })); iris.position.z = 0.002; iris.scale.set(opts.slit ? 0.38 : 1, 1.1, 1); g.add(iris);
+  const hl = new THREE.Mesh(new THREE.CircleGeometry(r * 0.24, 14), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(r * 0.25, r * 0.32, 0.004); g.add(hl);
+  const hl2 = new THREE.Mesh(new THREE.CircleGeometry(r * 0.11, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl2.position.set(-r * 0.22, -r * 0.25, 0.004); g.add(hl2);
+  const T = opts.tall || 1.15, W = opts.wide || 1, lidG = new THREE.CircleGeometry(r * 1.1, 28); lidG.translate(0, -r * 1.1, 0);
+  const lid = new THREE.Mesh(lidG, new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.8 })); lid.position.set(0, r * T * 1.02, 0.006); g.add(lid);
+  g.userData.blink = k => { lid.visible = k > 0.02; lid.scale.set(W * 1.02, Math.max(0.001, k) * T, 1); }; // k: 0 aberto → 1 fechado (a pálpebra desce de cima)
+  g.userData.blink(0);
+  return g;
+}
+const blinker = () => { let at = 1 + Math.random() * 3; return t => { if (t > at) { const q = (t - at) / 0.15; if (q >= 1) { at = t + 2 + Math.random() * 3.5; return 0; } return Math.sin(q * Math.PI); } return 0; }; };
+
+/* ---------- Mandacaru Andarilho: cacto que anda (espírito do MUKA, visual próprio) ----------
+   Tronco com gomos (costelas), braços que sobem, pezinhos de raiz, espinhos finos em tufos nas
+   aréolas, flor rosa no topo e cara de travesso desenhada no tronco. Anda gingando. */
+const CACT_BONES = { root: [null, [0, 0, 0]], body: ['root', [0, 0.32, 0]], top: ['body', [0, 0.75, 0]] };
+for (const s of [-1, 1]) Object.assign(CACT_BONES, { ['arm' + s]: ['body', [s * 0.21, 0.66, 0]], ['fore' + s]: ['arm' + s, [s * 0.43, 0.68, 0]], ['leg' + s]: ['root', [s * 0.12, 0.26, 0.02]] });
+let cactGeo = null;
+function cactusGeo() {
+  if (cactGeo) return cactGeo;
+  const P = [], C = (a, b, r0, r1, bone, k = 0.05) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.06) => P.push({ c, r, bone, k });
+  C([0, 0.22, 0], [0, 0.72, 0], 0.25, 0.235, 'body', 0.06); C([0, 0.72, 0], [0, 1.06, 0], 0.235, 0.2, 'top', 0.06); E([0, 1.07, 0], [0.2, 0.13, 0.2], 'top');
+  for (const s of [-1, 1]) {
+    C([s * 0.18, 0.64, 0], [s * 0.42, 0.67, 0], 0.088, 0.078, 'arm' + s, 0.05); C([s * 0.43, 0.67, 0], [s * 0.45, 0.96, 0], 0.078, 0.064, 'fore' + s, 0.04); E([s * 0.45, 0.97, 0], [0.064, 0.05, 0.064], 'fore' + s, 0.03);
+    C([s * 0.12, 0.28, 0.02], [s * 0.15, 0.06, 0.06], 0.085, 0.07, 'leg' + s, 0.05); E([s * 0.15, 0.045, 0.09], [0.085, 0.045, 0.115], 'leg' + s, 0.04);
+  }
+  const g = sdfSkinnedGeometry(P, CACT_BONES, [-0.6, -0.02, -0.32], [1.2, 1.24, 0.64], 0.018), Pp = g.attributes.position;
+  // gomos: afunda os vãos entre as costelas do tronco e dos braços
+  for (let i = 0; i < Pp.count; i++) {
+    const x = Pp.getX(i), y = Pp.getY(i), z = Pp.getZ(i);
+    if (y > 0.16 && Math.abs(x) < 0.3) { const a = Math.atan2(z, x), r = Math.hypot(x, z), k = 1 + Math.cos(a * 10) * 0.055 * Math.min(1, (y - 0.16) * 6); Pp.setX(i, x / r * r * k); Pp.setZ(i, z / r * r * k); }
+    else if (Math.abs(x) > 0.36 && y > 0.6) { const cx = Math.sign(x) * 0.44, a = Math.atan2(z, x - cx), r = Math.hypot(x - cx, z), k = 1 + Math.cos(a * 8) * 0.06; Pp.setX(i, cx + (x - cx) * k); Pp.setZ(i, z * k); }
+  }
+  g.computeVertexNormals();
+  return (cactGeo = g);
+}
+export function cactusCritter(color = '#5f9a3e') {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const M = paintedMat('cacto', { uG: color, uG2: '#a8d26a', uW: '#7a5a3a' }, `
+    float a = atan(p.z, p.x); float rib = 0.5 + 0.5 * cos(a * 10.0);
+    col = mix(uG * 0.62, mix(uG, uG2, 0.35), smoothstep(0.15, 0.9, rib));       // gomos: vão escuro, crista clara
+    col *= 0.9 + 0.14 * vn(p * vec3(30.0, 90.0, 30.0));                        // estrias verticais
+    col = mix(col, uW, smoothstep(0.22, 0.08, p.y));                            // pés de raiz, terrosos
+    col = mix(col, vec3(0.92, 0.86, 0.6), smoothstep(0.55, 0.9, n.y) * 0.25);   // poeira no topo
+  `, { roughness: 0.7 });
+  const rig = sdfRig(cactusGeo(), CACT_BONES, M), { at, R, bones } = rig; body.add(rig.mesh);
+  // espinhos finos em tufos de 3 nas cristas dos gomos (aréolas com um pontinho de lã)
+  const spineG = new THREE.CylinderGeometry(0.0012, 0.0035, 0.06, 4); spineG.translate(0, 0.03, 0);
+  const areoleG = new THREE.SphereGeometry(0.009, 8, 6), SP = new THREE.MeshStandardMaterial({ color: '#f2e6b8', roughness: 0.5 }), AR = new THREE.MeshStandardMaterial({ color: '#efe9dc', roughness: 1 });
+  const pts = []; for (let k = 0; k < 10; k++) for (let j = 0; j < 7; j++) { const a = k / 10 * Math.PI * 2, y = 0.26 + j * 0.12 + (k % 2) * 0.06; if (y > 1.08) continue; const r = (y < 0.72 ? 0.25 : 0.235 - (y - 0.72) * 0.1) * 1.055; pts.push([Math.cos(a) * r, y, Math.sin(a) * r, a]); }
+  const spines = new THREE.InstancedMesh(spineG, SP, pts.length * 3), ars = new THREE.InstancedMesh(areoleG, AR, pts.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  pts.forEach(([x, y, z, a], i) => { m4.makeTranslation(x, y, z); ars.setMatrixAt(i, m4); for (let k = 0; k < 3; k++) { const out = V3(Math.cos(a), (k - 1) * 0.5 + 0.2, Math.sin(a)).normalize(); q.setFromUnitVectors(V3(0, 1, 0), out); m4.compose(V3(x, y, z), q, V3(1, 0.8 + k * 0.2, 1)); spines.setMatrixAt(i * 3 + k, m4); } });
+  const spineG2 = new THREE.Group(); spineG2.add(spines, ars); spines.castShadow = false; at('body', spineG2, 0, 0, 0);
+  // flor no topo: pétalas rosadas em duas voltas e miolo amarelo
+  const flower = new THREE.Group(); at('top', flower, 0, 1.16, 0.02); flower.scale.setScalar(1.7);
+  const petG = new THREE.SphereGeometry(1, 18, 10); petG.scale(0.035, 0.012, 0.075); petG.translate(0, 0, 0.06);
+  for (let k = 0; k < 14; k++) { const ring = k < 8 ? 0 : 1, a = (k / (ring ? 6 : 8)) * Math.PI * 2 + ring * 0.3, pm = new THREE.Mesh(petG, new THREE.MeshStandardMaterial({ color: ring ? '#ff8fb8' : '#e8508a', roughness: 0.5 })); pm.rotation.set(0, a, 0); pm.rotateX(-0.35 - ring * 0.35); pm.scale.setScalar(ring ? 0.75 : 1); flower.add(pm); }
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 10), new THREE.MeshStandardMaterial({ color: '#ffd84a', roughness: 0.7 })); core.scale.y = 0.6; core.position.y = 0.015; flower.add(core);
+  // rosto desenhado: olhos grandes e marotos, sobrancelhas de espinho e um sorrisão torto
+  const face = new THREE.Group(); at('body', face, 0, 0.8, 0.25);
+  const eyes = [-1, 1].map(s => { const e = flatEye(face, 0.045, color); e.position.set(s * 0.075, 0.02, 0.012); e.rotation.y = s * 0.28; return e; });
+  const browM = new THREE.MeshStandardMaterial({ color: '#2f4a1e', roughness: 0.7 });
+  const brows = [-1, 1].map(s => { const b = new THREE.Mesh(taper([V3(-0.035, 0, 0), V3(0, 0.008, 0.004), V3(0.035, 0, 0)], 0.008, 0.005, 10, 8), browM); b.position.set(s * 0.075, 0.085, 0.018); b.rotation.y = s * 0.28; face.add(b); return b; });
+  const grin = new THREE.Shape(); grin.moveTo(-0.07, 0.012); grin.quadraticCurveTo(0, -0.03, 0.075, 0.02); grin.quadraticCurveTo(0.004, -0.07, -0.07, 0.012);
+  const mouth = new THREE.Mesh(new THREE.ShapeGeometry(grin, 16), new THREE.MeshStandardMaterial({ color: '#2a120c', roughness: 0.6 })); mouth.position.set(0, -0.075, 0.03); face.add(mouth);
+  const tongue = new THREE.Mesh(new THREE.CircleGeometry(0.02, 16), new THREE.MeshStandardMaterial({ color: '#d85a6a', roughness: 0.6 })); tongue.scale.set(1.3, 0.7, 1); tongue.position.set(0.01, -0.105, 0.032); face.add(tongue);
+  shadowAll(root); spines.castShadow = false;
+  let ph = 0, gait = 0, lt = 0, at0 = -9; const blink = blinker();
+  return { root, attack() { at0 = lt; }, animate(t, moving, dt = 1 / 60) {
+    lt = t; gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6); ph += dt * (3 + gait * 7);
+    const sk = strike((t - at0) / 0.55);
+    for (const s of [-1, 1]) { const p = ph + (s > 0 ? Math.PI : 0); R('leg' + s).x = Math.sin(p) * 0.55 * gait; R('leg' + s).z = -s * Math.max(0, Math.cos(p)) * 0.12 * gait; }
+    R('body').z = Math.sin(ph) * 0.09 * gait + Math.sin(t * 1.3) * 0.02 * (1 - gait); R('body').x = sk * 0.35 + 0.05 * gait;
+    body.position.y = Math.abs(Math.sin(ph)) * 0.04 * gait; body.position.z = sk * 0.25;
+    R('top').z = -R('body').z * 0.6 + Math.sin(t * 2.2) * 0.03; R('top').x = -sk * 0.2;
+    for (const s of [-1, 1]) { R('arm' + s).z = s * (Math.sin(ph + (s > 0 ? 0 : Math.PI)) * 0.25 * gait + Math.sin(t * 1.7 + s) * 0.06) - s * sk * 0.9; R('arm' + s).x = -sk * 0.8; R('fore' + s).z = s * (0.05 + Math.sin(t * 2 + s) * 0.08) - s * sk * 0.5; }
+    flower.rotation.y = Math.sin(t * 0.9) * 0.3; flower.rotation.z = Math.sin(t * 2.4) * 0.08;
+    const k = blink(t); for (const e of eyes) e.userData.blink(Math.max(k, sk > 0 ? 0.35 : 0.08));
+    brows.forEach((b, i) => { b.rotation.z = (i ? 1 : -1) * (sk > 0 ? -0.45 : 0.08); });
+    mouth.scale.y = 1 + Math.max(0, sk) * 0.8 + (moving ? Math.abs(Math.sin(ph)) * 0.15 : 0);
+  } };
+}
+
+/* ---------- Lagarto-de-Sal: grande lagarto das dunas com babado e cristas de sal ----------
+   Rasteja em S (a coluna ondula), cauda longa, cabeça larga, babado que se abre quando bravo. */
+const LZ_BONES = { root: [null, [0, 0, 0]], hips: ['root', [0, 0.4, -0.3]], chest: ['hips', [0, 0.42, 0.22]], neck: ['chest', [0, 0.48, 0.55]], head: ['neck', [0, 0.53, 0.76]], jaw: ['head', [0, 0.49, 0.8]], t1: ['hips', [0, 0.38, -0.62]], t2: ['t1', [0, 0.3, -0.98]], t3: ['t2', [0, 0.18, -1.34]] };
+for (const s of [-1, 1]) for (const [f, z] of [['f', 0.3], ['b', -0.32]]) Object.assign(LZ_BONES, { [f + 'u' + s]: [f === 'f' ? 'chest' : 'hips', [s * 0.2, 0.4, z]], [f + 'l' + s]: [f + 'u' + s, [s * 0.4, 0.28, z + 0.04]], [f + 'p' + s]: [f + 'l' + s, [s * 0.44, 0.04, z + 0.1]] });
+let lzGeo = null;
+function lizardGeo() {
+  if (lzGeo) return lzGeo;
+  const P = [], C = (a, b, r0, r1, bone, k = 0.05) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.06) => P.push({ c, r, bone, k });
+  E([0, 0.41, -0.22], [0.25, 0.18, 0.36], 'hips', 0.1); E([0, 0.43, 0.24], [0.24, 0.18, 0.3], 'chest', 0.1);
+  C([0, 0.45, 0.45], [0, 0.52, 0.72], 0.16, 0.13, 'neck', 0.07);
+  E([0, 0.55, 0.82], [0.14, 0.095, 0.16], 'head', 0.05); E([0, 0.535, 0.98], [0.1, 0.06, 0.12], 'head', 0.04);
+  for (const s of [-1, 1]) E([s * 0.075, 0.585, 0.83], [0.045, 0.04, 0.05], 'head', 0.03); // arco das sobrancelhas
+  E([0, 0.475, 0.9], [0.095, 0.035, 0.16], 'jaw', 0.03);
+  C([0, 0.39, -0.55], [0, 0.32, -0.98], 0.15, 0.1, 't1', 0.06); C([0, 0.32, -0.98], [0, 0.2, -1.34], 0.1, 0.055, 't2', 0.05); C([0, 0.2, -1.34], [0, 0.06, -1.75], 0.055, 0.012, 't3', 0.04);
+  for (const s of [-1, 1]) for (const [f, z] of [['f', 0.3], ['b', -0.32]]) {
+    C([s * 0.16, 0.4, z], [s * 0.4, 0.3, z + 0.04], 0.085, 0.06, f + 'u' + s, 0.05);
+    C([s * 0.4, 0.3, z + 0.04], [s * 0.44, 0.06, z + 0.1], 0.06, 0.045, f + 'l' + s, 0.04);
+    E([s * 0.45, 0.035, z + 0.15], [0.06, 0.03, 0.08], f + 'p' + s, 0.03);
+    for (const d of [-1, 0, 1]) C([s * 0.45, 0.035, z + 0.17], [s * (0.47 + d * 0.06), 0.02, z + 0.27 - Math.abs(d) * 0.03], 0.018, 0.008, f + 'p' + s, 0.015);
+  }
+  return (lzGeo = sdfSkinnedGeometry(P, LZ_BONES, [-0.6, -0.02, -1.85], [1.2, 0.72, 3.0], 0.02));
+}
+export function saltLizard(color = '#c9a06a') {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const M = paintedMat('lagarto', { uB: color, uD: '#6a4a2e', uL: '#efe0c0', uS: '#f6f4ee' }, `
+    vec2 w = worley(p * vec3(28.0, 28.0, 22.0));
+    col = mix(uB, uL, smoothstep(0.0, -0.7, n.y));                                    // barriga clara
+    float band = smoothstep(0.35, 0.65, sin(p.z * 9.0 + vn(p * 4.0) * 2.0) * 0.5 + 0.5) * smoothstep(0.1, 0.8, n.y);
+    col = mix(col, uD, band * 0.55);                                                   // faixas escuras nas costas
+    col *= 0.78 + 0.3 * smoothstep(0.08, 0.5, w.x);                                    // escamas
+    float salt = smoothstep(0.62, 0.8, vn(p * 7.0)) * smoothstep(0.4, 0.9, n.y) * smoothstep(0.62, 0.45, p.z); // crostas de sal (só no corpo)
+    col = mix(col, uS, salt * 0.8);
+  `, { roughness: 0.72 });
+  const rig = sdfRig(lizardGeo(), LZ_BONES, M), { at, R } = rig; body.add(rig.mesh);
+  // olhos de lagarto (pupila em fenda), desenhados
+  const eyes = [-1, 1].map(s => { const g = new THREE.Group(); at('head', g, s * 0.128, 0.6, 0.87); g.rotation.set(-0.2, s * 1.0, 0); const e = flatEye(g, 0.028, color, '#1a0e04', { white: '#e8b83a', slit: true }); return e; });
+  // babado do pescoço (membrana com varetas), fica fechado e abre quando bravo
+  const frillShape = new THREE.Shape(); frillShape.moveTo(0, 0);
+  for (let k = 0; k <= 64; k++) { const a = -Math.PI * 0.92 + k / 64 * Math.PI * 1.84, rib = Math.abs(Math.sin(k / 64 * Math.PI * 9)), r = 0.25 + rib * 0.045; frillShape.lineTo(Math.sin(a) * r, Math.cos(a) * r); }
+  frillShape.lineTo(0, 0);
+  const frillG = new THREE.ShapeGeometry(frillShape, 64); { const Pf = frillG.attributes.position, col = new Float32Array(Pf.count * 3), c = new THREE.Color(); for (let i = 0; i < Pf.count; i++) { const x = Pf.getX(i), y = Pf.getY(i), r = Math.hypot(x, y), a = Math.atan2(x, y); Pf.setZ(i, -r * r * 0.7); const ribC = Math.pow(Math.abs(Math.cos(a * 4.9)), 8); c.set('#c8501e').lerp(new THREE.Color('#f2d27a'), Math.min(1, r / 0.3)).lerp(new THREE.Color('#5a2a12'), ribC * 0.5 + (r > 0.25 ? 0.3 : 0)); col.set([c.r, c.g, c.b], i * 3); } frillG.setAttribute('color', new THREE.BufferAttribute(col, 3)); frillG.computeVertexNormals(); }
+  const frill = new THREE.Mesh(frillG, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, side: THREE.DoubleSide }));
+  const frillG2 = new THREE.Group(); frillG2.add(frill); at('neck', frillG2, 0, 0.53, 0.66);
+  // cristas de sal nas costas
+  const cryM = new THREE.MeshPhysicalMaterial({ color: '#fbf8f0', roughness: 0.25, transmission: 0, clearcoat: 1, emissive: '#fff4e0', emissiveIntensity: 0.08 });
+  for (let k = 0; k < 9; k++) { const z = 0.42 - k * 0.12, bone = z > 0 ? 'chest' : 'hips', h = 0.07 - Math.abs(k - 3) * 0.006; const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.03, 0), cryM); c.scale.set(0.8, h / 0.03, 1.3); at(bone, c, 0, 0.59 - Math.abs(k - 3) * 0.008, z); }
+  const tongue = new THREE.Mesh(taper([V3(0, 0, 0), V3(0, -0.005, 0.08), V3(0.015, 0, 0.14)], 0.008, 0.004, 8, 6), new THREE.MeshStandardMaterial({ color: '#b83a4a' })); at('jaw', tongue, 0, 0.485, 0.95); tongue.visible = false;
+  shadowAll(root); frill.castShadow = false; frill.receiveShadow = false;
+  let ph = 0, gait = 0, lt = 0, at0 = -9, flare = 0, tongueAt = 3; const blink = blinker();
+  return { root, attack() { at0 = lt; }, animate(t, moving, dt = 1 / 60) {
+    lt = t; gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6); ph += dt * (2.2 + gait * 8);
+    const sk = strike((t - at0) / 0.5), angry = t - at0 < 3 ? 1 : 0; flare += (Math.max(angry, gait * 0.2) - flare) * Math.min(1, dt * 5);
+    // rastejar: patas em diagonal e coluna ondulando em S
+    for (const s of [-1, 1]) for (const f of ['f', 'b']) { const p = ph + (s > 0 ? Math.PI : 0) + (f === 'b' ? Math.PI : 0), sw = Math.sin(p), lift = Math.max(0, Math.cos(p)); R(f + 'u' + s).y = s * sw * 0.5 * gait; R(f + 'u' + s).z = s * lift * 0.35 * gait; R(f + 'l' + s).z = -s * lift * 0.3 * gait; }
+    R('hips').y = Math.sin(ph) * 0.14 * gait; R('chest').y = -Math.sin(ph) * 0.2 * gait; R('neck').y = Math.sin(ph) * 0.12 * gait + Math.sin(t * 0.6) * 0.25 * (1 - gait);
+    R('neck').x = -sk * 0.3 + Math.sin(t * 0.9) * 0.04; R('head').x = sk * 0.2;
+    R('jaw').x = Math.max(0, sk) * 0.6 + angry * Math.max(0, Math.sin(t * 3)) * 0.08;
+    R('t1').y = -Math.sin(ph - 0.6) * 0.2 * gait + Math.sin(t * 0.8) * 0.15; R('t2').y = -Math.sin(ph - 1.2) * 0.25 * gait + Math.sin(t * 0.8 - 0.7) * 0.18; R('t3').y = -Math.sin(ph - 1.8) * 0.3 * gait + Math.sin(t * 0.8 - 1.4) * 0.2;
+    body.position.z = sk * 0.2;
+    frill.scale.setScalar(0.35 + flare * 0.75); frill.rotation.x = -0.4 + flare * 0.4;
+    // a língua sai para "provar" o ar de vez em quando
+    if (t > tongueAt) { const q = t - tongueAt; tongue.visible = q < 0.4; tongue.scale.z = Math.sin(Math.min(1, q / 0.4) * Math.PI); if (q >= 0.4) tongueAt = t + 2 + Math.random() * 4; }
+    const k = blink(t); for (const e of eyes) e.userData.blink(k);
+  } };
+}
+
+/* ---------- Trotavento Selvagem: a mesma ave das montarias, sem sela e com plumagem do deserto ---------- */
+export function wildRunner() {
+  const b = makeRunnerBird({ name: 'Trotavento Selvagem', bird: 'selvagem' }, { saddle: false });
+  return { root: b.obj, attack() { b.attack(); }, animate(t, moving, dt = 1 / 60) { b.animate(t, { speed: moving ? 0.55 : 0, turn: 0 }, dt); } };
+}
+
+/* ---------- artrópodes: quitina lisa e brilhante (segmentos são da anatomia, não "quadrados") ---------- */
+const chitin = (c, extra = {}) => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.38, metalness: 0.05, clearcoat: 0.9, clearcoatRoughness: 0.25, ...extra });
+// perna articulada: coxa sobe para fora, joelho, canela desce até o chão; devolve os pivôs para animar
+function insectLeg(parent, x, y, z, side, yaw, L1, L2, r, M, Mj) {
+  const hip = new THREE.Group(); hip.position.set(x, y, z); hip.rotation.y = yaw; parent.add(hip);
+  const lift = new THREE.Group(); hip.add(lift);
+  lift.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(side * L1 * 0.5, L1 * 0.45, 0), V3(side * L1, L1 * 0.5, 0)], r, r * 0.8, 10, 10), M));
+  const knee = new THREE.Group(); knee.position.set(side * L1, L1 * 0.5, 0); lift.add(knee);
+  knee.add(new THREE.Mesh(new THREE.SphereGeometry(r * 0.95, 12, 8), Mj));
+  knee.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(side * L2 * 0.35, -L2 * 0.5, 0), V3(side * L2 * 0.45, -(y + L1 * 0.5) + 0.01, 0)], r * 0.8, r * 0.3, 12, 8), M));
+  return { hip, lift, knee, side };
+}
+const tripod = (legs, ph, gait, amp = 0.35) => legs.forEach((l, i) => { const p = ph + ((i + (l.side > 0 ? 1 : 0)) % 2) * Math.PI; l.hip.rotation.x = Math.sin(p) * amp * gait; l.lift.rotation.z = l.side * Math.max(0, Math.cos(p)) * 0.35 * gait; });
+
+/* ---------- Escorpião-Rubro: carapaça vermelho-ferrugem, pinças grandes e cauda arqueada com ferrão ---------- */
+export function scorpion(color = '#8a2a1a') {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const M = chitin(color), D = chitin(new THREE.Color(color).multiplyScalar(0.45)), L = chitin(new THREE.Color(color).lerp(new THREE.Color('#e8a060'), 0.35));
+  const STING = chitin('#2a1410', { roughness: 0.2 }), VEN = new THREE.MeshStandardMaterial({ color: '#c8ff6a', emissive: '#7aff3a', emissiveIntensity: 0.6 });
+  // cefalotórax com sulco central e olhinhos
+  const ceph = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), M); ceph.scale.set(0.2, 0.085, 0.23); ceph.position.set(0, 0.22, 0.16); body.add(ceph);
+  const ridge = new THREE.Mesh(taper([V3(0, 0, -0.18), V3(0, 0.01, 0), V3(0, 0, 0.18)], 0.012, 0.012, 8, 8), D); ridge.position.set(0, 0.3, 0.16); body.add(ridge);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), chitin('#0a0606', { roughness: 0.05 })); e.position.set(s * 0.025, 0.305, 0.25); body.add(e); for (let k = 0; k < 3; k++) { const e2 = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), chitin('#0a0606', { roughness: 0.05 })); e2.position.set(s * (0.13 + k * 0.012), 0.27, 0.33 - k * 0.012); body.add(e2); } }
+  // abdômen em placas que se sobrepõem
+  for (let k = 0; k < 6; k++) { const seg = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 16), k % 2 ? M : L); seg.scale.set(0.2 - k * 0.012, 0.09 - k * 0.004, 0.08); seg.position.set(0, 0.23 - k * 0.004, -0.06 - k * 0.1); body.add(seg); const edge = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 6, 28, Math.PI), D); edge.scale.set(0.19 - k * 0.012, 0.085, 1); edge.position.set(0, 0.235, -0.1 - k * 0.1); body.add(edge); }
+  // cauda: 5 segmentos encadeados que se curvam por cima das costas, bulbo de veneno e ferrão
+  const tail = []; let par = new THREE.Group(); par.position.set(0, 0.25, -0.62); body.add(par);
+  for (let k = 0; k < 5; k++) { const g = new THREE.Group(); g.position.z = k ? -0.13 : 0; par.add(g); const sg = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), k % 2 ? L : M); sg.scale.set(0.058 - k * 0.003, 0.055 - k * 0.002, 0.078); sg.position.z = -0.065; g.add(sg); tail.push(g); par = g; }
+  const telson = new THREE.Group(); telson.position.z = -0.14; par.add(telson);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), L); bulb.scale.set(0.065, 0.06, 0.085); bulb.position.z = -0.06; telson.add(bulb);
+  const barb = new THREE.Mesh(taper([V3(0, 0, -0.12), V3(0, -0.03, -0.18), V3(0, -0.09, -0.19)], 0.022, 0.003, 12, 8), STING); telson.add(barb);
+  const drop = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), VEN); drop.position.set(0, -0.095, -0.19); telson.add(drop);
+  const REST = [0.55, 0.62, 0.68, 0.6, 0.5]; // arco por cima das costas
+  // pinças: braço, antebraço, mão inchada com dedo fixo e dedo móvel
+  const claws = [-1, 1].map(s => {
+    const sh = new THREE.Group(); sh.position.set(s * 0.13, 0.21, 0.33); sh.rotation.y = s * -0.5; body.add(sh);
+    sh.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(s * 0.08, 0.03, 0.08), V3(s * 0.12, 0.02, 0.16)], 0.035, 0.03, 10, 10), M));
+    const el = new THREE.Group(); el.position.set(s * 0.12, 0.02, 0.16); sh.add(el);
+    el.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(-s * 0.02, 0.01, 0.1), V3(-s * 0.04, 0, 0.17)], 0.033, 0.04, 10, 10), L));
+    const hand = new THREE.Group(); hand.position.set(-s * 0.04, 0, 0.19); el.add(hand);
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), M); palm.scale.set(0.065, 0.045, 0.1); palm.position.z = 0.05; hand.add(palm);
+    const fixedF = new THREE.Mesh(taper([V3(0, 0, 0), V3(s * 0.02, 0, 0.07), V3(s * 0.005, 0, 0.13)], 0.025, 0.005, 10, 8), D); fixedF.position.set(s * 0.02, 0, 0.13); hand.add(fixedF);
+    const mov = new THREE.Group(); mov.position.set(-s * 0.022, 0, 0.13); hand.add(mov);
+    mov.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(-s * 0.02, 0, 0.065), V3(-s * 0.004, 0, 0.12)], 0.022, 0.005, 10, 8), D));
+    return { sh, el, mov, s };
+  });
+  const legs = [];
+  for (const s of [-1, 1]) for (let k = 0; k < 4; k++) legs.push(insectLeg(body, s * 0.15, 0.2, 0.25 - k * 0.1, s, s * (0.5 - k * 0.32), 0.17 + k * 0.01, 0.26 + k * 0.015, 0.018, M, D));
+  shadowAll(root);
+  let ph = 0, gait = 0, lt = 0, at0 = -9;
+  return { root, attack() { at0 = lt; }, animate(t, moving, dt = 1 / 60) {
+    lt = t; gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6); ph += dt * (3 + gait * 12);
+    tripod(legs, ph, gait, 0.3);
+    const k = (t - at0) / 0.7, sting = k > 0 && k < 1 ? (k < 0.35 ? -Math.sin(k / 0.35 * Math.PI / 2) * 0.4 : Math.sin((k - 0.35) / 0.65 * Math.PI)) : 0;
+    tail.forEach((g, i) => { g.rotation.x = REST[i] + Math.sin(t * 2 + i * 0.6) * 0.04 + sting * (i < 2 ? 0.3 : 0.22); g.rotation.y = Math.sin(t * 1.3 - i * 0.5) * 0.05 * (1 + gait); });
+    telson.rotation.x = 0.35 + sting * 0.6;
+    claws.forEach(({ sh, el, mov, s }, i) => { const snap = Math.max(0, Math.sin(t * 5 + i)) > 0.8 ? 0.4 : 0; sh.rotation.x = Math.sin(ph + i) * 0.1 * gait - Math.max(0, sting) * 0.3; el.rotation.y = s * (0.15 + Math.sin(t * 0.8 + i) * 0.1); mov.rotation.y = s * (0.35 - snap - Math.max(0, sting) * 0.3); });
+    body.position.y = Math.abs(Math.sin(ph * 2)) * 0.008 * gait; body.position.z = Math.max(0, sting) * 0.08;
+  } };
+}
+
+/* ---------- Formiga-Ceifadora: formiga gigante das dunas, mandíbulas em foice e abdômen listrado ---------- */
+export function giantAnt(color = '#6a2414') {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const M = chitin(color), D = chitin('#1a0e0a', { roughness: 0.25 }), A = chitin('#c8782a');
+  const E = (r, sx, sy, sz, m, x, y, z) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 28, 18), m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); body.add(o); return o; };
+  // tórax estreito, pecíolo (nó) e abdômen grande listrado
+  E(1, 0.09, 0.075, 0.17, M, 0, 0.3, 0.05); E(1, 0.07, 0.065, 0.07, M, 0, 0.33, 0.2);
+  E(1, 0.04, 0.05, 0.045, M, 0, 0.3, -0.15);
+  const gaster = new THREE.Group(); gaster.position.set(0, 0.32, -0.22); body.add(gaster);
+  const gm = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), D); gm.scale.set(0.16, 0.14, 0.22); gm.position.z = -0.17; gaster.add(gm);
+  for (let k = 0; k < 3; k++) { const band = new THREE.Mesh(new THREE.TorusGeometry(1, 0.05, 8, 32), A); const z = -0.08 - k * 0.075, f = Math.sqrt(Math.max(0.05, 1 - Math.pow((z + 0.17) / 0.22, 2))); band.scale.set(0.16 * f, 0.14 * f, 0.4); band.position.z = z; gaster.add(band); }
+  // cabeça com olhos compostos, antenas cotoveladas e mandíbulas em foice
+  const head = new THREE.Group(); head.position.set(0, 0.36, 0.3); body.add(head);
+  const hm = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18), M); hm.scale.set(0.11, 0.09, 0.1); head.add(hm);
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 12), chitin('#0e0a08', { roughness: 0.08 })); e.scale.set(0.022, 0.03, 0.03); e.position.set(s * 0.095, 0.02, 0.04); head.add(e); }
+  const ants = [-1, 1].map(s => { const sc = new THREE.Group(); sc.position.set(s * 0.04, 0.06, 0.08); head.add(sc); sc.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(s * 0.04, 0.1, 0.02), V3(s * 0.06, 0.16, 0.03)], 0.01, 0.008, 8, 6), M)); const fu = new THREE.Group(); fu.position.set(s * 0.06, 0.16, 0.03); sc.add(fu); fu.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(s * 0.03, 0.02, 0.1), V3(s * 0.04, -0.02, 0.2)], 0.008, 0.011, 10, 6), D)); return { sc, fu, s }; });
+  const mands = [-1, 1].map(s => { const g = new THREE.Group(); g.position.set(s * 0.05, -0.03, 0.08); head.add(g); g.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(s * 0.05, 0, 0.07), V3(s * 0.02, 0, 0.14), V3(-s * 0.03, -0.005, 0.16)], 0.022, 0.004, 14, 8), D)); return g; });
+  const legs = [];
+  for (const s of [-1, 1]) for (let k = 0; k < 3; k++) legs.push(insectLeg(body, s * 0.06, 0.28, 0.14 - k * 0.09, s, s * (0.55 - k * 0.55), 0.2, 0.3 + k * 0.03, 0.016, M, D));
+  shadowAll(root);
+  let ph = 0, gait = 0, lt = 0, at0 = -9;
+  return { root, attack() { at0 = lt; }, animate(t, moving, dt = 1 / 60) {
+    lt = t; gait += ((moving ? 1 : 0) - gait) * Math.min(1, dt * 6); ph += dt * (3 + gait * 14);
+    tripod(legs, ph, gait, 0.32);
+    const sk = strike((t - at0) / 0.45);
+    head.rotation.x = sk * 0.3 + Math.sin(t * 1.4) * 0.04; head.rotation.y = Math.sin(t * 0.7) * 0.2 * (1 - gait); body.position.z = sk * 0.12;
+    mands.forEach((g, i) => { g.rotation.y = (i ? -1 : 1) * (0.25 + Math.max(0, sk) * -0.6 + (sk < 0 ? -sk * 0.8 : 0) + Math.max(0, Math.sin(t * 2.5)) * 0.08); });
+    ants.forEach(({ sc, fu, s }, i) => { sc.rotation.z = s * (Math.sin(t * 3 + i * 1.7) * 0.25); sc.rotation.x = Math.sin(t * 2.3 + i) * 0.2 - gait * 0.2; fu.rotation.x = Math.sin(t * 4 + i) * 0.3; });
+    gaster.rotation.x = Math.sin(ph * 2) * 0.04 * gait + Math.sin(t * 1.1) * 0.03; body.position.y = Math.abs(Math.sin(ph * 2)) * 0.006 * gait;
+  } };
+}
+
+/* ---------- Morcego de Cripta: morcego grande das ruínas e catacumbas ----------
+   Corpo de pelo macio, orelhas enormes, focinho curto com presinhas, olhos que brilham no escuro.
+   Asas de membrana fina presas a "dedos" (braço + mão): a parte de fora atrasa um pouco a batida,
+   então a asa ondula em vez de bater dura. Paira subindo e descendo e dá rasantes no ataque. */
+// membrana: borda de ataque (lead, com osso) e borda de fuga recortada entre os "dedos" (fingers: pontas na borda de fuga)
+function wingPart(side, lead, trail, fingers, memM, boneM) {
+  const sh = new THREE.Shape(); sh.moveTo(lead[0][0], lead[0][1]);
+  for (const [x, y] of lead.slice(1)) sh.lineTo(x, y);
+  for (let k = 1; k < trail.length; k++) { const [x0, y0] = trail[k - 1], [x1, y1] = trail[k]; sh.quadraticCurveTo((x0 + x1) / 2, (y0 + y1) / 2 + 0.05, x1, y1); } // recorte entre os dedos
+  sh.lineTo(lead[0][0], lead[0][1]);
+  const g = new THREE.ShapeGeometry(sh, 12), P = g.attributes.position, L = Math.max(...lead.map(p => p[0]));
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i); P.setZ(i, -Math.sin(Math.min(1, x / L) * Math.PI) * 0.03 - Math.max(0, -y) * 0.08); }
+  g.computeVertexNormals(); if (side < 0) g.scale(-1, 1, 1);
+  const grp = new THREE.Group(); grp.add(new THREE.Mesh(g, memM));
+  grp.add(new THREE.Mesh(taper(lead.map(([x, y]) => V3(side * x, y, 0.004)), 0.011, 0.006, 12, 6), boneM));
+  for (const [fx, fy, ox, oy] of fingers) grp.add(new THREE.Mesh(taper([V3(side * ox, oy, 0.004), V3(side * (ox + fx) / 2, (oy + fy) / 2, 0.0), V3(side * fx, fy, 0)], 0.006, 0.0025, 8, 5), boneM));
+  return grp;
+}
+export function cryptBat(color = '#5a3d7a') {
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body); body.position.y = 1.15;
+  const base = new THREE.Color(color), dark = base.clone().multiplyScalar(0.45), light = base.clone().lerp(new THREE.Color('#c8b0d8'), 0.35);
+  const VCB2 = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+  // corpo e cabeça (pelo macio em camadas)
+  const torso = paintV(furBody([ell(0.1, 1, 1.45, 0.95, 0, -0.03, 0)]), (c, x, y) => c.copy(base).lerp(light, Math.max(0, Math.min(1, -y * 3))));
+  body.add(new THREE.Mesh(torso, VCB2)); shellFur(body, torso, 4, 0.022, 8);
+  const head = new THREE.Group(); head.position.set(0, 0.15, 0.04); body.add(head);
+  const hg = paintV(furBody([ell(0.085, 1, 0.92, 0.95, 0, 0, 0), ell(0.045, 1.05, 0.8, 1.1, 0, -0.022, 0.07)]), (c, x, y, z) => c.copy(base).lerp(dark, Math.max(0, Math.min(1, (z - 0.06) * 18))));
+  head.add(new THREE.Mesh(hg, VCB2)); shellFur(head, hg, 3, 0.012, 9);
+  const SKIN = new THREE.MeshStandardMaterial({ color: dark.clone().lerp(new THREE.Color('#6a3a4a'), 0.4), roughness: 0.7, side: THREE.DoubleSide });
+  const ears = [-1, 1].map(s => { const e = new THREE.Group(); e.position.set(s * 0.055, 0.05, -0.005); e.rotation.set(-0.1, s * 0.3, -s * 0.5); head.add(e);
+    const es = new THREE.Shape(); es.moveTo(-0.035, 0); es.quadraticCurveTo(-0.04, 0.09, 0, 0.15); es.quadraticCurveTo(0.03, 0.08, 0.04, 0); es.quadraticCurveTo(0, -0.01, -0.035, 0);
+    const eg = new THREE.ShapeGeometry(es, 10); { const P = eg.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i); P.setZ(i, -x * x * 9); } eg.computeVertexNormals(); }
+    e.add(new THREE.Mesh(eg, SKIN)); return e; });
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.018, 14, 10), new THREE.MeshStandardMaterial({ color: '#2a1620', roughness: 0.35 })); nose.scale.set(1.3, 0.8, 0.8); nose.position.set(0, -0.012, 0.115); head.add(nose);
+  for (const s of [-1, 1]) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.0045, 0.02, 8), new THREE.MeshStandardMaterial({ color: '#f4eee0', roughness: 0.3 })); f.rotation.x = Math.PI; f.position.set(s * 0.014, -0.05, 0.1); head.add(f); }
+  const eyeM = new THREE.MeshStandardMaterial({ color: '#ff8a3a', emissive: '#ff5a1a', emissiveIntensity: 1.2, roughness: 0.2 });
+  for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 10), eyeM); e.scale.set(1, 0.85, 0.5); e.position.set(s * 0.04, 0.015, 0.075); e.rotation.y = s * 0.4; head.add(e); const pu = new THREE.Mesh(new THREE.CircleGeometry(0.006, 10), new THREE.MeshBasicMaterial({ color: '#1a0804' })); pu.position.set(s * 0.042, 0.016, 0.084); pu.rotation.y = s * 0.4; head.add(pu); }
+  // asas: braço (de dentro) e mão (de fora, atrasa a batida)
+  const memM = new THREE.MeshStandardMaterial({ color: dark.clone().lerp(new THREE.Color('#5a2a3a'), 0.3), roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.94 });
+  const boneM = new THREE.MeshStandardMaterial({ color: dark, roughness: 0.6 });
+  const wings = [-1, 1].map(s => { const sh = new THREE.Group(); sh.position.set(s * 0.06, 0.06, 0); body.add(sh);
+    // braço: do ombro ao pulso; a membrana desce até o flanco
+    sh.add(wingPart(s, [[0, 0.02], [0.14, 0.08], [0.26, 0.1]], [[0.26, -0.13], [0.12, -0.16], [0, -0.17]], [[0.26, -0.13, 0.26, 0.1]], memM, boneM));
+    const hand = new THREE.Group(); hand.position.set(s * 0.26, 0.1, 0); sh.add(hand);
+    // mão: dedos longos abrindo em leque a partir do pulso
+    hand.add(wingPart(s, [[0, 0], [0.16, 0.02], [0.34, -0.04]], [[0.34, -0.04], [0.27, -0.2], [0.14, -0.26], [0, -0.23]], [[0.27, -0.2, 0, 0], [0.14, -0.26, 0, 0]], memM, boneM));
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.03, 8), boneM); claw.position.set(s * 0.005, 0.02, 0.01); hand.add(claw);
+    return { sh, hand, s }; });
+  // pezinhos com garras e uma cauda de membrana
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(taper([V3(s * 0.03, -0.14, -0.02), V3(s * 0.04, -0.2, -0.05), V3(s * 0.045, -0.24, -0.04)], 0.01, 0.006, 8, 6), boneM); body.add(leg); }
+  const tailS = new THREE.Shape(); tailS.moveTo(-0.05, 0); tailS.quadraticCurveTo(0, -0.06, 0.05, 0); tailS.lineTo(0, 0.04); tailS.lineTo(-0.05, 0);
+  const tailM = new THREE.Mesh(new THREE.ShapeGeometry(tailS, 8), memM); tailM.position.set(0, -0.2, -0.07); tailM.rotation.x = -1.2; body.add(tailM);
+  shadowAll(root); for (const w of wings) w.sh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  let lt = 0, at = -9, ph = 0;
+  return { root, flying: true, attack() { at = lt; }, animate(t, moving, dt = 1 / 60) {
+    lt = t; ph += dt * (moving ? 12 : 9);
+    const k = (t - at) / 0.7, sw = k > 0 && k < 1 ? Math.sin(k * Math.PI) : 0; // rasante: mergulha para a frente e volta
+    for (const { sh, hand, s } of wings) {
+      const f = Math.sin(ph), g = Math.sin(ph - 0.9);
+      sh.rotation.z = s * (f * 0.75 + 0.1) * (1 - sw * 0.6) + s * sw * 0.9; sh.rotation.y = s * (0.15 + Math.cos(ph) * 0.2);
+      hand.rotation.z = s * g * 0.55 * (1 - sw * 0.5) + s * sw * 0.6; hand.rotation.y = -s * (0.2 + Math.max(0, -f) * 0.5); // dobra a mão na subida
+    }
+    body.position.y = 1.15 + Math.sin(ph) * 0.05 + Math.sin(t * 1.3) * 0.08 - sw * 0.45;
+    body.position.z = sw * 0.6; body.rotation.x = (moving ? 0.35 : 0.1) + sw * 0.6 - Math.cos(ph) * 0.05;
+    head.rotation.x = -body.rotation.x * 0.6 + Math.sin(t * 2) * 0.06; head.rotation.y = Math.sin(t * 0.9) * 0.3 * (moving ? 0.3 : 1);
+    ears.forEach((e, i) => { e.rotation.z = (i ? 1 : -1) * -0.5 + Math.sin(t * 7 + i) * 0.04; });
+  } };
 }

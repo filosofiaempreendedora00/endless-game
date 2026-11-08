@@ -7,12 +7,17 @@
 import * as THREE from 'three';
 import { vlight } from './lights3d.js';
 import { masonry } from './landmarks3d.js';
+import { dungeonWallMat, dungeonBox } from './dungeon3d.js';
 
 export const INTERIORS = {
   // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 450 e as montanhas do horizonte até ~740)
   estabulo: { name: 'Estábulo do Tomé', x: 1300, z: 0, w: 16, d: 13, h: 5.2, wall: '#b39570', floor: '#8a6a44', beam: '#5a3d24' },
   taverna: { name: 'Taverna Caneca Alegre', x: 1360, z: 0, w: 15, d: 12, h: 4.8, wall: '#c9b48e', floor: '#6e4e30', beam: '#4a3220' },
-  catacumbas: { name: 'Catacumbas do Santuário', x: 1500, z: 0, w: 64, d: 64, h: 6, wall: '#4f4a44', floor: '#3a3631', beam: '#2a2622', stone: true, dungeon: true, region: 'Santuário Silente', music: 'catacumbas' },
+  // S-159: as Catacumbas têm 4 andares (labirintos de 64 × 64 m), um atrás do outro em z; o chefe fica no 4º
+  catacumbas: { name: 'Catacumbas — 1º andar', x: 1500, z: 0, w: 64, d: 64, h: 6, wall: '#4f4a44', floor: '#3a3631', beam: '#2a2622', stone: true, dungeon: true, level: 1, region: 'Ossuário', music: 'catacumbas' },
+  catacumbas2: { name: 'Catacumbas — 2º andar', x: 1500, z: 90, w: 64, d: 64, h: 6, stone: true, dungeon: true, level: 2, region: 'Galerias dos Esquecidos', music: 'catacumbas' },
+  catacumbas3: { name: 'Catacumbas — 3º andar', x: 1500, z: 180, w: 64, d: 64, h: 6, stone: true, dungeon: true, level: 3, region: 'Criptas Profundas', music: 'catacumbas' },
+  catacumbas4: { name: 'Catacumbas — 4º andar', x: 1500, z: 270, w: 64, d: 64, h: 6, stone: true, dungeon: true, level: 4, region: 'Salão da Sentinela', music: 'catacumbas' },
 };
 
 const mat = (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...e });
@@ -32,6 +37,13 @@ function planks(w, d, color) {
 // sala: chão, 4 paredes finas (a câmera bate nelas), vigas, teto e janelas com luz do dia
 export function buildRoomShell(def) {
   const { w, d, h } = def, g = new THREE.Group(), walls = [];
+  if (def.dungeon) { // masmorra (S-159/S-160): só as 4 paredes de pedra de fora (chão, teto, labirinto e portão vêm de dungeon3d) — sem janela, tapete nem claridade
+    const M = dungeonWallMat(), t = 1.3;
+    for (const [ww, dd, x, z] of [[w + t * 2, t, 0, -d / 2 - t / 2], [w + t * 2, t, 0, d / 2 + t / 2], [t, d, -w / 2 - t / 2, 0], [t, d, w / 2 + t / 2, 0]]) { const m = new THREE.Mesh(dungeonBox(ww, h, dd, x, h / 2, z), M); m.receiveShadow = true; g.add(m); walls.push(m); }
+    const amb = vlight('#6a5a8a', 1.2, 40, 1.2); amb.position.set(0, h - 1, 0); g.add(amb); // penumbra fria
+    g.position.set(def.x, 0, def.z);
+    return { group: g, walls };
+  }
   if (def.stone) { // lajes de pedra (masmorra): uma malha só com cor por vértice
     const fg = new THREE.PlaneGeometry(w, d, Math.round(w / 2), Math.round(d / 2)); fg.rotateX(-Math.PI / 2); const P = fg.attributes.position, col = new Float32Array(P.count * 3), base = new THREE.Color(def.floor), c = new THREE.Color();
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); c.copy(base).offsetHSL(0, 0, ((Math.floor(x / 2) * 7 + Math.floor(z / 2) * 13) % 5) * 0.012 - 0.024); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
@@ -308,8 +320,7 @@ export function makeFruitStand(seed = 7) {
   const rind = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat('#2f6a2a', { side: THREE.DoubleSide })); rind.scale.set(1, 0.9, 1); half.add(rind);
   const flesh = new THREE.Mesh(new THREE.CircleGeometry(0.155, 24), mat('#e8405a', { roughness: 0.7 })); flesh.rotation.x = Math.PI / 2; half.add(flesh);
   for (let i = 0; i < 10; i++) { const sd = new THREE.Mesh(new THREE.SphereGeometry(0.008, 20, 14), mat('#1a1414')); const an = rnd() * 6.28, rr = 0.04 + rnd() * 0.08; sd.position.set(Math.cos(an) * rr, -0.002, Math.sin(an) * rr); half.add(sd); }
-  // placa
-  const sign = box(0.9, 0.32, 0.04, mat('#e9dcc0'), 0, 1.55, -0.45); g.add(sign); g.add(box(0.05, 0.75, 0.05, DARK, -0.42, 1.2, -0.45)); g.add(box(0.05, 0.75, 0.05, DARK, 0.42, 1.2, -0.45));
+  // S-152: sem placa na frente da feirante
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }

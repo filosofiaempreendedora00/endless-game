@@ -190,13 +190,20 @@ function axeGeo(len = 1.6, bladeW = 0.5) {
 const clothT = { value: 0 };
 function bannerTex(kind) {
   const W = 128, H = 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-  const pal = { anao: ['#7a1a14', '#a8281e', '#e2b04a'], elfo: ['#1e4a34', '#2e6e4a', '#e8eef2'], porto: ['#1e3e6e', '#2e5ea0', '#f2f2ea'], castelo: ['#3e1e5a', '#5a2e82', '#e6c46a'] }[kind];
+  const pal = { anao: ['#7a1a14', '#a8281e', '#e2b04a'], elfo: ['#1e4a34', '#2e6e4a', '#e8eef2'], porto: ['#1e3e6e', '#2e5ea0', '#f2f2ea'], castelo: ['#3e1e5a', '#5a2e82', '#e6c46a'], vigilia: ['#0c0c0e', '#1c1c20', '#e8ecf0'], guilda: ['#6a4a10', '#a8781e', '#fff2c8'] }[kind];
   const gr = x.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, pal[0]); gr.addColorStop(0.5, pal[1]); gr.addColorStop(1, pal[0]); x.fillStyle = gr; x.fillRect(0, 0, W, H);
   for (let k = 0; k < 900; k++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.06})`; x.fillRect(Math.random() * W, Math.random() * H, 1, 3); }
   x.strokeStyle = pal[2]; x.lineWidth = 5; x.strokeRect(8, 8, W - 16, H - 28);
   x.save(); x.translate(W / 2, 110); x.fillStyle = pal[2]; x.strokeStyle = 'rgba(0,0,0,0.35)'; x.lineWidth = 2;
   if (kind === 'anao') { x.fillRect(-6, -40, 12, 70); x.beginPath(); x.moveTo(-6, -36); x.quadraticCurveTo(-40, -42, -34, -8); x.quadraticCurveTo(-26, -20, -6, -18); x.fill(); x.beginPath(); x.moveTo(6, -36); x.quadraticCurveTo(40, -42, 34, -8); x.quadraticCurveTo(26, -20, 6, -18); x.fill(); x.fillRect(-24, 34, 48, 10); x.fillRect(-16, 26, 32, 10); } // machado sobre a bigorna
   else if (kind === 'elfo') { x.beginPath(); x.arc(0, -10, 30, 0.6, Math.PI * 2 - 0.6); x.arc(14, -10, 24, Math.PI * 2 - 0.7, 0.7, true); x.fill(); x.beginPath(); x.moveTo(0, 50); x.quadraticCurveTo(-26, 26, 0, 6); x.quadraticCurveTo(26, 26, 0, 50); x.fill(); } // lua e folha
+  else if (kind === 'vigilia') { // asa de corvo branca sobre o negro, com uma estrela (a vigília que não dorme)
+    for (let k = 0; k < 7; k++) { x.save(); x.rotate(-0.9 + k * 0.17); x.beginPath(); x.moveTo(0, 30); x.quadraticCurveTo(-8, -10, -4, -52 + k * 2); x.quadraticCurveTo(6, -10, 6, 30); x.closePath(); x.fill(); x.restore(); }
+    x.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 4 : 11; x.lineTo(Math.cos(a) * r + 26, Math.sin(a) * r - 46); } x.fill(); }
+  else if (kind === 'guilda') { // balança de mercador e uma moeda
+    x.fillRect(-2, -44, 4, 70); x.fillRect(-36, -36, 72, 4); x.fillRect(-14, 24, 28, 6);
+    for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * 34, -32); x.lineTo(sd * 44, -2); x.lineTo(sd * 24, -2); x.closePath(); x.strokeStyle = 'rgba(0,0,0,0.5)'; x.stroke(); x.beginPath(); x.arc(sd * 34, -2, 12, 0, Math.PI); x.fill(); }
+    x.beginPath(); x.arc(0, 50, 14, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,0.35)'; x.font = 'bold 16px serif'; x.textAlign = 'center'; x.fillText('Z', 0, 56); }
   else if (kind === 'porto') { x.lineWidth = 7; x.strokeStyle = pal[2]; x.beginPath(); x.moveTo(0, -40); x.lineTo(0, 40); x.moveTo(-22, -26); x.lineTo(22, -26); x.stroke(); x.beginPath(); x.arc(0, 18, 28, 0.2, Math.PI - 0.2); x.stroke(); x.beginPath(); x.arc(0, -46, 8, 0, 7); x.stroke(); } // âncora
   else { x.fillRect(-26, -10, 52, 46); for (const t of [-26, -9, 8]) x.fillRect(t, -24, 18, 16); x.fillRect(-10, -50, 20, 40); x.fillStyle = pal[0]; x.beginPath(); x.arc(0, 26, 10, Math.PI, 0); x.fillRect(-10, 26, 20, 12); x.fill(); } // torre
   x.restore();
@@ -383,6 +390,17 @@ function buildDwarfCity(ctx) {
       lines: 'O minério que o Brakar usa sai das galerias lá do fundo. Brilha no escuro, sabia? A gente chama de "pedra-fagulha".' }, 14, -14, -0.8],
     [{ id: 'lian_vis', name: 'Lian', title: 'Viajante humano', model: 'Rogue', look: { race: 'humano', face: 'gentil', hair: { style: 'curto', color: 'castanho' } },
       lines: 'Subi a estrada da Geada só para ver as forjas. Valeu cada passo — e cada calo.' }, -4, 18, 2.4],
+    // S-163: mais gente de Pedrafunda pelas ruas
+    [{ id: 'korvin', name: 'Korvin', title: 'Joalheiro das Profundezas', model: 'Barbarian', look: { race: 'anao', face: 'astuto', hair: { style: 'longo', color: 'preto' }, beard: true },
+      lines: 'Rubis do coração da montanha, lapidados à luz da forja. Quer ver? Olhe, mas não toque.' }, -20, 6, 1.2],
+    [{ id: 'brunna', name: 'Brunna', title: 'Mestre-Cervejeira', model: 'Barbarian', show: ['Mug'], look: { race: 'anao', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } },
+      lines: 'A cevada vem das colinas, o cogumelo vem das cavernas e o segredo vem da minha avó.' }, -22, -6, 0.9],
+    [{ id: 'torvald', name: 'Torvald', title: 'Veterano da Guarda', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: 'grisalho' }, beard: true },
+      lines: 'Quarenta invernos de guarda nesse portão. Já vi troll, dragão de gelo e até humano educado.' }, 10, 38, Math.PI],
+    [{ id: 'nim', name: 'Nim', title: 'Aprendiz de Ferreiro', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'castanho' } },
+      lines: 'O Mestre Brakar diz que eu ainda não sei segurar o martelo. Mas já sei carregar o carvão!' }, 14, 4, -1.4],
+    [{ id: 'gudrun', name: 'Gudrun', title: 'Anciã do Clã', model: 'Mage', look: { race: 'anao', sex: 'f', face: 'sabio', hair: { style: 'longo', color: 'branco' } },
+      lines: 'Nossos avós cavaram estas casas na rocha quando o mundo ainda era jovem. Cada runa nas portas conta uma história.' }, -2, -12, 0],
   ];
   for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
   // quadro do refino: parede leste do galpão (por dentro), virada para o oeste — onde o main3d pendura a tabela
@@ -644,6 +662,270 @@ function buildPortTown(ctx) {
   return { beach: B, yawSea };
 }
 
+
+/* =========================== A MURALHA GÉLIDA e a FORTALEZA DA VIGÍLIA NEGRA (S-165) ===========================
+   No extremo oeste do Vale da Geada, uma muralha de gelo colossal (≈55 m) guarda o fim do mundo conhecido.
+   Ao pé dela, a irmandade de mantos negros vive numa fortaleza de madeira e pedra sem muralhas próprias:
+   torre do comandante, salão comunal, alojamentos, corvaria, arsenal com forja, estábulo, pátio de treino,
+   escadaria em zigue-zague subindo o gelo e o elevador de gaiola puxado por um sarilho lá em cima.
+   (Inspiração de sensação, com nomes, brasões e formas próprios.) */
+export const FROST = { x: -380, z: 28, wallX: -405 };
+function iceTex() {
+  return canvasPair(512, 512, (g, gb, W, H) => {
+    const r = rngOf(61); const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#e8f4fb'); gr.addColorStop(1, '#a9cde2'); g.fillStyle = gr; g.fillRect(0, 0, W, H); gb.fillStyle = '#808080'; gb.fillRect(0, 0, W, H);
+    let y = 0; while (y < H) { const h = 6 + r() * 26, l = 78 + r() * 16; g.fillStyle = `hsla(${198 + r() * 12}, ${28 + r() * 25}%, ${l}%, 0.55)`; g.fillRect(0, y, W, h); gb.fillStyle = `rgb(${110 + r() * 60 | 0},${110 + r() * 60 | 0},${110 + r() * 60 | 0})`; gb.fillRect(0, y, W, h); g.fillStyle = 'rgba(70,110,140,0.25)'; g.fillRect(0, y + h - 1.5, W, 1.5); y += h; } // estratos (camadas de invernos)
+    for (let k = 0; k < 140; k++) { const x0 = r() * W, y0 = r() * H, L = 20 + r() * 120; g.strokeStyle = `rgba(${r() < 0.5 ? '255,255,255' : '60,100,130'},${0.15 + r() * 0.25})`; g.lineWidth = 0.6 + r() * 1.6; g.beginPath(); g.moveTo(x0, y0); g.bezierCurveTo(x0 + (r() - 0.5) * 30, y0 + L * 0.3, x0 + (r() - 0.5) * 30, y0 + L * 0.7, x0 + (r() - 0.5) * 20, y0 + L); g.stroke(); gb.strokeStyle = 'rgba(30,30,30,0.6)'; gb.lineWidth = 1.5; gb.stroke(); } // fendas e escorridos
+    for (let k = 0; k < 400; k++) { g.fillStyle = `rgba(255,255,255,${r() * 0.35})`; g.fillRect(r() * W, r() * H, 1 + r() * 3, 1 + r() * 2); }
+  });
+}
+const FM = {
+  ice: () => MATS.ice || (MATS.ice = (() => { const t = TEX.ice || (TEX.ice = iceTex()); for (const x of [t.map, t.bump]) x.repeat.set(1, 1); const m = new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 4, roughness: 0.5, metalness: 0.02, color: '#ffffff', vertexColors: true, emissive: '#0c2438', emissiveIntensity: 0.25 }); m.userData.tile = 24; return m; })()),
+  snow: () => plain('snow', '#f1f5f9', { rough: 0.9 }),
+  icicle: () => plain('icicle', '#cfe6f4', { rough: 0.15, metal: 0.05, transparent: true, opacity: 0.85 }),
+  blackWool: () => plain('blackWool', '#16151a', { rough: 1 }),
+  fur: () => plain('furCloak', '#5c4a3a', { rough: 1 }),
+  rawWood: () => texMat('rawWood', () => woodTex({ base: [26, 26, 26], seed: 71 }), 2.2, { bump: 3 }),
+  darkStone: () => texMat('frostStone', () => stoneTex({ base: [210, 6, 34], mortar: '#1c1e22', rows: [40, 60], wide: [60, 140], seed: 73 }), 4),
+};
+// telhado de duas águas com neve por cima (uma segunda "capa" branca um pouco maior)
+function snowRoof(K, w, d, h, mat, x, y, z, ry = 0) { gable(K, w, d, h, mat, x, y, z, ry, 0.5); gable(K, w + 0.25, d + 0.1, h + 0.12, FM.snow(), x, y + 0.14, z, ry, 0.42); }
+function icicles(K, r, x0, x1, y, z, ry = 0, n = 12) { const cs = Math.cos(ry), sn = Math.sin(ry); for (let k = 0; k < n; k++) { const u = x0 + (x1 - x0) * (k + r() * 0.6) / n, L = 0.25 + r() * 0.7; K.add(new THREE.ConeGeometry(0.05 + r() * 0.04, L, 6), FM.icicle(), u * cs + z * sn, y - L / 2, -u * sn + z * cs, 0, Math.PI, 0); } }
+// manto negro de lã com gola de pele (preso ao osso do peito dos personagens realistas)
+export function furCloak(ch, opts = {}) {
+  // preso ao corpo do personagem (grupo externo, que já tem a escala da raça), na altura dos ombros
+  const host = ch.obj || ch.root; if (!host) return null;
+  const g = new THREE.Group(); g.position.set(0, 1.32, 0); host.add(g);
+  const cg = new THREE.PlaneGeometry(1, 1, 10, 16), P = cg.attributes.position, len = opts.len || 1.12;
+  for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), u = 0.5 - y, w = 0.46 + u * 0.36, X = x * w; P.setXYZ(k, X, -u * len + (u > 0.95 ? Math.sin(x * 16) * 0.03 : 0), -X * X * 1.25 - u * u * 0.12 + Math.sin(x * 11 + u * 5) * 0.018 * u - 0.02); }
+  cg.computeVertexNormals();
+  const cape = new THREE.Mesh(cg, opts.mat || FM.blackWool()); cape.material.side = THREE.DoubleSide; cape.position.set(0, 0.16, -0.16); cape.rotation.x = 0.08; cape.castShadow = true; g.add(cape);
+  // gola de pele: anel grosso e irregular sobre os ombros
+  const fg = new THREE.TorusGeometry(0.18, 0.058, 10, 26), FP = fg.attributes.position;
+  for (let k = 0; k < FP.count; k++) { const x = FP.getX(k), y = FP.getY(k), z = FP.getZ(k), n = 1 + Math.sin(x * 40 + y * 30) * 0.08 + Math.sin(Math.atan2(y, x) * 23) * 0.06; FP.setXYZ(k, x * 1.25 * n, y * n * 0.9, z * 1.05 * n); }
+  fg.rotateX(Math.PI / 2); fg.computeVertexNormals(); const fur = new THREE.Mesh(fg, opts.fur || FM.fur()); fur.position.set(0, 0.07, -0.06); fur.rotation.x = 0.12; fur.castShadow = true; g.add(fur);
+  return g;
+}
+function iceWall(len, H, D) {
+  // face leste (virada para +x) bem subdividida: inclinação, camadas de inverno (beiradas), fendas verticais;
+  // nas pontas a muralha baixa e entra nas montanhas. Topo com neve acompanhando a altura.
+  const SX = 150, SY = 40, pos = [], idx = [], uv = [], Hz = z => H * (0.6 + 0.4 * Math.min(1, Math.max(0, (len / 2 - Math.abs(z)) / 50)));
+  const faceX = (y, z, hz) => { const v = (y + 6) / hz, band = y / 7.3, ledge = Math.pow(Math.max(0, Math.sin((band - Math.floor(band)) * Math.PI)), 6) * 0.9;
+    const crev = -2.2 * Math.pow(Math.max(0, Math.sin(z * 0.19 + Math.sin(y * 0.05) * 0.6)), 28) - 1.4 * Math.pow(Math.max(0, Math.sin(z * 0.071 + 2)), 40);
+    return -v * H * 0.12 + Math.sin(z * 0.045 + y * 0.03) * 1.1 + Math.sin(y * 1.3 + z * 0.05) * 0.18 + ledge + crev + Math.sin(z * 0.9 + y * 0.7) * 0.08; };
+  for (let j = 0; j <= SY; j++) for (let i = 0; i <= SX; i++) {
+    const u = i / SX, v = j / SY, z = (u - 0.5) * len, hz = Hz(z), y = v * hz - 6;
+    pos.push(faceX(y, z, hz), y + (v > 0.98 ? Math.sin(z * 0.43) * 0.8 : 0), z); uv.push(z / 30, y / 14);
+  }
+  for (let j = 0; j < SY; j++) for (let i = 0; i < SX; i++) { const a = j * (SX + 1) + i, b = a + SX + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  // cor: gelo azul-acinzentado, fendas e reentrâncias azul profundo, beiradas e topo quase brancos
+  const col = [], cA = new THREE.Color('#9fbfd4'), cDeep = new THREE.Color('#3f6f94'), cHi = new THREE.Color('#eef6fb'), tc = new THREE.Color();
+  for (let k = 0; k < pos.length; k += 3) { const x = pos[k], y = pos[k + 1], z = pos[k + 2], hz = Hz(z), base = -((y + 6) / hz) * H * 0.12, d = x - base;
+    tc.copy(cA).lerp(cDeep, Math.min(1, Math.max(0, -d - 0.4) * 0.45)).lerp(cHi, Math.min(1, Math.max(0, d - 0.3) * 0.5) * 0.8);
+    tc.offsetHSL(0, 0, Math.sin(y * 2.1 + z * 0.13) * 0.025 + ((y + 6) / hz > 0.9 ? 0.08 : 0)); col.push(tc.r, tc.g, tc.b); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const grp = new THREE.Group(), face = new THREE.Mesh(g, FM.ice()); face.receiveShadow = true; grp.add(face);
+  // topo: faixa de neve com borda irregular, da beirada até o fundo
+  const tp = [], ti = [];
+  for (let i = 0; i <= SX; i++) { const z = (i / SX - 0.5) * len, hz = Hz(z), y = hz - 6, x0 = faceX(y, z, hz); tp.push(x0 + 0.6, y + 0.2 + Math.sin(z * 0.43) * 0.8, z, x0 - 3, y + 1.0 + Math.sin(z * 0.2) * 0.3, z, x0 - D, y + 0.6, z); }
+  for (let i = 0; i < SX; i++) for (let c = 0; c < 2; c++) { const a = i * 3 + c, b = a + 3; ti.push(a, a + 1, b, b, a + 1, b + 1); }
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3)); tg.setIndex(ti); tg.computeVertexNormals(); const top = new THREE.Mesh(tg, FM.snow()); top.material.side = THREE.DoubleSide; grp.add(top);
+  return grp;
+}
+// monta com coordenadas do mundo e coloca o grupo no centro dado (para a distância de desenho funcionar)
+function putAbs(ctx, K, asset, cx, cz, opts = {}) { for (const { geos } of K.parts.values()) for (const g of geos) g.translate(-cx, 0, -cz); return put(ctx, K, asset, cx, cz, 0, { y: 0, ...opts }); }
+function buildFrostHold(ctx) {
+  const C = FROST, r = rngOf(4242), wd = FM.rawWood(), dk = M.darkWood(), st = FM.darkStone();
+  // ---------- a Muralha ----------
+  const H = 56, LEN = 500, wallZ = 2;
+  { const w = iceWall(LEN, H, 22); w.position.set(C.wallX, gY(C.wallX + 4, wallZ) - 0.5, wallZ); ctx.scene.add(w); w.userData.asset = 'muralha_gelida'; w.userData.big = true; w.userData.far = 900; ctx.placed.push(w); ctx.occluders.push(w); CULL.push(w); ctx.extraPick && ctx.extraPick.push(w);
+    for (let z = wallZ - LEN / 2; z <= wallZ + LEN / 2; z += 3) ctx.colliders.push({ x: C.wallX - 3, z, r: 4.5, name: 'muralha_gelida' }); }
+  // ---------- escadaria em zigue-zague subindo o gelo ----------
+  { const K = new Kit(), z0 = 52, flights = 8, rise = (H - 9) / flights, run = 16, xw = C.wallX + 3.2, yB = gY(C.wallX + 6, z0 + 8);
+    for (let f = 0; f < flights; f++) {
+      const dir = f % 2 ? -1 : 1, za = z0 + (dir > 0 ? 0 : run), y0 = yB + 0.4 + f * rise, xs = xw - (f * rise + 2) * 0.12 + 0.5; // acompanha a inclinação da face
+      const L = Math.hypot(run, rise), ang = Math.atan2(rise, run);
+      K.box(2.4, 0.18, L, wd, xs + 1.2, y0 + rise / 2, za + dir * run / 2, 0, -dir * ang); // rampa de tábuas
+      for (let k = 0; k < 16; k++) K.box(2.4, 0.06, 0.12, dk, xs + 1.2, y0 + (k + 0.5) / 16 * rise + 0.1, za + dir * (k + 0.5) / 16 * run, 0, -dir * ang); // degraus pregados
+      K.box(0.1, 1.0, L, dk, xs + 2.35, y0 + rise / 2 + 0.6, za + dir * run / 2, 0, -dir * ang); // corrimão
+      for (let k = 0; k <= 4; k++) { const yy = y0 + rise * k / 4, zz = za + dir * run * k / 4; K.box(0.22, yy + 1.2, 0.22, dk, xs + 2.35, (yy + 1.2) / 2 - 0.5, zz); K.box(1.9, 0.16, 0.16, dk, xs + 1.3, yy - 0.3, zz, 0, 0, 0.5); } // escoras cravadas no gelo
+      K.box(2.8, 0.22, 2.8, wd, xs + 1.2, y0 + rise + 0.05, za + dir * run + dir * 1.2); // patamar
+    }
+    putAbs(ctx, K, 'escadaria_da_muralha', C.wallX + 4, z0 + 8, { occ: false }); }
+  // ---------- elevador de gaiola + sarilho no topo ----------
+  { const z = 12, xt = C.wallX - H * 0.12 + 1.5, top = gY(C.wallX, z) + H - 6.5, K = new Kit();
+    K.box(7, 0.4, 7, wd, xt - 2, top + 0.2, z); for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.4, 4.2, 0.4, dk, xt - 2 + sx * 3, top + 2.4, z + sz * 3); snowRoof(K, 7.4, 7.4, 2.2, M.slate(), xt - 2, top + 4.4, z, Math.PI / 2);
+    K.box(8.5, 0.5, 0.5, dk, xt + 2, top + 3.8, z); K.add(new THREE.CylinderGeometry(1.4, 1.4, 0.3, 20), dk, xt - 2, top + 2.2, z, 0, 0, Math.PI / 2); // braço do guindaste e roda do sarilho
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.1, 2.6, 0.12, dk, xt - 2, top + 2.2, z, 0, a, Math.PI / 2); }
+    putAbs(ctx, K, 'sarilho', xt, z, { occ: false });
+    const cage = new Kit(); for (const sx of [-1, 1]) for (const sz of [-1, 1]) cage.box(0.12, 3, 0.12, dk, sx * 1.4, 1.5, sz * 1.4); cage.box(3, 0.15, 3, wd, 0, 0, 0); cage.box(3, 0.12, 3, dk, 0, 3, 0);
+    for (let k = -1; k <= 1; k++) for (const sz of [-1, 1]) cage.box(2.8, 0.08, 0.06, M.iron(), 0, 1 + k * 0.6 + 0.6, sz * 1.4); cage.box(0.06, 2.6, 0.06, M.iron(), 0, 4.3, 0);
+    const cg = put(ctx, cage, 'elevador_de_gaiola', xt + 5.8, z, 0, { y: gY(xt + 5.8, z), occ: false });
+    const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 6), M.iron()); chain.position.set(xt + 5.8, 0, z); ctx.scene.add(chain);
+    const y0 = gY(xt + 5.8, z) + 0.1, y1 = top - 3.5;
+    const anim = { userData: { update: t => { const k = (Math.sin(t * 0.07) * 0.5 + 0.5); const yy = y0 + (y1 - y0) * k * k * (3 - 2 * k); cg.position.y = yy; const ch0 = yy + 3, ch1 = top + 3.8; chain.scale.y = ch1 - ch0; chain.position.y = (ch0 + ch1) / 2; } } }; ctx.roomAnims.push(anim); }
+  // ---------- torre do comandante (pedra escura) ----------
+  { const K = new Kit(), R = 5.2, TH = 20;
+    K.add(new THREE.CylinderGeometry(R, R + 0.6, TH, 28, 1), st, 0, TH / 2 - 0.6, 0); K.add(new THREE.CylinderGeometry(R + 0.7, R + 0.7, 1.2, 28), st, 0, TH, 0);
+    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; K.box(1.2, 1.4, 1.0, st, Math.cos(a) * (R + 0.4), TH + 1.3, Math.sin(a) * (R + 0.4), -a); } // ameias
+    for (let k = 0; k < 9; k++) { const a = k * 2.3, yy = 4 + (k % 4) * 4; K.box(0.35, 1.3, 0.3, M.glass(), Math.cos(a) * (R + 0.15), yy, Math.sin(a) * (R + 0.15), -a); } // seteiras com luz
+    K.box(2.2, 3.4, 0.5, dk, R + 0.2, 1.6, 0, Math.PI / 2); archBlocks(K, 2.2, 0.6, 1.0, st, R + 0.1, 3.3, 0, Math.PI / 2, 9);
+    for (const sz of [-2, 2]) K.add(new THREE.ConeGeometry(0.06, 0.6, 6), FM.icicle(), R + 0.5, TH - 0.6, sz, 0, Math.PI, 0);
+    const g = put(ctx, K, 'torre_do_comandante', C.x - 4, C.z - 22, Math.PI, { box: [[0, 0, R + 0.6, R + 0.6]] });
+    for (const sz of [-1.6, 1.6]) { const b = makeBanner('vigilia', 1.5, 4.6); b.position.set(C.x - 4 - (R + 0.5), gY(C.x - 4, C.z - 22) + 14, C.z - 22 + sz); b.rotation.y = -Math.PI / 2; ctx.scene.add(b); }
+    brazier(ctx, C.x - 4, gY(C.x - 4, C.z - 22) + TH + 0.7, C.z - 22, true, 5); }
+  // ---------- salão comunal (madeira, telhado de neve) ----------
+  const hall = (asset, x, z, ry, w, d, h, chimney) => { const K = new Kit();
+    K.box(w + 0.6, 0.8, d + 0.6, st, 0, 0, 0); K.box(w, h, d, wd, 0, 0.4 + h / 2, 0);
+    for (const sx of [-1, 1]) for (let k = -2; k <= 2; k++) K.box(0.3, h, 0.3, dk, sx * w / 2, 0.4 + h / 2, k * d / 4);
+    snowRoof(K, w + 0.4, d + 0.6, h * 0.75, M.slate(), 0, 0.4 + h, 0, Math.PI / 2);
+    K.box(1.8, 2.6, 0.2, dk, w / 2 + 0.02, 1.7, 0, Math.PI / 2); for (const sz of [-d / 3, d / 3]) { K.box(0.6, 0.55, 0.1, M.glass(), w / 2 + 0.02, 2.5, sz, Math.PI / 2); K.box(0.9, 0.12, 0.2, dk, w / 2 + 0.06, 2.2, sz, Math.PI / 2); K.box(0.08, 0.6, 0.16, dk, w / 2 + 0.07, 2.5, sz, Math.PI / 2); }
+    if (chimney) { K.box(1.3, h + 3, 1.3, st, -w / 4, 0.4 + (h + 3) / 2, d / 2 - 1.2); }
+    icicles(K, r, -d / 2, d / 2, 0.45 + h, w / 2 + 0.45, Math.PI / 2, 14); icicles(K, r, -d / 2, d / 2, 0.45 + h, -w / 2 - 0.45, Math.PI / 2, 14);
+    return put(ctx, K, asset, x, z, ry, { box: [[0, 0, w / 2 + 0.4, d / 2 + 0.4]] }); };
+  hall('salao_comunal', C.x + 8, C.z - 2, 0, 9, 22, 4.6, true);
+  hall('alojamento', C.x - 6, C.z + 18, 0.08, 7, 16, 3.6, true);
+  hall('alojamento', C.x + 10, C.z + 24, -0.1, 7, 14, 3.4, false);
+  // ---------- corvaria: torre de pedra com pombal de madeira e corvos ----------
+  { const K = new Kit(); K.add(new THREE.CylinderGeometry(2.6, 3.0, 11, 18), st, 0, 5.5, 0); K.add(new THREE.CylinderGeometry(3.4, 3.4, 2.6, 12), wd, 0, 12.3, 0); K.add(new THREE.ConeGeometry(3.9, 3.4, 12), M.slate(), 0, 15.3, 0); K.add(new THREE.ConeGeometry(4.0, 3.5, 12), FM.snow(), 0, 15.4, 0, 0.2);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.7, 0.7, 0.2, plain('cote', '#0a0a0c'), Math.cos(a) * 3.38, 12.3, Math.sin(a) * 3.38, -a + Math.PI / 2); K.box(1.2, 0.08, 0.3, dk, Math.cos(a) * 3.7, 11.9, Math.sin(a) * 3.7, -a + Math.PI / 2); }
+    const crowM = plain('crow', '#0d0c10', { rough: 0.5 });
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + 0.3, x = Math.cos(a) * 3.8, z = Math.sin(a) * 3.8; K.add(new THREE.SphereGeometry(0.16, 10, 8), crowM, x, 12.12, z, 0, 0, 0, 0.8, 0.9, 1.4); K.add(new THREE.SphereGeometry(0.1, 10, 8), crowM, x + Math.cos(a) * 0.05, 12.32, z + Math.sin(a) * 0.05); K.add(new THREE.ConeGeometry(0.035, 0.14, 6), plain('beak', '#2a2a2a'), x + Math.cos(a) * 0.16, 12.3, z + Math.sin(a) * 0.16, -a + Math.PI / 2, Math.PI / 2, 0); }
+    put(ctx, K, 'corvaria', C.x - 20, C.z - 2, 0, { box: [[0, 0, 3, 3]] }); }
+  // ---------- arsenal com forja, estábulo, pátio de treino ----------
+  { const K = new Kit(); K.box(10, 0.4, 7, st, 0, 0, 0); K.box(10, 4, 0.6, st, 0, 2, -3.2); for (const px of [-4.7, 0, 4.7]) K.box(0.4, 4, 0.4, dk, px, 2, 3.2); snowRoof(K, 10.4, 7.4, 1.8, M.slate(), 0, 4, 0, 0);
+    K.box(2.4, 1.1, 1.6, st, -3, 0.55, -2.2); K.box(1.8, 0.1, 1.1, M.ember(), -3, 1.12, -2.1); K.box(0.8, 0.6, 0.5, M.iron(), 1, 0.9, -0.8); K.box(0.5, 0.6, 0.5, dk, 1, 0.3, -0.8);
+    for (let k = 0; k < 5; k++) for (const gg of axeGeo(1.6, 0.3)) K.add(gg, M.steel(), 2.6 + k * 0.45, 0.6, -2.85, 0, 0, 0.05);
+    const g = put(ctx, K, 'arsenal', C.x + 24, C.z - 18, -Math.PI / 2, { box: [[0, -3.2, 5, 0.5], [-3, -2.2, 1.2, 0.8]] }); const f = flame(1.6, 4); f.position.set(-3, 1.15, -2.1); g.add(f); ctx.roomAnims.push(f); }
+  { const K = new Kit(); K.box(12, 0.3, 6, wd, 0, 0, 0); for (const px of [-5.8, -2, 2, 5.8]) for (const pz of [-2.8, 2.8]) K.box(0.3, 3.2, 0.3, dk, px, 1.6, pz); snowRoof(K, 12.4, 6.6, 1.6, M.thatch(), 0, 3.2, 0, 0);
+    for (let k = 0; k < 3; k++) K.box(0.12, 1.2, 5.4, dk, -4 + k * 4, 0.7, 0); for (let k = 0; k < 4; k++) K.box(1.1, 0.5, 0.6, plain('hay', '#c9a85a', { rough: 1 }), -5 + k * 3.2, 0.4, 2.2);
+    put(ctx, K, 'estabulo_da_vigilia', C.x + 26, C.z + 12, Math.PI / 2, { box: [[0, 0, 6.2, 3.2]] }); }
+  { const K = new Kit(); // bonecos de palha e alvos de arco
+    for (let k = 0; k < 4; k++) { const x = -6 + k * 4; K.cyl(0.1, 0.12, 2.0, dk, x, 1.0, 0, 8); K.box(1.2, 0.1, 0.1, dk, x, 1.5, 0); K.add(new THREE.SphereGeometry(0.28, 12, 10), plain('straw', '#c9a85a', { rough: 1 }), x, 1.95, 0); K.add(new THREE.CylinderGeometry(0.32, 0.36, 0.8, 12), plain('straw', '#c9a85a', { rough: 1 }), x, 1.3, 0); }
+    for (let k = 0; k < 3; k++) { const x = -5 + k * 5; K.add(new THREE.CylinderGeometry(0.75, 0.75, 0.25, 24), plain('target', '#d8c8a0'), x, 1.2, -9, 0, Math.PI / 2, 0); K.add(new THREE.CylinderGeometry(0.45, 0.45, 0.27, 24), plain('targetR', '#8a2a1e'), x, 1.2, -9, 0, Math.PI / 2, 0); K.add(new THREE.CylinderGeometry(0.16, 0.16, 0.29, 16), plain('targetY', '#e0c050'), x, 1.2, -9, 0, Math.PI / 2, 0); for (const sx of [-0.5, 0.5]) K.box(0.1, 1.6, 0.1, dk, x + sx, 0.6, -9.2, 0, 0.3); }
+    put(ctx, K, 'patio_de_treino', C.x + 6, C.z + 8, Math.PI / 2, { occ: false }); }
+  // ---------- portão de ferro selado no pé da muralha (o túnel para o outro lado) ----------
+  { const K = new Kit(), gx = C.wallX + 1.5; K.box(2, 9, 2, st, 0, 4.5, -4.5); K.box(2, 9, 2, st, 0, 4.5, 4.5); K.box(2.2, 2, 11, st, 0, 9, 0); K.box(0.4, 7.6, 7, plain('tunnel', '#08090c'), -0.7, 3.8, 0);
+    for (let k = -3; k <= 3; k++) K.box(0.18, 7.4, 0.18, M.iron(), 0.6, 3.7, k * 1.0); for (let k = 0; k < 5; k++) K.box(0.18, 0.18, 7, M.iron(), 0.6, 1 + k * 1.5, 0);
+    put(ctx, K, 'portao_da_muralha', gx, C.z - 38, 0, { box: [[0, 0, 1.4, 5.5]] }); }
+  // ---------- braseiros, lenha, neve amontoada e estandartes negros ----------
+  for (const [dx, dz, L] of [[2, -10, true], [16, 8, false], [-12, 6, true], [0, 30, false], [20, -26, false], [-16, -28, true], [30, 0, false]]) brazier(ctx, C.x + dx, gY(C.x + dx, C.z + dz), C.z + dz, L, dx);
+  for (const [dx, dz] of [[14, -12], [-10, 30], [2, 40]]) { const K = new Kit(); for (let k = 0; k < 18; k++) K.add(new THREE.CylinderGeometry(0.16, 0.16, 1.6, 8), wd, (k % 6) * 0.34 - 0.85, 0.16 + Math.floor(k / 6) * 0.3, 0, 0, Math.PI / 2, 0); K.add(new THREE.BoxGeometry(2.3, 0.15, 1.8), FM.snow(), 0, 1.0, 0); put(ctx, K, 'lenha', C.x + dx, C.z + dz, r() * 3, { box: [[0, 0, 1.2, 0.9]], occ: false }); }
+  { const K = new Kit(); for (let k = 0; k < 26; k++) { const a = r() * Math.PI * 2, d = 6 + r() * 34, s2 = 0.8 + r() * 2.2, x = Math.cos(a) * d, z = Math.sin(a) * d; K.add(new THREE.SphereGeometry(1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), FM.snow(), x, gY(C.x + x, C.z + z) - gY(C.x, C.z) - 0.15, z, r() * 3, 0, 0, s2 * 1.5, s2 * 0.35, s2); } put(ctx, K, 'neve', C.x, C.z, 0, { occ: false }); }
+  for (let k = 0; k < 8; k++) ctx.place(['barrel', 'crate_A', 'crate_B', 'sack'][k % 4], C.x + 12 + (r() - 0.5) * 8, C.z - 12 + (r() - 0.5) * 6, { rf: 0.6 });
+  for (const [dx, dz] of [[34, -6], [34, 10]]) { const K = new Kit(); K.cyl(0.12, 0.15, 8, dk, 0, 4, 0, 10); put(ctx, K, 'mastro', C.x + dx, C.z + dz, 0, { box: [[0, 0, 0.2, 0.2]], occ: false }); const b = makeBanner('vigilia', 1.3, 3.2); b.position.set(C.x + dx + 0.12, gY(C.x + dx, C.z + dz) + 7.6, C.z + dz); b.rotation.y = Math.PI / 2; ctx.scene.add(b); }
+  // ---------- a irmandade de mantos negros (NPCs com roupa de frio) ----------
+  const W = (n, dx, dz, yaw) => { const npc = ctx.worldNpc(n, C.x + dx, C.z + dz, yaw); furCloak(npc, { len: n.cloakLen || 1.12 }); return npc; };
+  const npcs = [
+    [{ id: 'varek', name: 'Comandante Varek', title: 'Senhor-Comandante da Vigília Negra', model: 'Knight', show: ['2H_Sword'], look: { race: 'humano', face: 'valente', hair: { style: 'curto', color: 'grisalho' }, beard: true },
+      lines: 'A Muralha está de pé há oito mil invernos, e nós com ela. Juramos vigiar o fim do mundo — e não sair do posto até a morte.\nAlém do gelo há coisas que não dormem. Se quiser ajudar, fale com o Primeiro Batedor Hask: ele precisa de olhos lá fora.' }, 10, -14, -Math.PI / 2],
+    [{ id: 'hask', name: 'Hask', title: 'Primeiro Batedor', model: 'Rogue_Hooded', show: ['1H_Crossbow'], look: { race: 'humano', face: 'astuto', hair: { style: 'longo', color: 'preto' }, beard: true },
+      lines: 'Subo aquela escada todo amanhecer. Lá de cima dá pra ver a tempestade chegando do oeste — e às vezes umas luzes azuis que não deviam estar lá.\nLobos de gelo andam rondando o vale. Fique atento.' }, 18, 30, Math.PI],
+    [{ id: 'mornas', name: 'Intendente Mornas', title: 'Mestre das Provisões', model: 'Barbarian', show: ['Mug'], shopList: 'geral', shopTitle: '🧺 Provisões da Vigília', look: { race: 'anao', face: 'sereno', hair: { style: 'careca', color: 'ruivo' }, beard: true },
+      hello: 'Carne salgada, lenha seca e poções que não congelam. Na Muralha, quem não se prepara não volta.' }, 4, -4, Math.PI / 2],
+    [{ id: 'edran', name: 'Edran', title: 'Mestre dos Corvos', model: 'Mage', show: ['Spellbook_open'], look: { race: 'humano', face: 'sabio', hair: { style: 'careca', color: 'branco' }, beard: true },
+      lines: 'Meus corvos levam as mensagens até Alvorada em dois dias. Mais rápido que qualquer cavalo — menos que um Noctívago, admito.' }, -16, -6, 0.3],
+    [{ id: 'bram_v', name: 'Bram', title: 'Construtor da Muralha', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'humano', face: 'gentil', hair: { style: 'raspado', color: 'castanho' }, beard: true },
+      lines: 'Cada inverno o gelo racha um pouco, e cada verão a gente remenda. A escada? Fui eu que reconstruí, tábua por tábua.' }, -18, 34, Math.PI / 2],
+    [{ id: 'pip_v', name: 'Pip', title: 'Recruta', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'loiro' } }, cloakLen: 0.95,
+      lines: 'Primeira semana de vigília. Meus dedos do pé já desistiram de mim. Mas o manto é quentinho!' }, 8, 10, -1.2],
+    [{ id: 'ylva', name: 'Ylva', title: 'Cozinheira do Salão', model: 'Barbarian', show: ['Mug'], look: { race: 'humano', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } },
+      lines: 'Ensopado de cevada, de novo. Ninguém reclama no terceiro dia de nevasca.' }, 14, -2, -Math.PI / 2],
+  ];
+  for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
+}
+
+/* =========================== PORTO DAS GAIVOTAS: bairro dos mercadores (S-175) ===========================
+   Cidade portuária de comércio (inspiração de sensação: o grande porto mercante dos MMOs clássicos):
+   Guilda dos Mercadores com cúpula, armazéns de carga, guindastes no cais, um galeão mercante,
+   a feira de toldos coloridos (tapetes, especiarias, cerâmica, tecidos) e mercadores por toda parte. */
+function galleon(len = 24) {
+  const K = boat(len, false, 99), wd = M.wood(), dk = M.darkWood(), H = len * 0.16, sail = plain('sail2', '#f2ead6', { rough: 0.9, side: THREE.DoubleSide, emissive: '#4a4438', ei: 0.35 });
+  K.box(len * 0.34, 0.3, len * 0.26, wd, 0, H * 1.0, -len * 0.36); K.box(len * 0.3, 2.2, len * 0.22, dk, 0, H + 1.2, -len * 0.37); K.box(len * 0.34, 0.3, len * 0.26, wd, 0, H + 2.4, -len * 0.37); // castelo de popa
+  for (let k = 0; k < 4; k++) K.box(0.7, 0.6, 0.1, M.glass(), -len * 0.12 + k * len * 0.08, H + 1.4, -len * 0.48 + 0.02);
+  for (const [z, hgt, sw] of [[len * 0.2, len * 0.95, len * 0.4], [-len * 0.08, len * 1.1, len * 0.48], [-len * 0.3, len * 0.75, len * 0.32]]) {
+    K.cyl(0.18, 0.24, hgt, wd, 0, H + hgt / 2, z, 12);
+    for (const [yy, ww] of [[0.45, 1], [0.78, 0.75]]) { K.cyl(0.08, 0.08, sw * ww, wd, 0, H + hgt * yy, z, 8, 0, 0, Math.PI / 2);
+      const sl = new THREE.PlaneGeometry(sw * ww * 0.95, hgt * 0.28, 8, 6), P = sl.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin((P.getY(i) / (hgt * 0.28) + 0.5) * Math.PI) * 0.6 + Math.cos(P.getX(i) / (sw * ww) * Math.PI) * 0.3); sl.computeVertexNormals(); K.add(sl, sail, 0, H + hgt * (yy - 0.15), z + 0.4, Math.PI / 2 * 0); }
+  }
+  K.cyl(0.12, 0.12, len * 0.45, wd, 0, H + 1.6, len * 0.62, 8, 0, Math.PI / 2 - 0.35); // gurupés
+  return K;
+}
+function warehouse(seed) {
+  const K = new Kit(), r = rngOf(seed), w = 12 + r() * 4, d = 9, h = 6.5, st = M.greyStone(), wd = M.darkWood();
+  K.box(w + 0.6, 1, d + 0.6, st, 0, 0, 0); K.box(w, h, d, st, 0, 0.5 + h / 2, 0); for (const sx of [-1, 1]) K.box(0.6, h, 0.6, M.wood(), sx * w / 2, 0.5 + h / 2, d / 2);
+  gable(K, w + 0.4, d + 0.4, 3.2, M.clay(), 0, 0.5 + h, 0, 0, 0.5);
+  K.box(4.2, 4.6, 0.25, wd, 0, 2.8, d / 2 + 0.05); for (let k = -1; k <= 1; k++) K.box(4.2, 0.18, 0.3, M.iron(), 0, 1.6 + (k + 1) * 1.4, d / 2 + 0.1); // portão de carga
+  K.box(1.6, 0.25, 0.4, wd, 0, h + 0.2, d / 2 + 0.6); K.box(0.25, 0.25, 2.2, wd, 0, h + 0.4, d / 2 + 1.2); // viga do guincho
+  K.add(new THREE.CylinderGeometry(0.02, 0.02, 2.4, 6), M.rope(), 0, h - 1, d / 2 + 2.2);
+  for (let k = 0; k < 6; k++) K.box(1.0, 1.0, 1.0, M.wood(), (k % 3 - 1) * 1.1 + 3.5, 0.5 + Math.floor(k / 3) * 1.0, d / 2 + 1.4, r() * 0.2); // caixas empilhadas
+  for (let k = 0; k < 3; k++) K.add(new THREE.CylinderGeometry(0.42, 0.42, 1.0, 14), M.wood(), -3.8 + k * 0.9, 0.5, d / 2 + 1.3);
+  K.box(3.0, 0.7, 0.12, plain('whSign', '#2a1e14'), -3.5, h - 0.4, d / 2 + 0.07);
+  return { K, box: [[0, 0, w / 2 + 0.3, d / 2 + 0.3]] };
+}
+function guildHall() {
+  const K = new Kit(), st = M.sandStone(), mar = M.marble(), wd = M.darkWood();
+  K.box(22, 1.2, 16, M.greyStone(), 0, 0.2, 0); for (let k = 0; k < 4; k++) K.box(12 - k * 0.6, 0.35, 1.2, mar, 0, 0.18 + k * 0.35, 8.6 + 2.6 - k * 0.6); // escadaria
+  K.box(20, 9, 14, st, 0, 5.2, 0); K.box(21, 0.8, 15, mar, 0, 9.9, 0);
+  for (let k = 0; k < 6; k++) { const x = -7.5 + k * 3; K.cyl(0.55, 0.62, 8.6, mar, x, 5.0, 7.6, 16); K.box(1.5, 0.5, 1.5, mar, x, 9.4, 7.6); K.box(1.5, 0.5, 1.5, mar, x, 0.95, 7.6); } // pórtico de colunas
+  { const sh = new THREE.Shape(); sh.moveTo(-10.5, 0); sh.lineTo(10.5, 0); sh.lineTo(0, 3.4); sh.closePath(); K.add(new THREE.ExtrudeGeometry(sh, { depth: 2.2, bevelEnabled: false }), mar, 0, 10.3, 6.6); } // frontão
+  K.add(new THREE.CylinderGeometry(6.4, 6.4, 3, 32), st, 0, 11.8, -1); K.add(new THREE.SphereGeometry(6.4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), M.copper(), 0, 13.3, -1); // cúpula de cobre
+  K.cyl(0.6, 0.8, 2.2, M.gold(), 0, 20.6, -1, 12); K.add(new THREE.SphereGeometry(0.7, 16, 12), M.gold(), 0, 22.1, -1);
+  K.box(3.4, 5.4, 0.3, wd, 0, 3.6, 7.05); archBlocks(K, 3.4, 0.6, 0.8, mar, 0, 6.3, 7.0, 0, 11);
+  for (const sx of [-1, 1]) for (const yy of [3.5, 7]) K.box(1.6, 2.4, 0.15, M.glass(), sx * 6.5, yy, 7.02);
+  return K;
+}
+function marketStall(seed, kind) {
+  const K = new Kit(), r = rngOf(seed), wd = M.wood(), cols = ['#b8322a', '#2e6aa8', '#d8a020', '#3a8a4a', '#8a3aa0', '#e07a2a'], awn = plain('awn' + kind, cols[kind % cols.length], { rough: 0.9, side: THREE.DoubleSide }), awn2 = plain('awnW', '#f2ead6', { rough: 0.9, side: THREE.DoubleSide });
+  K.box(3.4, 0.95, 1.6, wd, 0, 0.48, 0); K.box(3.7, 0.1, 1.9, M.darkWood(), 0, 0.98, 0);
+  for (const sx of [-1.65, 1.65]) for (const sz of [-0.8, 0.8]) K.box(0.12, 2.8, 0.12, M.darkWood(), sx, 1.4, sz);
+  for (let k = 0; k < 6; k++) K.box(0.62, 0.06, 2.4, k % 2 ? awn : awn2, -1.55 + k * 0.62, 2.85, 0.15, 0, -0.22); // toldo listrado
+  for (let k = 0; k < 6; k++) K.add(new THREE.PlaneGeometry(0.62, 0.3), k % 2 ? awn : awn2, -1.55 + k * 0.62, 2.48, 1.32, 0, 0, 0); // franja
+  if (kind % 4 === 0) for (let k = 0; k < 5; k++) K.add(new THREE.CylinderGeometry(0.22, 0.26, 0.25, 14), plain('spice' + k, ['#c8501a', '#e0b030', '#7a3a1a', '#3a6a2a', '#a0281e'][k], { rough: 1 }), -1.3 + k * 0.65, 1.16, 0.1); // especiarias em tigelas
+  else if (kind % 4 === 1) for (let k = 0; k < 4; k++) K.add(new THREE.CylinderGeometry(0.18, 0.42, 0.9, 14, 1), plain('rug' + k, ['#8a2a1e', '#2a4a8a', '#c89a2a', '#4a2a6a'][k], { rough: 1 }), -1.2 + k * 0.8, 1.45, -0.3, 0, Math.PI / 2, 0.2); // tapetes enrolados
+  else if (kind % 4 === 2) for (let k = 0; k < 6; k++) K.add(new THREE.LatheGeometry([[0.01, 0], [0.16, 0.02], [0.22, 0.18], [0.12, 0.36], [0.09, 0.44], [0.12, 0.48]].map(([a, b]) => new THREE.Vector2(a, b)), 14), plain('pot', '#b8673a', { rough: 0.8 }), -1.4 + k * 0.55, 1.03, (k % 2) * 0.3 - 0.15); // cerâmica
+  else for (let k = 0; k < 5; k++) K.box(0.6, 0.12 + (k % 3) * 0.05, 0.9, plain('cloth' + k, cols[(k + 2) % cols.length], { rough: 1 }), -1.3 + k * 0.65, 1.1, 0); // tecidos dobrados
+  return K;
+}
+function buildMerchantQuarter(ctx, port) {
+  const C = PORT, u = { x: SEA.x - C.x, z: SEA.z - C.z }, ul = Math.hypot(u.x, u.z); u.x /= ul; u.z /= ul;
+  const side = { x: u.z, z: -u.x }, back = { x: -u.x, z: -u.z }, yawSea = port.yawSea, B = port.beach, r = rngOf(919);
+  const at = (o, dd) => ({ x: C.x + side.x * o + back.x * dd, z: C.z + side.z * o + back.z * dd });
+  // Guilda dos Mercadores, de frente para a praça (atrás das casas)
+  { const p = at(0, 64); put(ctx, guildHall(), 'guilda_dos_mercadores', p.x, p.z, yawSea, { box: [[0, 0, 11, 8]] });
+    for (const sx of [-1, 1]) { const b = makeBanner('guilda', 1.6, 5); const q = at(sx * 5.5, 64 - 8.1); b.position.set(q.x, gY(p.x, p.z) + 9.3, q.z); b.rotation.y = yawSea; ctx.scene.add(b); } }
+  // armazéns de carga ao longo da orla
+  [[-46, 4], [46, 4], [-56, 18], [56, 18]].forEach(([o, dd], i) => { const p = at(o, dd), { K, box } = warehouse(300 + i); put(ctx, K, 'armazem', p.x, p.z, yawSea + Math.PI + (o < 0 ? 0.25 : -0.25), { box }); });
+  // feira de toldos coloridos (rua dos mercadores)
+  for (let k = 0; k < 10; k++) { const o = -22 + (k % 5) * 11, dd = k < 5 ? 48 : 38, p = at(o, dd); put(ctx, marketStall(500 + k, k), 'banca_do_mercado', p.x, p.z, yawSea + (k < 5 ? 0 : Math.PI), { box: [[0, 0, 1.8, 0.9]] }); }
+  // guindastes de carga no cais e o galeão mercante atracado no cais central
+  for (const o of [-16, 16]) { const p = { x: B.x + side.x * o + u.x * 3, z: B.z + side.z * o + u.z * 3 }, K = new Kit(), wd = M.darkWood();
+    K.box(0.6, 7, 0.6, wd, 0, 3.5, 0); K.box(0.45, 0.45, 6, wd, 0, 6.8, 2.2, 0, 0.35); K.box(0.3, 3.4, 0.3, wd, 0, 5, 1.4, 0, -0.6); K.add(new THREE.CylinderGeometry(0.02, 0.02, 4, 6), M.rope(), 0, 4.6, 4.8); K.box(1.0, 0.8, 1.0, M.wood(), 0, 2.2, 4.8);
+    put(ctx, K, 'guindaste_do_cais', p.x, p.z, yawSea + (o < 0 ? 0.6 : -0.6), { box: [[0, 0, 0.5, 0.5]], occ: false }); }
+  { const px = B.x + u.x * 26 + side.x * 11, pz = B.z + u.z * 26 + side.z * 11, g = put(ctx, galleon(26), 'galeao_mercante', px, pz, yawSea, { y: SEA.level - 2.3, occ: false, box: [[0, 0, 3.6, 12]] });
+    g.userData.update = t => { g.position.y = SEA.level - 2.3 + Math.sin(t * 0.55) * 0.1; g.rotation.z = Math.sin(t * 0.4) * 0.02; }; ctx.roomAnims.push(g); }
+  // pilhas de carga pela orla
+  for (let k = 0; k < 16; k++) { const p = at((r() - 0.5) * 90, -1 - r() * 8); ctx.place(['crate_A', 'crate_B', 'barrel', 'sack'][k % 4], p.x, p.z, { rf: 0.6 }); }
+  // mercadores
+  const M2 = (n, o, dd, yaw) => { const p = at(o, dd); ctx.worldNpc(n, p.x, p.z, yaw); };
+  const ys = yawSea;
+  M2({ id: 'aurelio', name: 'Aurélio Vasconde', title: 'Mestre da Guilda dos Mercadores', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', face: 'sabio', hair: { style: 'curto', color: 'grisalho' }, beard: true },
+    lines: 'Todo navio que entra no Porto das Gaivotas paga à Guilda — e todo mercador honesto ganha com isso.\nQuer vender em grande? Traga drops raros: os compradores de além-mar pagam bem por presas, cristais e escamas.' }, 0, 54, ys);
+  M2({ id: 'zaira', name: 'Zaíra', title: 'Mercadora de Especiarias', model: 'Rogue', shopList: 'geral', shopTitle: '🌶️ Especiarias de Zaíra', look: { race: 'humano', sex: 'f', face: 'astuto', hair: { style: 'longo', color: 'preto' }, skin: 'escura' },
+    hello: 'Pimenta-de-fogo das dunas, sal rosado, canela do outro lado do mar! Cheire, cheire...' }, -22, 46, ys + Math.PI);
+  M2({ id: 'tadeu', name: 'Tadeu', title: 'Vendedor de Tapetes', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'careca', color: 'castanho' }, beard: true },
+    lines: 'Este aqui foi tecido por noventa dias! Para você, um preço de amigo. Para o meu amigo, um preço de irmão.' }, -11, 46, ys + Math.PI);
+  M2({ id: 'cora', name: 'Cora', title: 'Oleira', model: 'Barbarian', show: ['Mug'], look: { race: 'humano', sex: 'f', face: 'gentil', hair: { style: 'coque', color: 'castanho' } },
+    lines: 'Barro do rio, fogo do forno e paciência. Cada jarro tem o meu polegar marcado no fundo.' }, 0, 46, ys + Math.PI);
+  M2({ id: 'baltazar', name: 'Capitão Baltazar', title: 'Capitão do Galeão Mercante', model: 'Knight', show: ['1H_Sword'], look: { race: 'humano', face: 'valente', hair: { style: 'longo', color: 'ruivo' }, beard: true },
+    lines: 'O "Gaivota Dourada" volta do oriente a cada lua cheia, com o porão cheio. Um dia levo você junto — quando houver para onde ir.' }, 7, 6, ys);
+  M2({ id: 'dolf', name: 'Dolf', title: 'Estivador', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'alegre', hair: { style: 'raspado', color: 'preto' }, beard: true },
+    lines: 'Caixa pra cá, barril pra lá. Anão no porto? Ora, alguém tem que carregar o peso!' }, -30, 2, ys + 1);
+  M2({ id: 'selene', name: 'Selene', title: 'Mercadora de Tecidos', model: 'Mage', look: { race: 'elfo', sex: 'f', face: 'sereno', hair: { style: 'longo', color: 'platinado' } },
+    lines: 'Seda élfica de Aelindra e lã das montanhas dos anões. No porto, todas as raças fazem negócio.' }, 22, 40, ys);
+  M2({ id: 'fabio', name: 'Fábio', title: 'Cambista', model: 'Rogue', look: { race: 'humano', face: 'astuto', hair: { style: 'curto', color: 'castanho_escuro' } },
+    lines: 'Zeny, ouro de além-mar, pedras preciosas... eu troco tudo. Com uma pequena taxa, é claro.' }, 11, 43, ys);
+}
+
 /* =========================== entrada =========================== */
 // ctx: { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera }
 export function buildCities(ctx) {
@@ -653,6 +935,8 @@ export function buildCities(ctx) {
   const dwarf = buildDwarfCity(ctx);
   buildElfCity(ctx);
   const port = buildPortTown(ctx);
+  buildMerchantQuarter(ctx, port); // S-175: bairro dos mercadores (guilda, armazéns, feira, galeão)
+  buildFrostHold(ctx);             // S-165: a Muralha Gélida e a Fortaleza da Vigília Negra
   return { refineBoard: dwarf.refineBoard, port };
 }
 export { makeBanner, flame, brazier, axeGeo, archBlocks, gable, put, stoneTex, woodTex, roofTex, CULL };

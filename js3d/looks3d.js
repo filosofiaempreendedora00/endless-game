@@ -374,7 +374,7 @@ export function dressHuman(ch, cls, MODELS) {
   for (const [model, item] of items) { const src = Object.keys(MODELS).find(k => MODELS[k] && MODELS[k].scene && MODELS[k].scene.getObjectByName(item)); humanBorrow(root, MODELS, MODELS[model] && MODELS[model].scene.getObjectByName(item) ? model : src, item); }
   for (const [name, c] of Object.entries(L.glow || {})) { const o = root.userData.items && root.userData.items[name]; if (o) o.traverse(m => m.isMesh && glowMesh(m, c)); }
   for (const e of L.extras || []) if (EXTRAS[e] && !HUMAN_SKIP_EXTRAS.has(e)) EXTRAS[e](root, fx); // a roupa realista já tem cinto, aljava etc. de verdade
-  if ((L.show || []).some(n => /_Cape$/.test(n))) EXTRAS.humanCape && EXTRAS.humanCape(root, fx, t.cape || '#5a3a2a');
+  // S-147: sem a capa chapada nas costas (não combina com o corpo realista) — vale para todas as classes
   return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
 }
 /* Veste o personagem: devolve { style, update(t) } */

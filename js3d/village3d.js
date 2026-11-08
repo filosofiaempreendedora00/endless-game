@@ -433,3 +433,35 @@ export function retextureKayKit(MODELS) {
   }
   return n;
 }
+
+/* =========================================================================
+   BARRIL (S-174): aduelas de verdade (barriga no meio, frestas escuras entre as
+   tábuas), três aros de ferro com rebites, tampa de tábuas com aro de madeira
+   ========================================================================= */
+let _barrelWood = null;
+export function makeBarrel(seed = 4) {
+  const rng = rngOf(seed), g = new THREE.Group(), H = 1.0, R0 = 0.36, RB = 0.43, N = 16;
+  const wood = _barrelWood || (_barrelWood = new THREE.MeshStandardMaterial({ map: canvasTex('barrelwood', 256, 256, (c, W, Hh) => { woodGrain(c, W, Hh, [128, 84, 46], 17, 16); }), roughness: 0.78 }));
+  const r = y => R0 + (RB - R0) * Math.sin(Math.PI * y / H); // perfil com barriga
+  const staves = [];
+  for (let k = 0; k < N; k++) { // cada aduela é uma faixa curva com espessura e leve variação
+    const a0 = k / N * Math.PI * 2 + 0.012, a1 = (k + 1) / N * Math.PI * 2 - 0.012, sh = 0.97 + rng() * 0.05, pts = [], segY = 10, segA = 3;
+    const geo = new THREE.BufferGeometry(), pos = [], uv = [], idx = [];
+    for (let i = 0; i <= segY; i++) for (let j = 0; j <= segA; j++) { const y = i / segY * H, a = a0 + (a1 - a0) * j / segA, rr = r(y) * sh; pos.push(Math.cos(a) * rr, y, Math.sin(a) * rr); uv.push((k + j / segA) / N * 4, y / H); }
+    for (let i = 0; i < segY; i++) for (let j = 0; j < segA; j++) { const A = i * (segA + 1) + j, B = A + segA + 1; idx.push(A, A + 1, B, B, A + 1, B + 1); }
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+    staves.push(geo);
+  }
+  const body = new THREE.Mesh(mergeGeometries(staves), wood); body.material.side = THREE.DoubleSide; body.castShadow = body.receiveShadow = true; g.add(body);
+  // interior escuro (frestas aparecem escuras, sem ver através)
+  const inner = M(lathe(Array.from({ length: 11 }, (_, i) => [r(i / 10 * H) - 0.015, i / 10 * H])), new THREE.MeshStandardMaterial({ color: '#2a1a0e', roughness: 1, side: THREE.BackSide })); g.add(inner);
+  // aros de ferro com rebites
+  for (const y of [0.1, 0.3, 0.7, 0.9]) { const hoop = M(new THREE.TorusGeometry(r(y) + 0.008, 0.014, 6, 48), IRON, 0, y, 0, Math.PI / 2); hoop.scale.z = 1.8; g.add(hoop);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + y; g.add(M(new THREE.SphereGeometry(0.009, 6, 4), IRON_DARK, Math.cos(a) * (r(y) + 0.02), y, Math.sin(a) * (r(y) + 0.02))); } }
+  // tampa de tábuas encaixada um pouco abaixo da borda
+  const lid = new THREE.Group(); lid.position.y = H - 0.035; g.add(lid);
+  for (let k = -2; k <= 2; k++) { const w = 0.14, len = 2 * Math.sqrt(Math.max(0.01, R0 * R0 - (k * w) ** 2)) - 0.02; lid.add(M(new THREE.BoxGeometry(w - 0.008, 0.025, len), wood, k * w, 0, 0)); }
+  lid.add(M(new THREE.TorusGeometry(R0 - 0.01, 0.018, 6, 40), wood, 0, 0.01, 0, Math.PI / 2));
+  g.userData.radius = RB;
+  return bakeGroup(g);
+}

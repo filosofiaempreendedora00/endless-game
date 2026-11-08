@@ -184,7 +184,7 @@ const UI = {
   open(id) {
     if (id === 'equip') { this.charTab = 'equip'; id = 'char'; } else if (id === 'char' && !this.charTab) this.charTab = 'stats';
     if (id === 'char' && this.wins.char) { this.render_char(); return; }
-    const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 440), 50, Math.min(880, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 360), 40, Math.min(720, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [Math.max(10, innerWidth / 2 - 380), 70, Math.min(760, innerWidth - 20)], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], quests: [Math.max(10, innerWidth / 2 - 300), 70, Math.min(600, innerWidth - 20)], refino: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
+    const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 440), 50, Math.min(880, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 520), 30, Math.min(1040, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [Math.max(10, innerWidth / 2 - 380), 70, Math.min(760, innerWidth - 20)], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], quests: [Math.max(10, innerWidth / 2 - 360), 60, Math.min(720, innerWidth - 20)], refino: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
     const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: this.shopTitle || 'Loja do Bento', dialog: 'Conversa', sugestoes: '💡 Sugestões', quests: '📜 Missões', refino: '⚒️ Refino de Equipamentos', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
@@ -231,7 +231,9 @@ const UI = {
         break;
       }
       case 'qsel': this.qSel = ds.id; this.render_quests(); break;
-      case 'qdrop': if (confirm('Abandonar esta missão? O progresso será perdido.')) { questAbandon(p, ds.id); this.render_quests(); } break;
+      case 'qdrop': if (confirm('Abandonar esta missão?\nO progresso dela zera, mas você pode pegá-la de novo com o mesmo NPC quando quiser.')) { questAbandon(p, ds.id); this.render_quests(); } break;
+      case 'qtab': this.qTab = ds.t; this.qSel = null; this.render_quests(); break;
+      case 'qmap': this.qSel = ds.id; this.open('mapa'); break;
       case 'rfsel': this.refSel = +ds.uid; this.render_refino(); break;
       case 'rfgo': {
         const all = [...EQUIP_SLOTS.map(s => p.equip[s]).filter(Boolean), ...p.inventory], en = all.find(x => x.uid === this.refSel); if (!en) break;
@@ -442,20 +444,34 @@ const UI = {
   },
 
   /* ---------- Missões (S-126) ---------- */
-  render_quests() {
-    const p = G.player, st = questState(p), act = Object.keys(st.active).filter(id => QUESTS[id]);
-    const sel = act.includes(this.qSel) ? this.qSel : act[0];
-    const list = act.map(id => { const q = QUESTS[id], ready = questReady(p, id); return `<div class="ql-item ${id === sel ? 'on' : ''}" data-act="qsel" data-id="${id}">${q.main ? '⭐' : '❗'} <span>${esc(q.name)}</span>${ready ? '<b class="gold">✔</b>' : ''}<small>Nv. ${q.lv}</small></div>`; }).join('') || '<div class="muted" style="padding:10px">Nenhuma missão ativa. Procure NPCs com <b class="gold">!</b> em cima da cabeça.</div>';
-    const soon = Object.keys(QUESTS).filter(id => questAvailable(p, id) || questSoon(p, id)).map(id => `<div class="ql-soon">${QUESTS[id].main ? '⭐' : '❗'} ${esc(QUESTS[id].name)} <span class="muted">— ${QUEST_NPC_NAMES[QUESTS[id].giver] || QUESTS[id].giver}${questSoon(p, id) ? ` · a partir do Nv. ${QUESTS[id].lv}` : ''}</span></div>`).join('');
-    let det = '';
-    if (sel) { const q = QUESTS[sel], pr = questProgress(p, sel); det = `<div class="q-title">${q.main ? '⭐ ' : ''}${esc(q.name)}</div><div class="q-text">${q.text}</div><div class="q-sec">Objetivos</div>${pr.map(x => `<div class="q-obj ${x.have >= x.need ? 'ok' : ''}">${x.have >= x.need ? '✔' : '•'} ${objText(x.o)}${x.need > 1 ? ` <b>${x.have}/${x.need}</b>` : ''}</div>`).join('')}<div class="q-sec">Entregar para</div><div>${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}</div><div class="q-sec">Recompensa</div><div class="q-rew">${questRewardText(p, q)}</div><div style="margin-top:10px"><button class="btn small" data-act="qdrop" data-id="${sel}">Abandonar</button></div>`; }
-    this.body('quests').innerHTML = `<div class="ql"><div class="ql-left"><div class="q-sec" style="margin-top:0">Ativas (${act.length})</div>${list}${soon ? `<div class="q-sec">Disponíveis</div>${soon}` : ''}<div class="muted" style="margin-top:8px;font-size:11px">Concluídas: ${st.done.length}</div></div><div class="ql-right">${det || '<div class="muted">Escolha uma missão.</div>'}</div></div>`;
+  render_quests() { // S-176: abas separadas, detalhe organizado e "onde ir" ligado ao mapa
+    const p = G.player, st = questState(p), tab = this.qTab || 'ativas';
+    const act = Object.keys(st.active).filter(id => QUESTS[id]), avail = Object.keys(QUESTS).filter(id => questAvailable(p, id) || questSoon(p, id)), done = st.done.filter(id => QUESTS[id]);
+    const ids = tab === 'ativas' ? act : tab === 'disp' ? avail : done;
+    const sel = ids.includes(this.qSel) ? this.qSel : ids[0];
+    const icon = q => q.main ? '⭐' : '❗';
+    const tabs = `<div class="tabs">${[['ativas', `Em andamento (${act.length})`], ['disp', `Disponíveis (${avail.length})`], ['feitas', `Concluídas (${done.length})`]].map(([k, n]) => `<div class="tab ${tab === k ? 'on' : ''}" data-act="qtab" data-t="${k}">${n}</div>`).join('')}</div>`;
+    const list = ids.map(id => { const q = QUESTS[id], ready = tab === 'ativas' && questReady(p, id), soon = tab === 'disp' && questSoon(p, id); return `<div class="ql-item ${id === sel ? 'on' : ''} ${soon ? 'soon' : ''}" data-act="qsel" data-id="${id}"><span class="ql-ic">${icon(q)}</span><span class="ql-nm">${esc(q.name)}<small>${q.main ? 'História principal' : 'Secundária'} · Nv. ${q.lv}</small></span>${ready ? '<b class="ql-ok">✔ pronta</b>' : soon ? '<small class="muted">🔒</small>' : ''}</div>`; }).join('')
+      || `<div class="muted" style="padding:12px">${tab === 'ativas' ? 'Nenhuma missão em andamento. Veja a aba <b>Disponíveis</b> ou procure NPCs com <b class="gold">!</b> em cima da cabeça.' : tab === 'disp' ? 'Nenhuma missão disponível agora.' : 'Nenhuma concluída ainda.'}</div>`;
+    let det = '<div class="muted">Escolha uma missão.</div>';
+    if (sel) {
+      const q = QUESTS[sel], pr = tab === 'ativas' ? questProgress(p, sel) : q.obj.map(o => ({ o, have: tab === 'feitas' ? (o.n || 1) : 0, need: o.n || 1 }));
+      const where = tab === 'ativas' && typeof H3 !== 'undefined' && H3.questTargets ? H3.questTargets(sel) : [];
+      const giver = QUEST_NPC_NAMES[q.giver] || q.giver;
+      det = `<div class="qd-head"><span class="qd-ic">${icon(q)}</span><div><div class="q-title">${esc(q.name)}</div><div class="muted" style="font-size:11px">${q.main ? 'História principal' : 'Missão secundária'} · Nv. ${q.lv} · com ${giver}</div></div></div>
+        <div class="qd-card"><div class="q-sec" style="margin-top:0">Objetivos</div>${pr.map(x => `<div class="q-obj ${x.have >= x.need ? 'ok' : ''}"><span>${x.have >= x.need ? '✔' : '○'} ${objText(x.o)}</span>${x.need > 1 ? `<b>${x.have}/${x.need}</b>` : ''}</div>`).join('')}</div>
+        ${tab === 'ativas' ? `<div class="qd-card"><div class="q-sec" style="margin-top:0">📍 Onde ir</div>${where.length ? where.map(w => `<div class="qd-where">${w.kind === '⚔' ? '⚔️' : w.kind === '?' ? '❓' : '❗'} ${esc(w.label)}</div>`).join('') : '<div class="muted">—</div>'}<button class="btn small" data-act="qmap" data-id="${sel}" style="margin-top:6px">🗺️ Ver no mapa</button></div>` : ''}
+        <div class="qd-card"><div class="q-sec" style="margin-top:0">História</div><div class="q-text">${tab === 'feitas' ? q.done : q.text}</div></div>
+        <div class="qd-card"><div class="q-sec" style="margin-top:0">Recompensa</div><div class="q-rew">${questRewardText(p, q)}</div></div>
+        ${tab === 'ativas' ? `<div class="qd-foot"><button class="btn small" data-act="qdrop" data-id="${sel}">Abandonar</button><span class="muted">Pode abandonar sem medo: a missão volta para ${giver} e você pode pegá-la de novo quando quiser.</span></div>` : tab === 'disp' ? `<div class="qd-foot"><span class="muted">${questSoon(p, sel) ? `Libera no Nv. ${q.lv}. ` : ''}Fale com <b>${giver}</b> para aceitar.</span></div>` : ''}`;
+    }
+    this.body('quests').innerHTML = tabs + `<div class="ql"><div class="ql-left">${list}</div><div class="ql-right">${det}</div></div>`;
   },
   // rastreador de missões no canto (como no WoW)
   renderQuestTracker() {
     const el = $('qtrack'); if (!el || typeof QUESTS === 'undefined' || !G.player) return;
     const p = G.player, st = questState(p), act = Object.keys(st.active).filter(id => QUESTS[id]).slice(0, 4);
-    const html = act.map(id => { const q = QUESTS[id], pr = questProgress(p, id), ready = pr.every(x => x.have >= x.need); return `<div class="qt-q ${ready ? 'ready' : ''}" data-win="quests"><div class="qt-n">${q.main ? '⭐' : '❗'} ${esc(q.name)}</div>${ready ? `<div class="qt-o ok">✔ Volte para ${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}</div>` : pr.map(x => `<div class="qt-o ${x.have >= x.need ? 'ok' : ''}">${objText(x.o)}${x.need > 1 ? ` ${x.have}/${x.need}` : ''}</div>`).join('')}</div>`; }).join('');
+    const html = act.map(id => { const q = QUESTS[id], pr = questProgress(p, id), ready = pr.every(x => x.have >= x.need); return `<div class="qt-q ${ready ? 'ready' : ''}" data-win="quests"><div class="qt-n">${q.main ? '⭐' : '❗'} ${esc(q.name)}</div>${ready ? `<div class="qt-o ok">✔ Volte para ${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}</div>` : pr.map(x => `<div class="qt-o ${x.have >= x.need ? 'ok' : ''}">${objText(x.o)}${x.need > 1 ? ` ${x.have}/${x.need}` : ''}</div>`).join('') + (() => { const w = typeof H3 !== 'undefined' && H3.questTargets ? H3.questTargets(id).find(t => t.kind === '⚔') : null; return w ? `<div class="qt-w">📍 ${esc(w.label.split(' · ').pop())}</div>` : ''; })()}</div>`; }).join('');
     if (el._h !== html) { el._h = html; el.innerHTML = html; el.style.display = html ? '' : 'none'; }
   },
 
@@ -486,12 +502,16 @@ const UI = {
   render_bestiario() {
     const ids = Object.keys(MONSTERS).sort((a, b) => MONSTERS[a].lv - MONSTERS[b].lv);
     const sel = MONSTERS[this.bestSel] ? this.bestSel : ids[0], m = MONSTERS[sel];
+    // S-171: estilo pokédex — monstro ainda não visto aparece cinza e misterioso (o mestre com God Mode vê tudo)
+    const seenL = (G.player && G.player.seen) || [], revealAll = typeof isAdmin === 'function' && isAdmin() && G.god, seen = id => revealAll || seenL.includes(id);
+    const nSeen = ids.filter(id => seenL.includes(id)).length;
     const where = (typeof H3 !== 'undefined' && H3.spawnInfo) ? H3.spawnInfo() : Object.fromEntries(ids.map(id => [id, Object.values(MAPS).filter(mp => (mp.spawns || []).some(sp => sp.type === id)).map(mp => mp.name)]));
     const q = (this.bestQ || '').toLowerCase();
     const F = this.bestF || 'all'; // S-138: filtro por chefes
     const list = ids.filter(id => F === 'all' || (F === 'boss' ? MONSTERS[id].boss : F === 'mini' ? MONSTERS[id].mini : !MONSTERS[id].boss && !MONSTERS[id].mini)).filter(id => !q || MONSTERS[id].name.toLowerCase().includes(q) || MONSTERS[id].race.toLowerCase().includes(q) || ELEMENTS[MONSTERS[id].element].name.toLowerCase().includes(q)).map(id => {
       const x = MONSTERS[id], tag = x.boss ? '<span class="bs-tag boss">Chefe</span>' : x.mini ? '<span class="bs-tag mini">Mini</span>' : '';
       const th = typeof H3 !== 'undefined' && H3.monsterThumb ? H3.monsterThumb(id) : null;
+      if (!seen(id)) return `<div class="bs-item unseen ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${th ? `<img src="${th}" alt="">` : '?'}</span><span class="bs-nm">???</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
       return `<div class="bs-item ${id === sel ? 'on' : ''}" data-act="bestsel" data-id="${id}"><span class="bs-ic">${th ? `<img src="${th}" alt="">` : x.icon}</span><span class="bs-nm">${esc(x.name)}${tag}</span><span class="bs-lv">Nv. ${x.lv}</span></div>`;
     }).join('') || '<div class="muted" style="padding:8px">Nada encontrado.</div>';
     const weak = Object.keys(ELEMENT_STRONG).filter(e => ELEMENT_STRONG[e] === m.element).map(e => `<span style="color:${ELEMENTS[e].color}">${ELEMENTS[e].name}</span>`).join(', ') || '—';
@@ -504,14 +524,26 @@ const UI = {
     const zones = (where[sel] || []);
     const stat = (k, v) => `<div class="bs-stat"><span>${k}</span><b>${v}</b></div>`;
     const oldList = this.body('bestiario').querySelector('.bs-list'), keepScroll = oldList ? oldList.scrollTop : 0; // S-101: escolher um monstro não volta a lista para o topo
+    const counter = `<div class="bs-count">📖 Vistos: <b>${nSeen}</b> / ${ids.length}<div class="bs-cbar"><div style="width:${nSeen / ids.length * 100}%"></div></div></div>`;
+    if (!seen(sel)) { // ainda não visto: só a silhueta, o nível e onde procurar
+      const zones2 = (where[sel] || []);
+      this.body('bestiario').innerHTML = `<div class="bs"><div class="bs-left">${counter}<input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-filt">${[['all', 'Todos'], ['boss', '👑 Chefes'], ['mini', '⭐ Mini'], ['comum', 'Comuns']].map(([k, n]) => `<button class="${F === k ? 'on' : ''}" data-act="bestf" data-f="${k}">${n}</button>`).join('')}</div><div class="bs-list">${list}</div></div>
+        <div class="bs-right"><div class="bs-head"><div class="bs-big unseen">${typeof H3 !== 'undefined' && H3.monsterThumb ? `<img src="${H3.monsterThumb(sel)}" alt="">` : '?'}</div><div><div class="bs-name">???</div><div class="muted">Nível ${m.lv}${m.boss ? ' · 👑 Chefe' : m.mini ? ' · ⭐ Mini-chefe' : ''}</div></div></div>
+        <div class="bs-p" style="margin-top:10px">Você ainda não encontrou esta criatura. Chegue perto de uma para registrá-la no Bestiário e liberar tudo sobre ela.</div>
+        <h4>Onde procurar</h4><div class="bs-p">${zones2.length ? zones2.join('<br>') : '<span class="muted">Ainda não aparece no mundo.</span>'}</div></div></div>`;
+      const nl0 = this.body('bestiario').querySelector('.bs-list'); if (nl0 && oldList) nl0.scrollTop = keepScroll;
+      if (this._bsStop) { this._bsStop(); this._bsStop = null; }
+      const inp0 = $('bs-q'); inp0.oninput = () => { this.bestQ = inp0.value; const pos = inp0.selectionStart; this.render_bestiario(); const n = $('bs-q'); n.focus(); n.setSelectionRange(pos, pos); };
+      return;
+    }
     this.body('bestiario').innerHTML = `<div class="bs">
-      <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-filt">${[['all', 'Todos'], ['boss', '👑 Chefes'], ['mini', '⭐ Mini'], ['comum', 'Comuns']].map(([k, n]) => `<button class="${F === k ? 'on' : ''}" data-act="bestf" data-f="${k}">${n}</button>`).join('')}</div><div class="bs-list">${list}</div></div>
+      <div class="bs-left">${counter}<input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-filt">${[['all', 'Todos'], ['boss', '👑 Chefes'], ['mini', '⭐ Mini'], ['comum', 'Comuns']].map(([k, n]) => `<button class="${F === k ? 'on' : ''}" data-act="bestf" data-f="${k}">${n}</button>`).join('')}</div><div class="bs-list">${list}</div></div>
       <div class="bs-right">
         <div class="bs-head"><div class="bs-big">${typeof H3 !== 'undefined' && H3.monsterLive ? '<canvas id="bs-live" width="200" height="200"></canvas>' : m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
         <div class="bs-stats">${stat('HP', m.hp.toLocaleString('pt-BR'))}${stat('Ataque', m.atk[0] + '–' + m.atk[1])}${stat('Defesa', m.def)}${stat('Def. Mágica', m.mdef)}${stat('Precisão', m.hit)}${stat('Esquiva', m.flee)}${stat('EXP Base', m.exp.toLocaleString('pt-BR'))}${stat('EXP Classe', m.jexp.toLocaleString('pt-BR'))}</div>
         <h4>Elemento</h4><div class="bs-p">Leva <b>+50%</b> de dano de: ${weak} · causa +50% em: ${strongVs}</div>
         <h4>Comportamento</h4><div class="bs-p">${traits.join('<br>')}</div>
-        <h4>Onde encontrar</h4><div class="bs-p">${zones.length ? zones.join(', ') : '<span class="muted">Ainda não aparece no mundo.</span>'}</div>
+        <h4>Onde encontrar</h4><div class="bs-p">${zones.length ? zones.join('<br>') : '<span class="muted">Ainda não aparece no mundo.</span>'}</div>
         <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>${iconImg(card.id, 'iicon sm')} ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
         ${card ? `<h4>Carta</h4><div class="bs-p">Encaixe em: <b>${SLOT_NAMES[card.equip]}</b><br>${fmtBonuses(card.bonuses).join(' · ')}</div>` : ''}
       </div></div>`;

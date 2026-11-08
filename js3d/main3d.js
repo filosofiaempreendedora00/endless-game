@@ -6,18 +6,19 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, PORT, DWARF, ELF, CASTLE } from './world3d.js';
-import { buildCities, deckAt } from './cities3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, PORT, DWARF, ELF, CASTLE, treeAllowed } from './world3d.js';
+import { buildCities, deckAt, FROST } from './cities3d.js';
 import { buildCastle } from './castle3d.js';
-import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist } from './landmarks3d.js';
+import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
 import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
+import { buildCatacombs as buildDungeon, FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
-import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit } from './village3d.js';
+import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
 import { loadHumans, makeHuman, shareSkeletons } from './humans3d.js';
 
@@ -42,7 +43,7 @@ const canvas = renderer.domElement;
 
 const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
-const FOG_SNOW = new THREE.Color('#e3edf4'), FOG_SAND = new THREE.Color('#ecd9b0'), FOG_PLAIN = new THREE.Color('#dbe8ee');
+const FOG_SNOW = new THREE.Color('#e3edf4'), FOG_SAND = new THREE.Color('#ecd9b0'), FOG_PLAIN = new THREE.Color('#a9a79e');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 1700);
 const lightPool = makeLightPool(scene, 3); // poucas luzes reais, levadas às fontes mais próximas
@@ -104,7 +105,7 @@ function bbox(name) {
 }
 const colliders = [];
 function freeAt(x, z, r) { return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); }
-const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, barrel: 0.55, crate_A: 0.55, crate_B: 0.55, sack: 0.55, weaponrack: 0.55, lumber: 0.5, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
+const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, crate_A: 0.55, crate_B: 0.55, sack: 0.55, weaponrack: 0.55, lumber: 0.5, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
 const occluders = []; // objetos que bloqueiam a câmera
 const placed = []; // todos os objetos de cenário (sugestões identificam o modelo)
 // junta as peças fixas de um objeto (mesmo material) numa malha só: bem menos chamadas de desenho
@@ -152,7 +153,7 @@ function place(name, x, z, o = {}) {
   obj.scale.setScalar(s);
   obj.rotation.y = o.rot ?? rng() * Math.PI * 2;
   let gy = o.y ?? heightAt(x, z);
-  if (o.y === undefined && !native && /^(home|tavern|blacksmith|church|market|windmill|tower|destroyed|well)/.test(name)) { // S-109: prédio em encosta assenta no ponto mais baixo do terreno sob ele (nada de base flutuando)
+  if (o.y === undefined && !native && /^(home|tavern|blacksmith|church|windmill|tower|destroyed|well)/.test(name)) { // S-109: prédio em encosta assenta no ponto mais baixo do terreno sob ele (nada de base flutuando)
     const b = bbox(name), cs = Math.cos(obj.rotation.y), sn = Math.sin(obj.rotation.y);
     for (const [lx, lz] of [[b.min.x, b.min.z], [b.max.x, b.min.z], [b.min.x, b.max.z], [b.max.x, b.max.z], [(b.min.x + b.max.x) / 2, b.max.z], [(b.min.x + b.max.x) / 2, b.min.z]]) gy = Math.min(gy, heightAt(x + (lx * cs + lz * sn) * s * 0.95, z + (-lx * sn + lz * cs) * s * 0.95));
     gy -= 0.08;
@@ -220,7 +221,7 @@ function buildFruitMarket(mk) {
   const mc = colliders.find(c => c.name === 'market'); // a caixa da feira passa a cobrir só o prédio (a barraca fica na frente)
   if (mc && mc.box) { const lz = (-0.71 + 0.17) / 2 * s; mc.hz = (0.71 + 0.17) / 2 * s * 0.97; mc.x = mk.position.x + fx * lz; mc.z = mk.position.z + fz * lz; mc.r = Math.max(mc.hx, mc.hz); }
   const sx = mk.position.x + fx * 0.42 * s, sz = mk.position.z + fz * 0.42 * s;
-  const stand = bakeStatic(makeFruitStand()); stand.position.set(sx, heightAt(sx, sz), sz); stand.rotation.y = rot; scene.add(stand);
+  const stand = bakeStatic(makeFruitStand()); stand.position.set(sx, Math.max(mk.position.y, heightAt(sx, sz)), sz); stand.rotation.y = rot; scene.add(stand);
   stand.userData.asset = 'fruitstand'; placed.push(stand); occluders.push(stand);
   colliders.push({ x: sx, z: sz, r: 1.9, box: true, hx: 1.95, hz: 0.6, rot, name: 'fruitstand' });
   // feirante atrás da mesa, virada para a praça
@@ -270,13 +271,34 @@ function buildInteriors() {
       const rosa = roomNpc({ id: 'rosa', name: 'Dona Rosa', title: 'Taverneira', model: 'Rogue', show: ['Mug'], look: { race: 'humano', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } } }, I.x - 1.2, I.z - I.d / 2 + 1.0, 0); rosa.obj.position.y = 0.3;
       // Velho Gui sentado no banco, de frente para a mesa (S-079)
       roomNpc({ id: 'gui', name: 'Velho Gui', title: 'Contador de Histórias', model: 'Knight', show: ['Mug'], look: { race: 'humano', face: 'gentil', hair: { style: 'careca', color: 'branco' }, beard: true } }, I.x + 3.6, I.z + 2.0, 0, 'Sit_Chair_Idle');
-    } else if (id === 'catacumbas') buildCatacombs(I);
+    } else if (id === 'catacumbas') buildDungeonFloors();
+    if (I.dungeon && I.level > 1) continue; // andares de baixo: sobe-se pela escada, não há saída para fora
     // saída: portal junto à porta
     const ex = makePortal('#ffd27a'); ex.position.set(I.x, 0, I.z + I.d / 2 - 0.9); scene.add(ex);
     portals.push({ kind: 'exit', from: id, x: I.x, z: I.z + I.d / 2 - 0.9, mesh: ex });
   }
 }
 const roomAnims = [], roomMounts = [];
+// S-159: Catacumbas em 4 andares — escadas (portais) entre os andares
+function buildDungeonFloors() {
+  buildDungeon({ scene, colliders, occluders, roomAnims, INTERIORS });
+  for (const F of FLOORS) {
+    const next = FLOORS[F.n], prev = FLOORS[F.n - 2];
+    if (F.down && next) { const m = makePortal('#b08aff'); m.position.set(F.down.x, 0.05, F.down.z); scene.add(m); portals.push({ kind: 'floor', from: F.id, to: next.id, x: F.down.x, z: F.down.z, mesh: m, arrive: next.entry }); }
+    if (F.up && prev) { const m = makePortal('#9ae0ff'); m.position.set(F.up.x, 0, F.up.z); scene.add(m); portals.push({ kind: 'floor', from: F.id, to: prev.id, x: F.up.x, z: F.up.z, mesh: m, arrive: prev.arriveUp }); }
+  }
+}
+function goFloor(pt) {
+  const I = INTERIORS[pt.to], back = S.interior.back;
+  fadeTo(() => {
+    S.interior = { id: pt.to, ...I, back };
+    Object.assign(S.pos, { x: pt.arrive.x, z: pt.arrive.z, y: 0, vy: 0, ground: true, yaw: pt.arrive.yaw }); S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = pt.arrive.yaw;
+    setTarget(null); S.casting = null; S.fallTop = null;
+    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.vx = S.pet.vz = 0; }
+    $('mapname').innerHTML = `${I.name} <small>Masmorra</small>`; banner(I.name, I.region || '');
+    S.portalCd = S.time + 2; Sound.play('portal');
+  });
+}
 function roomNpc(n, x, z, yaw, anim = 'Idle') {
   const ch = makeNpcHero(n);
   ch.obj.position.set(x, 0, z); ch.obj.rotation.y = yaw; ch.anim.play(anim, { speed: 0.9 });
@@ -325,6 +347,7 @@ function updatePortals(dt) {
     if (S.p.dead || S.time < (S.portalCd || 0) || Math.hypot(pt.x - P.x, pt.z - P.z) > 1.0) continue;
     if (pt.kind === 'door' && !S.interior) enterInterior(pt.to, pt);
     else if (pt.kind === 'exit' && S.interior && S.interior.id === pt.from) leaveInterior(false);
+    else if (pt.kind === 'floor' && S.interior && S.interior.id === pt.from) goFloor(pt);
     S.portalCd = S.time + 2;
   }
 }
@@ -349,10 +372,15 @@ function toggleMount() { if (S.riding) dismount(); else mount(); }
 let mapaTimer = null;
 function renderMapa() {
   const body = UI.body('mapa');
-  body.innerHTML = `<canvas id="mapa-cv" width="680" height="680" style="width:100%;border-radius:8px;display:block"></canvas>
-    <div class="muted" style="font-size:11px;margin-top:6px">★ NPCs · 💀 mini-chefes · 👑 chefe · a seta é você. Feche com G ou Esc.</div>`;
-  const cv = $('mapa-cv'); drawAdmMap(cv);
-  clearInterval(mapaTimer); mapaTimer = setInterval(() => { if (!UI.wins.mapa || !document.body.contains(cv)) { clearInterval(mapaTimer); return; } drawAdmMap(cv); }, 400);
+  // S-171: ao lado do mapa, os monstros de cada região (com quantidade); S-176: as missões aparecem no mapa
+  const zm = H3.zoneMobs ? H3.zoneMobs() : {}, seenL = S.p.seen || [], all = isAdmin() && S.god;
+  const regions = Object.entries(zm).map(([zn, mobs]) => `<div class="mp-reg"><div class="mp-rn">${escH(zn)}</div>${Object.entries(mobs).sort((a, b) => MONSTERS[a[0]].lv - MONSTERS[b[0]].lv).map(([mid, n]) => { const ok = all || seenL.includes(mid); return `<div class="mp-mob ${ok ? '' : 'unseen'}" data-mob="${mid}" title="Abrir no Bestiário"><img src="${monsterThumb(mid)}" alt=""><span>${ok ? escH(MONSTERS[mid].name) : '???'}</span><small>Nv. ${MONSTERS[mid].lv} · ×${n}</small></div>`; }).join('')}</div>`).join('');
+  body.innerHTML = `<div class="mp-wrap"><div><canvas id="mapa-cv" width="680" height="680" style="width:100%;border-radius:8px;display:block"></canvas>
+    <div class="muted" style="font-size:11px;margin-top:6px">★ NPCs · 💀 mini-chefes · 👑 chefe · <b class="gold">! ? ⚔</b> suas missões · a seta é você. Feche com G ou Esc.</div></div>
+    <div class="mp-side"><div class="mp-h">Monstros por região</div>${regions}</div></div>`;
+  body.querySelectorAll('[data-mob]').forEach(el => el.onclick = () => { UI.bestSel = el.dataset.mob; UI.open('bestiario'); UI.render_bestiario(); });
+  const cv = $('mapa-cv'), draw = () => { if (S.interior && S.interior.dungeon && dungeonMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, { whole: true, yaw: S.pos.yaw, monsters: S.monsters.filter(m => !m.dead && m.x > HALF + 100 && Math.abs(m.z - S.interior.z) < 36).map(m => ({ x: m.x, z: m.z, boss: m.def.boss })) })) return; drawAdmMap(cv); }; draw();
+  clearInterval(mapaTimer); mapaTimer = setInterval(() => { if (!UI.wins.mapa || !document.body.contains(cv)) { clearInterval(mapaTimer); return; } draw(); }, 400);
 }
 
 /* ---------- Loja de Auroras ✦ (só cosméticos: skins e montarias) ---------- */
@@ -693,6 +721,7 @@ function buildWorld() {
   retextureKayKit(MODELS); // S-132: pedra, madeira e reboco com relevo nos prédios prontos
   MODELS.well = { scene: makeWell(), radius: 1.15, native: true };          // S-129
   MODELS.bucket = { scene: makeBucket(), radius: 0.22, native: true };      // S-129
+  MODELS.barrel = { scene: makeBarrel(), radius: 0.43, native: true };      // S-174: barril de aduelas, aros e tampa
   MODELS.blacksmith = { scene: makeSmithy(), radius: 3.0, native: true };   // S-125: ferraria sem o forno gigante
   MODELS.flag_blue = { scene: makeClothFlag('blue'), radius: 0.3, native: true }; // S-131: pano ao vento
   MODELS.flag_red = { scene: makeClothFlag('red'), radius: 0.3, native: true };
@@ -717,7 +746,7 @@ function buildWorld() {
   place('tower', V.x + 22, V.z - 9, { rf: 0.5 }); place('tower', V.x + 22, V.z + 14, { rf: 0.5 });
   place('flag_blue', V.x + 18, V.z - 6, { solid: false }); place('flag_blue', V.x + 18, V.z + 11, { solid: false });
   // feira e enfeites
-  const props = [['barrel', 6, -9], ['barrel', 7, -8], ['crate_A', 9, -10], ['sack', 5, -11], ['wheelbarrow', -9, 7], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 2, 3], ['crate_B', 10, 11], ['target_round', -6, -14], ['flag_red', 12, -12]];
+  const props = [['barrel', 6, -9], ['barrel', 7.1, -8], ['barrel', 6.2, -7.6], ['crate_A', 9, -10], ['crate_B', 9.9, -8.8], ['crate_A', 8.2, -11.2], ['wheelbarrow', -9, 7], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 1.75, 0.45], ['crate_B', 10, 11], /* S-172 balde junto do poço · S-173 sem o saco · S-174 barris detalhados e 3 caixas */ ['target_round', -6, -14], ['flag_red', 12, -12]];
   for (const [n, dx, dz] of props) place(n, V.x + dx, V.z + dz, { rf: 0.6 });
   // paliçada de troncos ao redor da vila (portão a leste, na estrada) — S-072
   {
@@ -737,7 +766,8 @@ function buildWorld() {
       const x = zn.x + (rng() * 2 - 1) * zn.r * 1.25, z = zn.z + (rng() * 2 - 1) * zn.r * 1.25;
       if (Math.abs(x) > PLAY_LIMIT - 4 || Math.abs(z) > PLAY_LIMIT - 4) continue;
       if (zoneWeight(zoneId, x, z) < minW) continue;
-      if (roadDist(x, z) < 5 || lakeDist(x, z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36 || Math.hypot(x - CITY2.x, z - CITY2.z) < 44 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 46 || Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r + 4 || Object.values(CAMPS).some(c => Math.hypot(x - c.x, z - c.z) < 16) || mountainMask(x, z) > 0.3) continue;
+      if (roadDist(x, z) < 5 || lakeDist(x, z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36 || Math.hypot(x - CITY2.x, z - CITY2.z) < 44 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 46 || Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r + 4 || Math.hypot(x - FROST.x, z - FROST.z) < 48 || x < -398 || Object.values(CAMPS).some(c => Math.hypot(x - c.x, z - c.z) < 16) || mountainMask(x, z) > 0.3) continue;
+      if (/^(oak|pine|cactus)/.test(list[0]) && !treeAllowed(x, z)) continue; // S-154: árvore só onde há terra
       if (!freeAt(x, z, gap)) continue;
       const name = list[Math.floor(rng() * list.length)];
       place(name, x, z, { scale: (extra.s0 || 0.9) + rng() * (extra.s1 || 0.4), rf: extra.rf || 0.35 });
@@ -757,11 +787,11 @@ function buildWorld() {
   for (let k = 0; k < 3; k++) { const c = cactusGeometry(400 + k); MODELS['cactus_' + k] = { scene: new THREE.Mesh(c.geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 })), radius: c.radius, native: true }; MODELS['cactus_' + k].scene.castShadow = true; }
   scatter('colinas', ['oak_0', 'oak_1', 'oak_2', 'oak_3', 'oak_4', 'pine_0'], 55, 0.35, 6, { s0: 0.85, s1: 0.45 });
   scatter('colinas', ['stone_0', 'stone_1', 'stone_2', 'stone_3', 'stump_0', 'log_0'], 24, 0.3, 3, { s0: 0.8, s1: 0.6 });
-  scatter('geada', ['pinedark_0', 'pinedark_1', 'pinedark_2', 'pinedark_3', 'pine_2', 'pine_3'], 90, 0.3, 4, { s0: 0.8, s1: 0.6 });
+  scatter('geada', ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'], 90, 0.3, 4, { s0: 0.8, s1: 0.6 }); // S-158: pinheiros com neve
   scatter('geada', ['stone_3', 'stone_4', 'stone_5', 'stonedark_0'], 28, 0.3, 3, { s0: 0.8, s1: 0.9 });
   scatter('dunas', ['cactus_0', 'cactus_1', 'cactus_2', 'cactus_0'], 60, 0.3, 5, { s0: 0.8, s1: 0.5 });
   scatter('dunas', ['stone_0', 'stone_3', 'stone_4', 'stump_1', 'log_1'], 34, 0.3, 4, { s0: 0.8, s1: 1.2 });
-  scatter('colossos', ['oak_0', 'oak_2', 'oak_3'], 18, 0.3, 14, { s0: 1.0, s1: 0.5 });
+  scatter('colossos', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 22, 0.3, 10, { s0: 1.0, s1: 0.5 }); // S-161: terra arrasada, sem árvores verdes
   scatter('colossos', ['stone_3', 'stone_4', 'stone_5', 'stonedark_1', 'stonedark_2'], 50, 0.25, 6, { s0: 1.0, s1: 1.6 });
   buildFrontier();
   // ruínas: prédios destruídos e muros quebrados
@@ -784,9 +814,9 @@ function buildWorld() {
   for (let k = 0, n = 0; k < 16000 && n < 320; k++) {
     const x = (rng() * 2 - 1) * (HALF - 10), z = (rng() * 2 - 1) * (HALF - 10), mm = mountainMask(x, z);
     if (mm < 0.12 || mm > 0.6 || (Math.abs(x) < 100 && Math.abs(z) < 100) || roadDist(x, z) < 8) continue;
-    const h = heightAt(x, z); if (h > 14 || Math.abs(heightAt(x + 1.5, z) - heightAt(x - 1.5, z)) > 2.2 || zoneWeight('dunas', x, z) > 0.5) continue;
+    const h = heightAt(x, z); if (h > 14 || !treeAllowed(x, z, { maxRock: 0.22, maxSlope: 0.42 }) || zoneWeight('dunas', x, z) > 0.5) continue; // S-154: só no sopé com terra
     if (Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT - 2 && !freeAt(x, z, 3)) continue;
-    place(['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'][Math.floor(rng() * 6)], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
+    place((zoneWeight('geada', x, z) > 0.3 ? ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'] : ['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'])[Math.floor(rng() * (zoneWeight('geada', x, z) > 0.3 ? 4 : 6))], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
   scene.add(buildDistantMountains());
   // nuvens
@@ -823,16 +853,16 @@ function landmark(obj, asset, x, z, rot, cols, y) {
   return obj;
 }
 const GRIFEIROS = {
-  vila: { id: 'neli', name: 'Neli', title: 'Mestra-Grifo', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'rabo', color: 'ruivo' } } },
-  pedraclara: { id: 'aldo', name: 'Aldo', title: 'Mestre-Grifo', model: 'Knight', show: ['Knight_Cape'], look: { race: 'humano', face: 'sereno', hair: { style: 'curto', color: 'grisalho' }, beard: true } },
-  geada: { id: 'ruan', name: 'Ruan', title: 'Mestre-Grifo', model: 'Barbarian', show: ['Barbarian_Cape'], look: { race: 'anao', face: 'valente', hair: { style: 'careca', color: 'branco' }, beard: true } },
-  dunas: { id: 'samira', name: 'Samira', title: 'Mestra-Grifo', model: 'Rogue', show: ['Rogue_Cape'], look: { race: 'humano', face: 'astuto', hair: { style: 'longo', color: 'preto' } } },
-  colossos: { id: 'oto', name: 'Oto', title: 'Mestre-Grifo', model: 'Rogue_Hooded', show: ['Rogue_Cape'], look: { race: 'elfo', face: 'gentil', hair: { style: 'franja', color: 'platinado' } } },
+  vila: { id: 'neli', name: 'Neli', title: 'Mestra dos Noctívagos', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'rabo', color: 'ruivo' } } },
+  pedraclara: { id: 'aldo', name: 'Aldo', title: 'Mestre dos Noctívagos', model: 'Knight', show: ['Knight_Cape'], look: { race: 'humano', face: 'sereno', hair: { style: 'curto', color: 'grisalho' }, beard: true } },
+  geada: { id: 'ruan', name: 'Ruan', title: 'Mestre dos Noctívagos', model: 'Barbarian', show: ['Barbarian_Cape'], look: { race: 'anao', face: 'valente', hair: { style: 'careca', color: 'branco' }, beard: true } },
+  dunas: { id: 'samira', name: 'Samira', title: 'Mestra dos Noctívagos', model: 'Rogue', show: ['Rogue_Cape'], look: { race: 'humano', face: 'astuto', hair: { style: 'longo', color: 'preto' } } },
+  colossos: { id: 'oto', name: 'Oto', title: 'Mestre dos Noctívagos', model: 'Rogue_Hooded', show: ['Rogue_Cape'], look: { race: 'elfo', face: 'gentil', hair: { style: 'franja', color: 'platinado' } } },
 };
 function buildFrontier() {
   // pontos de voo: poleiro com o emblema + mestre-grifo
   for (const [k, f] of Object.entries(FLIGHTS)) {
-    const r = makeRoost(); r.position.set(f.x + 1.6, heightAt(f.x + 1.6, f.z - 0.4), f.z - 0.4); scene.add(r); roomAnims.push(r); colliders.push({ x: f.x + 1.6, z: f.z - 0.4, r: 0.35 });
+    const r = makeRoost(); r.position.set(f.x + 1.6, heightAt(f.x + 1.6, f.z - 0.4), f.z - 0.4); scene.add(r); roomAnims.push(r); for (const [lx, lz, rr] of r.userData.cols || []) colliders.push({ x: f.x + 1.6 + lx, z: f.z - 0.4 + lz, r: rr });
     worldNpc({ ...GRIFEIROS[k], grifo: k }, f.x, f.z, k === 'vila' ? -Math.PI / 2 : rng() * 6.28);
   }
   // ---------- Cidadela de Pedraclara: muralha de pedra, torres, portão a oeste ----------
@@ -865,6 +895,7 @@ function buildFrontier() {
   colo(makeStoneBeast(67), 'colosso_fera', -78, -352, 0.9);                     // fera agachada
   colo(makeFallenTitan(79), 'colosso_tita', 100, -275, -0.4);                   // titã caído com o braço erguido
   colo(makeHeadless(97), 'colosso_sem_cabeca', -96, -246, 1.1);                 // guerreiro sem cabeça (a cabeça caiu a seus pés)
+  buildRuins({ scene, placed, colliders, occluders, heightAt, roadDist }); // S-161: ruínas e escombros
   { const mist = makeMist(heightAt, 0, -300, 115, 30, 5); scene.add(mist); roomAnims.push(mist); } // névoa baixa: clima de mistério
   landmark(makeGiantHead(7), 'cabeca_gigante', 46, -252, 0.6, [[0, 0, 4.6]], heightAt(46, -252) - 1.4);
   for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + 0.2, x = Math.cos(a) * 24, z = -300 + Math.sin(a) * 24; if (Math.abs(x) < 5) continue; landmark(makeMonolith(30 + k, 6 + (k % 3) * 1.6), 'monolito', x, z, -a, [[0, 0, 1.2]]); }
@@ -883,40 +914,19 @@ function buildFrontier() {
 // voo de grifo: libera o ponto ao conversar com o mestre-grifo dele
 function flightDialog(n) {
   const p = S.p; p.flights = p.flights || ['vila'];
-  if (!p.flights.includes(n.grifo)) { p.flights.push(n.grifo); log(`🦅 Novo ponto de voo descoberto: ${FLIGHTS[n.grifo].name}!`, 'card'); Sound.play('levelup'); save3d(); }
+  if (!p.flights.includes(n.grifo)) { p.flights.push(n.grifo); log(`🦇 Novo ponto de voo descoberto: ${FLIGHTS[n.grifo].name}!`, 'card'); Sound.play('levelup'); save3d(); }
   const cost = 40;
-  const opts = Object.entries(FLIGHTS).filter(([k]) => k !== n.grifo && p.flights.includes(k)).map(([k, f]) => ({ label: `🦅 ${f.name} — ${S.god ? 'grátis' : cost + ' z'}`, gold: true, fn: () => fly(k, cost) }));
-  UI.dialog(n, opts.length ? 'Para onde voamos hoje? O grifo conhece o caminho de cor.' : 'Você ainda não conhece outros pontos de voo. Fale com os mestres-grifo pelo mundo (Pedraclara, Geada, Dunas, Colossos) para poder voar até eles!', [...opts, { label: 'Até logo.', fn: () => UI.close('dialog') }]);
+  const opts = Object.entries(FLIGHTS).filter(([k]) => k !== n.grifo && p.flights.includes(k)).map(([k, f]) => ({ label: `🦇 ${f.name} — ${S.god ? 'grátis' : cost + ' z'}`, gold: true, fn: () => fly(k, cost) }));
+  UI.dialog(n, opts.length ? 'Para onde voamos hoje? O Noctívago conhece o caminho de cor.' : 'Você ainda não conhece outros pontos de voo. Fale com os mestres dos Noctívagos pelo mundo (Pedraclara, Geada, Dunas, Colossos) para poder voar até eles!', [...opts, { label: 'Até logo.', fn: () => UI.close('dialog') }]);
 }
 function fly(k, cost) {
   const p = S.p, f = FLIGHTS[k];
   if (!S.god && p.zeny < cost) { log('Zeny insuficiente para o voo.', 'warn'); Sound.play('error'); return; }
   if (!S.god) { p.zeny -= cost; hudDirty = true; }
   UI.close('dialog'); if (S.riding) dismount(true);
-  fadeTo(() => { teleport3d(f.x + 2.5, f.z + 1.5); banner(f.name, '🦅 Voo de grifo'); });
+  fadeTo(() => { teleport3d(f.x + 2.5, f.z + 1.5); banner(f.name, '🦇 Voo de Noctívago'); });
 }
 // ---------- Catacumbas do Santuário (masmorra) ----------
-function buildCatacombs(I) {
-  const stone = new THREE.MeshStandardMaterial({ color: '#57524b', roughness: 0.95 }), darkS = new THREE.MeshStandardMaterial({ color: '#3d3934', roughness: 1 });
-  const wall = (cx, cz, w, d) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, I.h, d), stone); m.position.set(I.x + cx, I.h / 2, I.z + cz); m.castShadow = m.receiveShadow = true; scene.add(m); occluders.push(m);
-    colliders.push({ x: I.x + cx, z: I.z + cz, r: Math.max(w, d) / 2, box: true, hx: w / 2, hz: d / 2, rot: 0, name: 'catacumba' });
-  };
-  // salão do chefe ao norte (passagem de 8 m no meio), corredor central e duas alas laterais
-  wall(-18, -14, 28, 1.4); wall(18, -14, 28, 1.4);
-  wall(-6, 10, 1.4, 20); wall(6, 10, 1.4, 20);
-  wall(-26, 0, 12, 1.4); wall(-10, 0, 8, 1.4); wall(26, 0, 12, 1.4); wall(10, 0, 8, 1.4);
-  // colunas, sarcófagos, ossadas e tochas
-  const colG = new THREE.CylinderGeometry(0.6, 0.7, I.h, 16);
-  for (const [x, z] of [[-14, -8], [14, -8], [-22, -24], [22, -24], [-8, -24], [8, -24]]) { const c = new THREE.Mesh(colG, stone); c.position.set(I.x + x, I.h / 2, I.z + z); c.castShadow = true; scene.add(c); occluders.push(c); colliders.push({ x: I.x + x, z: I.z + z, r: 0.75 }); }
-  const sarc = (x, z, rot) => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 2.4), darkS); b.position.y = 0.45; const l = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.25, 2.55), stone); l.position.y = 1.0; l.rotation.y = 0.12; g.add(b, l); g.position.set(I.x + x, 0, I.z + z); g.rotation.y = rot; g.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } }); scene.add(g); colliders.push({ x: I.x + x, z: I.z + z, r: 1.3 }); };
-  for (const [x, z] of [[-26, 10], [-20, 10], [-26, 20], [-20, 20], [26, 10], [20, 10], [26, 20], [20, 20], [-24, -7], [24, -7]]) sarc(x, z, 0);
-  const torch = (x, z, ry) => { const g = new THREE.Group(); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.6, 10), new THREE.MeshStandardMaterial({ color: '#3a2a1a' })); st.rotation.x = 0.5; g.add(st); const fl = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.4, 12), new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0.9 })); fl.position.set(0, 0.42, 0.14); g.add(fl); { const L = vlight('#ff9a40', 1.4, 9); L.position.set(0, 0.5, 0.25); g.add(L); } g.position.set(I.x + x, 2.6, I.z + z); g.rotation.y = ry; g.userData.update = t => { fl.scale.set(1, 1 + Math.sin(t * 12 + x) * 0.2, 1); }; scene.add(g); roomAnims.push(g); };
-  for (const [x, z, ry] of [[-31.4, 8, Math.PI / 2], [31.4, 8, -Math.PI / 2], [-31.4, -24, Math.PI / 2], [31.4, -24, -Math.PI / 2], [-5.2, 16, Math.PI / 2], [5.2, 16, -Math.PI / 2], [0, -31.4, 0], [-16, -13.2, Math.PI], [16, -13.2, Math.PI]]) torch(x, z, ry);
-  // altar do salão do chefe com runas
-  const alt = makeMonolith(77, 3.2); alt.position.set(I.x, 0, I.z - I.d / 2 + 3); scene.add(alt); colliders.push({ x: I.x, z: I.z - I.d / 2 + 3, r: 1.2 });
-}
-
 /* =========================== Personagens animados =========================== */
 const ACCESSORIES = {
   Knight: ['1H_Sword_Offhand', 'Badge_Shield', 'Rectangle_Shield', 'Round_Shield', 'Spike_Shield', '1H_Sword', '2H_Sword', 'Knight_Helmet', 'Knight_Cape'],
@@ -1097,13 +1107,20 @@ const SPAWNS = [
   ['dunas', 'brasinha', 10], ['dunas', 'esqueleto_vigia', 4],
   ['geada', 'geadinha', 11], ['geada', 'lobo_alfa', 1],
   ['colossos', 'gotinha_sombria', 8], ['colossos', 'cavaleiro_caido', 5], ['colossos', 'espectro', 5],
-  ['catacumbas', 'esqueleto_vigia', 6], ['catacumbas', 'espectro', 4], ['catacumbas', 'cavaleiro_caido', 3], ['catacumbas', 'gotinha_sombria', 3], ['catacumbas', 'sentinela_silente', 1],
+  ...DUNGEON_SPAWNS, // S-159: monstros por andar das Catacumbas (os mais fortes embaixo; chefe no 4º)
   // S-138: chefes grandes, um em cada região
   ['dunas', 'kharzul', 1], ['colossos', 'maldoran', 1], ['geada', 'vharnyr', 1], ['ruinas', 'selvara', 1],
+  // S-170: nenhum campo vazio — mais monstros e os que ainda não apareciam no mundo
+  ['valcinza', 'golem_musgo', 7], ['valcinza', 'espantalho', 6], ['valcinza', 'guardiao_ancestral', 2], ['valcinza', 'lobo_alfa', 2], ['valcinza', 'cavaleiro_caido', 3],
+  ['colinas', 'espantalho', 5], ['floresta', 'golem_musgo', 2], ['ruinas', 'morcego_cripta', 6], ['catacumbas', 'morcego_cripta', 5],
+  // S-167/S-169: criaturas novas das Dunas
+  ['dunas', 'mandacaru', 5], ['dunas', 'escorpiao_rubro', 6], ['dunas', 'formiga_ceifadora', 7], ['dunas', 'lagarto_sal', 4], ['dunas', 'trotavento_selvagem', 4],
+  ['dunas', 'brasinha', 4], ['geada', 'geadinha', 4], ['geada', 'lobo_cinzento', 5], ['campos', 'gotinha', 3], ['campos', 'fungolino', 3],
 ];
 let SPAWN_BOSS_NEXT = false;
 function spawnPoint(zoneId) {
   const room = INTERIORS[zoneId];
+  if (room && room.dungeon) { const b = SPAWN_BOSS_NEXT; SPAWN_BOSS_NEXT = false; return dungeonSpawn(zoneId, rng, b) || { x: room.x, z: room.z }; }
   if (room) { // masmorra: ponto livre dentro da sala (longe da entrada); o chefe fica no salão do fundo
     if (zoneId === 'catacumbas' && SPAWN_BOSS_NEXT) { SPAWN_BOSS_NEXT = false; return { x: room.x, z: room.z - room.d / 2 + 9 }; }
     for (let k = 0; k < 80; k++) { const x = room.x + (rng() * 2 - 1) * (room.w / 2 - 3), z = room.z + (rng() * 2 - 1) * (room.d / 2 - 3); if (z > room.z + room.d / 2 - 12 && Math.abs(x - room.x) < 10) continue; if (freeAt(x, z, 1.2)) return { x, z }; }
@@ -1172,8 +1189,8 @@ function monsterVisual(m) {
   const s = Math.max(0.6, d.size) * (d.shape === 'blob' ? 1.1 : 1);
   cr.root.scale.setScalar(s);
   const obj = new THREE.Group(); obj.add(cr.root);
-  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : 0.9) * s;
-  return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s * (d.shape === 'frostdragon' ? 1.3 : 1) };
+  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : d.shape === 'cactus' ? 1.25 : d.shape === 'saltlizard' ? 0.7 : d.shape === 'scorpion' ? 0.55 : d.shape === 'ant' ? 0.55 : d.shape === 'runnerbird' ? 2.1 : d.shape === 'bat' ? 1.45 : 0.9) * s;
+  return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s * (d.shape === 'frostdragon' ? 1.3 : d.shape === 'saltlizard' ? 1.4 : 1) };
 }
 // miniaturas e visualização animada dos monstros (Bestiário)
 const thumbCache = {};
@@ -1311,6 +1328,12 @@ const MON_SFX = {
   skeleton: { step: 'boneStep', every: 0.45, attack: 'boneAttack', pre: 'boneChatter', hurt: 'boneHit', hurtP: 1, die: 'boneDie', idle: 'boneChatter', idleEvery: 10, idleR: 16 },
   knight: { step: 'boneStep', every: 0.5, attack: 'knightSwing', pre: 'knightVoice', hurt: 'boneHit', hurtP: 1, die: 'boneDie', idle: 'knightVoice', idleEvery: 11, idleR: 26, talk: 'knightVoice' }, // S-104: o Cavaleiro Caído fala e golpeia com peso
   ghost: { attack: 'ghostWail', die: 'ghostWail', idle: 'ghostWail', idleEvery: 12, idleR: 18 },
+  cactus: { step: 'mushStep', every: 0.4, attack: 'beeSting', die: 'mushDie' },
+  saltlizard: { step: 'rabbitStep', every: 0.3, attack: 'wolfBite', pre: 'dragonBreath', hurt: 'wolfHurt', die: 'wolfDie' },
+  scorpion: { step: 'boneStep', every: 0.25, attack: 'beeSting', pre: 'boneChatter', hurt: 'boneHit', die: 'boneDie' },
+  ant: { step: 'boneStep', every: 0.22, attack: 'wolfBite', pre: 'boneChatter', die: 'beeDie' },
+  runnerbird: { step: 'rabbitStep', every: 0.35, attack: 'swing', hurt: 'wolfHurt', die: 'wolfDie' },
+  bat: { step: 'beeBuzz', every: 0.5, attack: 'wolfBite', die: 'beeDie', idle: 'ghostWail', idleEvery: 14, idleR: 16 },
   demonking: { step: 'bossStep', every: 0.9, attack: 'demonRoar', pre: 'demonRoar', hurt: 'hit', die: 'death', idle: 'demonRoar', idleEvery: 14, idleR: 40 },
   goatmage: { attack: 'magic', pre: 'goatChant', die: 'ghostWail', idle: 'goatChant', idleEvery: 15, idleR: 30 },
   frostdragon: { step: 'bossStep', every: 1.0, attack: 'dragonBreath', pre: 'dragonRoar', hurt: 'wolfHurt', die: 'dragonRoar', idle: 'dragonRoar', idleEvery: 12, idleR: 45 },
@@ -1645,7 +1668,9 @@ function updatePlayer(dt) {
   }
   // de frente para o alvo quando parado atacando
   if (S.autoAttack && S.target && !mi.any && !mi.turn && !mouse.right) P.yaw = angLerp(P.yaw, Math.atan2(S.target.x - P.x, S.target.z - P.z), Math.min(1, dt * 8));
-  me.obj.rotation.y = P.yaw;
+  // S-151: o corpo gira para o lado em que anda (andar de lado vira corrida na diagonal; para trás, passos de ré de verdade)
+  { const moving = mi.any && !S.riding && P.ground && !isAction(); const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
+  me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
   // animação
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (S.riding) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
@@ -1653,8 +1678,8 @@ function updatePlayer(dt) {
   else if (!P.ground) { if (me.anim.name !== 'Jump_Start') me.anim.play('Jump_Idle'); }
   else if (S.sitting) { if (me.anim.name !== 'Sit_Floor_Idle' && me.anim.name !== 'Sit_Floor_Down') { me.anim.play('Sit_Floor_Down', { once: true }); later(0.9, () => { if (S.sitting) me.anim.play('Sit_Floor_Idle'); }); } }
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.9 : 1 });
-  else if (mi.fwd < 0) me.anim.play('Walking_Backwards');
-  else if (mi.strafe) me.anim.play(mi.strafe < 0 ? 'Running_Strafe_Left' : 'Running_Strafe_Right');
+  else if (mi.fwd < 0) me.anim.play('Walking_Backwards', { speed: -1.05 }); // a caminhada tocada ao contrário = passos para trás
+  else if (mi.strafe) me.anim.play('Running_A'); // de lado: o corpo vira para a direção (bodyTwist) e corre
   else if (coast > 0.8) me.anim.play('Running_A', { speed: Math.max(0.45, coast / base) });
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
   else me.anim.play(S.autoAttack && S.target ? (S.me.look.style === '2h' || S.me.look.style === 'cast' ? '2H_Melee_Idle' : 'Idle') : 'Idle');
@@ -2083,6 +2108,7 @@ function updatePlates() {
     if (e.dead && !e.isNpc) continue;
     const d = Math.hypot(e.x - P.x, e.z - P.z);
     // nomes só de perto: monstros até 13 m (ou o alvo / quem está brigando com você), NPCs até 24 m
+    if (!e.isNpc && !e.dead && e.type && d < 22 && e.obj.visible && !(S.p.seen || (S.p.seen = [])).includes(e.type) && MONSTERS[e.type]) { S.p.seen.push(e.type); log(`📖 Nova criatura no Bestiário: ${e.def.name}!`, 'lvl'); Sound.play('card'); if (UI.wins.bestiario) UI.render_bestiario(); } // S-171: pokédex
     const qm = e.isNpc ? questMarker(S.p, e.id) : ''; // S-126: "!" / "?" de missão, visível de mais longe (como no WoW)
     const near = e.isNpc ? (qm && qm !== '…' ? 45 : 24) : 13, fight = (e === S.target || (!e.isNpc && e.aggro && !e.def.dummy)) && d < 20; // nem em combate aparece de longe (S-096, S-116: no máximo 20 m)
     if ((d > near && !fight) || (e.obj && !e.obj.visible)) continue;
@@ -2320,12 +2346,15 @@ function drawMinimap() {
   c.clearRect(0, 0, W, W);
   c.save(); c.beginPath(); c.arc(R, R, R - 7, 0, 7); c.clip();
   const sizePx = mmRange * 2 / 300 * WM;
-  c.fillStyle = '#1a2a1a'; c.fillRect(0, 0, W, W);
-  const MP = S.interior ? S.interior.back : S.pos; // dentro de casa: mostra a porta
-  c.drawImage(worldMap, w2m(MP.x) - sizePx / 2, w2m(MP.z) - sizePx / 2, sizePx, sizePx, 0, 0, W, W);
+  if (!(S.interior && S.interior.dungeon && dungeonMap(c, W, S.pos.x, S.pos.z, mmRange))) { // na masmorra: planta do andar
+    c.fillStyle = '#1a2a1a'; c.fillRect(0, 0, W, W);
+    const MP = S.interior ? S.interior.back : S.pos; // dentro de casa: mostra a porta
+    c.drawImage(worldMap, w2m(MP.x) - sizePx / 2, w2m(MP.z) - sizePx / 2, sizePx, sizePx, 0, 0, W, W);
+  }
   const pt = (x, z) => [R + (x - S.pos.x) / mmRange * R, R + (z - S.pos.z) / mmRange * R];
   const inside = (x, y) => Math.hypot(x - R, y - R) < R - 9;
   for (const m of S.monsters) if (!m.dead) {
+    if (S.interior && S.interior.dungeon && Math.abs(m.z - S.interior.z) > 36) continue; // só os do andar atual
     const [x, y] = pt(m.x, m.z); if (!inside(x, y)) continue;
     c.fillStyle = m.def.boss || m.def.mini ? '#ffb84a' : (m.def.aggressive || m.aggro) ? '#ff5a5a' : '#ffe08a';
     c.beginPath(); c.arc(x, y, m.def.mini || m.def.boss ? 3.5 : 2.3, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 1; c.stroke();
@@ -2468,7 +2497,7 @@ function toggleMenu() {
   $('m-opts').onclick = () => showSettings();
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
-const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'hp', 'sp'];
+const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'seen', 'hp', 'sp'];
 function save3d() {
   if (!S.p || !HAS_SRV) return;
   const s = {}; for (const k of SAVE_FIELDS3) s[k] = S.p[k];
@@ -2523,7 +2552,7 @@ function step(dt) {
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     if (S.me && S.me.hatId !== hatOf(S.p)) buildPlayerModel(); // trocou o chapéu
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
 }
@@ -2567,7 +2596,7 @@ function draw(dt) {
     else {
       const wr = zoneWeight('ruinas', P.x, P.z), wf = zoneWeight('floresta', P.x, P.z), wg = zoneWeight('geada', P.x, P.z), wd = zoneWeight('dunas', P.x, P.z), wc = zoneWeight('colossos', P.x, P.z);
       scene.fog.color.copy(FOG_DAY).lerp(FOG_FOREST, wf * 0.6).lerp(FOG_RUINS, wr * 0.85).lerp(FOG_SNOW, wg * 0.85).lerp(FOG_SAND, wd * 0.7).lerp(FOG_PLAIN, wc * 0.6);
-      scene.fog.near = 90 - wr * 60 - wf * 35 - wg * 40 + wc * 40; scene.fog.far = 420 - wr * 270 - wf * 180 - wg * 150 - wd * 60 + wc * 160;
+      scene.fog.near = 90 - wr * 60 - wf * 35 - wg * 40 - wc * 55; scene.fog.far = 420 - wr * 270 - wf * 180 - wg * 150 - wd * 60 - wc * 210;
     }
     // seleção
     const t = S.target;
@@ -2618,12 +2647,24 @@ function makeStage(cv) {
   const key = new THREE.DirectionalLight('#fff3e0', 2.6); key.position.set(2, 3.4, 4); const rim = new THREE.DirectionalLight('#9fc4ff', 1.6); rim.position.set(-3, 2.5, -3);
   const top = new THREE.DirectionalLight('#fff1d0', 1.2); top.position.set(1, 6, 2); sc.add(key, rim, top);
   const cam = new THREE.PerspectiveCamera(28, W / H, 0.05, 50);
+  // S-140: o pedestal agora é parte da cena 3D (no chão, y = 0): pés e patas sempre em cima do círculo
+  { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 10, 128, 128, 128); g.addColorStop(0, 'rgba(255,214,130,0.55)'); g.addColorStop(0.55, 'rgba(255,200,110,0.22)'); g.addColorStop(0.8, 'rgba(255,190,90,0.08)'); g.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+    x.strokeStyle = 'rgba(255,220,150,0.35)'; x.lineWidth = 3; x.beginPath(); x.arc(128, 128, 96, 0, 7); x.stroke();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const pad = new THREE.Mesh(new THREE.CircleGeometry(1.6, 64), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); pad.rotation.x = -Math.PI / 2; pad.position.y = 0.002; pad.renderOrder = -1; sc.add(pad); }
+  let zoomAt = new THREE.Vector3(0, 0, 0); // S-149: ponto para onde a rodinha aproxima (onde está o cursor)
+  const zr = new THREE.Raycaster();
   let cur = null, pet = null, yaw = 0.35, vel = 0, drag = false, lastX = 0, t = 0, last = performance.now(), alive = true, zoom = 0, zoomT = 0, idleT = 0;
   let fit = { cx: 0, cy: 0.75, dist: 3.8, face: 1.02 }, keyTurn = 0;
   cv.onpointerdown = e => { drag = true; lastX = e.clientX; vel = 0; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; };
   cv.onpointermove = e => { if (!drag) return; const dx = e.clientX - lastX; lastX = e.clientX; yaw += dx * 0.012; vel = dx * 0.012; idleT = 0; };
   cv.onpointerup = () => { drag = false; cv.style.cursor = 'grab'; };
-  cv.onwheel = e => { e.preventDefault(); zoomT = Math.max(0, Math.min(1, zoomT + (e.deltaY < 0 ? 0.25 : -0.25))); };
+  cv.onwheel = e => { e.preventDefault();
+    if (e.deltaY < 0 && zoomT < 0.01) { // começando a aproximar: mira no ponto do personagem/mascote debaixo do cursor
+      const r = cv.getBoundingClientRect(), v = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); zr.setFromCamera(v, cam);
+      const hit = zr.intersectObjects(root.children, true).find(h => h.object.visible && !h.object.isPoints);
+      zoomAt = hit ? hit.point.clone() : new THREE.Vector3(fit.cx, fit.face, 0);
+    }
+    zoomT = Math.max(0, Math.min(1, zoomT + (e.deltaY < 0 ? 0.25 : -0.25))); };
   cv.style.cursor = 'grab';
   // A/D (ou ←/→ no criador) giram o boneco como o mouse
   const kd = e => { const a = document.activeElement; if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return; const k = e.key.toLowerCase(); if (k === 'a') keyTurn = -1; else if (k === 'd') keyTurn = 1; };
@@ -2650,7 +2691,7 @@ function makeStage(cv) {
     setChar(obj) { if (cur) root.remove(cur.ch.obj); cur = obj; if (cur) { root.add(cur.ch.obj); cur.ch.obj.position.set(0, 0, 0); cur.ch.anim.update(0.3); } refit(); draw(0); },
     setPet(species) { if (pet) root.remove(pet.obj); pet = null; if (species && PETS[species]) { pet = makePet(species, 0); pet.obj.position.set(0.85, 0, 0.3); root.add(pet.obj); pet.animate(0, { speed: 0, turn: 0 }, 0.016); } refit(); draw(0); },
     draw: () => draw(0.016),
-    setZoom(z, now) { zoomT = z; if (now) { zoom = z; draw(0); } }, get zoom() { return zoomT; }, get fit() { return fit; }, get cur() { return cur; },
+    setZoom(z, now) { zoomAt = new THREE.Vector3(fit.cx, fit.face, 0); zoomT = z; if (now) { zoom = z; draw(0); } }, // botão "Ver rosto": aproxima do rosto get zoom() { return zoomT; }, get fit() { return fit; }, get cur() { return cur; },
     spin(d) { vel = d; idleT = 0; },
     setYaw(y) { yaw = y; vel = 0; idleT = 0; draw(0); },
     dispose() { if (!alive) return; alive = false; removeEventListener('keydown', kd); removeEventListener('keyup', ku); rr.dispose(); try { rr.forceContextLoss(); } catch (e) { } },
@@ -2668,9 +2709,9 @@ function makeStage(cv) {
     else if (!drag) { yaw += vel; vel *= 0.92; if (idleT > 4) yaw += dt * 0.25; } // inércia e giro lento quando parado
     zoom += (zoomT - zoom) * Math.min(1, dt * 8);
     if (cur) { cur.ch.obj.rotation.y = yaw; cur.ch.anim.update(dt); cur.fx(t); }
-    if (pet) { pet.obj.rotation.y = yaw * 0.6 - 0.4; pet.animate(t, { speed: 0, turn: 0 }, dt); }
-    // zoom: do corpo inteiro (com o mascote) até o rosto
-    const cx = fit.cx * (1 - zoom), cy = fit.cy + (fit.face - fit.cy) * zoom, dist = fit.dist + (1.3 - fit.dist) * zoom;
+    if (pet) { pet.obj.rotation.y = yaw; pet.animate(t, { speed: 0, turn: 0 }, dt); } // S-149: o mascote olha sempre para o mesmo lado do personagem
+    // zoom: do corpo inteiro (com o mascote) até o ponto que estava sob o cursor (S-149)
+    const zx = zoomAt.x, zy = zoomAt.y || fit.face, cx = fit.cx + (zx - fit.cx) * zoom, cy = fit.cy + (zy - fit.cy) * zoom, dist = fit.dist + (Math.max(1.1, zoomAt.z + 1.2) - fit.dist) * zoom;
     cam.position.set(cx, cy + 0.12 * (1 - zoom), dist); cam.lookAt(cx, cy, 0);
     rr.render(sc, cam);
   }
@@ -2702,7 +2743,7 @@ async function chooseCharacter() {
     <div class="cs-head"><h1>${GAME_TITLE}</h1><div class="sub">SEUS PERSONAGENS</div></div>
     <div class="cs-main">
       <button class="cs-arrow" id="cs-prev" title="Anterior (←)">‹</button>
-      <div class="cs-stage"><div class="cs-podium"></div><canvas id="cs-cv" width="760" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
+      <div class="cs-stage"><canvas id="cs-cv" width="760" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
       <button class="cs-arrow" id="cs-next" title="Próximo (→)">›</button>
       <div class="cs-info" id="cs-info"></div>
     </div>
@@ -2768,7 +2809,7 @@ function showCreate3d(list, opts = {}) {
   const PREV = ['aprendiz', 'guerreiro', 'mago', 'arqueiro', 'gatuno'].filter(k => CLASSES[k]);
   o.innerHTML = `<div class="cc">
     <div class="cc-stagewrap">
-      <div class="cc-stage"><div class="cs-podium"></div><canvas id="cc-cv" width="760" height="660"></canvas></div>
+      <div class="cc-stage"><canvas id="cc-cv" width="760" height="660"></canvas></div>
       <div class="cc-tools"><button class="btn" id="cc-l" title="Girar">⟲</button><button class="btn" id="cc-zoom">🙂 Ver rosto</button><button class="btn" id="cc-r" title="Girar">⟳</button><button class="btn" id="cc-rand">🎲 Aleatório</button></div>
       <div class="cc-prev"><span class="muted">Ver com a roupa de:</span>${PREV.map(k => `<button class="cc-chip ${k === st.cls ? 'on' : ''}" data-pc="${k}">${CLASSES[k].icon} ${CLASSES[k].name}</button>`).join('')}</div>
     </div>
@@ -2875,7 +2916,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
+const ASSET_NAMES = { ruinas: 'Ruínas', calcada_antiga: 'Calçada antiga', coluna_quebrada: 'Coluna quebrada', muro_desabado: 'Muro desabado', coluna_tombada: 'Coluna gigante tombada', pedestal_vazio: 'Pedestal vazio', escombros: 'Escombros', muralha_gelida: 'A Muralha Gélida', escadaria_da_muralha: 'Escadaria da Muralha', sarilho: 'Sarilho do elevador', elevador_de_gaiola: 'Elevador de gaiola', torre_do_comandante: 'Torre do Comandante', salao_comunal: 'Salão comunal', alojamento: 'Alojamento da Vigília', corvaria: 'Corvaria', arsenal: 'Arsenal com forja', estabulo_da_vigilia: 'Estábulo da Vigília', patio_de_treino: 'Pátio de treino', portao_da_muralha: 'Portão selado da Muralha', lenha: 'Lenha empilhada', neve: 'Neve acumulada', guilda_dos_mercadores: 'Guilda dos Mercadores', armazem: 'Armazém de carga', banca_do_mercado: 'Banca do mercado', guindaste_do_cais: 'Guindaste do cais', galeao_mercante: 'Galeão mercante', noctivago: 'Noctívago (cavalo alado)', pinesnow_0: 'Pinheiro com neve', pinesnow_1: 'Pinheiro com neve', pinesnow_2: 'Pinheiro com neve', pinesnow_3: 'Pinheiro com neve', oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
@@ -2977,7 +3018,9 @@ function installIntegration() {
   Object.assign(H3, {
     save: save3d, useItem: use3d, useSlot, levelFx, portrait, monsterThumb, monsterLive, refineFx: (ok, broke) => { ring(S.pos, ok ? 1.8 : 1.4, ok ? '#ffd76a' : broke ? '#ff4a3a' : '#9a9a9a'); if (ok) ring(S.pos, 1.0, '#fff6c0'); floatAt(S.me.obj.position, ok ? 'Refino bem-sucedido!' : broke ? 'Quebrou!' : 'Falhou', ok ? '#ffd76a' : '#ff6a5a', 2.4); },
     setPet: (k, st, force) => { if (!isAdmin() || (!G.god && !force)) return; const pt = newPet(k); pt.lv = st ? PET_EVOLVE[st] : 1; S.p.pet = pt; buildPet(); hudDirty = true; log(`⚡ Mascote trocado: ${petInfo(pt).name} (Nv. ${pt.lv}).`, 'sys'); save3d(); },
-    spawnInfo: () => { const o = {}; for (const [zone, type] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; (o[type] = o[type] || []).includes(zn.name) || o[type].push(zn.name); } return o; }, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
+    spawnInfo: () => { const o = {}, c = {}; for (const [zone, type, n] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; if (!zn) continue; const k = type + '|' + zn.name; c[k] = (c[k] || 0) + (n || 1); } for (const k in c) { const [type, name] = k.split('|'); (o[type] = o[type] || []).push(`${name} <b>×${c[k]}</b>`); } return o; }, // S-171: onde e quantos
+    zoneMobs: () => { const o = {}; for (const [zone, type, n] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; if (!zn) continue; const a = (o[zn.name] = o[zn.name] || {}); a[type] = (a[type] || 0) + (n || 1); } return o; },
+    questTargets, zoneMusic: () => (S.zone ? S.zone.music : 'vila'),
     setPaused: on => { G.paused = on; mouse.left = mouse.right = false; for (const k in keys) keys[k] = false; if (Sound.music) Sound.music.gain.setTargetAtTime((on ? 0.05 : 0.16) * Sound.mv(), Sound.ctx.currentTime, 0.2); updatePauseBar(); },
     say: txt => floatAt(S.me.obj.position, '💬 ' + txt, '#ffffff', 2.6),
   });
@@ -3069,6 +3112,21 @@ function adminRender() {
   cv.onclick = e => { const w = toWorld(e); UI.close('admin'); teleport3d(w.x, w.z); log(`Teleportado para (${Math.round(w.x)}, ${Math.round(w.z)}).`); };
   drawAdmMap(cv);
 }
+/* S-176: onde fazer cada missão — pontos no mapa (NPC para falar/entregar, regiões dos monstros ou de quem deixa cair o item) */
+function zonePos(zoneId) { const z = ZONES.find(q => q.id === zoneId); if (z) return { x: z.x, z: z.z, name: z.name }; const I = INTERIORS[zoneId]; if (I && I.door) return { x: I.door.x, z: I.door.z, name: I.name || zoneId }; return null; }
+function questTargets(id) {
+  const q = QUESTS[id], p = S.p; if (!q) return [];
+  const pr = questProgress(p, id), ready = pr && pr.every(x => x.have >= x.need), out = [];
+  const npcAt = nid => { const n = S.npcs.find(x => x.id === nid); if (!n) return null; if (Math.abs(n.x) > HALF + 50) { const I = Object.values(INTERIORS).find(I => Math.abs(n.x - I.x) < (I.w || 40) && Math.abs(n.z - I.z) < (I.d || 40)); return I && I.door ? { x: I.door.x, z: I.door.z, name: n.name } : null; } return { x: n.x, z: n.z, name: n.name }; };
+  if (ready) { const t = npcAt(q.turnIn); if (t) out.push({ ...t, kind: '?', label: `Entregar: ${t.name}` }); return out; }
+  for (const x of pr) { if (x.have >= x.need) continue; const o = x.o;
+    if (o.talk) { const t = npcAt(o.talk); if (t) out.push({ ...t, kind: '!', label: `Falar com ${t.name}` }); }
+    const mons = o.kill ? [o.kill] : o.collect ? Object.keys(MONSTERS).filter(mid => (MONSTERS[mid].drops || []).some(d => d[0] === o.collect)) : [];
+    const zones = new Set(); for (const [zid, mid] of SPAWNS) if (mons.includes(mid)) zones.add(zid);
+    for (const zid of zones) { const zp = zonePos(zid); if (zp) out.push({ ...zp, kind: '⚔', label: `${o.kill ? MONSTERS[o.kill].name : ITEMS[o.collect].name} · ${zp.name}` }); }
+  }
+  return out;
+}
 function drawAdmMap(cv) {
   const c = cv.getContext('2d'), W = cv.width, pt = (x, z) => [(x / HALF + 1) / 2 * W, (z / HALF + 1) / 2 * W];
   c.imageSmoothingEnabled = true; c.drawImage(worldMap, 0, 0, W, W);
@@ -3079,6 +3137,12 @@ function drawAdmMap(cv) {
   for (const z of ZONES) { const [x, y] = pt(z.x, z.z); label(z.name, x, y - 22, 15, '#ffe9a8'); c.font = '11px Nunito'; c.fillStyle = '#e8dcc0'; c.fillText(z.lvl, x, y - 6); }
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) { const [x, y] = pt(m.x, m.z); c.font = '15px sans-serif'; c.fillText(m.def.boss ? '👑' : '💀', x, y); }
   for (const n of S.npcs) { if (Math.abs(n.x) > HALF) continue; const [x, y] = pt(n.x, n.z); c.fillStyle = '#ffe36a'; c.font = '13px sans-serif'; c.fillText('★', x, y); }
+  // S-176: marcadores das missões ativas (a selecionada pisca)
+  if (S.p && typeof QUESTS !== 'undefined') { const act = Object.keys(questState(S.p).active), selQ = UI.qSel || act[0];
+    for (const qid of act) for (const tg of questTargets(qid)) { const [x, y] = pt(tg.x, tg.z), on = qid === selQ, pulse = on ? 1 + Math.sin(performance.now() / 200) * 0.25 : 1;
+      c.fillStyle = on ? 'rgba(255,216,74,0.30)' : 'rgba(255,216,74,0.14)'; c.beginPath(); c.arc(x, y, (tg.kind === '⚔' ? 22 : 12) * pulse, 0, 7); c.fill();
+      c.font = `900 ${on ? 18 : 14}px Cinzel, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = 'rgba(20,14,4,0.9)'; c.strokeText(tg.kind, x, y); c.fillStyle = '#ffd84a'; c.fillText(tg.kind, x, y);
+      if (on) { c.font = '700 11px Nunito'; c.strokeText(tg.label, x, y + 18); c.fillStyle = '#fff3c4'; c.fillText(tg.label, x, y + 18); } } }
   const MP = S.interior ? S.interior.back : S.pos; const [px, py] = pt(MP.x, MP.z);
   c.fillStyle = 'rgba(58,140,255,0.25)'; c.beginPath(); c.arc(px, py, 14, 0, 7); c.fill();
   c.save(); c.translate(px, py); c.rotate(-S.pos.yaw + Math.PI); c.fillStyle = '#fff'; c.strokeStyle = '#1a3a8a'; c.lineWidth = 2;

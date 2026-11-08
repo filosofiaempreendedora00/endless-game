@@ -63,3 +63,61 @@ const BOSS_ICONS = {
 for (const id in BOSS_ICONS) if (ITEMS[id]) ITEMS[id].iconRecipe = BOSS_ICONS[id];
 for (const id in ITEMS) ITEMS[id].id = id;
 for (const id of ['kharzul', 'maldoran', 'vharnyr', 'selvara']) MONSTERS[id].drops.push(['ferrolume', 0.5], ['pedra_egide', 0.6]);
+
+/* =========================================================================
+   BICHOS DAS DUNAS DE SAL-RUBRO (S-167, S-169) — visual em js3d/critters.js
+   (formas cactus, saltlizard, scorpion, ant, runnerbird). Originais, só inspirados na sensação
+   dos monstros clássicos de deserto.
+   ========================================================================= */
+Object.assign(ITEMS, {
+  flor_de_mandacaru: { name: 'Flor de Mandacaru', type: 'etc', icon: '🌸', price: 180, desc: 'Flor rosada que só abre à noite. Os alquimistas pagam bem por ela.', iconRecipe: ['flowers', {}] },
+  escama_de_sal: { name: 'Escama de Sal', type: 'etc', icon: '🧂', price: 260, desc: 'Escama coberta de cristais de sal do Lagarto-de-Sal.', iconRecipe: ['crystal', { c: '#e8dcc8', c2: '#ffffff' }] },
+  ferrao_rubro: { name: 'Ferrão Rubro', type: 'etc', icon: '🦂', price: 240, desc: 'Ainda pinga um veneno esverdeado. Cuidado ao guardar.', iconRecipe: ['stinger', {}] },
+  mandibula_ceifadora: { name: 'Mandíbula Ceifadora', type: 'etc', icon: '🐜', price: 200, desc: 'Curva como uma foice e dura como ferro.', iconRecipe: ['fang', {}] },
+  pena_dourada: { name: 'Pena Dourada', type: 'etc', icon: '🪶', price: 300, desc: 'Pena macia do Trotavento. Dizem que dá sorte nas viagens.', iconRecipe: ['leaf', { c: '#e8b648' }] },
+});
+Object.assign(MONSTERS, {
+  mandacaru: {
+    name: 'Mandacaru Andarilho', lv: 29, hp: 1500, atk: [58, 76], def: 22, exp: 610, jexp: 460, element: 'terra', shape: 'cactus', color: '#5f9a3e',
+    size: 1, speed: 45, aggressive: false, race: 'Planta', icon: '🌵',
+    drops: [['flor_de_mandacaru', 0.45], ['broto_umido', 0.3], ['pocao_vermelha', 0.1], ['frutinha_azul', 0.15]],
+    card: { equip: 'escudo', bonuses: { def: 4, resist: { vento: 10 } } },
+  },
+  escorpiao_rubro: {
+    name: 'Escorpião-Rubro', lv: 32, hp: 1750, atk: [70, 92], def: 30, exp: 720, jexp: 540, element: 'fogo', shape: 'scorpion', color: '#8a2a1a',
+    size: 1.25, speed: 62, aggressive: true, aggroRange: 6, race: 'Inseto', icon: '🦂',
+    drops: [['ferrao_rubro', 0.45], ['brasa_viva', 0.2], ['pocao_vermelha', 0.12], ['adaga_afiada', 0.01]],
+    card: { equip: 'arma', bonuses: { atk: 10, dmgVs: { terra: 10 } } },
+  },
+  formiga_ceifadora: {
+    name: 'Formiga Ceifadora', lv: 27, hp: 1200, atk: [55, 72], def: 26, exp: 540, jexp: 400, element: 'terra', shape: 'ant', color: '#6a2414',
+    size: 1.35, speed: 70, aggressive: true, aggroRange: 5, race: 'Inseto', icon: '🐜',
+    drops: [['mandibula_ceifadora', 0.45], ['fragmento_ferro', 0.15], ['pocao_vermelha', 0.1]],
+    card: { equip: 'botas', bonuses: { agi: 2, flee: 5 } },
+  },
+  lagarto_sal: {
+    name: 'Lagarto-de-Sal', lv: 36, hp: 2300, atk: [82, 108], def: 34, exp: 960, jexp: 720, element: 'terra', shape: 'saltlizard', color: '#c9a06a',
+    size: 1.25, speed: 58, aggressive: true, aggroRange: 6, race: 'Fera', icon: '🦎',
+    drops: [['escama_de_sal', 0.45], ['carne_assada', 0.3], ['pocao_azul', 0.05], ['colete_couro', 0.02]],
+    card: { equip: 'armadura', bonuses: { def: 5, resist: { fogo: 10 } } },
+  },
+  trotavento_selvagem: {
+    name: 'Trotavento Selvagem', lv: 34, hp: 2000, atk: [76, 98], def: 24, exp: 840, jexp: 630, element: 'vento', shape: 'runnerbird', color: '#c9a066',
+    size: 0.85, speed: 85, aggressive: false, race: 'Fera', icon: '🐦', flee: 70,
+    drops: [['pena_dourada', 0.5], ['carne_assada', 0.35], ['faixa_de_penas', 0.02]],
+    card: { equip: 'capa', bonuses: { agi: 3, aspdPct: 3 } },
+  },
+});
+for (const id of ['mandacaru', 'escorpiao_rubro', 'formiga_ceifadora', 'lagarto_sal', 'trotavento_selvagem']) {
+  const m = MONSTERS[id];
+  m.id = id;
+  m.hit = m.hit ?? Math.round(m.lv * 1.5 + 18);
+  m.flee = m.flee ?? Math.round(m.lv * 1.2 + 4);
+  m.mdef = m.mdef ?? Math.floor(m.def / 2);
+  m.aggroRange = m.aggroRange ?? 6;
+  m.aspd = m.aspd ?? 1500;
+  m.range = m.range ?? 1.2;
+  m.drops.push(['ferrolume', 0.025], ['pedra_egide', 0.03]);
+  if (m.card) ITEMS['carta_' + id] = { name: 'Carta ' + m.name, type: 'carta', icon: '🃏', price: 20, equip: m.card.equip, bonuses: m.card.bonuses, monster: id, desc: `Encaixe em: ${SLOT_NAMES[m.card.equip]}. Uma vez inserida, não pode ser removida.` };
+}
+for (const id in ITEMS) ITEMS[id].id = id;

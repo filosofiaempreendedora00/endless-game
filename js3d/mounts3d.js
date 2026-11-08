@@ -16,6 +16,7 @@ export const MOUNTS = {
   // S-136: grandes felinos (premium) — anatomia de felino de verdade, pelagem fina pintada (sem "espinhos")
   leopardo: { name: 'Leopardo das Dunas', premium: true, price: 1500, rarity: 'epica', cat: 'leopardo', desc: 'Felino dourado com rosetas escuras: silencioso, ágil e elegante.', wool: '#d9a85a', skin: '#2a1e16', horn: '#f3e2c0', mane: '#3a2614', blanket: '#7a1f2a' },
   pantera_neve: { name: 'Pantera da Geada', premium: true, price: 1500, rarity: 'epica', cat: 'neve', desc: 'Pelagem cinza-gelo com rosetas de carvão e cauda longa e felpuda, nascida no Vale da Geada.', wool: '#d8d8d2', skin: '#3a3a40', horn: '#f4f4ee', mane: '#4a4a52', blanket: '#2a4a7a' },
+  trotavento: { name: 'Trotavento', premium: true, price: 1200, rarity: 'rara', bird: 'trotavento', desc: 'Ave corredora das Dunas de Sal-Rubro: penas douradas, topete vermelho e pernas que não cansam. Não voa, mas ninguém a alcança.', wool: '#e8b648', skin: '#d98a3a', horn: '#f08a1e', mane: '#d8502a', blanket: '#2a5a7a' },
   leao: { name: 'Leão Solar', premium: true, price: 2400, rarity: 'lendaria', cat: 'leao', desc: 'Leão imponente de juba dourada que brilha ao sol: o rei das montarias.', wool: '#c99a5a', skin: '#3a2618', horn: '#ffd76a', mane: '#8a4a1e', blanket: '#5a2a8a', glow: true },
 };
 export const MOUNT_SPEED = 1.7; // multiplicador de velocidade montado
@@ -37,6 +38,7 @@ const blob = (r, sx, sy, sz, m, x, y, z, seg = 18) => { const o = new THREE.Mesh
 export function makeMount(kind = 'lanudo') {
   const D = MOUNTS[kind] || MOUNTS.lanudo;
   if (D.cat) return makeBigCat(D);
+  if (D.bird) return makeRunnerBird(D);
   const obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
   const coatC = new THREE.Color(D.wool);
   const COAT = M(coatC, { roughness: 0.65 }), BELLY = M(coatC.clone().offsetHSL(0, -0.05, 0.06), { roughness: 0.7 });
@@ -206,21 +208,26 @@ for (const s of [-1, 1]) Object.assign(CAT_BONES, {
 const catGeoCache = {};
 function catGeometry(kind) {
   if (catGeoCache[kind]) return catGeoCache[kind];
-  const parts = catParts(kind), H = 0.022, X0 = -0.5, Y0 = -0.02, Z0 = -1.02, NX = Math.ceil(1.0 / H) + 1, NY = Math.ceil(1.72 / H) + 1, NZ = Math.ceil(2.32 / H) + 1;
+  return (catGeoCache[kind] = sdfSkinnedGeometry(catParts(kind), CAT_BONES, [-0.5, -0.02, -1.02], [1.0, 1.72, 2.32], 0.022));
+}
+/* Gera uma malha orgânica (com pele presa a ossos) a partir de partes de um campo de distância
+   (cápsulas {a,b,r0,r1,bone,k} e elipsoides {c,r,bone,k}) unidas suavemente: "surface nets".
+   Usado pelos felinos, pelo Trotavento e pelos bichos do deserto (critters). bones = { nome: [pai, [x,y,z]] } */
+export function sdfSkinnedGeometry(parts, BONES, org, size, H) {
+  const [X0, Y0, Z0] = org, NX = Math.ceil(size[0] / H) + 1, NY = Math.ceil(size[1] / H) + 1, NZ = Math.ceil(size[2] / H) + 1;
   const F = new Float32Array(NX * NY * NZ).fill(0.25), id = (i, j, k) => (k * NY + j) * NX + i;
   const field = (x, y, z) => { let d = 0.25; for (const P of parts) d = smin(d, sdPrim(x, y, z, P), P.k); return d; };
-  // cada parte só é calculada dentro da sua caixa (o resto do volume fica "fora"): rápido
   for (const P of parts) {
     const pad = P.k + 0.05, lo = P.a ? [0, 1, 2].map(q => Math.min(P.a[q], P.b[q]) - Math.max(P.r0, P.r1) - pad) : P.c.map((c, q) => c - P.r[q] - pad), hi = P.a ? [0, 1, 2].map(q => Math.max(P.a[q], P.b[q]) + Math.max(P.r0, P.r1) + pad) : P.c.map((c, q) => c + P.r[q] + pad);
     const i0 = Math.max(0, Math.floor((lo[0] - X0) / H)), i1 = Math.min(NX - 1, Math.ceil((hi[0] - X0) / H)), j0 = Math.max(0, Math.floor((lo[1] - Y0) / H)), j1 = Math.min(NY - 1, Math.ceil((hi[1] - Y0) / H)), k0 = Math.max(0, Math.floor((lo[2] - Z0) / H)), k1 = Math.min(NZ - 1, Math.ceil((hi[2] - Z0) / H));
     for (let k = k0; k <= k1; k++) for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const n = id(i, j, k); F[n] = smin(F[n], sdPrim(X0 + i * H, Y0 + j * H, Z0 + k * H, P), P.k); }
   }
   const vIdx = new Int32Array(NX * NY * NZ).fill(-1), pos = [];
+  const E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
   for (let k = 0; k < NZ - 1; k++) for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
     let sx = 0, sy = 0, sz = 0, n = 0, neg = 0;
     for (let c = 0; c < 8; c++) if (F[id(i + (c & 1), j + ((c >> 1) & 1), k + (c >> 2))] < 0) neg++;
     if (neg === 0 || neg === 8) continue;
-    const E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
     for (const [a, b] of E) {
       const ai = i + (a & 1), aj = j + ((a >> 1) & 1), ak = k + (a >> 2), bi = i + (b & 1), bj = j + ((b >> 1) & 1), bk = k + (b >> 2);
       const fa = F[id(ai, aj, ak)], fb = F[id(bi, bj, bk)]; if ((fa < 0) === (fb < 0)) continue;
@@ -231,20 +238,17 @@ function catGeometry(kind) {
   const idx = [];
   for (let k = 1; k < NZ - 1; k++) for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) {
     const f0 = F[id(i, j, k)] < 0;
-    // aresta em x: quads com as células (j-1..j, k-1..k)
     if ((F[id(i + 1, j, k)] < 0) !== f0) { const a = vIdx[id(i, j - 1, k - 1)], b = vIdx[id(i, j, k - 1)], c = vIdx[id(i, j, k)], d = vIdx[id(i, j - 1, k)]; if (a >= 0 && b >= 0 && c >= 0 && d >= 0) f0 ? idx.push(a, b, c, a, c, d) : idx.push(a, c, b, a, d, c); }
     if ((F[id(i, j + 1, k)] < 0) !== f0) { const a = vIdx[id(i - 1, j, k - 1)], b = vIdx[id(i, j, k - 1)], c = vIdx[id(i, j, k)], d = vIdx[id(i - 1, j, k)]; if (a >= 0 && b >= 0 && c >= 0 && d >= 0) f0 ? idx.push(a, c, b, a, d, c) : idx.push(a, b, c, a, c, d); }
     if ((F[id(i, j, k + 1)] < 0) !== f0) { const a = vIdx[id(i - 1, j - 1, k)], b = vIdx[id(i, j - 1, k)], c = vIdx[id(i, j, k)], d = vIdx[id(i - 1, j, k)]; if (a >= 0 && b >= 0 && c >= 0 && d >= 0) f0 ? idx.push(a, b, c, a, c, d) : idx.push(a, c, b, a, d, c); }
   }
   const nv = pos.length / 3, nrm = new Float32Array(nv * 3), e = H * 0.5;
-  // normais pelo gradiente do campo (lisas, sem facetas)
   for (let v = 0; v < nv; v++) {
     const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2];
-    let gx = field(x + e, y, z) - field(x - e, y, z), gy = field(x, y + e, z) - field(x, y - e, z), gz = field(x, y, z + e) - field(x, y, z - e); const l = len3(gx, gy, gz) || 1;
+    const gx = field(x + e, y, z) - field(x - e, y, z), gy = field(x, y + e, z) - field(x, y - e, z), gz = field(x, y, z + e) - field(x, y, z - e), l = len3(gx, gy, gz) || 1;
     nrm[v * 3] = gx / l; nrm[v * 3 + 1] = gy / l; nrm[v * 3 + 2] = gz / l;
   }
-  // pele: cada vértice segue os ossos das partes mais próximas (até 4), com transição suave nas juntas
-  const names = Object.keys(CAT_BONES), bi = new Uint16Array(nv * 4), bw = new Float32Array(nv * 4);
+  const names = Object.keys(BONES), bi = new Uint16Array(nv * 4), bw = new Float32Array(nv * 4);
   for (let v = 0; v < nv; v++) {
     const x = pos[v * 3], y = pos[v * 3 + 1], z = pos[v * 3 + 2], acc = {};
     let dmin = 1e9; const ds = parts.map(P => { const d = sdPrim(x, y, z, P); if (d < dmin) dmin = d; return d; });
@@ -256,7 +260,16 @@ function catGeometry(kind) {
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
   g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(bi, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(bw, 4));
   g.setIndex(idx); g.computeBoundingSphere();
-  return (catGeoCache[kind] = g);
+  return g;
+}
+// monta o esqueleto e a malha com pele; at(osso, malha, x,y,z) prende uma peça a um osso na posição do mundo de repouso
+export function sdfRig(geo, BONES, material) {
+  const bones = {}; for (const n of Object.keys(BONES)) { const b = new THREE.Bone(); b.name = 'r_' + n; bones[n] = b; }
+  for (const [n, [par, p]] of Object.entries(BONES)) { const pp = par ? BONES[par][1] : [0, 0, 0]; bones[n].position.set(p[0] - pp[0], p[1] - pp[1], p[2] - pp[2]); if (par) bones[par].add(bones[n]); }
+  const root = Object.keys(BONES).find(n => !BONES[n][0]), skel = new THREE.Skeleton(Object.keys(BONES).map(n => bones[n]));
+  const mesh = new THREE.SkinnedMesh(geo, material); mesh.add(bones[root]); mesh.bind(skel); mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
+  const at = (bn, o, x, y, z) => { const p = BONES[bn][1]; o.position.set(x - p[0], y - p[1], z - p[2]); bones[bn].add(o); o.traverse(c => { if (c.isMesh) c.castShadow = true; }); return o; };
+  return { mesh, bones, at, R: n => bones[n].rotation };
 }
 // pelagem pintada no material (em 3D, presa ao corpo): rosetas, barriga clara, fios finos
 const NOISE_GLSL = `
@@ -377,4 +390,157 @@ function makeBigCat(D) {
     },
     get bodyY() { return body.position.y; },
   };
+}
+
+export { NOISE_GLSL as SDF_NOISE_GLSL };
+
+/* =========================================================================
+   TROTAVENTO (S-167): grande ave corredora das dunas — não voa, corre. Original:
+   corpo fofo de penas douradas, pescoço longo, bico curvo laranja, topete de plumas,
+   asinhas de penas compridas, leque de cauda e pernas fortes com escamas e três dedos.
+   Uma malha orgânica só (campo de distância + pele com ossos); penas pintadas no material.
+   Serve como montaria (com sela) e como bicho selvagem nas Dunas (sem sela).
+   ========================================================================= */
+const BIRD_COL = {
+  trotavento: { base: '#e8b648', back: '#c98a2a', belly: '#f7e6b4', wing: '#a8661e', crest: '#d8502a', beak: '#f08a1e', leg: '#d98a3a', eye: '#4a2a12' },
+  selvagem: { base: '#c9a066', back: '#8a5e32', belly: '#efdcb4', wing: '#6a4220', crest: '#b8301e', beak: '#e0782a', leg: '#b8763a', eye: '#2a1608' },
+};
+const BIRD_BONES = { root: [null, [0, 0, 0]], hips: ['root', [0, 1.12, -0.15]], chest: ['hips', [0, 1.18, 0.25]], neck1: ['chest', [0, 1.33, 0.44]], neck2: ['neck1', [0, 1.6, 0.52]], head: ['neck2', [0, 1.88, 0.58]], tail: ['hips', [0, 1.24, -0.55]] };
+for (const s of [-1, 1]) Object.assign(BIRD_BONES, {
+  ['wi' + s]: ['chest', [s * 0.3, 1.3, 0.18]], ['th' + s]: ['hips', [s * 0.17, 1.0, 0.0]], ['sh' + s]: ['th' + s, [s * 0.19, 0.68, 0.14]],
+  ['ta' + s]: ['sh' + s, [s * 0.19, 0.4, -0.06]], ['ft' + s]: ['ta' + s, [s * 0.19, 0.06, 0.03]],
+});
+function birdParts() {
+  const P = [], C = (a, b, r0, r1, bone, k = 0.06) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.07) => P.push({ c, r, bone, k });
+  E([0, 1.14, -0.06], [0.34, 0.32, 0.5], 'hips', 0.1);
+  E([0, 1.2, 0.24], [0.3, 0.33, 0.28], 'chest', 0.1);
+  E([0, 1.06, 0.12], [0.26, 0.24, 0.3], 'chest', 0.1); // peito estufado
+  E([0, 1.22, -0.5], [0.24, 0.21, 0.22], 'tail', 0.1);
+  C([0, 1.28, 0.42], [0, 1.6, 0.52], 0.19, 0.13, 'neck1', 0.09);
+  E([0, 1.36, 0.46], [0.2, 0.2, 0.17], 'neck1', 0.09); // gola fofa na base do pescoço
+  C([0, 1.6, 0.52], [0, 1.86, 0.57], 0.13, 0.11, 'neck2', 0.07);
+  E([0, 1.94, 0.6], [0.135, 0.135, 0.155], 'head', 0.05);
+  E([0, 2.0, 0.55], [0.08, 0.055, 0.1], 'head', 0.04);
+  for (const s of [-1, 1]) E([s * 0.058, 1.895, 0.63], [0.07, 0.068, 0.08], 'head', 0.04); // bochechas
+  C([0, 1.93, 0.69], [0, 1.905, 0.84], 0.062, 0.03, 'head', 0.025); // bico (de cima), curvo na ponta
+  C([0, 1.905, 0.84], [0, 1.865, 0.895], 0.03, 0.01, 'head', 0.015);
+  C([0, 1.885, 0.68], [0, 1.858, 0.83], 0.045, 0.012, 'head', 0.02);  // bico (de baixo)
+  for (const s of [-1, 1]) {
+    E([s * 0.29, 1.24, 0.02], [0.06, 0.17, 0.3], 'wi' + s, 0.06);
+    E([s * 0.17, 0.96, 0.04], [0.13, 0.2, 0.17], 'th' + s, 0.08);
+    C([s * 0.18, 0.92, 0.06], [s * 0.19, 0.68, 0.14], 0.11, 0.07, 'th' + s, 0.06);
+    C([s * 0.19, 0.68, 0.14], [s * 0.19, 0.4, -0.06], 0.066, 0.046, 'sh' + s, 0.04);
+    C([s * 0.19, 0.4, -0.06], [s * 0.19, 0.08, 0.03], 0.043, 0.038, 'ta' + s, 0.03);
+    E([s * 0.19, 0.06, 0.04], [0.05, 0.035, 0.06], 'ft' + s, 0.03);
+    C([s * 0.19, 0.05, 0.05], [s * 0.19, 0.03, 0.25], 0.03, 0.013, 'ft' + s, 0.02);
+    C([s * 0.19, 0.05, 0.05], [s * 0.19 + 0.09, 0.03, 0.19], 0.026, 0.011, 'ft' + s, 0.02);
+    C([s * 0.19, 0.05, 0.05], [s * 0.19 - 0.09, 0.03, 0.19], 0.026, 0.011, 'ft' + s, 0.02);
+    C([s * 0.19, 0.06, 0.02], [s * 0.19, 0.03, -0.09], 0.022, 0.011, 'ft' + s, 0.02);
+  }
+  return P;
+}
+let birdGeo = null;
+function birdMaterial(C) {
+  const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.85 });
+  m.onBeforeCompile = sh => {
+    const u = {}; for (const k of ['base', 'back', 'belly', 'wing', 'crest', 'beak', 'leg']) u['u' + k] = { value: new THREE.Color(C[k]) };
+    Object.assign(sh.uniforms, u);
+    sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position; vON = normal;');
+    sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform vec3 ubase, uback, ubelly, uwing, ucrest, ubeak, uleg;\n' + NOISE_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      vec3 p = vOP; vec3 n = normalize(vON);
+      // penas: base dourada, costas mais escuras, peito e barriga claros
+      vec3 col = mix(ubase, uback, smoothstep(0.2, 0.9, n.y) * smoothstep(1.05, 1.35, p.y) * (1.0 - smoothstep(1.55, 1.7, p.y)));
+      col = mix(col, ubelly, smoothstep(0.1, -0.7, n.y) * smoothstep(0.55, 0.95, p.y) + smoothstep(0.55, 0.95, n.z) * smoothstep(0.85, 1.3, p.y) * smoothstep(0.2, 0.45, p.z) * 0.6);
+      col = mix(col, uwing, smoothstep(0.27, 0.36, abs(p.x)) * smoothstep(1.0, 1.15, p.y) * (1.0 - smoothstep(1.45, 1.55, p.y)) * 0.45 * smoothstep(-0.3, -0.6, p.z + 0.0 * n.x));
+      // escamas de pena (ponta de cada pena mais clara) + fios finos
+      vec2 w = worley(p * vec3(26.0, 34.0, 26.0) + vn(p * 5.0) * 0.6); col *= 0.92 + 0.1 * smoothstep(0.05, 0.6, w.x);
+      col *= 0.92 + 0.12 * vn(p * vec3(90.0, 30.0, 90.0));
+      // bico laranja (ponta mais escura) e pernas com escamas
+      float beak = smoothstep(0.72, 0.75, p.z) * smoothstep(1.8, 1.83, p.y);
+      col = mix(col, mix(ubeak, ubeak * 0.55, smoothstep(0.78, 0.9, p.z)), beak);
+      float leg = (1.0 - smoothstep(0.62, 0.7, p.y)) * smoothstep(0.08, 0.12, abs(p.x));
+      vec2 sc = worley(p * 60.0); col = mix(col, uleg * (0.75 + 0.35 * smoothstep(0.1, 0.5, sc.x)), leg);
+      diffuseColor.rgb *= col;`);
+  };
+  m.customProgramCacheKey = () => 'bird-' + C.base;
+  return m;
+}
+// pena: folha lisa com nervura (cor por vértice: base → ponta)
+function featherGeo(len, wid, c0, c1) {
+  const g = new THREE.SphereGeometry(1, 16, 10); g.scale(wid, 0.12 * wid, len / 2); g.translate(0, 0, len / 2);
+  const P = g.attributes.position, col = new Float32Array(P.count * 3), a = new THREE.Color(c0), b = new THREE.Color(c1), c = new THREE.Color();
+  for (let i = 0; i < P.count; i++) { const t = P.getZ(i) / len; P.setY(i, P.getY(i) + Math.sin(t * Math.PI) * 0.15 * wid - t * t * 0.25 * len * 0.3); c.copy(a).lerp(b, Math.pow(t, 1.5)); if (Math.abs(P.getX(i)) < wid * 0.08) c.multiplyScalar(0.8); col.set([c.r, c.g, c.b], i * 3); }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); return g;
+}
+export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
+  const C = BIRD_COL[D.bird] || BIRD_COL.trotavento, obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
+  if (!birdGeo) birdGeo = sdfSkinnedGeometry(birdParts(), BIRD_BONES, [-0.52, -0.02, -0.86], [1.04, 2.16, 1.88], 0.024);
+  const rig = sdfRig(birdGeo, BIRD_BONES, birdMaterial(C)), { at, R, bones } = rig; body.add(rig.mesh);
+  const FM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, side: THREE.DoubleSide });
+  // olhos grandes e expressivos (íris escura com brilho, pálpebra que pisca)
+  const lids = [];
+  for (const s of [-1, 1]) {
+    const eg = new THREE.Group(); eg.rotation.set(-0.05, s * 0.62, 0); at('head', eg, s * 0.108, 1.96, 0.68);
+    eg.add(new THREE.Mesh(new THREE.SphereGeometry(0.034, 22, 16), new THREE.MeshStandardMaterial({ color: '#f3ead6', roughness: 0.3 }))).scale.set(1, 1.08, 0.5);
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.027, 22, 16), new THREE.MeshStandardMaterial({ color: '#7a4a1a', roughness: 0.15 })); iris.scale.set(1, 1.08, 0.45); iris.position.z = 0.012; eg.add(iris);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.016, 18, 12), new THREE.MeshStandardMaterial({ color: '#120804', roughness: 0.1 })); pu.scale.set(1, 1.1, 0.4); pu.position.z = 0.019; eg.add(pu);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.009, 0.011, 0.026); eg.add(hl);
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.037, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: C.base, roughness: 0.8 })); lid.scale.set(1, 1.08, 0.58); lid.rotation.x = -1.25; eg.add(lid); lids.push(lid);
+    const brow = new THREE.Mesh(taper([V(-0.035, -0.006, 0), V(0, 0.008, 0.006), V(0.035, -0.006, 0)], 0.008, 0.006, 10, 8), new THREE.MeshStandardMaterial({ color: C.back, roughness: 0.8 })); brow.position.set(0, 0.05, 0.004); eg.add(brow);
+  }
+  // topete de plumas (o "charme" do bicho) e leque da cauda
+  const crest = [];
+  for (let k = 0; k < 9; k++) { const a = (k - 4) / 4; const f = new THREE.Mesh(featherGeo(0.2 + (1 - Math.abs(a)) * 0.1, 0.026, C.crest, C.base), FM); const g = new THREE.Group(); g.rotation.set(-0.9 - (k % 3) * 0.18, a * 0.5, 0); g.add(f); at('head', g, a * 0.035, 2.03, 0.58 - (k % 3) * 0.02); crest.push(g); }
+  const fan = [];
+  for (let k = 0; k < 9; k++) { const a = (k - 4) / 4; const f = new THREE.Mesh(featherGeo(0.42 - Math.abs(a) * 0.08, 0.055, C.back, k % 2 ? C.crest : C.wing), FM); const g = new THREE.Group(); g.rotation.set(-2.5 + Math.abs(a) * 0.25, a * 0.75, a * 0.3); g.add(f); at('tail', g, a * 0.08, 1.3, -0.62); fan.push(g); }
+  for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { const f = new THREE.Mesh(featherGeo(0.3 + k * 0.04, 0.045, C.wing, C.back), FM); const g = new THREE.Group(); g.rotation.set(-2.85 + k * 0.08, s * 0.08, s * 0.1); g.add(f); at('wi' + s, g, s * (0.36 - k * 0.012), 1.17 - k * 0.04, -0.15); }
+  // sela (só na montaria)
+  if (opts.saddle !== false) {
+    const LEATHER = new THREE.MeshStandardMaterial({ color: '#5a3a22', roughness: 0.55 }), METAL = new THREE.MeshStandardMaterial({ color: '#c9b07a', roughness: 0.3, metalness: 0.6 });
+    const saddle = new THREE.Group(); at('hips', saddle, 0, 0, 0);
+    const blanket = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.56, 28, 1, true, -Math.PI * 0.4, Math.PI * 0.8), new THREE.MeshStandardMaterial({ color: D.blanket || '#3a6a8a', roughness: 0.8, side: THREE.DoubleSide }));
+    blanket.rotation.x = Math.PI / 2; blanket.rotation.y = Math.PI; blanket.position.set(0, 1.17, 0.02); saddle.add(blanket);
+    const seat = new THREE.Mesh(taper([V(0, 0, -0.24), V(0, -0.03, -0.04), V(0, -0.02, 0.12), V(0, 0.05, 0.22)], 0.17, 0.11, 12, 14), LEATHER); seat.scale.set(1.1, 0.42, 1); seat.position.set(0, 1.47, 0.02); saddle.add(seat);
+    saddle.add(blob(0.065, 1, 1.3, 0.8, LEATHER, 0, 1.54, 0.24, 12));
+    for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.011, 8, 22), METAL); st.position.set(s * 0.37, 0.92, 0.04); saddle.add(st); const strap = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.46, 0.035), LEATHER); strap.position.set(s * 0.355, 1.16, 0.04); strap.rotation.z = s * 0.08; saddle.add(strap); }
+    saddle.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  }
+  let ph = 0, gait = 0, run = 0, air = 0, look = 0, pitch = 0, blinkAt = 2, kickT = -9, lt = 0, peck = 0;
+  const api = {
+    obj, saddleY: 1.45, name: D.name,
+    attack() { kickT = lt; },
+    animate(t, m, dt) {
+      lt = t; const s = m.speed;
+      gait += (Math.min(1, s * 1.4) - gait) * (1 - Math.exp(-dt * 6));
+      run += ((s > 0.9 ? 1 : 0) - run) * (1 - Math.exp(-dt * 4));
+      air += ((m.air ? 1 : 0) - air) * (1 - Math.exp(-dt * 10));
+      ph += dt * (2.6 + s * 8.5);
+      const kk = (t - kickT) / 0.55, kick = kk > 0 && kk < 1 ? Math.sin(kk * Math.PI) : 0, wind = kk > 0 && kk < 0.35 ? Math.sin(kk / 0.35 * Math.PI) : 0;
+      for (const sd of [-1, 1]) {
+        const p = ph + (sd > 0 ? Math.PI : 0), sw = Math.sin(p), lift = Math.max(0, Math.cos(p)), g = gait * (1 - air), amp = 0.42 + run * 0.35;
+        const kicker = sd > 0 ? kick : 0; // chute com a pata direita (golpe do bicho selvagem)
+        R('th' + sd).x = -sw * amp * g - 0.55 * air - kicker * 1.1 + (sd > 0 ? wind * 0.4 : 0);
+        R('sh' + sd).x = lift * (0.5 + run * 0.3) * g + 0.9 * air + kicker * 0.4;  // joelho
+        R('ta' + sd).x = -lift * (0.9 + run * 0.5) * g - 1.4 * air - kicker * 0.6; // o tornozelo dobra ao levantar
+        R('ft' + sd).x = lift * 0.9 * g + 0.8 * air - kicker * 0.5; // dedos se fecham no ar
+      }
+      body.position.y = Math.abs(Math.sin(ph)) * (0.03 + run * 0.06) * gait * (1 - air) + Math.sin(t * 1.5) * 0.008 * (1 - gait);
+      pitch += ((m.air ? (m.vy > 0 ? 0.15 : -0.12) : 0.12 * run * gait) - pitch) * (1 - Math.exp(-dt * 6));
+      body.rotation.x = pitch; body.rotation.z = -m.turn * 0.06 * gait + Math.sin(ph) * 0.025 * gait;
+      // cabeça: balança como a de uma ave andando (vai e volta), parada olha em volta e às vezes cisca
+      look += ((gait > 0.2 ? -m.turn * 0.15 : Math.sin(t * 0.5) * 0.5) - look) * (1 - Math.exp(-dt * 4));
+      peck += ((!m.speed && Math.sin(t * 0.37 + 1.1) > 0.8 ? 1 : 0) - peck) * (1 - Math.exp(-dt * 3));
+      R('neck1').x = Math.sin(ph * 2) * 0.1 * gait - 0.15 * run * gait + peck * 0.55 + wind * 0.25; R('neck1').y = look * 0.4;
+      R('neck2').x = -Math.sin(ph * 2) * 0.08 * gait + peck * 0.45 + (1 - gait) * Math.sin(t * 0.8) * 0.04; R('neck2').y = look * 0.3;
+      R('head').x = -Math.sin(ph * 2) * 0.06 * gait - peck * 0.4 + Math.sin(t * 9) * 0.03 * peck; R('head').y = look * 0.3;
+      for (const sd of [-1, 1]) { R('wi' + sd).z = sd * (Math.sin(ph * 2) * 0.08 * gait + run * 0.25 * gait + air * 0.6 + Math.max(0, Math.sin(t * 0.7 + sd)) * 0.05); R('wi' + sd).x = -air * 0.3; }
+      R('tail').x = -0.1 + Math.sin(ph * 2) * 0.06 * gait + run * 0.2; R('tail').y = Math.sin(t * 2.2) * 0.08 + m.turn * 0.06;
+      fan.forEach((g, k) => { g.rotation.y += ((k - 4) / 4 * (0.75 + Math.sin(t * 1.3) * 0.05) - g.rotation.y) * 0.2; });
+      crest.forEach((g, k) => { g.rotation.x = -0.9 - (k % 3) * 0.18 - gait * 0.3 + Math.sin(t * 3 + k) * 0.05; });
+      let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.14; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2 + Math.random() * 3; }
+      for (const l of lids) l.rotation.x = -1.6 + bl * 1.55; // olhos bem abertos (curiosos), piscam
+    },
+    get bodyY() { return body.position.y; },
+  };
+  return api;
 }

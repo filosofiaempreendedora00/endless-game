@@ -18,7 +18,7 @@ export const ZONES = [
   { id: 'pedraclara', name: 'Cidadela de Pedraclara', lvl: 'Cidade', x: 305, z: -14, r: 36, music: 'cidade', grass: '#7fab58', safe: true },
   { id: 'dunas', name: 'Dunas de Sal-Rubro', lvl: 'Nv. 22–32', x: 10, z: 292, r: 96, music: 'dunas', grass: '#d6b679' },
   { id: 'geada', name: 'Vale da Geada', lvl: 'Nv. 30–42', x: -300, z: 22, r: 96, music: 'geada', grass: '#dfe8ee' },
-  { id: 'colossos', name: 'Planície dos Colossos', lvl: 'Nv. 40–55', x: 0, z: -300, r: 118, music: 'colossos', grass: '#a9b15c' },
+  { id: 'colossos', name: 'Ruínas dos Colossos', lvl: 'Nv. 40–55', x: 0, z: -300, r: 118, music: 'colossos', grass: '#8a8066' }, // S-161: terra arrasada, silêncio e mistério
   // S-117: cidades das raças e o litoral; S-118: o castelo nos campos
   { id: 'porto', name: 'Porto das Gaivotas', lvl: 'Cidade do litoral', x: 262, z: 262, r: 46, music: 'cidade', grass: '#9cb46a', safe: true },
   { id: 'pedrafunda', name: 'Pedrafunda', lvl: 'Cidade dos Anões', x: -288, z: -288, r: 40, music: 'cidade', grass: '#8d877c', safe: true },
@@ -103,7 +103,8 @@ export function mountainMask(x, z) {
   const pass = inner > 0.01 || corner > 0.01 ? 1 - smooth(10, 26, roadDist(x, z)) : 0; // as estradas abrem passagens na serra
   const tn = Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 80 ? templeNiche(x, z) : 0; // pátio do Santuário escavado na montanha
   const bs = basin(x, z), sea = 1 - smooth(-30, 30, seaDist(x, z)); // cidades novas e o mar não têm montanha
-  return Math.max(Math.max(Math.max(inner, corner) * (1 - pass), outer * (1 - tn)) * (1 - bs) * (1 - sea), tn < 1 ? templeCliff(x, z) : 0);
+  // S-166: as bacias das cidades só tiram a serra de dentro; a borda do mundo continua com montanha (nada de chão cortado e vazio cinza)
+  return Math.max(Math.max(Math.max(inner, corner) * (1 - pass) * (1 - bs), outer * (1 - tn)) * (1 - sea), tn < 1 ? templeCliff(x, z) : 0);
 }
 // paredões de Pedrafunda: anel de rocha alta em volta da cidade dos anões, aberto ao sul (estrada)
 export function dwarfCliff(x, z) {
@@ -119,6 +120,23 @@ export function mountainH(x, z) {
   const tc = templeCliff(x, z); if (tc > 0) h = Math.max(h, Math.pow(tc, 0.8) * (30 + r * 22)); // paredões altos em volta do Santuário
   if (dcl > 0) h = Math.max(h, Math.pow(dcl, 0.75) * (46 + r * 40 + vnoise(x * 0.04, z * 0.04) * 18)); // picos mais altos do mundo em volta de Pedrafunda
   return h;
+}
+
+/* S-154: árvore só nasce onde há terra: nada em rocha dura, encosta íngreme, neve alta ou cascalho de Pedrafunda.
+   rockiness(x, z) usa a mesma conta da cor do chão (0 = terra/grama, 1 = rocha nua). */
+export function rockiness(x, z) {
+  const mm = Math.max(mountainMask(x, z), dwarfCliff(x, z)), h = heightAt(x, z), nn = vnoise(x * 0.2, z * 0.2);
+  const slope = Math.hypot(heightAt(x + 1, z) - heightAt(x - 1, z), heightAt(x, z + 1) - heightAt(x, z - 1)) / 2;
+  let r = mm > 0.02 ? Math.min(1, smooth(7, 18, h + nn * 5) * 0.85 + smooth(0.6, 1.2, slope)) * mm : 0;
+  if (h > 6 && (mm > 0.05 || edgeDist(x, z) < 150)) r = Math.max(r, smooth(6, 14, h) * (mm > 0.05 ? 1 : 0.6));
+  return { rock: r, slope, h };
+}
+export function treeAllowed(x, z, opts = {}) {
+  const { rock, slope, h } = rockiness(x, z);
+  if (rock > (opts.maxRock ?? 0.3) || slope > (opts.maxSlope ?? 0.5) || h > 20) return false;
+  if (Math.hypot(x - DWARF.x, z - DWARF.z) < 110) return false; // cascalho de Pedrafunda
+  if (seaDist(x, z) < 14) return false; // praia
+  return true;
 }
 
 /* ---------- altura do terreno ---------- */
@@ -191,7 +209,13 @@ export function groundColor(x, z, h, slopeIn) {
     const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
     if (wD > 0.08) { const rip = Math.sin(x * 0.9 + Math.sin(z * 0.3) * 3) * 0.5 + 0.5, dune = Math.sin(x * 0.045 + Math.sin(z * 0.018) * 2.6) * 0.5 + 0.5; c.lerp(new THREE.Color('#e8c98c').offsetHSL(0.005, 0.05, rip * 0.06 - 0.04 + (dune - 0.5) * 0.08), smooth(0.12, 0.5, wD)); } // areia bem marcada, com marolas e sombra das dunas
     if (wG > 0.08) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); c.lerp(new THREE.Color('#f3f6f9').offsetHSL(0.55, 0.05, (patch - 0.5) * 0.06), cover * (patch > 0.6 - cover * 0.45 ? 1 : 0.35)); } // neve que vai cobrindo a grama aos poucos
-    if (wC > 0.2) c.offsetHSL(0.01, 0.04, (vnoise(x * 0.03, z * 0.03) - 0.5) * 0.08); // capim dourado ondulando em manchas
+    if (wC > 0.12) { // S-161: terra arrasada — chão de terra seca e cinzenta, manchas queimadas, rachaduras e pouco capim morto
+      const k = smooth(0.12, 0.55, wC), patch = vnoise(x * 0.045, z * 0.045), crack = Math.abs(vnoise(x * 0.35, z * 0.35) - 0.5);
+      const dirt = new THREE.Color('#7a6f5c').lerp(new THREE.Color('#5e564a'), patch).offsetHSL(0, -0.02, (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.07);
+      if (crack < 0.035) dirt.multiplyScalar(0.72); // fendas no chão
+      if (vnoise(x * 0.02 + 9, z * 0.02) > 0.68) dirt.lerp(new THREE.Color('#3f3a35'), 0.45); // manchas queimadas
+      c.lerp(dirt, k * (patch > 0.72 ? 0.7 : 0.95));
+    }
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.15);
     if (df < 1.05) c.lerp(new THREE.Color('#bfe2f0').offsetHSL(0, 0, (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.08), smooth(1.05, 0.95, df)); // gelo
     const dc = Math.hypot(x - CITY2.x, z - CITY2.z); if (dc < 26) c.lerp(new THREE.Color('#bdb5a3').offsetHSL(0, 0, ((Math.floor(x / 2.5) + Math.floor(z / 2.5)) & 1) * 0.03), smooth(26, 22, dc)); // praça de Pedraclara
@@ -201,6 +225,10 @@ export function groundColor(x, z, h, slopeIn) {
     const wet = smooth(4, -1, sd), sand = new THREE.Color('#e3cf9c').offsetHSL(0, 0, (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.06 - wet * 0.12);
     c.lerp(sand, smooth(26, 12, sd));
     if (sd < -2) c.lerp(new THREE.Color('#9c9a72'), smooth(-2, -20, sd) * 0.8);
+  } }
+  { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150) { // S-164: chegando em Pedrafunda o chão vira cascalho e pedra (sem grama)
+    const k = 1 - smooth(70, 150, dd), gr = new THREE.Color('#8b8478').lerp(new THREE.Color('#6f6a62'), vnoise(x * 0.25, z * 0.25)).offsetHSL(0, 0, (vnoise(x * 0.9, z * 0.9) - 0.5) * 0.06);
+    c.lerp(gr, k * 0.9);
   } }
   for (const [ct, rr, col, cell] of [[DWARF, 34, '#8a8073', 3.2], [ELF, 16, '#d9d4c4', 2.2], [PORT, 18, '#c7b48e', 2.5], [CASTLE, 0, '#b8b09c', 3]]) { // praças das cidades novas
     if (!rr) continue; const d = Math.hypot(x - ct.x, z - ct.z);
@@ -316,7 +344,10 @@ export function buildDistantMountains() {
   const SEGA = 300, ROWS = 7, R0 = 470, R1 = 740, pos = [], col = [], idx = [];
   const rockC = new THREE.Color('#56606e'), farC = new THREE.Color('#8ea3ba'), snowC = new THREE.Color('#e6edf4'), hazeC = new THREE.Color('#c4d8ec');
   for (let j = 0; j <= ROWS; j++) for (let i = 0; i <= SEGA; i++) {
-    const a = i / SEGA * Math.PI * 2, k = j / ROWS, r = R0 + (R1 - R0) * k;
+    const a = i / SEGA * Math.PI * 2, k = j / ROWS;
+    // S-166: o mundo é quadrado — nos cantos a cordilheira distante começa depois da borda (antes ela nascia DENTRO do mapa,
+    // perto do jogador, e aparecia como uma parede cinza sem forma)
+    const sq = (HALF + 25) / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))), r0 = Math.max(R0, sq), r = r0 + (R1 - R0) * k;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const peak = ridged(a * 3.1, k * 2 + 3) * 0.6 + ridged(a * 7.3 + 2, k * 3) * 0.3 + vnoise(a * 17, k * 4) * 0.1;
     const seaGap = Math.exp(-Math.pow((((a - Math.PI / 4) + Math.PI * 3) % (Math.PI * 2) - Math.PI) / 0.42, 2)); // S-117: horizonte aberto sobre o mar (sudeste)
@@ -535,30 +566,67 @@ function windMaterial(opts) {
   };
   return m;
 }
-function flowerGeometry() {
-  const parts = [];
-  const stem = new THREE.CylinderGeometry(0.008, 0.01, 0.3, 4); stem.translate(0, 0.15, 0); parts.push([stem, '#4f8a35']);
-  for (let i = 0; i < 5; i++) { const pt = new THREE.SphereGeometry(0.035, 6, 4); pt.scale(1, 0.35, 0.6); const a = i / 5 * Math.PI * 2; pt.translate(Math.cos(a) * 0.04, 0.31, Math.sin(a) * 0.04); parts.push([pt, '#ffffff']); }
-  const c = new THREE.SphereGeometry(0.022, 6, 4); c.translate(0, 0.32, 0); parts.push([c, '#ffd23a']);
-  // junta tudo numa geometria só, com cor por vértice (a cor das pétalas vem da instância)
-  const pos = [], col = [], idx = []; let off = 0;
-  for (const [g, hex] of parts) {
-    const gi = g.index ? g : g.toIndexed?.() || g; const pa = gi.attributes.position, cc = new THREE.Color(hex);
-    for (let i = 0; i < pa.count; i++) { pos.push(pa.getX(i), pa.getY(i), pa.getZ(i)); col.push(cc.r, cc.g, cc.b); }
-    for (let i = 0; i < gi.index.count; i++) idx.push(gi.index.getX(i) + off);
-    off += pa.count;
+/* S-153: flores nascem juntinhas, em touceiras — um tufo de folhas com hastes curvas e finas (que se inclinam
+   para lados diferentes) e várias flores de 5–6 pétalas viradas para o sol. Regra: nunca flor solta no chão.
+   A cor das pétalas vem da instância (cor branca no vértice = recebe a cor); folhas e hastes ficam verdes. */
+function flowerGeometry(seed = 3) {
+  let sd = seed * 9301 + 49297; const rng = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  const G = [{ pos: [], col: [], idx: [] }, { pos: [], col: [], idx: [] }]; let pos, col, idx; // [0] folhas e hastes, [1] flores (recebem a cor da instância)
+  const use = k => { ({ pos, col, idx } = G[k]); }; use(0);
+  const leafA = new THREE.Color('#3f7a2c'), leafB = new THREE.Color('#6aa548'), stemC = new THREE.Color('#4a8a34'), petal = new THREE.Color('#ffffff'), heart = new THREE.Color('#e8b020');
+  const quad = (p0, p1, p2, p3, c0, c1) => { const i = pos.length / 3; pos.push(...p0, ...p1, ...p2, ...p3); col.push(c0.r, c0.g, c0.b, c0.r, c0.g, c0.b, c1.r, c1.g, c1.b, c1.r, c1.g, c1.b); idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); };
+  // folhas do tufo: lâminas largas, arqueadas para fora
+  for (let k = 0; k < 16; k++) {
+    const ang = rng() * Math.PI * 2, len = 0.07 + rng() * 0.07, w = 0.02 + rng() * 0.012, dx = Math.cos(ang), dz = Math.sin(ang), seg = 3;
+    let px = dx * 0.02, pz = dz * 0.02, py = 0;
+    for (let sg = 0; sg < seg; sg++) {
+      const t0 = sg / seg, t1 = (sg + 1) / seg, out = len / seg, up0 = 0.08 * (1 - t0 * t0), up1 = 0.08 * (1 - t1 * t1);
+      const nx = px + dx * out, nz = pz + dz * out, ny = py + (up1 - up0) + len * 0.3 / seg * (1 - t1 * 1.6);
+      const w0 = w * Math.sin(Math.PI * (0.15 + t0 * 0.85)), w1 = w * Math.sin(Math.PI * (0.15 + t1 * 0.85)) * (sg === seg - 1 ? 0.15 : 1);
+      quad([px - dz * w0, py, pz + dx * w0], [px + dz * w0, py, pz - dx * w0], [nx - dz * w1, ny, nz + dx * w1], [nx + dz * w1, ny, nz - dx * w1], leafA.clone().lerp(leafB, t0), leafA.clone().lerp(leafB, t1));
+      px = nx; pz = nz; py = ny;
+    }
   }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  g.setIndex(idx); g.computeVertexNormals(); return g;
+  // hastes curvas com flor na ponta
+  const nf = 7 + Math.floor(rng() * 5);
+  for (let f = 0; f < nf; f++) {
+    const ang = rng() * Math.PI * 2, r0 = rng() * 0.07, H = 0.09 + rng() * 0.11, lean = 0.03 + rng() * 0.06, dx = Math.cos(ang), dz = Math.sin(ang);
+    const pt = t => [Math.cos(ang) * r0 + dx * lean * t * t + Math.sin(t * 3 + f) * 0.008, H * t, Math.sin(ang) * r0 + dz * lean * t * t];
+    const seg = 5, sw = 0.0045;
+    for (let sg = 0; sg < seg; sg++) { const a0 = pt(sg / seg), a1 = pt((sg + 1) / seg); quad([a0[0] - sw, a0[1], a0[2]], [a0[0] + sw, a0[1], a0[2]], [a1[0] - sw, a1[1], a1[2]], [a1[0] + sw, a1[1], a1[2]], stemC, stemC); quad([a0[0], a0[1], a0[2] - sw], [a0[0], a0[1], a0[2] + sw], [a1[0], a1[1], a1[2] - sw], [a1[0], a1[1], a1[2] + sw], stemC, stemC); }
+    // flor: pétalas em forma de gota, levemente em taça, inclinada como a haste
+    const top = pt(1), np = 5 + (f % 2), pr = 0.03 + rng() * 0.016, tilt = 0.35 + rng() * 0.3;
+    use(1);
+    const ci = pos.length / 3; pos.push(top[0], top[1] + 0.006, top[2]); col.push(heart.r, heart.g, heart.b);
+    for (let k = 0; k < np; k++) {
+      const a0 = k / np * Math.PI * 2 + f, a1 = a0 + Math.PI * 2 / np * 0.5, a2 = a0 + Math.PI * 2 / np;
+      const P = (a, r, y) => [top[0] + Math.cos(a) * r + dx * tilt * r * 0.6, top[1] + y + r * 0.35 - (dx * Math.cos(a) + dz * Math.sin(a)) * r * tilt, top[2] + Math.sin(a) * r + dz * tilt * r * 0.6];
+      const i0 = pos.length / 3; const pa = P(a0, pr * 0.55, 0), pm = P(a1, pr * 1.15, 0.004), pb = P(a2, pr * 0.55, 0);
+      pos.push(...pa, ...pm, ...pb); for (let q = 0; q < 3; q++) col.push(petal.r, petal.g, petal.b);
+      idx.push(ci, i0, i0 + 1, ci, i0 + 1, i0 + 2);
+    }
+    use(0);
+  }
+  // pétalas: as duas faces viradas para cima (iluminadas pelo sol dos dois lados, nada de pétala preta)
+  { const P = G[1]; const n = P.idx.length; for (let k = 0; k < n; k += 3) P.idx.push(P.idx[k], P.idx[k + 2], P.idx[k + 1]); }
+  return G.map(({ pos, col, idx }, gi) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+    if (gi === 1) { const N = g.attributes.normal; for (let k = 0; k < N.count; k++) { const v = new THREE.Vector3(N.getX(k) * 0.3, 1, N.getZ(k) * 0.3).normalize(); N.setXYZ(k, v.x, v.y, v.z); } }
+    return g; });
 }
+// escombros (S-161): lascas de pedra quebrada com faces de corte, não bolinhas redondas
+function rubbleGeometry() {
+  const g = mergeVerticesSafe(new THREE.IcosahedronGeometry(0.2, 1)), p = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = Math.sin(v.x * 23 + 1) * Math.cos(v.z * 19) * 0.25 + Math.sin(v.y * 31) * 0.1; v.multiplyScalar(1 + n); v.y = Math.max(v.y * 0.6, -0.06); p.setXYZ(i, v.x * 1.3, v.y, v.z); }
+  g.computeVertexNormals(); return g;
+}
+function mergeVerticesSafe(g) { const pa = g.attributes.position; const map = new Map(), idx = [], pos = []; for (let i = 0; i < pa.count; i++) { const k = `${pa.getX(i).toFixed(4)},${pa.getY(i).toFixed(4)},${pa.getZ(i).toFixed(4)}`; let j = map.get(k); if (j === undefined) { j = pos.length / 3; map.set(k, j); pos.push(pa.getX(i), pa.getY(i), pa.getZ(i)); } idx.push(j); } const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setIndex(idx); return out; }
 const grassChunks = [];
 // grama em blocos de 50 m gerados conforme o jogador chega perto (o mundo é grande demais para gerar tudo de uma vez)
 const GCH = 50, GN = Math.round(HALF * 2 / GCH);
-let grassRoot = null, grassMat = null, flowerMat = null, tuftGeos = null, flowerGeo = null, rubbleGeo = null, rubbleMat = null;
+let grassRoot = null, grassMat = null, flowerMat = null, petalMat = null, tuftGeos = null, flowerGeo = null, rubbleGeo = null, rubbleMat = null;
 const grassMade = new Map();
 const PETAL = ['#ffd84a', '#ff7aa8', '#ffffff', '#b48cff', '#ff9a4a', '#7ad0ff'].map(c => new THREE.Color(c));
-const C_FOREST = new THREE.Color('#7fa07a'), C_RUINS = new THREE.Color('#c8b98a'), C_GOLD = new THREE.Color('#e2d48e'), C_FROST = new THREE.Color('#dfe9ef'), C_DRY = new THREE.Color('#d8c48a');
+const C_FOREST = new THREE.Color('#7fa07a'), C_RUINS = new THREE.Color('#c8b98a'), C_GOLD = new THREE.Color('#b8a676'), C_FROST = new THREE.Color('#dfe9ef'), C_DRY = new THREE.Color('#d8c48a');
 function grassChunk(ci, cj) {
   let sd = (ci * 7919 + cj * 104729 + 99) % 2147483647 || 1;
   const rng = () => (sd = sd * 16807 % 2147483647) / 2147483647;
@@ -572,6 +640,7 @@ function grassChunk(ci, cj) {
     if (Math.abs(x) > PLAY_LIMIT || Math.abs(z) > PLAY_LIMIT) continue;
     if (lakeDist(x, z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12 || Math.hypot(x - CITY2.x, z - CITY2.z) < 27 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 31) continue;
     if (Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r * 1.05) continue;
+    { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150 && rng() > smooth(75, 150, dd)) continue; } // S-164: a grama vai sumindo antes de Pedrafunda
     if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 36 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
     if (mountainMask(x, z) > 0.35) continue;
     const y = heightAt(x, z);
@@ -580,17 +649,19 @@ function grassChunk(ci, cj) {
     const bw = biome(x, z), wD = bw.dunas, wG = bw.geada, wC = bw.colossos;
     q.setFromAxisAngle(up, rng() * 6.28);
     // densidade de planta pela mistura de regiões: deserto quase nada, neve pouco, planície dos colossos capim alto (transição gradual)
-    const dens = 1 - wD * 0.985 - wG * 0.8 + wC * 0.15;
-    if (rng() > dens) { if (wD > 0.5 && rng() < 0.02) { sc.set(0.4 + rng(), 0.3 + rng() * 0.4, 0.4 + rng()); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; }
+    const dens = 1 - wD * 0.985 - wG * 0.8 - wC * 0.72; // S-161: Ruínas dos Colossos = terra arrasada, pouca grama
+    if (rng() > dens) { if ((wD > 0.5 && rng() < 0.02) || (wC > 0.4 && rng() < 0.05)) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // escombros e lascas de pedra pelo chão
     if (ruins > 0.55) {
       if (rng() < 0.5) { sc.set(0.6 + rng() * 1.4, 0.4 + rng() * 0.6, 0.6 + rng() * 1.4); m.compose(v.set(x, y + 0.03, z), q, sc); rub.push(m.clone()); continue; }
       if (rng() < 0.75) continue;
     }
     if (roadDist(x, z) < 2.2) continue; // estradas limpas
-    if (rng() < 0.035 && forest < 0.5 && ruins < 0.3 && wG < 0.3 && wD < 0.3) {
-      sc.setScalar(0.5 + rng() * 0.45); m.compose(v.set(x, y, z), q, sc); flw.push([m.clone(), PETAL[Math.floor(rng() * PETAL.length)]]);
+    if (rng() < 0.004 && forest < 0.5 && ruins < 0.3 && wG < 0.3 && wD < 0.3 && wC < 0.3) {
+      // S-153: flores só em canteirinhos (3–7 touceiras juntas, da mesma cor), nunca soltas
+      const pc = PETAL[Math.floor(rng() * PETAL.length)], nC = 3 + Math.floor(rng() * 5);
+      for (let c = 0; c < nC; c++) { const fx = x + (rng() - 0.5) * 1.6, fz = z + (rng() - 0.5) * 1.6; q.setFromAxisAngle(up, rng() * 6.28); sc.setScalar(0.8 + rng() * 0.5); m.compose(v.set(fx, heightAt(fx, fz) - 0.01, fz), q, sc); flw.push([m.clone(), pc.clone().offsetHSL((rng() - 0.5) * 0.03, 0, (rng() - 0.5) * 0.08)]); }
     } else if (rng() < 0.75) {
-      const tall = 1 + wC * 0.7; // capim alto na Planície dos Colossos
+      const tall = 1 - wC * 0.3; // capim baixo e ralo na terra arrasada
       const kk = 0.8 + rng() * 0.6; sc.set(kk, kk * (0.7 + rng() * 0.6) * tall, kk); m.compose(v.set(x, y - 0.01, z), q, sc);
       tint.setRGB(1, 1, 1).lerp(C_FOREST, forest * 0.6).lerp(C_RUINS, ruins * 0.8).lerp(C_GOLD, wC * 0.55).lerp(C_FROST, wG * 0.8).lerp(C_DRY, wD).multiplyScalar(0.85 + rng() * 0.3);
       tuft[Math.floor(rng() * 3)].push([m.clone(), tint.clone()]);
@@ -598,7 +669,10 @@ function grassChunk(ci, cj) {
   }
   const g = new THREE.Group(); g.userData.cx = cx; g.userData.cz = cz;
   tuft.forEach((arr, vi) => { if (!arr.length) return; const mesh = new THREE.InstancedMesh(tuftGeos[vi], grassMat, arr.length); mesh.receiveShadow = true; arr.forEach(([mm, cc], i) => { mesh.setMatrixAt(i, mm); mesh.setColorAt(i, cc); }); mesh.computeBoundingSphere(); g.add(mesh); });
-  if (flw.length) { const f = new THREE.InstancedMesh(flowerGeo, flowerMat, flw.length); flw.forEach(([mm, cc], i) => { f.setMatrixAt(i, mm); f.setColorAt(i, cc); }); f.computeBoundingSphere(); g.add(f); }
+  if (flw.length) { // touceira (folhas/hastes) + flores coloridas, mesmas matrizes
+    const lv = new THREE.InstancedMesh(flowerGeo[0], flowerMat, flw.length), f = new THREE.InstancedMesh(flowerGeo[1], petalMat, flw.length);
+    flw.forEach(([mm, cc], i) => { lv.setMatrixAt(i, mm); f.setMatrixAt(i, mm); f.setColorAt(i, cc); }); lv.computeBoundingSphere(); f.computeBoundingSphere(); g.add(lv, f);
+  }
   if (rub.length) { const r = new THREE.InstancedMesh(rubbleGeo, rubbleMat, rub.length); rub.forEach((mm, i) => r.setMatrixAt(i, mm)); r.castShadow = r.receiveShadow = true; r.computeBoundingSphere(); g.add(r); }
   return g;
 }
@@ -623,8 +697,8 @@ export function cullGrass(x, z, force = false) {
 export function buildGrass(rng) {
   grassRoot = new THREE.Group();
   grassMat = windMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
-  flowerMat = windMaterial({ vertexColors: true, roughness: 0.7 });
+  flowerMat = windMaterial({ vertexColors: true, roughness: 0.75, side: THREE.DoubleSide }); petalMat = windMaterial({ vertexColors: true, roughness: 0.6 });
   tuftGeos = [0, 1, 2].map(v => tuftGeometry(rng, v)); flowerGeo = flowerGeometry();
-  rubbleGeo = new THREE.DodecahedronGeometry(0.18, 2); rubbleMat = new THREE.MeshStandardMaterial({ color: '#8a877e', roughness: 1 });
+  rubbleGeo = rubbleGeometry(); rubbleMat = new THREE.MeshStandardMaterial({ color: '#8a857a', roughness: 1 });
   return grassRoot;
 }
