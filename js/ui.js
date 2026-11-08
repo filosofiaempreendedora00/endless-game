@@ -14,16 +14,26 @@ const UI = {
   init() {
     document.querySelectorAll('#menubar [data-win]').forEach(b => b.onclick = () => { Sound.play('click'); this.toggle(b.dataset.win); });
     if ($('btn-sound')) $('btn-sound').onclick = () => toggleSound();
-    // hotbar
+    // hotbar (S-107): até 3 fileiras de 9 (arraste o canto de baixo à direita) e 3 conjuntos trocados com a tecla 0
     const hb = $('hotbar');
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < HB_SLOTS; i++) {
       const s = document.createElement('div');
       s.className = 'hslot'; s.dataset.i = i;
-      s.innerHTML = `<span class="key">${i + 1}</span><span class="ic"></span><span class="qty"></span><div class="cd"></div>`;
-      s.onclick = () => useHotbar(i);
-      s.oncontextmenu = e => { e.preventDefault(); G.player.hotbar[i] = null; this.markDirty(); };
+      const row = Math.floor(i / 9), key = (i % 9) + 1;
+      s.innerHTML = `<span class="key">${row === 0 ? key : row === 1 ? '⇧' + key : ''}</span><span class="ic"></span><span class="qty"></span><div class="cd"></div>`;
+      s.onclick = () => useHotbar(hbBase() + i);
+      s.oncontextmenu = e => { e.preventDefault(); G.player.hotbar[hbBase() + i] = null; this.markDirty(); };
       hb.appendChild(s);
     }
+    const tag = document.createElement('div'); tag.id = 'hb-preset'; tag.title = 'Conjunto de atalhos — aperte 0 (ou clique) para trocar entre os 3'; tag.onclick = () => cycleHotPreset(); hb.appendChild(tag);
+    const grip = document.createElement('div'); grip.id = 'hb-grip'; grip.title = 'Arraste para baixo para ter mais fileiras de atalhos'; hb.appendChild(grip);
+    grip.onpointerdown = e => {
+      if (typeof FB !== 'undefined' && (FB.picking || FB.box)) return;
+      e.preventDefault(); e.stopPropagation(); grip.setPointerCapture(e.pointerId);
+      const y0 = e.clientY, r0 = hbRows();
+      grip.onpointermove = ev => { const r = Math.max(1, Math.min(3, r0 + Math.round((ev.clientY - y0) / 51))); if (r !== hbRows()) { G.player.hotRows = r; this.layoutHotbar(); this.markDirty(); } };
+      grip.onpointerup = () => { grip.onpointermove = grip.onpointerup = null; };
+    };
     // tooltips
     document.addEventListener('mouseover', e => {
       const el = e.target.closest('[data-tip]');
@@ -103,9 +113,9 @@ const UI = {
     $('st-zeny').textContent = p.zeny.toLocaleString('pt-BR');
     $('st-god').classList.toggle('hidden', !G.god);
     // cooldowns da hotbar
-    const slots = $('hotbar').children;
-    for (let i = 0; i < 9; i++) {
-      const h = p.hotbar[i]; const cdEl = slots[i].querySelector('.cd');
+    const slots = $('hotbar').children, base = hbBase();
+    for (let i = 0; i < hbRows() * 9; i++) {
+      const h = p.hotbar[base + i]; const cdEl = slots[i].querySelector('.cd');
       if (h && h.kind === 'skill' && p.cds[h.id] > G.time) {
         const sk = SKILLS[h.id]; cdEl.style.height = Math.min(100, (p.cds[h.id] - G.time) / (sk.cd / 1000) * 100) + '%';
       } else cdEl.style.height = '0';
@@ -114,9 +124,10 @@ const UI = {
 
   refreshHud() {
     const p = G.player;
-    const slots = $('hotbar').children;
-    for (let i = 0; i < 9; i++) {
-      const h = p.hotbar[i], s = slots[i];
+    this.layoutHotbar();
+    const slots = $('hotbar').children, base = hbBase();
+    for (let i = 0; i < hbRows() * 9; i++) {
+      const h = p.hotbar[base + i], s = slots[i];
       let ic = '', qty = '', tip = '';
       if (h && h.kind === 'skill' && SKILLS[h.id]) { ic = SKILLS[h.id].icon; qty = p.skills[h.id] ? 'Nv' + p.skills[h.id] : ''; tip = 'skill:' + h.id; }
       else if (h && h.kind === 'item' && ITEMS[h.id]) { ic = ITEMS[h.id].icon; qty = countItem(p, h.id); tip = 'item:' + h.id; if (!qty) s.style.opacity = 0.4; }
@@ -411,6 +422,12 @@ const UI = {
         <div style="margin:4px 0 6px">${c.desc}</div><div class="muted" style="font-size:11px;margin-bottom:4px">Armas: ${ws} • HP ×${c.hpMod} • SP ×${c.spMod}</div>${skl}</div>`;
   },
 
+  layoutHotbar() {
+    const rows = hbRows(), slots = $('hotbar').querySelectorAll('.hslot');
+    slots.forEach((s, i) => { s.style.display = i < rows * 9 ? '' : 'none'; });
+    const tag = $('hb-preset'); if (tag) tag.innerHTML = `<b>${(G.player.hotPreset || 0) + 1}</b><small>/3</small><span>0 troca</span>`;
+  },
+
   /* ---------- Bestiário (wiki dos monstros) ---------- */
   render_bestiario() {
     const ids = Object.keys(MONSTERS).sort((a, b) => MONSTERS[a].lv - MONSTERS[b].lv);
@@ -431,6 +448,7 @@ const UI = {
     const cardRate = ((m.cardRate ?? CONFIG.CARD_DROP_RATE ?? 0.01) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
     const zones = (where[sel] || []);
     const stat = (k, v) => `<div class="bs-stat"><span>${k}</span><b>${v}</b></div>`;
+    const oldList = this.body('bestiario').querySelector('.bs-list'), keepScroll = oldList ? oldList.scrollTop : 0; // S-101: escolher um monstro não volta a lista para o topo
     this.body('bestiario').innerHTML = `<div class="bs">
       <div class="bs-left"><input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-list">${list}</div></div>
       <div class="bs-right">
@@ -442,10 +460,18 @@ const UI = {
         <h4>Drops</h4><div class="bs-drops">${drops || '<span class="muted">Nenhum.</span>'}${card ? `<div class="bs-drop card" data-tip="item:${card.id}"><span>🃏 ${esc(card.name)}</span><b>${cardRate}%</b></div>` : ''}</div>
         ${card ? `<h4>Carta</h4><div class="bs-p">Encaixe em: <b>${SLOT_NAMES[card.equip]}</b><br>${fmtBonuses(card.bonuses).join(' · ')}</div>` : ''}
       </div></div>`;
+    const nl = this.body('bestiario').querySelector('.bs-list'); if (nl) { nl.scrollTop = keepScroll; const on = nl.querySelector('.bs-item.on'); if (on && (on.offsetTop < nl.scrollTop || on.offsetTop + on.offsetHeight > nl.scrollTop + nl.clientHeight)) on.scrollIntoView({ block: 'nearest' }); }
     if (this._bsStop) this._bsStop();
     if ($('bs-live')) this._bsStop = H3.monsterLive(sel, $('bs-live'));
     const inp = $('bs-q');
     inp.oninput = () => { this.bestQ = inp.value; const pos = inp.selectionStart; this.render_bestiario(); const n = $('bs-q'); n.focus(); n.setSelectionRange(pos, pos); };
+  },
+
+  // S-100: ↑/↓ passam pelos monstros do Bestiário
+  bestStep(dir) {
+    const items = [...this.body('bestiario').querySelectorAll('.bs-item')]; if (!items.length) return;
+    const i = items.findIndex(x => x.classList.contains('on')), n = items[Math.max(0, Math.min(items.length - 1, (i < 0 ? 0 : i + dir)))];
+    if (n && n.dataset.id !== this.bestSel) { this.bestSel = n.dataset.id; this.render_bestiario(); }
   },
 
   /* ---------- Ajuda ---------- */

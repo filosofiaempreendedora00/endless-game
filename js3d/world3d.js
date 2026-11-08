@@ -62,20 +62,33 @@ export function roadDist(x, z) {
 /* ---------- montanhas na borda do mundo (fazem parte do terreno) ---------- */
 const edgeDist = (x, z) => Math.pow(Math.pow(Math.abs(x), 6) + Math.pow(Math.abs(z), 6), 1 / 6); // quadrado de cantos arredondados
 const ridged = (x, z) => 1 - Math.abs(vnoise(x, z) * 2 - 1);
+// S-103: o Santuário fica num nicho escavado na montanha — paredões dos lados e atrás, abertura para a planície.
+// templeNiche = 1 no chão do pátio, 0 na rocha; templeCliff = paredão em volta do nicho.
+export function templeNiche(x, z) {
+  const dx = Math.abs(x - TEMPLE.x), dz = z - TEMPLE.z;
+  const w = 15.2 + Math.max(0, dz) * 0.5 + (vnoise(x * 0.12 + 3, z * 0.12) - 0.5) * 3;
+  return 1 - smooth(-0.5, 5, Math.max(dx - w, -8.2 - dz));
+}
+export function templeCliff(x, z) {
+  const d = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (d > 75) return 0;
+  return (1 - templeNiche(x, z)) * (1 - smooth(36, 75, d + Math.max(0, z - TEMPLE.z) * 0.6));
+}
 export function mountainMask(x, z) {
   const e = edgeDist(x, z) + (vnoise(x * 0.03, z * 0.03) - 0.5) * 18;
   const inner = smooth(104, 128, e) * (1 - smooth(158, 192, e)); // serra que cerca o vale de Alvorada
   const corner = smooth(208, 262, Math.min(Math.abs(x), Math.abs(z)) + (vnoise(x * 0.02 + 5, z * 0.02) - 0.5) * 34); // maciços entre as regiões novas
   const outer = smooth(HALF - 58, HALF - 14, e); // borda do mundo
   const pass = inner > 0.01 || corner > 0.01 ? 1 - smooth(10, 26, roadDist(x, z)) : 0; // as estradas abrem passagens na serra
-  const tm = 1 - smooth(26, 44, Math.hypot(x - TEMPLE.x, z - TEMPLE.z)); // pátio do Santuário escavado na montanha
-  return Math.max(Math.max(inner, corner) * (1 - pass), outer * (1 - tm * 0.95));
+  const tn = Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 80 ? templeNiche(x, z) : 0; // pátio do Santuário escavado na montanha
+  return Math.max(Math.max(inner, corner) * (1 - pass), outer * (1 - tn), tn < 1 ? templeCliff(x, z) : 0);
 }
 export function mountainH(x, z) {
   const m = mountainMask(x, z); if (m <= 0) return 0;
   const r = ridged(x * 0.022, z * 0.022) * 0.5 + ridged(x * 0.05 + 7, z * 0.05) * 0.28 + ridged(x * 0.13, z * 0.13 + 4) * 0.14 + vnoise(x * 0.3, z * 0.3) * 0.08; // cristas, picos e rochas
   const big = 0.45 + vnoise(x * 0.011 + 3, z * 0.011) * 0.9; // picos altos e vales mais baixos ao longo da cordilheira
-  return Math.pow(m, 1.7) * (12 + r * 58) * big;
+  let h = Math.pow(m, 1.7) * (12 + r * 58) * big;
+  const tc = templeCliff(x, z); if (tc > 0) h = Math.max(h, Math.pow(tc, 0.8) * (30 + r * 22)); // paredões altos em volta do Santuário
+  return h;
 }
 
 /* ---------- altura do terreno ---------- */
@@ -102,7 +115,7 @@ export function heightAt(x, z) {
   const dl = lakeDist(x, z);
   if (dl < LAKE.r + 6) { const k = smooth(LAKE.r + 6, LAKE.r - 4, dl); h = h * (1 - k) + (LAKE.level - 1.3 - 1.5 * smooth(LAKE.r - 3, LAKE.r * 0.25, dl) + (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.4) * k; } // fundo mais fundo no meio
   h += mountainH(x, z); // montanhas na borda
-  const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 40) h = h * smooth(22, 40, dt) + 2 * (1 - smooth(22, 40, dt)); // pátio do Santuário
+  const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 80) { const f = templeNiche(x, z) * (1 - smooth(40, 78, dt)); h = h * (1 - f) + 2 * f; } // pátio do Santuário
   return h;
 }
 
@@ -146,7 +159,7 @@ export function groundColor(x, z, h, slopeIn) {
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.15);
     if (df < 1.05) c.lerp(new THREE.Color('#bfe2f0').offsetHSL(0, 0, (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.08), smooth(1.05, 0.95, df)); // gelo
     const dc = Math.hypot(x - CITY2.x, z - CITY2.z); if (dc < 26) c.lerp(new THREE.Color('#bdb5a3').offsetHSL(0, 0, ((Math.floor(x / 2.5) + Math.floor(z / 2.5)) & 1) * 0.03), smooth(26, 22, dc)); // praça de Pedraclara
-    const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 30) c.lerp(new THREE.Color('#9e998d').offsetHSL(0, 0, ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) * 0.035), smooth(30, 24, dt)); // pátio do Santuário
+    const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 34) c.lerp(new THREE.Color('#9e998d').offsetHSL(0, 0, ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) * 0.035), smooth(34, 26, dt) * smooth(0.6, 0.95, templeNiche(x, z))); // pátio do Santuário
   }
   const rd = roadDist(x, z);
   if (rd < 3.2) { const stone = far && zw('colossos', x, z) > 0.3; c.lerp(new THREE.Color(stone ? '#a7a092' : '#b08c5a').offsetHSL(0, 0, stone ? ((Math.floor(x / 2) + Math.floor(z / 2.6)) & 1) * 0.04 : 0), smooth(3.2, 1.6, rd)); } // calçada antiga nos Colossos

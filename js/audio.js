@@ -291,6 +291,29 @@ const Sound = {
       case 'slimeDie': this.noise(t, 0.4, 0.45, 1400, 'lowpass'); this.sweep(520, 120, t, 0.3, 'sine', 0.2); for (let k = 0; k < 4; k++) this.sweep(900 + Math.random() * 600, 400, t + 0.1 + k * 0.06, 0.05, 'sine', 0.06); break; // splash + gotinhas
       case 'boneStep': this.noise(t, 0.03, 0.12, 2600, 'bandpass'); break;
       case 'boneAttack': for (let k = 0; k < 3; k++) this.noise(t + k * 0.035, 0.03, 0.25, 2200 + k * 400, 'bandpass'); this.noise(t + 0.12, 0.12, 0.25, 3200, 'highpass'); break; // chocalho de ossos + golpe
+      case 'boneHit': { // S-104: pancada em osso — estalo seco e oco, cada golpe um pouco diferente
+        const c = this.ctx, base = 600 + Math.random() * 500;
+        for (const [f, d, v] of [[base, 0.07, 0.22], [base * 1.73, 0.05, 0.12], [base * 2.6, 0.03, 0.08]]) { const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.8, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(this.sfx); o.start(t); o.stop(t + d + 0.02); }
+        this.noise(t, 0.025, 0.35, 2600 + Math.random() * 1200, 'bandpass'); for (let k = 1; k < 3 + Math.random() * 3; k++) this.noise(t + 0.03 + k * 0.03 + Math.random() * 0.02, 0.02, 0.12, 1800 + Math.random() * 2000, 'bandpass'); // lascas chacoalhando
+        break; }
+      case 'boneChatter': for (let k = 0; k < 9; k++) this.noise(t + k * 0.045 + Math.random() * 0.01, 0.018, 0.14 - k * 0.01, 2400 + (k % 2) * 900, 'bandpass'); break; // dentes batendo
+      case 'knightSwing': { // golpe pesado: lufada de ar + lâmina de ferro
+        const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1400, t + 0.22); f.frequency.exponentialRampToValueAtTime(400, t + 0.4);
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32, t + 0.16); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t); src.stop(t + 0.5);
+        for (const [fr, v] of [[820, 0.07], [1370, 0.05], [2210, 0.03]]) { const o = c.createOscillator(), og = c.createGain(); o.frequency.value = fr * (0.97 + Math.random() * 0.06); og.gain.setValueAtTime(v, t + 0.02); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); o.connect(og); og.connect(this.sfx); o.start(t + 0.02); o.stop(t + 0.95); }
+        break; }
+      case 'knightVoice': { // S-104: fala do Cavaleiro Caído — voz cavernosa, como palavras arrastadas de além-túmulo
+        const c = this.ctx, o = c.createOscillator(), sub = c.createOscillator(), g = c.createGain(), f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(), mix = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+        const dur = 1.1 + Math.random() * 0.8, f0 = 58 + Math.random() * 14; o.type = 'sawtooth'; sub.type = 'square'; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 0.82, t + dur); sub.frequency.setValueAtTime(f0 / 2, t);
+        lfo.frequency.value = 5 + Math.random() * 3; lg.gain.value = 4; lfo.connect(lg); lg.connect(o.frequency);
+        f1.type = f2.type = 'bandpass'; f1.Q.value = 6; f2.Q.value = 8;
+        const vow = [[400, 800], [600, 1000], [300, 700], [500, 1700], [350, 640]]; let tt = t; // sequência de "vogais" = sílabas
+        for (let k = 0; k < 3 + Math.floor(Math.random() * 3); k++) { const [a, b] = vow[Math.floor(Math.random() * vow.length)]; f1.frequency.linearRampToValueAtTime(a, tt + 0.1); f2.frequency.linearRampToValueAtTime(b, tt + 0.1); tt += dur / 4; }
+        g.gain.setValueAtTime(0.0001, t); for (let k = 0, tk = t; tk < t + dur; k++, tk += dur / 4) { g.gain.linearRampToValueAtTime(0.5, tk + 0.06); g.gain.linearRampToValueAtTime(0.18, tk + dur / 4 - 0.04); } g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25);
+        o.connect(f1); o.connect(f2); sub.connect(f1); f1.connect(mix); f2.connect(mix); mix.gain.value = 0.5; mix.connect(g); g.connect(this.sfx);
+        o.start(t); sub.start(t); lfo.start(t); o.stop(t + dur + 0.3); sub.stop(t + dur + 0.3); lfo.stop(t + dur + 0.3);
+        this.noise(t, dur, 0.05, 900, 'bandpass'); // respiração rouca
+        break; }
       case 'boneDie': for (let k = 0; k < 7; k++) this.noise(t + k * 0.05 + Math.random() * 0.03, 0.04, 0.3, 1600 + Math.random() * 1600, 'bandpass'); this.noise(t + 0.35, 0.2, 0.3, 300, 'lowpass'); break; // ossos desmontando
       case 'ghostWail': { const c = this.ctx, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(380, t + 1.1); lfo.frequency.value = 6; lg.gain.value = 22; lfo.connect(lg); lg.connect(o.frequency); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.2); g.gain.setTargetAtTime(0.0001, t + 0.8, 0.2); o.connect(g); g.connect(this.sfx); o.start(t); lfo.start(t); o.stop(t + 1.3); lfo.stop(t + 1.3); break; } // lamento
       case 'rabbitStep': this.noise(t, 0.04, 0.08, 500, 'lowpass'); break;

@@ -103,3 +103,25 @@ body.g3d { background: #9fd3ff; }
 #crosshair i:nth-child(1) { left: 12px; top: 0; width: 2px; height: 8px; } #crosshair i:nth-child(2) { left: 12px; bottom: 0; width: 2px; height: 8px; }
 #crosshair i:nth-child(3) { top: 12px; left: 0; width: 8px; height: 2px; } #crosshair i:nth-child(4) { top: 12px; right: 0; width: 8px; height: 2px; }
 #crosshair b { position: absolute; left: 11px; top: 11px; width: 4px; height: 4px; border-radius: 50%; background: #ffe9a8; }
+/* S-105: árvore de classes compacta no Painel do Mestre */
+.adm-tree { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+.adm-tree-root { display: flex; justify-content: center; position: relative; padding-bottom: 14px; }
+.adm-tree-root::after { content: ''; position: absolute; left: 12.5%; right: 12.5%; bottom: 0; height: 7px; border: 2px solid rgba(255,215,106,0.35); border-bottom: none; border-radius: 6px 6px 0 0; }
+.adm-tree-root::before { content: ''; position: absolute; left: 50%; bottom: 7px; height: 7px; border-left: 2px solid rgba(255,215,106,0.35); }
+.adm-tree-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.adm-tree-col { display: flex; flex-direction: column; align-items: center; position: relative; }
+.adm-tree-col::before { content: ''; position: absolute; top: -7px; left: 50%; height: 7px; border-left: 2px solid rgba(255,215,106,0.35); }
+.adm-tree-t1 { position: relative; padding-bottom: 12px; width: 100%; display: flex; justify-content: center; }
+.adm-tree-t1::after { content: ''; position: absolute; left: 50%; bottom: 0; height: 12px; border-left: 2px solid rgba(255,215,106,0.35); }
+.adm-tree-t2 { display: flex; flex-direction: column; gap: 4px; width: 100%; padding-top: 4px; border-top: 2px solid rgba(255,215,106,0.25); border-radius: 6px; }
+.adm-tree .adm-class { width: 100%; justify-content: center; font-size: 11px; padding: 4px 6px; min-height: 0; }
+.adm-tree .adm-class.path { border-color: rgba(255,215,106,0.55); }
+/* S-114: vida e stamina do mascote */
+.plate3d .pbar.pet { width: 46px; height: 5px; } .plate3d .pbar.pet div { background: linear-gradient(#7aff9a, #2fae5a); }
+.plate3d .pbar.sta { width: 46px; height: 3px; margin-top: 1px; } .plate3d .pbar.sta div { background: linear-gradient(#ffe27a, #d8a020); }
+.pet-bar { position: relative; height: 9px; margin-top: 3px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
+.pet-bar div { height: 100%; } .pet-bar.hp div { background: linear-gradient(#7aff9a, #2fae5a); } .pet-bar.sta div { background: linear-gradient(#ffe27a, #d8a020); }
+.pet-bar i { position: absolute; inset: 0; font-size: 8px; line-height: 9px; text-align: center; font-style: normal; font-weight: 800; color: #fff; text-shadow: 0 1px 1px #000; }
+.adm-tree-root .adm-class { width: auto; min-width: 140px; }
+.adm-tree-root::after, .adm-tree-root::before, .adm-tree-col::before, .adm-tree-t1::after { border-color: rgba(255,215,106,0.6) !important; }
+.adm-tree-t2 { border-top-color: rgba(255,215,106,0.45); }

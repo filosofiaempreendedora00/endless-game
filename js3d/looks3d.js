@@ -28,7 +28,7 @@ export const CLASS_LOOKS = {
   sabio_elemental: { outfit: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Cape'], tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, glow: { '1H_Wand': '#7affd0', 'Spellbook_open': '#7affd0' }, style: 'cast', extras: ['elementOrbs'] },
   arqueiro: { outfit: 'Rogue', show: ['2H_Crossbow', 'Rogue_Cape'], tint: { body: '#4f8a45', legs: '#5a4430', cape: '#2f5a2a' }, style: 'ranged', extras: ['quiver'] },
   cacador: { outfit: 'Barbarian', show: ['Barbarian_Cape'], borrow: [['Rogue', '2H_Crossbow']], tint: { body: '#8a6a3a', legs: '#5a4028', cape: '#4a3020' }, style: 'ranged', extras: ['quiver', 'falcon'] },
-  menestrel: { outfit: 'Rogue', show: ['1H_Crossbow', 'Rogue_Cape'], tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute', 'musicNotes'] },
+  menestrel: { outfit: 'Rogue', show: ['1H_Crossbow', 'Rogue_Cape'], tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute'] }, // S-108: as notas só aparecem com a Canção de Batalha ativa (songAura em main3d)
   ladino: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#4a4a55', legs: '#33333c', cape: '#2a2a33' }, style: 'dual', extras: ['scarf'] },
   lamina_sombria: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#221a2e', legs: '#18121f', cape: '#2a1440' }, glow: { Knife: '#b06aff', Knife_Offhand: '#b06aff' }, style: 'dual', extras: ['shoulderSpikes', 'shadowWisps'] },
   saqueador: { outfit: 'Barbarian', show: ['1H_Axe', '1H_Axe_Offhand', 'Barbarian_Cape'], tint: { body: '#7a5a3a', legs: '#4a3a2a', cape: '#a8842a' }, style: 'dual', extras: ['lootBag', 'goldCoins'] },

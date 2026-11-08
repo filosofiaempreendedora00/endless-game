@@ -34,7 +34,7 @@ function initRuntime(p) {
     dead: false, buffs: {}, cds: {}, atkT: -9, regenHp: 0, regenSp: 0, d: {}, repathT: 0, say: null,
   });
 }
-const SAVE_FIELDS = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hp', 'sp'];
+const SAVE_FIELDS = ['charId', 'pet', 'mount', 'cosmetics', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'hp', 'sp'];
 function saveGame() {
   if (!G.player || G.state === 'title') return;
   const s = {}; for (const k of SAVE_FIELDS) s[k] = G.player[k];
@@ -857,7 +857,8 @@ addEventListener('keydown', e => {
   if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
   if (G.paused && ((k >= '1' && k <= '9') || k === 'x' || k === 'f')) return;
-  if (k >= '1' && k <= '9') { useHotbar(+k - 1); return; }
+  if (k >= '1' && k <= '9') { useHotbar(hbBase() + +k - 1); return; }
+  if (k === '0') { cycleHotPreset(); return; }
   switch (k) {
     case 'enter': UI.setChatMin(false); document.getElementById('chatinput').focus(); e.preventDefault(); break;
     case 'escape': // cancela mira > fecha janelas > abre o menu do jogo
@@ -1118,7 +1119,7 @@ function continueGame(s) {
   initRuntime(p);
   for (const k of SAVE_FIELDS) if (s[k] !== undefined) p[k] = s[k];
   if (!p.charId) p.charId = newCharId(); // personagens antigos ganham identidade
-  p.hotbar = (p.hotbar || []).concat(Array(9).fill(null)).slice(0, 9);
+  normalizeHotbar(p);
   G.player = p;
   recalc(p);
   enterGame();

@@ -147,4 +147,6 @@ function petGainExp(pet, amount) {
   return { up, evolved: after > before ? after : null };
 }
 // força do mascote (usada nos ataques, curas e proteção)
-function petPower(pet) { const st = petStage(pet); return { atk: Math.round((8 + pet.lv * 3.2) * (1 + st * 0.6)), heal: 0.05 + st * 0.03, guard: 8 + st * 6, speedMult: 1 + st * 0.2 }; }
+// S-114: o mascote tem vida (HP) e, em vez de SP, stamina: correr e atacar cansam; descansando, recupera.
+const PET_HP_MOD = { ataque: 1, suporte: 0.85, guardiao: 1.6 };
+function petPower(pet) { const st = petStage(pet); return { atk: Math.round((8 + pet.lv * 3.2) * (1 + st * 0.6)), heal: 0.05 + st * 0.03, guard: 8 + st * 6, speedMult: 1 + st * 0.2, maxHp: Math.round((70 + pet.lv * 16) * (1 + st * 0.5) * (PET_HP_MOD[PETS[pet.species].role] || 1)), maxSta: 100 + st * 25, def: 5 + pet.lv + st * 10 }; }

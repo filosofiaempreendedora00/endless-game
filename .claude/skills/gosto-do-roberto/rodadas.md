@@ -16,8 +16,11 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 | "Quadriculado" (facetas) | 2 | S-012 ("pontio agudas"), S-071 (alaúde: "algo que eu detesto") |
 | Lag | 2 | conversa (antes da S-042), S-069 |
 | Parecer cópia de outro jogo | 2 | S-074 (Gotinha = poring), S-085 (o mini-chefe também) |
-| Física / corpos se atravessando | 3 | S-064, S-072, S-088 (monstro dentro de monstro) |
-| Som (falta de efeitos ou de controle) | 2 | S-086 (botão de som sumiu), S-091 (passos e morte do cogumelo) |
+| Física / corpos se atravessando | 4 | S-064, S-072, S-088 (monstro dentro de monstro), S-098 (queda sem dano, subir montanha íngreme) |
+| Som (falta de efeitos ou de controle) | 3 | S-086 (botão de som sumiu), S-091 (passos e morte do cogumelo), S-104 (fala do Cavaleiro, osso ao apanhar) |
+| Coisas flutuando | 2 | S-025/S-054 (troncos), S-109 (casa em encosta) |
+| Nomes de longe | 2 | S-096, S-116 (boneco em combate) |
+| Mascotes feios / "monte de peças" | 3 | S-093, S-110, S-111, S-112 |
 
 ## Histórico
 
@@ -120,3 +123,25 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Quando o pedido é "muito mais realista", vale propor a troca de base (modelos), com custo e opções.
   - O gosto dele aponta para Skyrim e WoW: 1ª pessoa, mira, mãos visíveis, mundo grande.
 - S-093 aplicado em 2026-11-08: ele viu o protótipo e aprovou. Mostrar um protótipo antes de uma troca grande funcionou: ele quis ver primeiro ("queria ver antes de aprovar").
+
+### Rodada 12 (S-098 a S-116 + S-119 a S-121), 2026-11-08
+- Pedidos:
+  - Física estilo Skyrim: dano de queda e não subir encosta íngreme (S-098).
+  - Bestiário: girar arrastando, setas ↑/↓, não voltar ao topo (S-099 a S-101).
+  - Colossos maiores e diferentes, "Shadow of the Colossus com God of War", clima de mistério (S-102); masmorra dentro da montanha (S-103).
+  - Sons do Cavaleiro Caído (ataque e fala) e de osso ao apanhar (S-104).
+  - Árvore de evolução clara no Painel do Mestre (S-105).
+  - Tirar tenda (S-106); casa flutuando e portal longe da porta (S-109).
+  - Barra de atalhos redimensionável + 3 conjuntos com a tecla 0 (S-107).
+  - Notas do Bardo só com a canção ativa, e mais musicais (S-108).
+  - Mascotes: tatu muito mais detalhado (S-110), bichinho de água "bolha" e curandeiro (S-111), raposa "infinitamente mais realista" (S-112), ataque padrão da Faísca corpo a corpo como lobo (S-113), vida e stamina (S-114).
+  - Botão do meio gira a câmera 360° (S-115); nome visível de longe (S-116).
+  - Arena: câmera atrás do muro (S-119), hexágono "disforme" (S-120), pedra, tocha e cartazes de verdade (S-121).
+- Reincidências: física (4ª), flutuar (casa), nomes de longe (2ª), mascotes "monte de peças".
+- Aprendizados:
+  - Ele quer **regras de mundo reais** (queda, encosta), mas aceita que o God Mode fure a regra para testar.
+  - Habilidade do mascote ≠ ataque padrão: o ataque básico deve ser coerente com o bicho (raposa morde); poderes vêm como habilidade de evolução.
+  - Efeitos visuais permanentes cansam: efeito bonito deve aparecer **quando significa algo** (buff ativo).
+  - Polígono puro chapado no chão (hexágono, retângulos coloridos como estandarte) é lido como "disforme": troque por objeto reconhecível (medalhão gravado, estandarte de tecido, cartaz).
+  - Ele pede "parecido com o que dá para fazer na vitrine" — interações boas de uma tela devem valer nas outras (arrastar para girar).
+- Pedidos grandes que ficaram para a próxima rodada (chegaram durante esta): cidades por raça e no litoral (S-117), castelo gigante com interior (S-118), ícones de item sem emoji (S-122), compra/venda estilo WoW/RO (S-123), refino até +10 num ferreiro anão (S-124), forno gigante da ferraria (S-125).

@@ -71,13 +71,24 @@ function learnSkill(id) {
   recalc(p); UI.markDirty();
 }
 
+/* Barra de atalhos (S-107): p.hotbar tem 3 conjuntos × 27 espaços (3 fileiras de 9).
+   p.hotPreset = conjunto atual (tecla 0 troca), p.hotRows = fileiras visíveis (1–3). Saves antigos (9 espaços) continuam valendo. */
+const HB_SLOTS = 27, HB_PRESETS = 3;
+function hbBase() { return ((G.player && G.player.hotPreset) || 0) * HB_SLOTS; }
+function hbRows() { return Math.max(1, Math.min(3, (G.player && G.player.hotRows) || 1)); }
+function normalizeHotbar(p) { p.hotbar = (p.hotbar || []).concat(Array(HB_SLOTS * HB_PRESETS).fill(null)).slice(0, HB_SLOTS * HB_PRESETS); p.hotPreset = Math.max(0, Math.min(2, p.hotPreset || 0)); p.hotRows = Math.max(1, Math.min(3, p.hotRows || 1)); }
+function cycleHotPreset() {
+  const p = G.player; p.hotPreset = ((p.hotPreset || 0) + 1) % HB_PRESETS;
+  UI.log(`Conjunto de atalhos ${p.hotPreset + 1}/3 (tecla 0 troca).`, 'sys'); if (typeof Sound !== 'undefined') Sound.play('click'); UI.markDirty();
+}
 function assignHotbar(kind, id, silent) {
-  const p = G.player;
-  if (p.hotbar.some(h => h && h.kind === kind && h.id === id)) { if (!silent) UI.log('Já está na barra de atalhos.', 'sys'); return; }
-  const i = p.hotbar.findIndex(h => !h);
+  const p = G.player, base = hbBase(), n = hbRows() * 9;
+  if (p.hotbar.slice(base, base + HB_SLOTS).some(h => h && h.kind === kind && h.id === id)) { if (!silent) UI.log('Já está na barra de atalhos.', 'sys'); return; }
+  let i = -1; for (let k = 0; k < HB_SLOTS; k++) if (!p.hotbar[base + k]) { i = k; break; }
   if (i < 0) { if (!silent) UI.log('Barra de atalhos cheia — clique com o botão direito num atalho para limpar.', 'warn'); return; }
-  p.hotbar[i] = { kind, id };
-  if (!silent) UI.log(`Atalho ${i + 1}: ${(kind === 'skill' ? SKILLS : ITEMS)[id].name}`, 'sys');
+  if (i >= n) { G.player.hotRows = Math.floor(i / 9) + 1; } // caiu numa fileira escondida: mostra a fileira
+  p.hotbar[base + i] = { kind, id };
+  if (!silent) UI.log(`Atalho ${i < 9 ? i + 1 : i < 18 ? 'Shift+' + (i - 8) : 'fileira 3'}: ${(kind === 'skill' ? SKILLS : ITEMS)[id].name}`, 'sys');
   UI.markDirty();
 }
 
@@ -86,7 +97,7 @@ function createCharacter(name, look = {}, petSpecies = null) {
   const p = {
     name, look, cls: 'aprendiz', baseLv: 1, jobLv: 1, baseExp: 0, jobExp: 0,
     stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, statPoints: CONFIG.STAT_START_POINTS, skillPoints: 0, skills: {},
-    zeny: 150, inventory: [], equip: Object.fromEntries(EQUIP_SLOTS.map(s => [s, null])), hotbar: Array(9).fill(null),
+    zeny: 150, inventory: [], equip: Object.fromEntries(EQUIP_SLOTS.map(s => [s, null])), hotbar: Array(HB_SLOTS * HB_PRESETS).fill(null), hotPreset: 0, hotRows: 1,
     hp: 1, sp: 1, charId: newCharId(), buffs: {}, cds: {}, pet: petSpecies ? newPet(petSpecies) : null,
   };
   addItem(p, 'adaga_simples', 1); addItem(p, 'tunica_algodao', 1);

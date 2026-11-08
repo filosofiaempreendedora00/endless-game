@@ -593,15 +593,15 @@ const PET_MAX_LV = 40;
 const PETS = {
   fogo: {
     role: 'ataque', roleName: 'Ataque', roleIcon: '⚔️', element: 'fogo', color: '#ff7a3a',
-    desc: 'Corre até os inimigos e cospe fogo neles. Para quem quer derrotar monstros mais rápido.',
+    desc: 'Corre até os inimigos e ataca de perto, com botes e mordidas como um lobo. Para quem quer derrotar monstros mais rápido.',
     skills: [
-      { stage: 0, name: 'Cuspe de Fogo', icon: '🔥', desc: 'Fica a uns 5 m do seu alvo e cospe uma bola de fogo a cada ~2,4 s.' },
-      { stage: 1, name: 'Fôlego de Brasa', icon: '💨', desc: 'Cospe fogo mais rápido (a cada ~1,9 s) e corre 20% mais.' },
-      { stage: 2, name: 'Explosão Solar', icon: '☀️', desc: 'Cada bola de fogo explode e atinge os inimigos ao redor do alvo (metade do dano).' },
+      { stage: 0, name: 'Mordida', icon: '🦷', desc: 'Ataque padrão: salta no seu alvo e morde a cada ~1,6 s (gasta stamina).' },
+      { stage: 1, name: 'Cuspe de Brasa', icon: '🔥', desc: 'Habilidade nova: a cada ~8 s cospe uma bola de fogo no alvo. Morde mais rápido e corre 20% mais.' },
+      { stage: 2, name: 'Explosão Solar', icon: '☀️', desc: 'O cuspe de fogo explode e atinge os inimigos ao redor do alvo (metade do dano).' },
     ],
     stages: [
       { name: 'Faísca', icon: '🦊', desc: 'Raposinha curiosa com a ponta do rabo em chamas.' },
-      { name: 'Labareda', icon: '🔥', desc: 'Dois rabos flamejantes e uma juba de brasas. Ataca mais rápido.' },
+      { name: 'Labareda', icon: '🔥', desc: 'Dois rabos flamejantes e uma juba de brasas. Aprende a cuspir fogo.' },
       { name: 'Solaris', icon: '☀️', desc: 'Raposa solar de três caudas. Suas chamas explodem em área.' },
     ],
   },

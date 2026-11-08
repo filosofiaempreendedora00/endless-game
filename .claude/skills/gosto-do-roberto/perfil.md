@@ -1,6 +1,6 @@
 # Perfil de gosto do Roberto
 
-Destilado de S-001 a S-092 (atualizado em 2026-11-08, rodada 10) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
+Destilado de S-001 a S-121 (atualizado em 2026-11-08, rodada 12) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
 
 ## Princípios
 
@@ -32,6 +32,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
   - Animais respeitam a água.
   - Animações fisicamente plausíveis.
   - Ele percebe esses detalhes **sempre**.
+  - Regras físicas do mundo valem para o jogador também: queda machuca/mata e encosta íngreme (>45°) não se sobe (S-098). O God Mode pode furar a regra.
+  - Prédio em encosta assenta no ponto mais baixo do terreno (S-109).
 
 ### 3. Proporção e escala consistentes ★★★★★
 - Evidências: classes gigantes (S-016, S-017, S-021, S-022 e a reincidência S-050), chapéu desproporcional (S-019), frutas proporcionais (S-065).
@@ -61,6 +63,7 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 ### 6. Vivo e animado ★★★★
 - Evidências: movimento com inércia "como o WoW" (S-015), mascote fluido (S-015), ataque animado dos monstros (S-044), morte animada com uma versão padrão e uma rara (S-055), bestiário com o monstro "se mexendo, mesmo que parado" (S-049), girar o boneco na janela (S-045).
 - Como aplicar: nada aparece ou some "seco". Entradas, saídas, ataques, mortes e prévias têm animação.
+- Mas efeito permanente cansa: partícula/efeito só quando **significa algo** (ex.: notas do Bardo só com a canção ativa, S-108).
 
 ### 7. Interface limpa, consolidada e com switchers ★★★★
 - Evidências:
@@ -139,6 +142,13 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Evidências: boneco de treino com HP infinito (S-090), God Mode mais rápido (S-089), mascote no Painel (S-075).
 - Como aplicar: ele testa o jogo de verdade e quer números (DPS) e atalhos de mestre.
 
+### 19. Mascotes como companheiros de verdade ★★★★
+- Evidências: tatu, bolha e raposa "monte de peças" (S-110 a S-112), ataque padrão coerente com o bicho (S-113), vida e stamina (S-114).
+- Como aplicar:
+  - Anatomia crível e muito detalhe (pelo, casco, pele), sem cara de outro jogo.
+  - O ataque básico combina com o animal (raposa morde como lobo); poderes elementais chegam como habilidade ao evoluir.
+  - O mascote é um ser vivo no combate: tem vida, cansa e pode desmaiar.
+
 ## Antipadrões (ele já rejeitou)
 - Primitivos geométricos à mostra, como cones de grama, cubos de pedra e esferas de mascote.
 - Repetição idêntica de elementos.
@@ -152,6 +162,9 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Monstros parados, sem animação de ataque ou de morte.
 - Visual "quadriculado" (facetas).
 - Monstro ou cena que lembra demais outro jogo (ex.: poring).
+- Polígono chapado no lugar de objeto (hexágono vermelho no chão, retângulos coloridos como estandarte).
+- Efeito visual ligado o tempo todo sem motivo.
+- Câmera que fica atrás de parede.
 
 ## Checklist de entrega
 Passe pelo que você tocou antes de dizer "feito":

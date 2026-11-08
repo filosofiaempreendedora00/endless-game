@@ -4531,9 +4531,10 @@
       "sp": "21/21"
     },
     "id": "S-098",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:36:09",
-    "imagem": "img/S-098.png"
+    "imagem": "img/S-098.png",
+    "resposta": "Física nova: cair de lugar alto machuca. Até ~5 m nada; daí em diante o dano cresce rápido e a partir de ~19 m mata (água amortece, montado a montaria absorve parte, com aviso \"Que queda!\"). E encostas acima de ~45° não dão mais para subir, nem pulando: você trava e, se parar numa encosta íngreme demais, escorrega para baixo. No God Mode você continua subindo e não sente a queda, só vê o número \"(imune)\"."
   },
   {
     "texto": "gostaria de poder arrrastar aqui o bicho com o botao esquerdo do mouse tipo o que da pra fazer com o personagem principal la na tela de selecao",
@@ -4577,9 +4578,10 @@
       "sp": "21/21"
     },
     "id": "S-099",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:36:55",
-    "imagem": "img/S-099.png"
+    "imagem": "img/S-099.png",
+    "resposta": "No Bestiário, segure o botão esquerdo em cima do bicho e arraste para girá-lo como na vitrine. Solto, ele volta a girar devagar sozinho."
   },
   {
     "texto": "gostara de poder passar por eles aqui apertando a setinha de baixo tambem, nao apenas com o mouse. Quero dar essa outra opcao",
@@ -4628,9 +4630,10 @@
       "sp": "21/21"
     },
     "id": "S-100",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:37:56",
-    "imagem": "img/S-100.png"
+    "imagem": "img/S-100.png",
+    "resposta": "Com o Bestiário aberto, as setas ↑/↓ passam pelos monstros da lista (ela rola sozinha para mostrar o escolhido)."
   },
   {
     "texto": "nao quero o bug de que, quando eu clico em algum monstro, volta pro topo. Tem que manter na mesma tela",
@@ -4686,9 +4689,10 @@
       "sp": "21/21"
     },
     "id": "S-101",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:38:36",
-    "imagem": "img/S-101.png"
+    "imagem": "img/S-101.png",
+    "resposta": "Corrigido: ao clicar num monstro a lista fica exatamente onde estava, sem voltar para o topo."
   },
   {
     "texto": "gostaria de estátuas maiores, e diferentes entre si aqui. Clima de mistério no ar. E elas serem feitas de forma melhor, com mis cuidado. Podem ser de pedra sim, mas com uma pegada meio shadow of colossus com mistura de god of war. E bem detalhistas e irada",
@@ -4737,9 +4741,10 @@
       "sp": "21/21"
     },
     "id": "S-102",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:42:25",
-    "imagem": "img/S-102.png"
+    "imagem": "img/S-102.png",
+    "resposta": "A Planície dos Colossos ganhou 5 estátuas gigantes e diferentes entre si, esculpidas com cuidado: o Colosso Sentinela de pé (≈35 m, elmo com chifres, escudo e espada cravada com runas), o Rei de Pedra no trono com machado duplo, a Fera de pedra agachada com chifres e máscara, o Titã caído com o braço erguido ao céu e o Guerreiro sem cabeça (a cabeça caiu aos pés, olhos ainda brilhando). Pedra gasta com musgo, rachaduras e runas azuis fracas, e névoa baixa pela planície para o clima de mistério."
   },
   {
     "texto": "ideal emlhorar visualmente e tudo isso se fundir à montanha, como se a dungeon fosse dentro da montanha",
@@ -4784,9 +4789,10 @@
       "sp": "21/21"
     },
     "id": "S-103",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:43:03",
-    "imagem": "img/S-103.png"
+    "imagem": "img/S-103.png",
+    "resposta": "O Santuário Silente agora fica dentro da montanha: o pátio virou um entalhe na rocha, com paredões dos dois lados e atrás, e a fachada sai do penhasco com rochas abraçando as laterais, um teto de pedra por cima e pedras caídas na base. A entrada das Catacumbas parece escavada no monte."
   },
   {
     "texto": "ele precisa ter sons de ataques e tbm efeitos sonoros de falas, e tbm eu batendo em bichos de esqueletos (isso vale pra tosoa) precisa er alguns sons de 'ossos' quando eles tomam porrada",
@@ -4830,9 +4836,10 @@
       "sp": "21/21"
     },
     "id": "S-104",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:43:59",
-    "imagem": "img/S-104.png"
+    "imagem": "img/S-104.png",
+    "resposta": "Sons novos: o Cavaleiro Caído fala (voz cavernosa, como palavras arrastadas) ao te ver, de vez em quando e às vezes depois de atacar, e o golpe dele tem lufada pesada + lâmina de ferro. Todo monstro de esqueleto (Esqueleto Vigia, Cavaleiro Caído, Sentinela) agora faz um estalo de osso diferente a cada pancada que leva, e os esqueletos batem os dentes ao te ver."
   },
   {
     "texto": "aqui tbm quero no godmode de ver com clareza a arvore de volucao, enquanto escolho, mesmo que de forma mais compacta pra eu selecionar",
@@ -4887,9 +4894,10 @@
       "sp": "23/23"
     },
     "id": "S-105",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:45:08",
-    "imagem": "img/S-105.png"
+    "imagem": "img/S-105.png",
+    "resposta": "No Painel do Mestre, \"Virar qualquer classe\" virou uma árvore de evolução compacta: Aprendiz no topo, cada 1ª classe numa coluna com as suas duas 2ª classes logo abaixo, ligadas por linhas. A classe atual fica dourada e o caminho até ela, destacado."
   },
   {
     "texto": "remover essa cabana aleatoria, nao gostei dela",
@@ -4946,9 +4954,10 @@
       "sp": "23/23"
     },
     "id": "S-106",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:46:17",
-    "imagem": "img/S-106.png"
+    "imagem": "img/S-106.png",
+    "resposta": "Tenda removida da praça da vila."
   },
   {
     "texto": "sobre essa barra, que eu consiga arrastar o canto direito inferior pra baixo, pra dar maios opcos ali de itens pra eu colocar. E tbm deixar claor que com o comando 0 eu mudo pra novas opcoes ali, pra que tenham 3'pre-sets' ao todo, pra eu ter mai espaços pra outras builds e tals",
@@ -4994,9 +5003,10 @@
       "sp": "23/23"
     },
     "id": "S-107",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:47:58",
-    "imagem": "img/S-107.png"
+    "imagem": "img/S-107.png",
+    "resposta": "A barra de atalhos agora cresce: arraste o cantinho dourado de baixo à direita para baixo e ganhe até 3 fileiras de 9 (a 2ª fileira usa Shift+1–9; a 3ª é por clique). E há 3 conjuntos de atalhos: a tecla 0 (ou o quadradinho \"1/3 · 0 troca\" na ponta da barra) troca entre eles, para suas builds. Saves antigos continuam com os atalhos de antes no conjunto 1."
   },
   {
     "texto": "essas notinhas saindo do bardo nao quero que tenha por padrao. Apenas se ele tiver buffado co lguma skill.  E que essa skill traga elementos mais interessantes, mais parecidos com musica, notas diferntes te tals, mas bem trabalhado",
@@ -5041,9 +5051,10 @@
       "sp": "23/23"
     },
     "id": "S-108",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:49:00",
-    "imagem": "img/S-108.png"
+    "imagem": "img/S-108.png",
+    "resposta": "O Bardo não solta mais notas por padrão. Elas só aparecem enquanto a Canção de Batalha está ativa, e agora são uma pauta dourada de 5 linhas girando na cintura com notas de formatos diferentes (semínima, colcheia, par de colcheias ligadas e clave de sol), cada uma de uma cor, subindo em espiral como uma melodia, com um brilho suave."
   },
   {
     "texto": "casa ficou meio voando, preciso qu e trabalhe melhor pra na oparecer isso. E o portal sempre mais proximo da entrada de fato, melhor posicionado",
@@ -5085,9 +5096,10 @@
       "sp": "23/23"
     },
     "id": "S-109",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:49:30",
-    "imagem": "img/S-109.png"
+    "imagem": "img/S-109.png",
+    "resposta": "Prédios em encosta agora assentam no ponto mais baixo do terreno sob eles (nada de base flutuando; vale para todas as casas, taverna, ferraria, igreja, moinho e torres). E os portais da taverna e do estábulo ficam no pé da escada da porta, não mais no meio da fachada."
   },
   {
     "texto": "gostei muito da ideia de ser um bicho inspirado em um tatu e que vai evoluindo tipo bulbassauro ou torterra e tudo mais, mas quero muuuuuito mais detalhes na pele, casco, etc pra que seja um bicho bonito de verdade e nao esse monte de peças todo escroto",
@@ -5129,9 +5141,10 @@
       "sp": "23/23"
     },
     "id": "S-110",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:50:49",
-    "imagem": "img/S-110.png"
+    "imagem": "img/S-110.png",
+    "resposta": "O tatu foi refeito do zero: casco de verdade com escudo dos ombros e da garupa cobertos de escamas arredondadas e 8 cintas de placas sobrepostas (sulcos escuros, topos gastos), pele de couro com rugas no pescoço, placa de escamas na cabeça, focinho com narinas, olhinhos com pálpebra, patas aneladas e garras compridas. Rochedo ganha cristais nascendo do casco e líquen; Monolito vira uma paisagem que anda (musgo, grama, florzinhas, pedras, um grande cristal brilhante e dois chifres de pedra). Dá para ver de perto no prototipo-mascotes.html."
   },
   {
     "texto": "esse bichinho gosto da ideia dele ser de água, mas precisa ter muito mais algo na linha de 'bolha' do que parecer uma salamandra. Ou, se parecesse a alamanra, nao pode parecer tanto aqeuele bpokemon. E o rosto dele eu nao gostei nem um pouco. Ele tem que ter mais indicativos tbm que ele cura as pessoas. Gosto que tenha mais a ver com 'bolha' do que salamandra. Mas precisa ser sim bem trabalhado",
@@ -5173,9 +5186,10 @@
       "sp": "23/23"
     },
     "id": "S-111",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:52:42",
-    "imagem": "img/S-111.png"
+    "imagem": "img/S-111.png",
+    "resposta": "Agora é uma bolha de verdade, nada de salamandra: corpo transparente com brilho de arco-íris e borda luminosa, água balançando dentro, rosto novo e delicado (olhos grandes que piscam, bochechas e sorrisinho). Sinais de cura: cruz verde com duas folhas brilhando na testa, gotinhas verdes de cura caindo e bolhinhas em órbita. Maré ganha um anel de água ondulado; Aquária uma coroa de gotas com uma gema e luz própria."
   },
   {
     "texto": "de todos o que eu mais gostei foi essa raposinha. So preciso que seja muuuuuuuito mais bem trabalhada, mas vc tá numa excelente linha. Gosto do rabinho pegando fogo tbm. Só preicso que deixe as 3 evolucoes infinitamente mais realistas do que está hj. Ta mto feio o modelo ainnda",
@@ -5217,9 +5231,10 @@
       "sp": "23/23"
     },
     "id": "S-112",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:53:44",
-    "imagem": "img/S-112.png"
+    "imagem": "img/S-112.png",
+    "resposta": "A raposa foi refeita com anatomia de verdade: corpo, cabeça e focinho longo e fino numa peça lisa só, pelagem fina por cima (peito e bochechas creme), olhos âmbar amendoados com pupila em fenda, orelhas altas com pelo dentro e pontas pretas, patas finas com \"meias\" escuras e dedinhos. O rabo é felpudo e termina em chama que tremula sempre para cima (1, 2 e 3 rabos por estágio). Labareda ganha juba de brasas e chaminhas nas orelhas; Solaris, pelagem dourada, marca solar na testa e luz própria."
   },
   {
     "texto": "o ataque padrao da faísca tem que ser melee, e parecido com do lobo. Nao tacando coisa de fogo. Pode ser skill futura que ela desenvolve e nao o ataque padrão",
@@ -5261,9 +5276,10 @@
       "sp": "23/23"
     },
     "id": "S-113",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:55:18",
-    "imagem": "img/S-113.png"
+    "imagem": "img/S-113.png",
+    "resposta": "O ataque padrão da Faísca agora é corpo a corpo, como o lobo: ela corre até o alvo, se agacha e dá o bote com mordida (com o som da mordida do lobo). O fogo virou habilidade de evolução: a partir da Labareda ela cospe uma brasa a cada ~8 s, e na Solaris a brasa explode em área. Os outros mascotes também ganharam animação de ação (o tatu empina e bate o casco, a bolha solta um anel verde de cura)."
   },
   {
     "texto": "nosso mascotes tbm tem que ter vida, mas e mvez de sp, precisa ter stamina",
@@ -5305,9 +5321,10 @@
       "sp": "23/23"
     },
     "id": "S-114",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:56:05",
-    "imagem": "img/S-114.png"
+    "imagem": "img/S-114.png",
+    "resposta": "Mascotes agora têm vida e stamina (no lugar de SP), com barras no quadro do personagem e em cima do mascote. Correr e atacar gastam stamina; cansado, ele fica mais lento e espera recuperar. Quando o mascote briga de perto, os monstros podem acertá-lo; com a vida a zero ele desmaia, descansa uns segundos e volta. Vida e stamina ficam no save."
   },
   {
     "texto": "ao inves do botao da bolinha do mouse permitir que eu visse minha car, eu gostaria que clicar nele e arrastaro mouse permitisse que eu pudesser ver o personagem por outra perspectiva, meio que poder dar um 360 em volta dele",
@@ -5349,9 +5366,10 @@
       "sp": "31/31"
     },
     "id": "S-115",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T15:59:56",
-    "imagem": "img/S-115.png"
+    "imagem": "img/S-115.png",
+    "resposta": "O botão do meio (rodinha) agora gira a câmera: segure e arraste para dar a volta de 360° em volta do personagem (e para cima/baixo). Soltando, a câmera volta suave para trás dele."
   },
   {
     "texto": "isso tbm nao pode aparecer aqui. deveria te r sumido por eu estar suficientemente longe",
@@ -5408,9 +5426,10 @@
       "sp": "31/31"
     },
     "id": "S-116",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T16:00:57",
-    "imagem": "img/S-116.png"
+    "imagem": "img/S-116.png",
+    "resposta": "Corrigido: nomes de monstros (inclusive o Boneco de Treino que você acertou) não aparecem mais de longe. Em combate o limite agora é 20 m, e o boneco não conta como \"brigando com você\"."
   },
   {
     "texto": "foi um excelente começo esse aumento do mundo pra ter neve, deserto e etc. De fato preciso ter tudo isso no mundo. Senti falta de cidades perto de praias, e tbm quero que vc crie cidades pra cada raça. Na de humanos é onde todo mundo começa, mas tbm precisa ter cidades de anoes e de elfos. Sendo anoes guerreiros por padrao, cidade de equipamentos e tudo mais, machados e tudo nessa pegada, perto de montanhas mais altas. e tbm idades de elfos e tudo o que caracterizaria uma cidade de elfos. Obviamnente precisa ter npcs tbm que se adaptem às cidades, sendo das respectivas raças em sua maioria esmagadora",
@@ -5552,9 +5571,10 @@
       "sp": "31/31"
     },
     "id": "S-119",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T16:18:59",
-    "imagem": "img/S-119.png"
+    "imagem": "img/S-119.png",
+    "resposta": "Na Arena a câmera não sai mais do círculo: ela se aproxima sozinha para nunca ficar atrás do muro."
   },
   {
     "texto": "nao goto de uma forma geométrica tao disforme aqiu no meio, podia ser outra coisa",
@@ -5596,8 +5616,980 @@
       "sp": "31/31"
     },
     "id": "S-120",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T16:19:20",
-    "imagem": "img/S-120.png"
+    "imagem": "img/S-120.png",
+    "resposta": "O hexágono vermelho virou um medalhão de pedra gravado: disco com borda e marcas em volta, escudo de bronze em relevo e duas espadas cruzadas."
+  },
+  {
+    "texto": "quero tornar isso tudo mais realistas, com tilojos da pedra nas pareses, a tocha realista e em vez de retangulos vermelhos e azuis tem que ser algum cartaz, algo assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (989×267 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 7,
+          "Cavaleiro Caído": 8,
+          "Espectro Pálido": 8,
+          "Coelho-Chifre": 1,
+          "Gotinha Sombria": 8
+        },
+        "npcs": [
+          "Oto"
+        ],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        808,
+        2
+      ],
+      "pos": [
+        808,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-121",
+    "status": "feito",
+    "criadoEm": "2026-11-08T16:19:58",
+    "imagem": "img/S-121.png",
+    "resposta": "A Arena ficou de pedra de verdade: muro e pilares com tijolos de pedra em relevo (tamanhos e tons variados), tochas de parede com suporte de ferro, pano enrolado e chama em camadas que tremula, estandartes de tecido com brasão pintado (Leões e Águias) e cartazes do torneio pregados no muro."
+  },
+  {
+    "texto": "ja mudar tudo isso aqui pra nada ser emojis e sim itens de jogos mesmo, pode criar itens lindos de forma que minimize retrabalho. Vc entende do meu gosto e confio que vai chegar em algo legal que nao sejam emojis",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"Loja do Bento\"",
+      "nome": "Área de 627×444 px em Janela \"Loja do Bento\" — \"Bento · <Mercador> · Capitão Bravo · <Mestre da Arena (PvP)> · Alvo fora de alcance. · Loja do Bento · ✕ · Comprar · 🍎 \"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"Loja do Bento\""
+        ],
+        "textos": [
+          "Bento",
+          "<Mercador>",
+          "Capitão Bravo",
+          "<Mestre da Arena (PvP)>",
+          "Alvo fora de alcance.",
+          "Loja do Bento",
+          "✕",
+          "Comprar",
+          "🍎",
+          "Maçã"
+        ],
+        "area": [
+          1396,
+          93,
+          2023,
+          537
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-122",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:23:25",
+    "imagem": "img/S-122.png"
+  },
+  {
+    "texto": "pode se inspirar na compra e vende do wow por exemplo ou do ragnarok, de forma que fique intuitivo que eu posso ir vendendo alg, tipo o que ta na minha bag e eu posso ir dando duplo click e vai entrando em uma janelinh dos itens que pretendo vender o gold que daria se eu vendesse esses itens",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (660×490 px) (sobre: Janela \"Loja do Bento\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 3,
+          "Cavaleiro Caído": 4,
+          "Espectro Pálido": 4,
+          "Gotinha Sombria": 6
+        },
+        "npcs": [
+          "Oto",
+          "Capitão Bravo"
+        ],
+        "cenario": {
+          "Casa": 1,
+          "Caixote": 1,
+          "Bandeira": 1,
+          "Cerca": 6,
+          "Rocha": 1,
+          "Rocha musgosa": 2,
+          "Toco": 1,
+          "Tronco caído": 1
+        },
+        "centro": "Casa",
+        "versao": "3D",
+        "interface": [
+          "Janela \"Loja do Bento\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -57,
+        1
+      ],
+      "pos": [
+        -57,
+        1
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-123",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:24:32",
+    "imagem": "img/S-123.png"
+  },
+  {
+    "texto": "nao nessa casa aqui, mas em uma casa no mundo dos anoes tem que ter um ferreiro onede eu possa ter o sistema de refinios de equipamentos. Eles podem chegar até no + 10. Podem chegar até +X sem quebrar e a partir de la, tem chance de quebrar. Essa tabelinha precisa estar muito visual nessa casnha , como funciona o sistema inteiro de refinio. E algo analogo aos oridecon e elinium do ragnarok , mas porem de outros nomes. E tbm as coisas refinadas vao melhorando meu ataque ou defesa. Armas melhora ataque e os melgoramentos no equipamento melhoram a defesa",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (507×508 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Casa": 1,
+          "Moinho": 1,
+          "Alvo de treino": 1,
+          "Cerca": 5
+        },
+        "centro": "Casa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -83,
+        2
+      ],
+      "pos": [
+        -83,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-124",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:27:12",
+    "imagem": "img/S-124.png"
+  },
+  {
+    "texto": "nao tem sentido nenhum um forno gigante aqui",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (494×478 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Ferraria": 1,
+          "Cerca": 5
+        },
+        "centro": "Ferraria",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -70,
+        -3
+      ],
+      "pos": [
+        -70,
+        -3
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-125",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:27:24",
+    "imagem": "img/S-125.png"
+  },
+  {
+    "texto": "preciso que tenha aqui um npc de quest aqui. Será o NPC da main quest, na qual vou seguindo o que ele diz, ele me manda la pra casa do chapeu pra falar com nao sei quem e eu vou fazendo a quest que ele me pedir e, à medida que faço a quest e completo, eu ganho coisas, como itens (às vezes apenas). e principalmente exp pra eu ir evoluindo de nivel. Mas Gostaria que isso fosse so uma ajuda pra evoluir , meio que um empurraozinho, pois prefiro pegar mais exp de matar monstro do que de fazer missao. Mas pode se inspirar no sistema de quests do wow. Nao vai copiar tudo ao pe da letra obviamente mais se inspire muito nessse quesito de inter-relacao entre npcs e tudo mais",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (101×95 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -71,
+        9
+      ],
+      "pos": [
+        -71,
+        9
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-126",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:31:30",
+    "imagem": "img/S-126.png"
+  },
+  {
+    "texto": "gostari que o padrão do modelo tivesse pele mais clara. Podendo essa sim ser mudada la na selecao de personagens, mas o padrao é que fossese mais clara. E as mulheres precisam ser um pouco mais femininas e nao parecerem tao masculinas assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (260×389 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Neli"
+        ],
+        "cenario": {},
+        "centro": "Neli",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -44,
+        27
+      ],
+      "pos": [
+        -44,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-127",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:32:28",
+    "imagem": "img/S-127.png"
+  },
+  {
+    "texto": "os equipamentos nao combinaram muito com p modelo, preciso de encaixas muuuito melhores, nao quero criar um frankstein",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (367×471 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Guarda Tobias"
+        ],
+        "cenario": {},
+        "centro": "Guarda Tobias",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -55,
+        22
+      ],
+      "pos": [
+        -55,
+        22
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-128",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:32:59",
+    "imagem": "img/S-128.png"
+  },
+  {
+    "texto": "precis do de baldes mto mais realistas.  E essa fonte tbm",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (175×352 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Poço": 1,
+          "Balde": 1
+        },
+        "centro": "Poço",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -70,
+        20
+      ],
+      "pos": [
+        -70,
+        20
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-129",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:33:27",
+    "imagem": "img/S-129.png"
+  },
+  {
+    "texto": "esse hat ta flutuando bugado na cabeça d pessoa. Nao pode ser assim. E isso na mao dele é um machado? Ta muito bugado e nao ta encaixando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (217×359 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Bento"
+        ],
+        "cenario": {
+          "Bandeira": 1
+        },
+        "centro": "Bento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -61,
+        13
+      ],
+      "pos": [
+        -61,
+        13
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-130",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:33:59",
+    "imagem": "img/S-130.png"
+  },
+  {
+    "texto": "precisa melgorar estetica aqui e ter uma bandeira que se mexe com o vento e nao toda durona e azul. Melgorar tbm a textura da madeira",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (270×249 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Bandeira": 1
+        },
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -50,
+        14
+      ],
+      "pos": [
+        -50,
+        14
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-131",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:34:35",
+    "imagem": "img/S-131.png"
+  },
+  {
+    "texto": "melhorar textura de tudo que é feio de pedra, pra ficar mais realista",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (298×379 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Brasinha": 3,
+          "Esqueleto Vigia": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Torre": 1,
+          "Cerca": 2,
+          "Carvalho": 2,
+          "Rocha": 1
+        },
+        "centro": "Torre",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -48,
+        34
+      ],
+      "pos": [
+        -48,
+        34
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-132",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:34:55",
+    "imagem": "img/S-132.png"
+  },
+  {
+    "texto": "esse bagulho branco perto do lugar de pegar a cerveja ficou bugado, preciso que mehore isso. E melgore a caneca pra ficar um pouco menos transparente tbm, no lugar de pegar e tm ficou mto fino o copo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (492×130 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        1360,
+        2
+      ],
+      "pos": [
+        1360,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-133",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:37:16",
+    "imagem": "img/S-133.png"
+  },
+  {
+    "texto": "aqui ta com varios pedaços nao conectados, meio que voando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (422×238 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Carrinho de mão": 1
+        },
+        "centro": "Carrinho de mão",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -79,
+        27
+      ],
+      "pos": [
+        -79,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-134",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:37:36",
+    "imagem": "img/S-134.png"
+  },
+  {
+    "texto": "gostaria dessa loja esteticamente muito melhor, nao entendi esse monte de paleta de cores ali, nao ta sufcientemetne intuitivo em termos de ui/ux",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (765×476 px) (sobre: Janela \"✦ Loja de Auroras\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 3,
+          "Fungolino": 2,
+          "Coelho-Chifre": 5,
+          "Abelha Rubra": 8,
+          "Lobo Cinzento": 12,
+          "Musguinho": 6,
+          "Esqueleto Vigia": 6,
+          "Espectro Pálido": 4,
+          "Cavaleiro Caído": 3,
+          "Gotinha Sombria": 3,
+          "Sentinela Silente": 1
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Aldo",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela"
+        ],
+        "cenario": {
+          "Carvalho": 6,
+          "Pinheiro": 16,
+          "Rocha": 1,
+          "Pedra": 1,
+          "Pinheiro escuro": 16,
+          "Carvalho do bosque": 5,
+          "Rocha musgosa": 5,
+          "Toco": 4,
+          "Tronco caído": 1
+        },
+        "centro": "Estrada de terra — Campos de Verdelume",
+        "versao": "3D",
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        11,
+        24
+      ],
+      "pos": [
+        11,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-135",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:38:28",
+    "imagem": "img/S-135.png"
+  },
+  {
+    "texto": "aqui tbm tinha que ter um bom preview pra pessoa ter um gostinho melhor do que ela ia receber. Tipo um leao ou algo assim em termos de montaria. Tipo um leopardo, algo assim foda, e precisa ser muito bem feito pra nao ficar escroto tbm",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (442×271 px) (sobre: Janela \"✦ Loja de Auroras\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 3,
+          "Fungolino": 1,
+          "Abelha Rubra": 1,
+          "Lobo Cinzento": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Carvalho": 3,
+          "Pinheiro": 2,
+          "Pinheiro escuro": 1
+        },
+        "centro": "Chão — Campos de Verdelume",
+        "versao": "3D",
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        11,
+        21
+      ],
+      "pos": [
+        11,
+        21
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-136",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:39:11",
+    "imagem": "img/S-136.png"
+  },
+  {
+    "texto": "gostei mas da pra melhorar deixando esse olho menos esquisito e tbm nao gostei tanto das formas geométricas dentro dela. Ta num otimo caminho essas gotas maselas precisam ser mais diferentes um pouco do poring e ser muito mais expressivas, e nao tenham um boca tao parada assim. Ta num bom caminho, gostei dela ser translucida, mas sint oque da pr a melhorar. Podia tbm ir deixando um rastro que fosse sumindo, ia ser bem legal",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (179×145 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Gotinha",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        6,
+        23
+      ],
+      "pos": [
+        6,
+        23
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-137",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:40:55",
+    "imagem": "img/S-137.png"
+  },
+  {
+    "texto": "gostaria de ter um local pra filtrar por boss e tbm tivessem alguns boss mais fodas tipo inspirados muito ali no satan morroc e outros mvps do ragnarok. E eles precisam ser bemgrandões. \n\nPra ideias de boss, quero que vc se inspire nos oss que a comunidade do WoW e ragnarok mais gostavam. E skyrim também pode se inspirar. Sobre padrão esteticos deles vc vai vendo os feedbacks que ja dei pros mosntros e vc vai entnendendo o que eu gosto e o que eu nao gosto, até que chegue a algo do meu agrado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"📖 Bestiário\"",
+      "nome": "Área de 721×598 px em Janela \"📖 Bestiário\" — \"Coelho-Chifre · Alvo fora de alcance. · 📖 Bestiário · Lobo Cinzento · Nv. 12 · Espantalho Errante · Nv. 15 · Morcego de\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"📖 Bestiário\""
+        ],
+        "textos": [
+          "Coelho-Chifre",
+          "Alvo fora de alcance.",
+          "📖 Bestiário",
+          "Lobo Cinzento",
+          "Nv. 12",
+          "Espantalho Errante",
+          "Nv. 15",
+          "Morcego de Cripta",
+          "Nv. 18",
+          "Lobo Alfa"
+        ],
+        "area": [
+          1347,
+          61,
+          2068,
+          659
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-138",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:44:16",
+    "imagem": "img/S-138.png"
+  },
+  {
+    "texto": "o coelho melhorou mas ainda estáexcessivamente em formas geometrica e esse pelinho foi muito mal aplicao, pq a gente sabe que coelho tem pelo fofo e nao assim todo espinhudo, e tbm as pernas dele nao tao bem conectaas. Dá pra melhorar bastante esse coelho ainda, pra parecer mais um coelho da ida real. Ta num bom caminho mas da pra melhorar mai ainda",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (138×117 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Coelho-Chifre": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Coelho-Chifre",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        16,
+        27
+      ],
+      "pos": [
+        16,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Arquimago",
+      "nivelBase": 3,
+      "nivelClasse": 3,
+      "hp": "69/69",
+      "sp": "31/31"
+    },
+    "id": "S-139",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T16:45:27",
+    "imagem": "img/S-139.png"
   }
 ]

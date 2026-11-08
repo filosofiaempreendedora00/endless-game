@@ -23,6 +23,19 @@ function rock(rng, rx, ry, rz, amt = 0.12) {
   }
   g.computeVertexNormals(); return g;
 }
+// lasca de rocha talhada: faces planas cortadas (como rocha de encosta), quinas gastas
+function chunk(rng, rx, ry, rz, cuts = 11) {
+  const g = mergeVertices(new THREE.IcosahedronGeometry(1, 3)), P = g.attributes.position, ph = rng() * 10, planes = [];
+  for (let k = 0; k < cuts; k++) { const a = rng() * Math.PI * 2, y = k < 2 ? (k ? 1 : -1) * (0.7 + rng() * 0.3) : (rng() - 0.5) * 0.6; const n = V3(Math.cos(a) * Math.sqrt(1 - y * y), y, Math.sin(a) * Math.sqrt(1 - y * y)).normalize(); planes.push([n, 0.42 + rng() * 0.28]); }
+  const v = new THREE.Vector3();
+  for (let i = 0; i < P.count; i++) {
+    v.fromBufferAttribute(P, i);
+    for (const [n, d] of planes) { const t = v.dot(n); if (t > d) v.addScaledVector(n, -(t - d) * 0.92); }
+    const w = 1 + (Math.sin(v.x * 5 + ph) * Math.cos(v.y * 7 + ph) * Math.sin(v.z * 6)) * 0.03 + Math.sin(v.y * 22 + ph) * 0.008; // estratos
+    P.setXYZ(i, v.x * rx * w, v.y * ry * w, v.z * rz * w);
+  }
+  g.computeVertexNormals(); return g;
+}
 // coluna gasta: cilindro com caneluras e borda irregular
 function column(rng, r, h, broken = 0) {
   const g = new THREE.CylinderGeometry(r * 0.92, r, h, 18, 8), P = g.attributes.position;
@@ -123,11 +136,25 @@ export function makeTemple(seed = 13) {
   const wall = new THREE.BoxGeometry(26, 16, 2, 10, 6, 1); wall.translate(0, 9.6, -8.4); S.push(paint(wall, '#8f8a80', '#5d7a3a', 0.3, seed)); // fundo (encostado na montanha)
   const doorFrame = new THREE.TorusGeometry(3.4, 0.6, 10, 28, Math.PI); doorFrame.translate(0, 8.6, -7.3); S.push(paint(doorFrame, '#c2bba9', '#5d7a3a', 0.2, seed));
   for (const sx of [-3.4, 3.4]) { const jamb = new THREE.BoxGeometry(1.2, 5, 1.2); jamb.translate(sx, 6.1, -7.3); S.push(paint(jamb, '#c2bba9', '#5d7a3a', 0.2, seed)); }
+  // S-103: a fachada sai de dentro da rocha — paredões dos lados, uma laje de pedra por cima (beiral) e blocos caídos na base
+  const rk = (c, sz, rot, amt = 0.14, col = '#8c877d') => S.push(paint(put(amt > 0.2 ? chunk(rng, ...sz) : rock(rng, ...sz, amt), ...c, ...rot), col, '#5d7a3a', 0.45, seed + S.length));
+  // massa de rocha = vários blocos angulosos sobrepostos (nada de "travesseiro" liso)
+  const crag = (c, sz, n, amt = 0.3) => { for (let k = 0; k < n; k++) { const f = 0.55 + rng() * 0.25; rk([c[0] + (rng() - 0.5) * sz[0] * 0.4, c[1] + (k / Math.max(1, n - 1) - 0.5) * sz[1] * 0.55, c[2] + (rng() - 0.5) * sz[2] * 0.3], [sz[0] * f * 0.62, sz[1] * f * 0.5, sz[2] * f * 0.6], [(rng() - 0.5) * 0.2, rng() * 3, (rng() - 0.5) * 0.2], amt, rng() < 0.5 ? '#8c877d' : '#7f7a71'); } };
+  for (const sx of [-1, 1]) {
+    crag([sx * 17.2, 10, -3.5], [9, 22, 14], 4); rk([sx * 15.4, 7, -6.5], [3.8, 8.5, 4.5], [0, 0.3, 0], 0.3); rk([sx * 16.5, 2.8, 1.5], [3.6, 3.4, 3.6], [0, 1, 0], 0.3);            // paredão lateral colado na fachada
+    crag([sx * 21, 22, -8], [12, 12, 12], 2);               // ombro da montanha
+    crag([sx * 16, 2.4, 6], [6, 4, 6], 3, 0.25);            // pedras que rolaram ao pé da escada
+    crag([sx * 21, 1.6, 11], [6, 3, 6], 2, 0.25);
+    rk([sx * 14.2, 12.8, -1.2], [1.8, 6.5, 2.6], [0, 0, sx * 0.12], 0.2); // aresta de rocha cobrindo a junta
+  }
+  for (let k = 0; k < 4; k++) rk([-13.5 + k * 9 + (rng() - 0.5) * 2, 19.4 + rng() * 1.2, -1.4 + (rng() - 0.5) * 1.5], [6.5 + rng() * 1.5, 2.8 + rng() * 0.8, 5.6], [(rng() - 0.5) * 0.15, (rng() - 0.5) * 0.4, (rng() - 0.5) * 0.15], 0.3);              // beiral de rocha acima do lintel
+  crag([0, 26, -9.5], [40, 12, 8], 4);                      // montanha logo atrás
   g.add(mesh(S));
   const dark = new THREE.Mesh(new THREE.CircleGeometry(3.3, 28, 0, Math.PI), new THREE.MeshBasicMaterial({ color: '#07060a' })); dark.position.set(0, 8.6, -7.35); g.add(dark);
   const darkB = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 5), new THREE.MeshBasicMaterial({ color: '#07060a' })); darkB.position.set(0, 6.1, -7.35); g.add(darkB);
   // braseiros nas laterais da escada
   for (const sx of [-13, 13]) { const b = brazier(); b.position.set(sx, 3.6, 2.6); g.add(b); }
+  g.userData.cols = [[-16.5, 1.5, 3.6], [16.5, 1.5, 3.6], [-16, 6, 3.4], [16, 6, 3.4], [-21, 11, 3.4], [21, 11, 3.4]]; // rochas no pé da fachada
   return g;
 }
 function brazier() {
@@ -250,5 +277,350 @@ export function makeWheelbarrow() {
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 14), iron); hub.rotation.z = Math.PI / 2; wheel.add(hub);
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 8), iron); axle.rotation.z = Math.PI / 2; wheel.add(axle);
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  return g;
+}
+
+/* =========================================================================
+   COLOSSOS (S-102): gigantes esculpidos na pedra, cada um com pose, armadura e arma próprias.
+   Inspiração de sensação (não de visual): a vastidão silenciosa de Shadow of the Colossus e a
+   brutalidade dos titãs de God of War. Tudo numa malha de pedra (cor por vértice: musgo em cima,
+   sujeira embaixo, rachaduras) + uma malha de runas que brilham fraquinho.
+   Cada função devolve um Group com userData.cols = [[x, z, raio], ...] (colisão no chão, local).
+   ========================================================================= */
+const UPV = new THREE.Vector3(0, 1, 0);
+const runeMat = new THREE.MeshStandardMaterial({ color: '#7fa8c8', emissive: '#5aa8f0', emissiveIntensity: 0.9, roughness: 0.6 });
+const eyeMat = new THREE.MeshStandardMaterial({ color: '#e6f4ff', emissive: '#8fd0ff', emissiveIntensity: 2.2 });
+// membro esculpido de a até b: tronco de cone com músculo (barriga no meio), desgaste e leve achatamento
+function limb(rng, a, b, r0, r1, o = {}) {
+  const A = V3(...a), B = V3(...b), d = B.clone().sub(A), L = d.length();
+  const g = new THREE.CylinderGeometry(1, 1, L, 24, Math.max(6, Math.round(L / 0.6)), true), P = g.attributes.position, ph = rng() * 10, bulge = o.bulge ?? 0.12, amt = o.amt ?? 0.035, fx = o.fx ?? 1;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), y = P.getY(i), z = P.getZ(i), t = (y + L / 2) / L, r = r0 + (r1 - r0) * t;
+    const m = 1 + Math.sin(t * Math.PI) * bulge + Math.sin(t * Math.PI * 2 + ph) * bulge * 0.25;
+    const n = 1 + (Math.sin(x * 3 + y * 1.3 + ph) * Math.cos(z * 2.6 + ph) * 0.5 + Math.sin(y * 4.1 + ph) * 0.25) * amt;
+    P.setXYZ(i, x * r * m * n * fx, y, z * r * m * n);
+  }
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UPV, d.normalize()));
+  g.translate((A.x + B.x) / 2, (A.y + B.y) / 2, (A.z + B.z) / 2);
+  g.computeVertexNormals(); return g;
+}
+// placa de armadura: bloco de quinas gastas, curvado como uma couraça
+function plate(rng, w, h, d, pos, rot = [0, 0, 0], curve = 0.22) {
+  const g = mergeVertices(new THREE.BoxGeometry(w, h, d, 10, 8, 2).deleteAttribute('uv').deleteAttribute('normal')), P = g.attributes.position, r = Math.min(w, h, d) * 0.4;
+  for (let i = 0; i < P.count; i++) {
+    let x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+    const ex = Math.max(0, Math.abs(x) - (w / 2 - r)), ey = Math.max(0, Math.abs(y) - (h / 2 - r)), ez = Math.max(0, Math.abs(z) - (d / 2 - r));
+    const e = Math.hypot(ex, ey, ez); if (e > 0) { const k = r / e; x -= Math.sign(x) * ex * (1 - k); y -= Math.sign(y) * ey * (1 - k); z -= Math.sign(z) * ez * (1 - k); }
+    z -= (Math.pow(x / (w / 2), 2) * w * 0.5 + Math.pow(y / (h / 2), 2) * h * 0.18) * curve; // curvatura
+    const j = Math.sin(x * 2.3 + y * 1.7) * Math.cos(y * 2.1) * 0.03 * Math.min(w, h);
+    P.setXYZ(i, x, y, z + j);
+  }
+  g.computeVertexNormals(); return put(g, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2]);
+}
+// ponta afiada (chifre, espigão, garra) que curva ao longo de vários pontos
+function horn(rng, pts, r0, r1 = 0.02) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => V3(...p))), N = 20, tg = new THREE.TubeGeometry(curve, N, 1, 16, false), P = tg.attributes.position, Nn = tg.attributes.normal;
+  for (let i = 0; i <= N; i++) { const u = i / N, c = curve.getPointAt(u), rr = r0 + (r1 - r0) * Math.pow(u, 0.8); for (let j = 0; j <= 16; j++) { const k = i * 17 + j, ring = 1 + (Math.sin(u * 40) > 0.6 ? 0.06 : 0); P.setXYZ(k, c.x + Nn.getX(k) * rr * ring, c.y + Nn.getY(k) * rr * ring, c.z + Nn.getZ(k) * rr * ring); } }
+  tg.deleteAttribute('uv'); tg.computeVertexNormals(); return tg;
+}
+// lâmina de espada: larga, com fio afinando nas bordas e ponta
+function blade(W, L, T = 0.6, broken = 0) {
+  const bl = new THREE.BoxGeometry(W, L, T, 8, 24, 2), Pb = bl.attributes.position;
+  for (let i = 0; i < Pb.count; i++) { const y = Pb.getY(i), t = (y + L / 2) / L, x = Pb.getX(i), z = Pb.getZ(i); const taper = t < 0.1 ? t / 0.1 : 1; let yy = y; if (broken && t > 0.98) yy -= (Math.sin(x * 5) * 0.5 + 0.5) * broken; Pb.setXYZ(i, x * (0.8 + 0.2 * t) * Math.max(0.04, taper), yy, z * (1 - Math.pow(Math.abs(x) / (W / 2), 2) * 0.8) * Math.max(0.2, taper)); }
+  bl.deleteAttribute('uv'); bl.computeVertexNormals(); return bl;
+}
+const blob = (rng, c, s, rot = [0, 0, 0], amt = 0.06) => put(rock(rng, s[0], s[1], s[2], amt), c[0], c[1], c[2], rot[0], rot[1], rot[2]);
+// faixa de runa: glifos gravados (haste + galhos em diagonal), um embaixo do outro
+function runeLine(rng, pos, len, rot = [0, 0, 0], w = 0.14) {
+  const parts = [], gh = Math.max(0.6, w * 6), bar = (l, a, x, y) => { const b = new THREE.BoxGeometry(w, l, 0.08); b.rotateZ(a); b.translate(x, y, 0); parts.push(b); };
+  for (let y = -len / 2 + gh / 2; y < len / 2 - gh / 2; y += gh * 1.35) {
+    bar(gh, 0, 0, y); // haste
+    const kind = Math.floor(rng() * 5), d = gh * 0.42;
+    if (kind === 0) { bar(d, 0.8, d * 0.28, y + gh * 0.25); bar(d, -0.8, d * 0.28, y); }
+    else if (kind === 1) { bar(d * 1.2, 0.7, -d * 0.3, y + gh * 0.2); bar(d * 1.2, -0.7, d * 0.3, y + gh * 0.2); }
+    else if (kind === 2) { bar(d, -0.75, d * 0.3, y + gh * 0.3); bar(d, 0.75, d * 0.3, y - gh * 0.05); bar(d, -0.75, -d * 0.3, y - gh * 0.2); }
+    else if (kind === 3) { bar(d * 1.4, 0.6, 0, y); }
+    else { bar(d, 0.8, -d * 0.28, y + gh * 0.3); bar(d, -0.8, d * 0.28, y + gh * 0.3); bar(d * 0.9, Math.PI / 2, 0, y - gh * 0.3); }
+  }
+  const g = mergeGeometries(parts.map(p => { p.deleteAttribute('uv'); return p; })); return put(g, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2]);
+}
+function runeRing(R, pos, rot = [0, 0, 0], n = 16) {
+  const parts = []; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, b = new THREE.BoxGeometry(0.16, R * 0.32 * (k % 3 ? 0.6 : 1), 0.08); b.rotateZ(a + (k % 2 ? 0.3 : -0.3)); b.translate(Math.cos(a) * R, Math.sin(a) * R, 0); parts.push(b); }
+  const g = mergeGeometries(parts.map(p => { p.deleteAttribute('uv'); return p; })); return put(g, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2]);
+}
+// junta as peças: pedra pintada (1 malha) + runas (1 malha)
+function colossusMesh(stoneParts, runeParts, eyes = []) {
+  const g = new THREE.Group();
+  g.add(mesh(stoneParts));
+  if (runeParts.length) { const r = new THREE.Mesh(mergeGeometries(runeParts.map(p => { const x = p.index ? p.toNonIndexed() : p; for (const k of Object.keys(x.attributes)) if (k !== 'position' && k !== 'normal') x.deleteAttribute(k); if (!x.attributes.normal) x.computeVertexNormals(); return x; })), runeMat); g.add(r); }
+  for (const [x, y, z, sx, sy, sz, rx = 0, ry = 0] of eyes) { const e = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 12), eyeMat); e.scale.set(sx, sy, sz); e.position.set(x, y, z); e.rotation.set(rx, ry, 0); g.add(e); }
+  return g;
+}
+// destroços aos pés: lascas de armadura e pedras quebradas
+function rubble(rng, S, n, cx, cz, spread, base, scale = 1) {
+  for (let k = 0; k < n; k++) {
+    const x = cx + (rng() - 0.5) * spread, z = cz + (rng() - 0.5) * spread, s = (0.5 + rng() * 1.3) * scale;
+    S.push(paint(rng() < 0.5 ? blob(rng, [x, s * 0.25, z], [s, s * 0.6, s * 0.9], [rng(), rng() * 3, rng()], 0.2) : plate(rng, s * 2, s * 1.4, s * 0.45, [x, s * 0.3, z], [-1.3 + rng() * 0.5, rng() * 3, rng() - 0.5]), base, '#5b7a36', 0.8, k));
+  }
+}
+
+/* ---------- 1. Sentinela de Pé (≈ 35 m): elmo com crista, escudo redondo nas costas, as duas mãos no pomo de uma espada cravada no chão ---------- */
+export function makeSentinel(seed = 41) {
+  const rng = rngOf(seed), S = [], R = [], base = '#b2ab9d', armor = '#97918a', moss = '#5d7a3a';
+  const P = (g, c = base, m = 0.55) => S.push(paint(g, c, moss, m, seed));
+  for (const sx of [-1, 1]) {
+    // pernas firmes, afastadas
+    P(blob(rng, [sx * 4.3, 0.9, 1.4], [1.7, 1.0, 2.8]), armor);                                  // pé (sapato de placas)
+    P(plate(rng, 3.0, 1.2, 3.8, [sx * 4.3, 1.5, 1.8], [-0.25, 0, 0], 0.3), armor);                // biqueira
+    P(limb(rng, [sx * 4.3, 1.4, 0.4], [sx * 3.7, 9.2, 0.2], 1.35, 1.75, { bulge: 0.16 }));        // canela
+    P(plate(rng, 2.6, 6.2, 0.7, [sx * 4.0, 5.4, 1.75], [-0.04, sx * 0.05, 0], 0.5), armor);        // grevas
+    P(blob(rng, [sx * 3.7, 9.4, 0.5], [2.0, 1.9, 2.0]));                                          // joelho
+    P(plate(rng, 2.6, 2.4, 0.8, [sx * 3.7, 9.6, 2.3], [0.15, 0, 0], 0.6), armor);                 // joelheira
+    P(limb(rng, [sx * 3.7, 9.4, 0.3], [sx * 2.9, 16.4, 0], 1.85, 2.35, { bulge: 0.12 }));          // coxa
+  }
+  P(blob(rng, [0, 16.9, 0], [4.7, 2.7, 3.3]));                                                     // quadril
+  for (let k = 0; k < 9; k++) { const a = -2.2 + k * 0.55, x = Math.sin(a) * 4.6, z = Math.cos(a) * 3.5; P(plate(rng, 2.4, 4.8, 0.5, [x, 14.8, z], [-0.18, a, 0], 0.3), armor); } // saiote de placas
+  P(blob(rng, [0, 18.2, 0.1], [5.0, 1.0, 3.7], [0, 0, 0], 0.03), '#7d786e');                        // cinturão
+  P(plate(rng, 2.6, 2.2, 0.8, [0, 18.2, 3.75], [0, 0, 0], 0.3), armor); R.push(runeRing(0.75, [0, 18.2, 4.2])); // fivela com runa
+  P(blob(rng, [0, 20.6, 0.2], [3.9, 3.0, 2.9]));                                                   // abdome
+  for (let k = 0; k < 3; k++) P(plate(rng, 6.6 - k * 0.3, 1.2, 0.6, [0, 19.4 + k * 1.15, 2.7 + k * 0.12], [-0.1, 0, 0], 0.45), armor); // lâminas da barriga
+  P(blob(rng, [0, 24.4, 0.2], [5.6, 3.9, 3.5]));                                                   // peito
+  for (const sx of [-1, 1]) P(plate(rng, 4.6, 5.4, 0.8, [sx * 2.35, 24.6, 3.15], [-0.12, sx * 0.38, 0], 0.4), armor); // couraça
+  P(plate(rng, 0.9, 5.8, 0.9, [0, 24.6, 3.75], [-0.12, 0, 0], 0.1), '#9a9488'); R.push(runeLine(rng, [0, 24.4, 4.25], 4.6, [-0.12, 0, 0]));   // quilha central com inscrição
+  // escudo redondo pendurado nas costas
+  { const sh = new THREE.CylinderGeometry(5.2, 5.2, 0.9, 48, 1); const Pp = sh.attributes.position; for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i), y = Pp.getY(i); Pp.setY(i, y + (y > 0 ? (1 - (x * x + z * z) / 27) * 0.9 : 0)); } sh.deleteAttribute('uv'); sh.computeVertexNormals(); P(put(sh, 0, 23.4, -4.2, -Math.PI / 2 + 0.1, Math.PI, 0), '#8a8479', 0.4);
+    P(put(new THREE.TorusGeometry(5.1, 0.35, 10, 48).deleteAttribute('uv'), 0, 23.4, -4.4, 0.1, 0, 0), '#77726a', 0.3);
+    P(blob(rng, [0, 23.5, -5.6], [1.3, 1.3, 0.9], [0, 0, 0], 0.03), '#77726a'); R.push(runeRing(3.4, [0, 23.4, -5.45], [0.1, 0, 0], 22)); }
+  for (const sx of [-1, 1]) { // ombros com ombreiras em camadas
+    P(blob(rng, [sx * 5.6, 26.8, 0.1], [2.4, 2.2, 2.4]));
+    for (let k = 0; k < 3; k++) P(plate(rng, 4.6 - k * 0.5, 2.0, 4.4 - k * 0.3, [sx * (6.3 + k * 0.35), 27.9 - k * 1.25, 0.1], [0, 0, sx * (-0.5 - k * 0.12)], 0.35), armor);
+    // braços: cotovelos abertos, as duas mãos repousam uma sobre a outra no pomo da espada
+    P(limb(rng, [sx * 5.9, 26.4, 0.2], [sx * 7.0, 21.2, 1.4], 1.65, 1.4));          // braço
+    P(blob(rng, [sx * 7.0, 21.2, 1.4], [1.55, 1.55, 1.55]));                         // cotovelo
+    P(limb(rng, [sx * 7.0, 21.2, 1.4], [sx * 1.5, 18.9, 5.9], 1.4, 1.05));           // antebraço
+    P(plate(rng, 2.5, 3.8, 0.6, [sx * 4.4, 20.4, 4.0], [0.35, sx * -0.7, sx * 1.2], 0.5), armor); // braçadeira
+    P(put(new THREE.TorusGeometry(1.15, 0.22, 8, 24).deleteAttribute('uv'), sx * 2.3, 19.2, 5.3, 0.4, sx * -0.95, 0), armor, 0.2); // punho da manopla
+  }
+  P(blob(rng, [0, 19.2, 6.5], [1.7, 1.15, 1.5]), armor);                                // mão de baixo
+  P(blob(rng, [0.2, 20.3, 6.4], [1.6, 1.1, 1.45], [0, 0.3, 0]), armor);                  // mão de cima
+  for (let f = 0; f < 4; f++) P(limb(rng, [-1.3 + f * 0.85, 19.5, 7.4], [-1.2 + f * 0.82, 18.2, 7.6], 0.34, 0.28, { bulge: 0.05 }), armor); // dedos sobre o pomo
+  // espada cravada: lâmina larga com runas no sulco, guarda curva, cabo e pomo
+  { const L = 17.2, bl = new THREE.BoxGeometry(3.2, L, 0.6, 8, 24, 2), Pb = bl.attributes.position; for (let i = 0; i < Pb.count; i++) { const y = Pb.getY(i), t = (y + L / 2) / L, x = Pb.getX(i), z = Pb.getZ(i); const taper = t < 0.1 ? t / 0.1 : 1; Pb.setXYZ(i, x * (0.8 + 0.2 * t) * Math.max(0.04, taper), y, z * (1 - Math.pow(Math.abs(x) / 1.6, 2) * 0.8) * Math.max(0.2, taper)); }
+    bl.deleteAttribute('uv'); bl.computeVertexNormals(); P(put(bl, 0, L / 2 - 1.4, 6.7), '#99958d', 0.15); R.push(runeLine(rng, [0, 7.4, 7.02], 11, [0, 0, 0], 0.16)); }
+  S.push(paint(horn(rng, [[-3.6, 16.6, 6.7], [-1.8, 15.6, 6.7], [0, 15.4, 6.7], [1.8, 15.6, 6.7], [3.6, 16.6, 6.7]], 0.62, 0.5), '#858077', moss, 0.3, seed)); // guarda
+  P(limb(rng, [0, 15.6, 6.7], [0, 18.4, 6.7], 0.5, 0.5), '#6f6a62'); P(blob(rng, [0, 18.6, 6.7], [0.9, 0.7, 0.9]), '#7d786e');
+  // pescoço e elmo (cabeça levemente baixa, olhando quem chega)
+  P(limb(rng, [0, 27.6, 0.2], [0, 29.4, 0.9], 1.7, 1.5));
+  P(blob(rng, [0, 31.3, 1.1], [2.35, 2.75, 2.55], [0.25, 0, 0], 0.03), armor);                     // elmo
+  P(plate(rng, 4.0, 3.4, 0.9, [0, 30.7, 3.35], [0.25, 0, 0], 0.55), armor);                       // viseira
+  P(plate(rng, 4.4, 0.7, 1.1, [0, 31.7, 3.45], [0.25, 0, 0], 0.4), '#7a756c');                    // aba sobre a fenda dos olhos
+  for (const sx of [-1, 1]) P(plate(rng, 1.4, 3.6, 2.6, [sx * 2.1, 30.1, 2.0], [0.25, sx * 0.4, 0], 0.3), armor); // jugulares
+  P(plate(rng, 0.6, 2.8, 5.6, [0, 34.1, 0.3], [0.25, 0, 0], 0.25), armor);                        // crista
+  for (const sx of [-1, 1]) S.push(paint(horn(rng, [[sx * 1.9, 32.2, 0.9], [sx * 4.2, 33.0, 0.2], [sx * 5.8, 35.2, -1.2], [sx * 6.2, 38.4, -2.6], [sx * 5.4, 40.6, -3.4]], 0.85, 0.06), '#8a8479', moss, 0.3, seed)); // chifres para trás
+  rubble(rng, S, 10, 0, 3, 22, armor, 1.1);
+  const g = colossusMesh(S, R, [[-0.9, 31.15, 3.55, 0.55, 0.16, 0.2, 0.25], [0.9, 31.15, 3.55, 0.55, 0.16, 0.2, 0.25]]);
+  g.userData.cols = [[-4.2, 1, 2.6], [4.2, 1, 2.6], [0, 6.7, 1.6], [0, -1.5, 3]];
+  return g;
+}
+
+/* ---------- 2. Rei Sentado (≈ 32 m com o trono): barba trançada, coroa de espigões, mão no braço do trono e machado de duas lâminas ---------- */
+export function makeSeatedKing(seed = 53) {
+  const rng = rngOf(seed), S = [], R = [], base = '#a49d8f', armor = '#8c867b', moss = '#5d7a3a', throneC = '#8f8a80';
+  const P = (g, c = base, m = 0.55) => S.push(paint(g, c, moss, m, seed));
+  // trono: base em degraus, assento, encosto alto com três torres, braços
+  P(plate(rng, 18, 3.2, 15, [0, 1.6, -0.8], [0, 0, 0], 0.02), throneC, 0.8); P(plate(rng, 16, 3.4, 12, [0, 4.6, -1.4], [0, 0, 0], 0.02), throneC, 0.7);
+  P(plate(rng, 16, 22, 2.8, [0, 17, -7.6], [0, 0, 0], 0.08), throneC, 0.5);
+  for (const sx of [-1, 0, 1]) { const h = sx ? 5 : 7.5, y0 = 27.6; P(plate(rng, sx ? 2.6 : 3.4, h, 3.2, [sx * 6.4, y0 + h / 2, -7.6], [0, 0, 0], 0.05), throneC, 0.6); S.push(paint(horn(rng, [[sx * 6.4, y0 + h - 0.2, -7.6], [sx * 6.5, y0 + h + 2.2, -7.6], [sx * 6.6, y0 + h + 4.2, -7.5]], sx ? 1.1 : 1.5, 0.06), throneC, moss, 0.3, seed)); }
+  P(put(new THREE.TorusGeometry(5.2, 0.8, 10, 32, Math.PI).deleteAttribute('uv'), 0, 22.4, -6.0, 0, 0, 0), '#7f7a70', 0.3); R.push(runeRing(3.6, [0, 22.4, -6.05], [0, 0, 0], 20)); // arco esculpido atrás da cabeça
+  for (const sx of [-1, 1]) { P(plate(rng, 2.6, 4.2, 12, [sx * 8.4, 8.4, -1.6], [0, 0, 0], 0.05), throneC, 0.7); P(blob(rng, [sx * 8.4, 10.5, 4.6], [1.6, 1.6, 1.6], [0, 0, 0], 0.08), throneC); }
+  R.push(runeLine(rng, [0, 17, -6.1], 16, [0, 0, 0], 0.22)); for (const sx of [-1, 1]) R.push(runeLine(rng, [sx * 4.2, 15, -6.1], 10, [0, 0, 0], 0.16));
+  // pernas sentadas
+  for (const sx of [-1, 1]) {
+    P(limb(rng, [sx * 2.9, 8.8, -1.6], [sx * 3.3, 9.1, 6.4], 2.5, 2.0, { bulge: 0.15 }));     // coxa
+    P(plate(rng, 4.0, 5.0, 0.7, [sx * 3.1, 10.8, 3.0], [-Math.PI / 2 + 0.1, 0, 0], 0.45), armor); // coxote
+    P(blob(rng, [sx * 3.3, 8.9, 6.8], [2.0, 2.0, 2.0]));                                     // joelho
+    P(plate(rng, 2.6, 2.4, 0.8, [sx * 3.3, 9.1, 8.6], [0.2, 0, 0], 0.6), armor);
+    P(limb(rng, [sx * 3.3, 8.6, 7.0], [sx * 3.5, 1.3, 7.8], 1.85, 1.4, { bulge: 0.16 }));     // canela
+    P(plate(rng, 2.4, 5.6, 0.6, [sx * 3.4, 4.6, 9.15], [-0.05, 0, 0], 0.5), armor);
+    P(blob(rng, [sx * 3.5, 0.9, 9.0], [1.7, 1.0, 2.6]), armor);                               // pé
+  }
+  P(blob(rng, [0, 8.8, -1.8], [4.6, 2.6, 3.6]));                                              // quadril
+  for (let k = 0; k < 5; k++) P(plate(rng, 1.8, 4.2, 0.45, [-3.2 + k * 1.6, 9.2, 2.2 + Math.abs(k - 2) * -0.25], [-1.2, 0, 0], 0.25), '#7f7a70', 0.7); // saiote caído sobre as coxas
+  P(blob(rng, [0, 12.4, -1.9], [3.9, 3.0, 2.9]));                                             // abdome
+  P(blob(rng, [0, 16.4, -2.2], [5.4, 3.7, 3.4]));                                             // peito
+  for (const sx of [-1, 1]) P(plate(rng, 4.4, 4.8, 0.8, [sx * 2.3, 16.2, 0.95], [-0.05, sx * 0.4, 0], 0.4), armor);
+  P(blob(rng, [0, 10.6, -1.8], [4.9, 0.9, 3.6], [0, 0, 0], 0.03), '#77726a');                  // cinturão
+  P(plate(rng, 3.0, 2.4, 0.8, [0, 10.6, 1.8], [0, 0, 0], 0.3), armor); R.push(runeRing(0.8, [0, 10.6, 2.25]));
+  // barba longa trançada (cai sobre o peito)
+  P(blob(rng, [0, 19.6, 0.4], [2.1, 2.2, 1.4], [0.2, 0, 0], 0.1), '#8f897d', 0.2);
+  for (const sx of [-1, 0, 1]) { P(limb(rng, [sx * 0.9, 19.0, 1.0], [sx * 0.7, 13.6, 1.9], 0.75, 0.45, { bulge: 0.1, amt: 0.12 }), '#8f897d', 0.2); for (let k = 0; k < 3; k++) P(put(new THREE.TorusGeometry(0.62 - k * 0.06, 0.16, 8, 20).deleteAttribute('uv'), sx * (0.85 - k * 0.05), 17.8 - k * 1.5, 1.25 + k * 0.25, Math.PI / 2 + 0.15, 0, 0), '#6f6a60', 0.1); }
+  // cabeça e coroa
+  P(limb(rng, [0, 19.3, -2.0], [0, 21.0, -1.2], 1.6, 1.45));
+  P(blob(rng, [0, 22.7, -0.9], [2.15, 2.5, 2.3], [0.1, 0, 0], 0.04));
+  P(blob(rng, [0, 23.3, 1.0], [2.0, 0.55, 0.8], [0.1, 0, 0], 0.06));                          // sobrancelha pesada
+  P(blob(rng, [0, 22.2, 1.35], [0.5, 1.0, 0.7], [0.3, 0, 0], 0.04));                          // nariz
+  P(blob(rng, [0, 21.0, 0.9], [1.7, 0.6, 1.0], [0.1, 0, 0], 0.12), '#8f897d', 0.2);            // bigode
+  P(put(new THREE.TorusGeometry(2.25, 0.42, 10, 40).deleteAttribute('uv'), 0, 24.2, -0.9, Math.PI / 2 + 0.1, 0, 0), '#8a8479', 0.4); // aro da coroa
+  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, x = Math.sin(a) * 2.25, z = -0.9 + Math.cos(a) * 2.25, h = k % 2 ? 1.6 : 2.6; S.push(paint(horn(rng, [[x, 24.2, z], [x * 1.12, 24.2 + h * 0.6, z + Math.cos(a) * 0.2], [x * 1.2, 24.2 + h, z + Math.cos(a) * 0.3]], 0.42, 0.05), '#8a8479', moss, 0.3, seed)); }
+  // braço direito apoiado no braço do trono
+  P(blob(rng, [5.5, 19.0, -2.2], [2.3, 2.1, 2.3]));
+  for (let k = 0; k < 3; k++) P(plate(rng, 4.4 - k * 0.5, 1.9, 4.2, [6.1 + k * 0.3, 20.0 - k * 1.2, -2.2], [0, 0, -0.5 - k * 0.12], 0.35), armor);
+  P(limb(rng, [5.7, 18.6, -2.1], [7.6, 11.6, -2.0], 1.6, 1.35)); P(blob(rng, [7.6, 11.4, -1.9], [1.5, 1.5, 1.5]));
+  P(limb(rng, [7.6, 11.4, -1.9], [7.9, 11.0, 4.3], 1.35, 1.0)); P(plate(rng, 2.4, 3.8, 0.6, [7.8, 12.4, 1.2], [-Math.PI / 2, 0, 0], 0.5), armor);
+  P(blob(rng, [8.0, 11.2, 5.4], [1.4, 1.0, 1.7]), armor); for (let f = 0; f < 4; f++) P(limb(rng, [7.4 + f * 0.4, 11.0, 6.3], [7.3 + f * 0.42, 9.9, 7.0], 0.3, 0.25, { bulge: 0.05 }), armor); // dedos sobre a borda
+  // braço esquerdo segura o machado em pé, ao lado do trono
+  P(blob(rng, [-5.5, 19.0, -2.2], [2.3, 2.1, 2.3]));
+  for (let k = 0; k < 3; k++) P(plate(rng, 4.4 - k * 0.5, 1.9, 4.2, [-6.1 - k * 0.3, 20.0 - k * 1.2, -2.2], [0, 0, 0.5 + k * 0.12], 0.35), armor);
+  P(limb(rng, [-5.7, 18.6, -2.1], [-8.9, 13.6, 0.2], 1.6, 1.35)); P(blob(rng, [-8.9, 13.6, 0.2], [1.5, 1.5, 1.5]));
+  P(limb(rng, [-8.9, 13.6, 0.2], [-10.6, 15.6, 3.6], 1.35, 1.05)); P(blob(rng, [-10.9, 15.7, 4.0], [1.4, 1.7, 1.4]), armor);
+  // machado de duas lâminas (haste cravada no chão)
+  P(limb(rng, [-11.0, -0.5, 4.2], [-11.0, 27.2, 4.0], 0.55, 0.5, { bulge: 0.02 }), '#6f6a62', 0.3);
+  for (const y of [5, 9, 13, 17.5]) P(put(new THREE.TorusGeometry(0.62, 0.14, 8, 20).deleteAttribute('uv'), -11.0, y, 4.15, Math.PI / 2, 0, 0), '#77726a', 0.1);
+  { const sh = new THREE.Shape(); sh.moveTo(0.3, -2.4); sh.quadraticCurveTo(3.4, -3.4, 5.6, -5.6); sh.quadraticCurveTo(4.2, 0, 5.6, 5.6); sh.quadraticCurveTo(3.4, 3.4, 0.3, 2.4); sh.lineTo(0.3, -2.4);
+    for (const sx of [-1, 1]) { const ax = new THREE.ExtrudeGeometry(sh, { depth: 0.5, bevelEnabled: true, bevelThickness: 0.3, bevelSize: 0.25, bevelSegments: 3, curveSegments: 20 }); ax.deleteAttribute('uv'); ax.translate(0, 0, -0.25); if (sx < 0) ax.rotateY(Math.PI); P(put(ax, -11.0, 23.6, 4.1, 0, Math.PI / 2, 0), '#8b8780', 0.1); R.push(runeRing(1.2, [-11.0 + 0, 23.6, 4.1 + sx * 3.3], [0, Math.PI / 2, 0], 10)); } }
+  P(blob(rng, [-11.0, 27.6, 4.0], [0.9, 1.2, 0.9]), '#77726a');
+  rubble(rng, S, 9, 0, 6, 26, throneC, 1.1);
+  const g = colossusMesh(S, R, [[-0.75, 22.6, 1.45, 0.42, 0.14, 0.18], [0.75, 22.6, 1.45, 0.42, 0.14, 0.18]]);
+  g.userData.cols = [[0, -0.8, 9], [-11, 4.1, 0.9], [-3.5, 9, 1.6], [3.5, 9, 1.6]];
+  return g;
+}
+
+/* ---------- 3. Fera de Pedra (≈ 34 m de comprimento): agachada, cabeça baixa, chifres enormes e placas ao longo da espinha ---------- */
+export function makeStoneBeast(seed = 67) {
+  const rng = rngOf(seed), S = [], R = [], base = '#9c968a', armor = '#857f74', moss = '#5d7a3a';
+  const P = (g, c = base, m = 0.65) => S.push(paint(g, c, moss, m, seed));
+  P(blob(rng, [0, 9.2, -0.5], [6.2, 5.6, 9.2], [0, 0, 0], 0.08));   // corpo
+  P(blob(rng, [0, 8.6, -7.6], [5.6, 5.2, 5.0], [0, 0, 0], 0.08));   // anca
+  P(blob(rng, [0, 9.8, 6.6], [5.4, 5.8, 4.6], [0.2, 0, 0], 0.08));   // peito
+  for (let k = 0; k < 11; k++) { const z = -11 + k * 2.1, y = 14.2 + Math.sin((k / 10) * Math.PI) * 1.4; P(plate(rng, 6.4 - Math.abs(k - 5) * 0.3, 0.8, 3.0, [0, y, z], [-0.25, 0, 0], 0.9), armor); if (k % 2 === 0) S.push(paint(horn(rng, [[0, y + 0.3, z], [0, y + 2.2, z - 0.8], [0, y + 3.4, z - 2.0]], 0.6, 0.05), armor, moss, 0.2, seed)); }
+  for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) P(plate(rng, 4.2, 3.6, 0.7, [sx * 5.7, 9.6, -6 + k * 3.8], [0, sx * Math.PI / 2, sx * 0.25], 0.25), armor); // placas dos flancos
+  for (const sx of [-1, 1]) {
+    // patas da frente, dobradas, garras no chão
+    P(limb(rng, [sx * 4.4, 8.8, 7.0], [sx * 5.1, 3.6, 9.4], 2.3, 1.9, { bulge: 0.18 })); P(blob(rng, [sx * 5.1, 3.6, 9.4], [1.9, 1.9, 1.9]));
+    P(limb(rng, [sx * 5.1, 3.6, 9.4], [sx * 4.9, 1.3, 12.6], 1.8, 1.5)); P(blob(rng, [sx * 4.9, 1.0, 13.4], [2.1, 1.1, 2.4]));
+    for (let f = 0; f < 4; f++) S.push(paint(horn(rng, [[sx * 4.9 + (f - 1.5) * 0.9, 1.1, 14.6], [sx * 4.9 + (f - 1.5) * 1.0, 0.7, 15.8], [sx * 4.9 + (f - 1.5) * 1.05, -0.1, 16.4]], 0.42, 0.04), '#77726a', moss, 0.1, seed));
+    // patas de trás dobradas (sentada)
+    P(limb(rng, [sx * 4.7, 7.4, -7.4], [sx * 5.5, 3.0, -2.6], 2.6, 2.0, { bulge: 0.2 })); P(blob(rng, [sx * 5.5, 3.0, -2.6], [2.0, 2.0, 2.0]));
+    P(limb(rng, [sx * 5.5, 3.0, -2.6], [sx * 5.0, 1.3, -9.8], 1.7, 1.4)); P(blob(rng, [sx * 4.9, 0.9, -5.2], [1.9, 0.9, 2.2]));
+  }
+  // pescoço com juba de placas, cabeça baixa
+  P(limb(rng, [0, 11.4, 8.0], [0, 10.4, 12.8], 3.3, 2.6, { bulge: 0.08 }));
+  for (let k = 0; k < 10; k++) { const a = -1.6 + k * 0.36; P(plate(rng, 2.0, 3.6, 0.5, [Math.sin(a) * 3.8, 11.6 + Math.cos(a) * 2.6, 10.6], [0.6, 0, -a], 0.3), armor, 0.4); } // juba
+  P(blob(rng, [0, 9.2, 15.2], [3.0, 2.7, 4.0], [0.2, 0, 0], 0.05));   // crânio alongado
+  P(blob(rng, [0, 7.0, 18.4], [2.1, 1.7, 2.6], [0.35, 0, 0], 0.05));   // focinho
+  P(blob(rng, [0, 5.4, 17.0], [1.9, 0.8, 2.6], [0.45, 0, 0], 0.06));   // mandíbula entreaberta
+  P(plate(rng, 2.8, 7.6, 0.9, [0, 10.2, 17.5], [-1.05, 0, 0], 0.6), armor); R.push(runeLine(rng, [0, 10.6, 17.75], 4.6, [-1.05, 0, 0], 0.16)); // máscara de pedra sobre a cara
+  for (const sx of [-1, 1]) { P(plate(rng, 2.2, 3.6, 0.6, [sx * 2.4, 8.4, 16.4], [0.2, sx * 0.9, 0], 0.5), armor); P(blob(rng, [sx * 2.0, 10.75, 17.4], [1.2, 0.5, 1.2], [0, sx * 0.5, sx * -0.35], 0.06)); } // bochechas e sobrancelhas
+  for (const sx of [-1, 1]) {
+    for (const k of [0, 1]) S.push(paint(horn(rng, [[sx * (0.8 + k * 0.7), 6.2, 19.4 - k * 1.1], [sx * (0.85 + k * 0.7), 5.2, 19.6 - k * 1.1], [sx * (0.9 + k * 0.7), 4.5, 19.5 - k * 1.1]], 0.3, 0.03), '#c9c2b0', moss, 0, seed)); // presas
+    S.push(paint(horn(rng, [[sx * 2.4, 11.2, 14.4], [sx * 5.2, 12.4, 13.4], [sx * 7.2, 14.8, 15.0], [sx * 7.0, 17.4, 17.6], [sx * 5.8, 18.6, 19.2]], 1.15, 0.08), '#8a8479', moss, 0.25, seed)); // chifres
+    P(blob(rng, [sx * 2.9, 12.0, 13.0], [1.1, 1.6, 0.6], [0, 0, sx * 0.4]));   // orelha
+  }
+  // cauda pesada deitada no chão, terminando em maça de espigões
+  { const pts = [[0, 7.5, -11.6], [2.0, 4.2, -15.5], [5.0, 1.6, -18.0], [9.0, 1.0, -17.4], [11.5, 1.1, -14.2]]; S.push(paint(horn(rng, pts, 1.9, 0.9), base, moss, 0.7, seed)); P(blob(rng, [11.8, 1.2, -13.6], [1.6, 1.5, 1.6])); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; S.push(paint(horn(rng, [[11.8, 1.2, -13.6], [11.8 + Math.cos(a) * 1.6, 1.2 + Math.sin(a) * 1.4, -13.2], [11.8 + Math.cos(a) * 2.6, 1.2 + Math.sin(a) * 2.2, -13.0]], 0.45, 0.04), '#77726a', moss, 0.1, seed)); } }
+  for (const sx of [-1, 1]) R.push(runeLine(rng, [sx * 6.4, 9.6, 0], 6, [0, sx * Math.PI / 2, Math.PI / 2], 0.2));
+  rubble(rng, S, 8, 0, 4, 30, armor, 1.2);
+  const g = colossusMesh(S, R, [[-1.95, 10.05, 17.95, 0.5, 0.2, 0.3, 0.1, -0.5], [1.95, 10.05, 17.95, 0.5, 0.2, 0.3, 0.1, 0.5]]);
+  g.userData.cols = [[0, 0, 6.5], [0, -8, 5.5], [0, 8, 5], [0, 15, 3.2], [-4.9, 13.4, 2], [4.9, 13.4, 2], [8, -17, 2]];
+  return g;
+}
+
+/* ---------- 4. Titã Caído (≈ 24 m de braço): meio enterrado de costas, um braço erguido para o céu, a mão aberta ---------- */
+export function makeFallenTitan(seed = 79) {
+  const rng = rngOf(seed), S = [], R = [], base = '#a39d90', armor = '#8b857a', moss = '#5a7a36';
+  const P = (g, c = base, m = 0.95) => S.push(paint(g, c, moss, m, seed));
+  P(blob(rng, [0, 0.4, 0], [6.4, 4.4, 5.4], [0, 0, 0], 0.08));                  // peito (metade enterrada)
+  for (let k = 0; k < 4; k++) P(plate(rng, 9.5 - k * 0.6, 1.6, 0.8, [-2 + k * 2.4, 3.6 - k * 0.3, 0], [-Math.PI / 2, 0, Math.PI / 2], 0.6), armor); // couraça para cima
+  R.push(runeLine(rng, [0.5, 4.6, 0], 7, [-Math.PI / 2, 0, Math.PI / 2], 0.2));
+  P(blob(rng, [8.6, 0.0, 0.4], [4.6, 3.0, 4.2], [0, 0, 0], 0.08));              // quadril
+  P(limb(rng, [10.5, 0.6, -2.2], [15.4, 3.6, -3.4], 2.4, 2.0)); P(blob(rng, [15.6, 3.7, -3.4], [2.2, 2.2, 2.2])); P(plate(rng, 2.6, 2.4, 0.8, [15.9, 5.2, -3.4], [-Math.PI / 2 + 0.3, 0, 0], 0.6), armor); // joelho dobrado saindo da terra
+  P(limb(rng, [15.6, 3.7, -3.4], [20.4, 0.0, -3.0], 1.9, 1.5));
+  P(limb(rng, [10.6, 0.2, 2.6], [20.0, -0.4, 3.6], 2.3, 1.7)); P(blob(rng, [21.4, 1.0, 3.8], [1.4, 2.4, 1.9], [0, 0, -0.3]), armor); // perna esticada, pé apontando para cima
+  // cabeça virada de lado, elmo com crista no chão
+  P(limb(rng, [-5.2, 0.6, 0], [-7.6, 0.8, 0.4], 1.8, 1.6));
+  P(blob(rng, [-9.6, 1.2, 0.6], [2.6, 2.8, 3.0], [0, 0, 0.3], 0.04), armor);
+  P(plate(rng, 3.8, 3.2, 0.8, [-9.8, 1.8, 3.2], [0.1, 0.2, 0.3], 0.55), armor);
+  P(plate(rng, 0.6, 2.6, 5.4, [-12.0, 1.8, 0.4], [0, 0, 1.5], 0.25), armor);
+  // braço esquerdo largado no chão, quebrado
+  P(limb(rng, [-1.8, 0.8, -4.6], [-1.0, 0.4, -11.6], 1.8, 1.5)); P(blob(rng, [-0.8, 0.6, -12.2], [1.7, 1.4, 1.7])); rubble(rng, S, 6, -1, -15, 6, armor, 0.9);
+  // braço direito erguido: ombro → cotovelo → mão aberta lá no alto
+  P(blob(rng, [-1.6, 2.4, 5.0], [2.4, 2.4, 2.4]));
+  for (let k = 0; k < 3; k++) P(plate(rng, 4.4 - k * 0.5, 1.8, 4.0, [-1.6, 3.4 + k * 0.4, 5.6 + k * 0.9], [1.2 + k * 0.15, 0, 0], 0.35), armor);
+  P(limb(rng, [-1.6, 2.4, 5.2], [-0.6, 11.6, 7.8], 1.8, 1.5)); P(blob(rng, [-0.6, 11.6, 7.8], [1.6, 1.6, 1.6]));
+  P(limb(rng, [-0.6, 11.6, 7.8], [0.4, 19.6, 6.6], 1.5, 1.15)); P(plate(rng, 2.6, 4.6, 0.6, [-0.1, 15.6, 8.6], [0.1, 0, 0], 0.5), armor); R.push(runeLine(rng, [-0.1, 15.6, 8.95], 3.4, [0.1, 0, 0], 0.16));
+  P(blob(rng, [0.6, 21.2, 6.5], [1.9, 2.1, 0.95], [0.1, 0.2, 0], 0.05));      // palma
+  for (let f = 0; f < 4; f++) { const x = -0.5 + f * 0.72, sp = (f - 1.5) * 0.18; P(limb(rng, [x, 22.8, 6.5], [x + sp * 2.4, 25.4 - Math.abs(f - 1.5) * 0.4, 6.3], 0.38, 0.33, { bulge: 0.05 })); P(blob(rng, [x + sp * 2.4, 25.4 - Math.abs(f - 1.5) * 0.4, 6.3], [0.36, 0.36, 0.36])); P(blob(rng, [x + sp * 3.0, 26.5 - Math.abs(f - 1.5) * 0.5, 7.0], [0.3, 0.3, 0.3])); P(limb(rng, [x + sp * 2.4, 25.4 - Math.abs(f - 1.5) * 0.4, 6.3], [x + sp * 3.0, 26.5 - Math.abs(f - 1.5) * 0.5, 7.0], 0.33, 0.29, { bulge: 0.04 })); P(limb(rng, [x + sp * 3.0, 26.5 - Math.abs(f - 1.5) * 0.5, 7.0], [x + sp * 3.2, 26.9 - Math.abs(f - 1.5) * 0.5, 8.0], 0.29, 0.22, { bulge: 0.03 })); } // dedos curvos, como quem tenta agarrar o céu
+  P(limb(rng, [-0.8, 21.0, 6.8], [-2.4, 22.6, 7.2], 0.45, 0.36)); // polegar
+  // espada partida caída ao lado
+  { P(put(blade(2.6, 12, 0.6, 1.2), 6, 0.35, 9.5, Math.PI / 2, 0.4, 0), '#8d8a84', 0.4); P(limb(rng, [3.2, 0.5, 4.2], [8.6, 0.5, 2.0], 0.5, 0.5), '#7d786e', 0.4); }
+  rubble(rng, S, 12, 4, 0, 34, base, 1.0);
+  const g = colossusMesh(S, R, [[-9.8, 1.4, 0.2, 0.5, 0.18, 0.14, 0.1, 0.2]]);
+  g.userData.cols = [[0, 0, 6], [8.6, 0.4, 4.2], [-9.6, 0.6, 3], [15.5, -3.4, 2.4], [-0.8, 7, 2], [16, 3.5, 2]];
+  return g;
+}
+
+/* ---------- 5. Guerreiro Sem Cabeça (≈ 27 m): manto de pedra rasgado, lança partida na mão; a cabeça caiu a seus pés ---------- */
+export function makeHeadless(seed = 97) {
+  const rng = rngOf(seed), S = [], R = [], base = '#9f998c', armor = '#88827a', moss = '#5d7a3a';
+  const P = (g, c = base, m = 0.6) => S.push(paint(g, c, moss, m, seed));
+  const leg = (sx, fz) => {
+    P(blob(rng, [sx * 3.6, 0.8, fz + 1.2], [1.5, 0.9, 2.5]), armor);
+    P(limb(rng, [sx * 3.6, 1.2, fz], [sx * 3.2, 8.0, fz * 0.6], 1.2, 1.55, { bulge: 0.16 })); P(plate(rng, 2.3, 5.4, 0.6, [sx * 3.4, 4.7, fz * 0.8 + 1.5], [-0.05 + fz * 0.03, 0, 0], 0.5), armor);
+    P(blob(rng, [sx * 3.2, 8.2, fz * 0.6 + 0.3], [1.75, 1.7, 1.75]));
+    P(limb(rng, [sx * 3.2, 8.2, fz * 0.6], [sx * 2.5, 14.3, 0], 1.75, 2.3, { bulge: 0.14 }));
+  };
+  leg(-1, 2.2); leg(1, -1.4);
+  P(blob(rng, [0, 14.8, 0], [4.2, 2.4, 2.9]));
+  for (let k = 0; k < 7; k++) { const a = -1.7 + k * 0.57; P(plate(rng, 2.2, 4.4, 0.45, [Math.sin(a) * 4.0, 13.0, Math.cos(a) * 3.0], [-0.15, a, 0], 0.3), armor); }
+  P(blob(rng, [0, 18.0, 0.1], [3.5, 2.8, 2.6]));
+  P(blob(rng, [0, 21.4, 0.1], [5.0, 3.4, 3.1]));
+  for (const sx of [-1, 1]) P(plate(rng, 4.0, 4.8, 0.7, [sx * 2.1, 21.4, 2.75], [-0.1, sx * 0.38, 0], 0.4), armor);
+  for (let k = 0; k < 4; k++) P(plate(rng, 5.8 - k * 0.2, 1.0, 0.5, [0, 16.8 + k * 1.0, 2.4 + k * 0.1], [-0.08, 0, 0], 0.4), armor);
+  // pescoço partido: a pedra quebrada mostra um brilho por dentro
+  P(limb(rng, [0, 23.8, 0.1], [0, 25.2, 0.2], 1.55, 1.4, { amt: 0.12 }));
+  P(blob(rng, [0, 25.3, 0.2], [1.5, 0.45, 1.4], [0, 0, 0], 0.35), '#6c675e', 0.2);
+  R.push(blob(rng, [0, 25.45, 0.2], [0.9, 0.18, 0.8], [0, 0, 0], 0.2));
+  for (const sx of [-1, 1]) { P(blob(rng, [sx * 5.0, 23.6, 0.1], [2.1, 2.0, 2.1])); for (let k = 0; k < 2; k++) P(plate(rng, 4.0 - k * 0.5, 1.8, 3.8, [sx * (5.6 + k * 0.3), 24.6 - k * 1.2, 0.1], [0, 0, sx * (-0.5 - k * 0.15)], 0.35), armor); }
+  // manto de pedra caindo das costas até o chão, com dobras e barra rasgada
+  { const W = 11, H = 23.5, cl = new THREE.BoxGeometry(W, H, 0.7, 30, 30, 1), Pc = cl.attributes.position;
+    for (let i = 0; i < Pc.count; i++) { const x = Pc.getX(i), y = Pc.getY(i), z = Pc.getZ(i), t = (H / 2 - y) / H; // t: 0 em cima, 1 embaixo
+      const fold = Math.sin(x * 1.25 + t * 1.5) * (0.25 + t * 0.9), flare = 1 + t * 0.45, torn = t > 0.88 ? Math.max(0, Math.sin(x * 3.1 + 1) * 0.5 + Math.sin(x * 7.3) * 0.3) * 2.6 : 0;
+      Pc.setXYZ(i, x * flare, y + torn, z - fold - t * t * 4.2 - (1 - Math.pow(x / (W / 2), 2)) * 0.6); }
+    cl.deleteAttribute('uv'); cl.computeVertexNormals(); P(put(cl, 0, 24.6 - H / 2 + 0.1, -3.2), '#958f83', 0.5); }
+  // braço direito segura a lança partida, em pé
+  P(limb(rng, [5.2, 23.2, 0.2], [6.9, 17.4, 1.4], 1.5, 1.3)); P(blob(rng, [6.9, 17.4, 1.4], [1.4, 1.4, 1.4]));
+  P(limb(rng, [6.9, 17.4, 1.4], [7.4, 13.4, 3.6], 1.3, 1.0)); P(plate(rng, 2.2, 3.4, 0.55, [7.6, 15.4, 2.9], [-0.5, 0, 0.1], 0.5), armor);
+  P(blob(rng, [7.6, 13.0, 4.0], [1.3, 1.6, 1.3]), armor);
+  P(limb(rng, [7.6, -0.5, 4.2], [7.7, 21.5, 4.0], 0.5, 0.45, { bulge: 0.02 }), '#6f6a62', 0.3);
+  P(blob(rng, [7.7, 21.7, 4.0], [0.55, 0.6, 0.55], [0.4, 0, 0.6], 0.4), '#6f6a62', 0.2); // ponta lascada
+  { const head = new THREE.ConeGeometry(1.1, 4.4, 4, 4); head.deleteAttribute('uv'); P(put(head, -6.5, 0.45, 9.6, Math.PI / 2, 0.8, 0), '#8d8a84', 0.4); P(limb(rng, [-5.4, 0.4, 7.9], [-3.6, 0.4, 5.5], 0.48, 0.45), '#6f6a62', 0.5); } // ponta da lança caída
+  // braço esquerdo partido no cotovelo; o antebraço está no chão
+  P(limb(rng, [-5.2, 23.2, 0.2], [-6.3, 18.0, -0.3], 1.5, 1.35)); P(blob(rng, [-6.3, 17.8, -0.3], [1.35, 0.9, 1.35], [0, 0, 0], 0.35), '#6c675e', 0.3);
+  P(limb(rng, [-9.0, 0.9, -5.0], [-11.6, 0.9, -1.4], 1.3, 1.0)); P(blob(rng, [-12.0, 0.9, -0.8], [1.3, 1.0, 1.6]), armor);
+  // a cabeça caída de lado, olhando para quem chega (os olhos ainda brilham)
+  const hx = -5.6, hz = 9.0;
+  P(blob(rng, [hx, 2.1, hz], [2.3, 2.6, 2.4], [0, 0.6, 1.35], 0.04), armor);
+  P(plate(rng, 3.8, 3.0, 0.8, [hx - 0.4, 2.4, hz + 2.0], [0.2, 0.6, 1.35], 0.55), armor);
+  S.push(paint(horn(rng, [[hx + 0.6, 3.6, hz - 0.8], [hx + 1.6, 5.6, hz - 1.6], [hx + 1.0, 7.4, hz - 3.0]], 0.7, 0.08), armor, moss, 0.3, seed));
+  rubble(rng, S, 9, 0, 3, 24, armor, 1.0);
+  const g = colossusMesh(S, R, [[hx - 0.2, 2.9, hz + 2.45, 0.45, 0.15, 0.18, 0.2, 0.6], [hx - 0.75, 1.75, hz + 2.2, 0.45, 0.15, 0.18, 0.2, 0.6]]);
+  g.userData.cols = [[-3.6, 2.2, 2.2], [3.6, -1.4, 2.2], [0, -4.5, 3.5], [7.6, 4.1, 0.9], [hx, hz, 2.8], [-10.5, -3, 1.6]];
+  return g;
+}
+
+/* ---------- névoa baixa (clima de mistério): planos macios que sempre olham para a câmera e derivam devagar ---------- */
+let mistTex = null;
+export function makeMist(heightAt, cx, cz, radius, count = 26, seed = 5, color = '#d8dde0') {
+  if (!mistTex) { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const c = cv.getContext('2d'), gr = c.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,0.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, 128, 128); mistTex = new THREE.CanvasTexture(cv); }
+  const rng = rngOf(seed), g = new THREE.Group(), items = [];
+  const m = new THREE.MeshBasicMaterial({ map: mistTex, color, transparent: true, opacity: 0.16, depthWrite: false, fog: true });
+  const geo = new THREE.PlaneGeometry(1, 1);
+  for (let k = 0; k < count; k++) {
+    const a = rng() * Math.PI * 2, r = Math.sqrt(rng()) * radius, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r, s = 26 + rng() * 30;
+    const p = new THREE.Mesh(geo, m); p.scale.set(s, s * 0.32, 1); p.position.set(x, heightAt(x, z) + s * 0.08, z); p.renderOrder = 2; p.frustumCulled = true;
+    p.onBeforeRender = (r2, sc, cam) => { p.quaternion.copy(cam.quaternion); };
+    g.add(p); items.push({ p, x, z, ph: rng() * 6, sp: 0.5 + rng() });
+  }
+  g.userData.update = t => { for (const it of items) { it.p.position.x = it.x + Math.sin(t * 0.03 * it.sp + it.ph) * 9; it.p.position.z = it.z + Math.cos(t * 0.025 * it.sp + it.ph) * 7; } };
   return g;
 }

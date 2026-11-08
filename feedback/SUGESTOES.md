@@ -2,121 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (23)
-
-### S-098 · Área do mapa: Área da tela (429×362 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:36:09 · **Mapa:** Dunas de Sal-Rubro (tile [136, 154])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** quedas de locais altos precisam tirar hp e/ou matar pessoas que saltam de locais altos, pra tornar mais crível com a realidade. E tbm nao deve ser possivel subir em montanhas assim como eu subi. Sei que estou em god mod e ai tudo bem, mas precisa nao ser possivel subir com facilidade em lugares taoingrimes. Pra que seja aplicada uma boa física, estilo skyrim mesmo
-- ![print](img/S-098.png)
-
-### S-099 · Interface: Área de 112×101 px em Janela "📖 Bestiário"
-- **Status:** pendente · **Quando:** 2026-11-08T15:36:55 · **Mapa:** Dunas de Sal-Rubro (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** gostaria de poder arrrastar aqui o bicho com o botao esquerdo do mouse tipo o que da pra fazer com o personagem principal la na tela de selecao
-- ![print](img/S-099.png)
-
-### S-100 · Área do mapa: Área da tela (261×531 px) (sobre: Chat, Janela "📖 Bestiário")
-- **Status:** pendente · **Quando:** 2026-11-08T15:37:56 · **Mapa:** Dunas de Sal-Rubro (tile [111, 213])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** gostara de poder passar por eles aqui apertando a setinha de baixo tambem, nao apenas com o mouse. Quero dar essa outra opcao
-- ![print](img/S-100.png)
-
-### S-101 · Interface: Área de 239×502 px em Chat, Janela "📖 Bestiário" — "— · Gotinha · Nv. 1 · Boneco de Treino · Fungolino · Nv. 3 · Coelho-Chifre · Nv. 5 · Abelha Rubra · Nv. 8"
-- **Status:** pendente · **Quando:** 2026-11-08T15:38:36 · **Mapa:** Dunas de Sal-Rubro (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** nao quero o bug de que, quando eu clico em algum monstro, volta pro topo. Tem que manter na mesma tela
-- ![print](img/S-101.png)
-
-### S-102 · Área do mapa: Área da tela (352×344 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:42:25 · **Mapa:** Planície dos Colossos (tile [-58, -296])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostaria de estátuas maiores, e diferentes entre si aqui. Clima de mistério no ar. E elas serem feitas de forma melhor, com mis cuidado. Podem ser de pedra sim, mas com uma pegada meio shadow of colossus com mistura de god of war. E bem detalhistas e irada
-- ![print](img/S-102.png)
-
-### S-103 · Área do mapa: Área da tela (332×309 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:43:03 · **Mapa:** Planície dos Colossos (tile [20, -425])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ideal emlhorar visualmente e tudo isso se fundir à montanha, como se a dungeon fosse dentro da montanha
-- ![print](img/S-103.png)
-
-### S-104 · Área do mapa: Área da tela (156×134 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:43:59 · **Mapa:** Planície dos Colossos (tile [111, -281])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ele precisa ter sons de ataques e tbm efeitos sonoros de falas, e tbm eu batendo em bichos de esqueletos (isso vale pra tosoa) precisa er alguns sons de 'ossos' quando eles tomam porrada
-- ![print](img/S-104.png)
-
-### S-105 · Interface: Área de 564×194 px em Janela "👑 Painel do Mestre" — "Boneco de Treino · Você precisa estar de frente para o alvo · Inicial · Aprendiz · 🌱 · 1ª classe · Guerreiro · ⚔️ · Mag"
-- **Status:** pendente · **Quando:** 2026-11-08T15:45:08 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** aqui tbm quero no godmode de ver com clareza a arvore de volucao, enquanto escolho, mesmo que de forma mais compacta pra eu selecionar
-- ![print](img/S-105.png)
-
-### S-106 · Área do mapa: Área da tela (229×165 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:46:17 · **Mapa:** Vila de Alvorada (tile [-59, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** remover essa cabana aleatoria, nao gostei dela
-- ![print](img/S-106.png)
-
-### S-107 · Área do mapa: Área da tela (531×74 px) (sobre: Barra de atalhos, Ícones de buff)
-- **Status:** pendente · **Quando:** 2026-11-08T15:47:58 · **Mapa:** Vila de Alvorada (tile [-124, -9])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** sobre essa barra, que eu consiga arrastar o canto direito inferior pra baixo, pra dar maios opcos ali de itens pra eu colocar. E tbm deixar claor que com o comando 0 eu mudo pra novas opcoes ali, pra que tenham 3'pre-sets' ao todo, pra eu ter mai espaços pra outras builds e tals
-- ![print](img/S-107.png)
-
-### S-108 · Área do mapa: Área da tela (248×362 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:49:00 · **Mapa:** Vila de Alvorada (tile [-69, 11])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** essas notinhas saindo do bardo nao quero que tenha por padrao. Apenas se ele tiver buffado co lguma skill.  E que essa skill traga elementos mais interessantes, mais parecidos com musica, notas diferntes te tals, mas bem trabalhado
-- ![print](img/S-108.png)
-
-### S-109 · Área do mapa: Área da tela (358×86 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:49:30 · **Mapa:** Vila de Alvorada (tile [-89, 27])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** casa ficou meio voando, preciso qu e trabalhe melhor pra na oparecer isso. E o portal sempre mais proximo da entrada de fato, melhor posicionado
-- ![print](img/S-109.png)
-
-### S-110 · Área do mapa: Área da tela (224×198 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:50:49 · **Mapa:** Vila de Alvorada (tile [-76, 20])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostei muito da ideia de ser um bicho inspirado em um tatu e que vai evoluindo tipo bulbassauro ou torterra e tudo mais, mas quero muuuuuito mais detalhes na pele, casco, etc pra que seja um bicho bonito de verdade e nao esse monte de peças todo escroto
-- ![print](img/S-110.png)
-
-### S-111 · Área do mapa: Área da tela (209×224 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:52:42 · **Mapa:** Vila de Alvorada (tile [-80, 22])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** esse bichinho gosto da ideia dele ser de água, mas precisa ter muito mais algo na linha de 'bolha' do que parecer uma salamandra. Ou, se parecesse a alamanra, nao pode parecer tanto aqeuele bpokemon. E o rosto dele eu nao gostei nem um pouco. Ele tem que ter mais indicativos tbm que ele cura as pessoas. Gosto que tenha mais a ver com 'bolha' do que salamandra. Mas precisa ser sim bem trabalhado
-- ![print](img/S-111.png)
-
-### S-112 · Área do mapa: Área da tela (157×119 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:53:44 · **Mapa:** Vila de Alvorada (tile [-79, 22])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** de todos o que eu mais gostei foi essa raposinha. So preciso que seja muuuuuuuito mais bem trabalhada, mas vc tá numa excelente linha. Gosto do rabinho pegando fogo tbm. Só preicso que deixe as 3 evolucoes infinitamente mais realistas do que está hj. Ta mto feio o modelo ainnda
-- ![print](img/S-112.png)
-
-### S-113 · Área do mapa: Área da tela (81×111 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:55:18 · **Mapa:** Vila de Alvorada (tile [-71, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** o ataque padrao da faísca tem que ser melee, e parecido com do lobo. Nao tacando coisa de fogo. Pode ser skill futura que ela desenvolve e nao o ataque padrão
-- ![print](img/S-113.png)
-
-### S-114 · Área do mapa: Área da tela (97×92 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:56:05 · **Mapa:** Vila de Alvorada (tile [-74, 31])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nosso mascotes tbm tem que ter vida, mas e mvez de sp, precisa ter stamina
-- ![print](img/S-114.png)
-
-### S-115 · Área do mapa: Área da tela (243×206 px)
-- **Status:** pendente · **Quando:** 2026-11-08T15:59:56 · **Mapa:** Vila de Alvorada (tile [-69, 26])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ao inves do botao da bolinha do mouse permitir que eu visse minha car, eu gostaria que clicar nele e arrastaro mouse permitisse que eu pudesser ver o personagem por outra perspectiva, meio que poder dar um 360 em volta dele
-- ![print](img/S-115.png)
-
-### S-116 · Área do mapa: Área da tela (137×76 px)
-- **Status:** pendente · **Quando:** 2026-11-08T16:00:57 · **Mapa:** Dunas de Sal-Rubro (tile [-116, 179])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** isso tbm nao pode aparecer aqui. deveria te r sumido por eu estar suficientemente longe
-- ![print](img/S-116.png)
+## Pendentes (20)
 
 ### S-117 · Interface: Área de 594×469 px em Janela "👑 Painel do Mestre" — "🪨 Pedrinho · Nv. 1 · 🌍 Teleporte · — clique no mapa onde quer aparecer"
 - **Status:** pendente · **Quando:** 2026-11-08T16:03:34 · **Mapa:** Dunas de Sal-Rubro (tile None)
@@ -130,19 +16,117 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** quero que em algum lugar também tenha um campo em auqe tenha um portal pra entrar em algum grande castelo gigantesco, e la dentro tenha salas, comodos e tudo mais. Um castelo foda que fique em algum local no campo. Quero esse castelo bem enorme por dentro e bem detalhado
 - ![print](img/S-118.png)
 
-### S-119 · Área do mapa: Área da tela (1589×763 px)
-- **Status:** pendente · **Quando:** 2026-11-08T16:18:59 · **Mapa:** Vila de Alvorada (tile [816, 5])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao osso ter essa visualizacao dentro do pvp, ia me atrapalhar demais ficar olhando pro muro assim
-- ![print](img/S-119.png)
+### S-122 · Interface: Área de 627×444 px em Janela "Loja do Bento" — "Bento · <Mercador> · Capitão Bravo · <Mestre da Arena (PvP)> · Alvo fora de alcance. · Loja do Bento · ✕ · Comprar · 🍎 "
+- **Status:** pendente · **Quando:** 2026-11-08T16:23:25 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** ja mudar tudo isso aqui pra nada ser emojis e sim itens de jogos mesmo, pode criar itens lindos de forma que minimize retrabalho. Vc entende do meu gosto e confio que vai chegar em algo legal que nao sejam emojis
+- ![print](img/S-122.png)
 
-### S-120 · Área do mapa: Área da tela (531×184 px)
-- **Status:** pendente · **Quando:** 2026-11-08T16:19:20 · **Mapa:** Vila de Alvorada (tile [810, 3])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** nao goto de uma forma geométrica tao disforme aqiu no meio, podia ser outra coisa
-- ![print](img/S-120.png)
+### S-123 · Área do mapa: Área da tela (660×490 px) (sobre: Janela "Loja do Bento")
+- **Status:** pendente · **Quando:** 2026-11-08T16:24:32 · **Mapa:** Vila de Alvorada (tile [-57, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** pode se inspirar na compra e vende do wow por exemplo ou do ragnarok, de forma que fique intuitivo que eu posso ir vendendo alg, tipo o que ta na minha bag e eu posso ir dando duplo click e vai entrando em uma janelinh dos itens que pretendo vender o gold que daria se eu vendesse esses itens
+- ![print](img/S-123.png)
 
-## Feitas (97)
+### S-124 · Área do mapa: Área da tela (507×508 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:27:12 · **Mapa:** Vila de Alvorada (tile [-83, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao nessa casa aqui, mas em uma casa no mundo dos anoes tem que ter um ferreiro onede eu possa ter o sistema de refinios de equipamentos. Eles podem chegar até no + 10. Podem chegar até +X sem quebrar e a partir de la, tem chance de quebrar. Essa tabelinha precisa estar muito visual nessa casnha , como funciona o sistema inteiro de refinio. E algo analogo aos oridecon e elinium do ragnarok , mas porem de outros nomes. E tbm as coisas refinadas vao melhorando meu ataque ou defesa. Armas melhora ataque e os melgoramentos no equipamento melhoram a defesa
+- ![print](img/S-124.png)
+
+### S-125 · Área do mapa: Área da tela (494×478 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:27:24 · **Mapa:** Vila de Alvorada (tile [-70, -3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao tem sentido nenhum um forno gigante aqui
+- ![print](img/S-125.png)
+
+### S-126 · Área do mapa: Área da tela (101×95 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:31:30 · **Mapa:** Vila de Alvorada (tile [-71, 9])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que tenha aqui um npc de quest aqui. Será o NPC da main quest, na qual vou seguindo o que ele diz, ele me manda la pra casa do chapeu pra falar com nao sei quem e eu vou fazendo a quest que ele me pedir e, à medida que faço a quest e completo, eu ganho coisas, como itens (às vezes apenas). e principalmente exp pra eu ir evoluindo de nivel. Mas Gostaria que isso fosse so uma ajuda pra evoluir , meio que um empurraozinho, pois prefiro pegar mais exp de matar monstro do que de fazer missao. Mas pode se inspirar no sistema de quests do wow. Nao vai copiar tudo ao pe da letra obviamente mais se inspire muito nessse quesito de inter-relacao entre npcs e tudo mais
+- ![print](img/S-126.png)
+
+### S-127 · Área do mapa: Área da tela (260×389 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:32:28 · **Mapa:** Vila de Alvorada (tile [-44, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostari que o padrão do modelo tivesse pele mais clara. Podendo essa sim ser mudada la na selecao de personagens, mas o padrao é que fossese mais clara. E as mulheres precisam ser um pouco mais femininas e nao parecerem tao masculinas assim
+- ![print](img/S-127.png)
+
+### S-128 · Área do mapa: Área da tela (367×471 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:32:59 · **Mapa:** Vila de Alvorada (tile [-55, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** os equipamentos nao combinaram muito com p modelo, preciso de encaixas muuuito melhores, nao quero criar um frankstein
+- ![print](img/S-128.png)
+
+### S-129 · Área do mapa: Área da tela (175×352 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:33:27 · **Mapa:** Vila de Alvorada (tile [-70, 20])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** precis do de baldes mto mais realistas.  E essa fonte tbm
+- ![print](img/S-129.png)
+
+### S-130 · Área do mapa: Área da tela (217×359 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:33:59 · **Mapa:** Vila de Alvorada (tile [-61, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esse hat ta flutuando bugado na cabeça d pessoa. Nao pode ser assim. E isso na mao dele é um machado? Ta muito bugado e nao ta encaixando
+- ![print](img/S-130.png)
+
+### S-131 · Área do mapa: Área da tela (270×249 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:34:35 · **Mapa:** Vila de Alvorada (tile [-50, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** precisa melgorar estetica aqui e ter uma bandeira que se mexe com o vento e nao toda durona e azul. Melgorar tbm a textura da madeira
+- ![print](img/S-131.png)
+
+### S-132 · Área do mapa: Área da tela (298×379 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:34:55 · **Mapa:** Vila de Alvorada (tile [-48, 34])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorar textura de tudo que é feio de pedra, pra ficar mais realista
+- ![print](img/S-132.png)
+
+### S-133 · Área do mapa: Área da tela (492×130 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:37:16 · **Mapa:** Vila de Alvorada (tile [1360, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esse bagulho branco perto do lugar de pegar a cerveja ficou bugado, preciso que mehore isso. E melgore a caneca pra ficar um pouco menos transparente tbm, no lugar de pegar e tm ficou mto fino o copo
+- ![print](img/S-133.png)
+
+### S-134 · Área do mapa: Área da tela (422×238 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:37:36 · **Mapa:** Vila de Alvorada (tile [-79, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** aqui ta com varios pedaços nao conectados, meio que voando
+- ![print](img/S-134.png)
+
+### S-135 · Área do mapa: Área da tela (765×476 px) (sobre: Janela "✦ Loja de Auroras")
+- **Status:** pendente · **Quando:** 2026-11-08T16:38:28 · **Mapa:** Campos de Verdelume (tile [11, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** gostaria dessa loja esteticamente muito melhor, nao entendi esse monte de paleta de cores ali, nao ta sufcientemetne intuitivo em termos de ui/ux
+- ![print](img/S-135.png)
+
+### S-136 · Área do mapa: Área da tela (442×271 px) (sobre: Janela "✦ Loja de Auroras")
+- **Status:** pendente · **Quando:** 2026-11-08T16:39:11 · **Mapa:** Campos de Verdelume (tile [11, 21])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** aqui tbm tinha que ter um bom preview pra pessoa ter um gostinho melhor do que ela ia receber. Tipo um leao ou algo assim em termos de montaria. Tipo um leopardo, algo assim foda, e precisa ser muito bem feito pra nao ficar escroto tbm
+- ![print](img/S-136.png)
+
+### S-137 · Área do mapa: Área da tela (179×145 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:40:55 · **Mapa:** Campos de Verdelume (tile [6, 23])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostei mas da pra melhorar deixando esse olho menos esquisito e tbm nao gostei tanto das formas geométricas dentro dela. Ta num otimo caminho essas gotas maselas precisam ser mais diferentes um pouco do poring e ser muito mais expressivas, e nao tenham um boca tao parada assim. Ta num bom caminho, gostei dela ser translucida, mas sint oque da pr a melhorar. Podia tbm ir deixando um rastro que fosse sumindo, ia ser bem legal
+- ![print](img/S-137.png)
+
+### S-138 · Interface: Área de 721×598 px em Janela "📖 Bestiário" — "Coelho-Chifre · Alvo fora de alcance. · 📖 Bestiário · Lobo Cinzento · Nv. 12 · Espantalho Errante · Nv. 15 · Morcego de"
+- **Status:** pendente · **Quando:** 2026-11-08T16:44:16 · **Mapa:** Campos de Verdelume (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** gostaria de ter um local pra filtrar por boss e tbm tivessem alguns boss mais fodas tipo inspirados muito ali no satan morroc e outros mvps do ragnarok. E eles precisam ser bemgrandões. 
+
+Pra ideias de boss, quero que vc se inspire nos oss que a comunidade do WoW e ragnarok mais gostavam. E skyrim também pode se inspirar. Sobre padrão esteticos deles vc vai vendo os feedbacks que ja dei pros mosntros e vc vai entnendendo o que eu gosto e o que eu nao gosto, até que chegue a algo do meu agrado
+- ![print](img/S-138.png)
+
+### S-139 · Área do mapa: Área da tela (138×117 px)
+- **Status:** pendente · **Quando:** 2026-11-08T16:45:27 · **Mapa:** Campos de Verdelume (tile [16, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o coelho melhorou mas ainda estáexcessivamente em formas geometrica e esse pelinho foi muito mal aplicao, pq a gente sabe que coelho tem pelo fofo e nao assim todo espinhudo, e tbm as pernas dele nao tao bem conectaas. Dá pra melhorar bastante esse coelho ainda, pra parecer mais um coelho da ida real. Ta num bom caminho mas da pra melhorar mai ainda
+- ![print](img/S-139.png)
+
+## Feitas (119)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -826,3 +810,157 @@ Tbm quero mudar a forma de batalha, de serem target, pra atacar segurando o bot�
 - **Sugestão:** o lobo precisa de sons também, assim como todos os outros monstros. Vi que vc melhorou a estética dele, mas o rosto e os pelos e orelhas ainda estão excessivamente geométricos e mal acabados. QQueria que se parecesse mais com um lobo real
 - ![print](img/S-097.png)
 - **Resposta do Claude:** Todos os monstros ganharam sons próprios: lobo (passos, rosnado antes do ataque, mordida, ganido quando apanha, gemido ao morrer e uivo distante de vez em quando), abelha (zumbido e ferroada), gotas (plof e splash), esqueletos (ossos batendo e desmontando), espectro (lamento), coelho e cogumelo. O lobo ganhou cabeça esculpida numa peça só (crânio em cunha, focinho, testa, bochechas, máscara clara), focinho com narinas e orelhas grossas com borda arredondada e pelinhos por dentro.
+
+### S-098 · Área do mapa: Área da tela (429×362 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:36:09 · **Mapa:** Dunas de Sal-Rubro (tile [136, 154])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quedas de locais altos precisam tirar hp e/ou matar pessoas que saltam de locais altos, pra tornar mais crível com a realidade. E tbm nao deve ser possivel subir em montanhas assim como eu subi. Sei que estou em god mod e ai tudo bem, mas precisa nao ser possivel subir com facilidade em lugares taoingrimes. Pra que seja aplicada uma boa física, estilo skyrim mesmo
+- ![print](img/S-098.png)
+- **Resposta do Claude:** Física nova: cair de lugar alto machuca. Até ~5 m nada; daí em diante o dano cresce rápido e a partir de ~19 m mata (água amortece, montado a montaria absorve parte, com aviso "Que queda!"). E encostas acima de ~45° não dão mais para subir, nem pulando: você trava e, se parar numa encosta íngreme demais, escorrega para baixo. No God Mode você continua subindo e não sente a queda, só vê o número "(imune)".
+
+### S-099 · Interface: Área de 112×101 px em Janela "📖 Bestiário"
+- **Status:** feito · **Quando:** 2026-11-08T15:36:55 · **Mapa:** Dunas de Sal-Rubro (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** gostaria de poder arrrastar aqui o bicho com o botao esquerdo do mouse tipo o que da pra fazer com o personagem principal la na tela de selecao
+- ![print](img/S-099.png)
+- **Resposta do Claude:** No Bestiário, segure o botão esquerdo em cima do bicho e arraste para girá-lo como na vitrine. Solto, ele volta a girar devagar sozinho.
+
+### S-100 · Área do mapa: Área da tela (261×531 px) (sobre: Chat, Janela "📖 Bestiário")
+- **Status:** feito · **Quando:** 2026-11-08T15:37:56 · **Mapa:** Dunas de Sal-Rubro (tile [111, 213])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** gostara de poder passar por eles aqui apertando a setinha de baixo tambem, nao apenas com o mouse. Quero dar essa outra opcao
+- ![print](img/S-100.png)
+- **Resposta do Claude:** Com o Bestiário aberto, as setas ↑/↓ passam pelos monstros da lista (ela rola sozinha para mostrar o escolhido).
+
+### S-101 · Interface: Área de 239×502 px em Chat, Janela "📖 Bestiário" — "— · Gotinha · Nv. 1 · Boneco de Treino · Fungolino · Nv. 3 · Coelho-Chifre · Nv. 5 · Abelha Rubra · Nv. 8"
+- **Status:** feito · **Quando:** 2026-11-08T15:38:36 · **Mapa:** Dunas de Sal-Rubro (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao quero o bug de que, quando eu clico em algum monstro, volta pro topo. Tem que manter na mesma tela
+- ![print](img/S-101.png)
+- **Resposta do Claude:** Corrigido: ao clicar num monstro a lista fica exatamente onde estava, sem voltar para o topo.
+
+### S-102 · Área do mapa: Área da tela (352×344 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:42:25 · **Mapa:** Planície dos Colossos (tile [-58, -296])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostaria de estátuas maiores, e diferentes entre si aqui. Clima de mistério no ar. E elas serem feitas de forma melhor, com mis cuidado. Podem ser de pedra sim, mas com uma pegada meio shadow of colossus com mistura de god of war. E bem detalhistas e irada
+- ![print](img/S-102.png)
+- **Resposta do Claude:** A Planície dos Colossos ganhou 5 estátuas gigantes e diferentes entre si, esculpidas com cuidado: o Colosso Sentinela de pé (≈35 m, elmo com chifres, escudo e espada cravada com runas), o Rei de Pedra no trono com machado duplo, a Fera de pedra agachada com chifres e máscara, o Titã caído com o braço erguido ao céu e o Guerreiro sem cabeça (a cabeça caiu aos pés, olhos ainda brilhando). Pedra gasta com musgo, rachaduras e runas azuis fracas, e névoa baixa pela planície para o clima de mistério.
+
+### S-103 · Área do mapa: Área da tela (332×309 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:43:03 · **Mapa:** Planície dos Colossos (tile [20, -425])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ideal emlhorar visualmente e tudo isso se fundir à montanha, como se a dungeon fosse dentro da montanha
+- ![print](img/S-103.png)
+- **Resposta do Claude:** O Santuário Silente agora fica dentro da montanha: o pátio virou um entalhe na rocha, com paredões dos dois lados e atrás, e a fachada sai do penhasco com rochas abraçando as laterais, um teto de pedra por cima e pedras caídas na base. A entrada das Catacumbas parece escavada no monte.
+
+### S-104 · Área do mapa: Área da tela (156×134 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:43:59 · **Mapa:** Planície dos Colossos (tile [111, -281])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ele precisa ter sons de ataques e tbm efeitos sonoros de falas, e tbm eu batendo em bichos de esqueletos (isso vale pra tosoa) precisa er alguns sons de 'ossos' quando eles tomam porrada
+- ![print](img/S-104.png)
+- **Resposta do Claude:** Sons novos: o Cavaleiro Caído fala (voz cavernosa, como palavras arrastadas) ao te ver, de vez em quando e às vezes depois de atacar, e o golpe dele tem lufada pesada + lâmina de ferro. Todo monstro de esqueleto (Esqueleto Vigia, Cavaleiro Caído, Sentinela) agora faz um estalo de osso diferente a cada pancada que leva, e os esqueletos batem os dentes ao te ver.
+
+### S-105 · Interface: Área de 564×194 px em Janela "👑 Painel do Mestre" — "Boneco de Treino · Você precisa estar de frente para o alvo · Inicial · Aprendiz · 🌱 · 1ª classe · Guerreiro · ⚔️ · Mag"
+- **Status:** feito · **Quando:** 2026-11-08T15:45:08 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** aqui tbm quero no godmode de ver com clareza a arvore de volucao, enquanto escolho, mesmo que de forma mais compacta pra eu selecionar
+- ![print](img/S-105.png)
+- **Resposta do Claude:** No Painel do Mestre, "Virar qualquer classe" virou uma árvore de evolução compacta: Aprendiz no topo, cada 1ª classe numa coluna com as suas duas 2ª classes logo abaixo, ligadas por linhas. A classe atual fica dourada e o caminho até ela, destacado.
+
+### S-106 · Área do mapa: Área da tela (229×165 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:46:17 · **Mapa:** Vila de Alvorada (tile [-59, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** remover essa cabana aleatoria, nao gostei dela
+- ![print](img/S-106.png)
+- **Resposta do Claude:** Tenda removida da praça da vila.
+
+### S-107 · Área do mapa: Área da tela (531×74 px) (sobre: Barra de atalhos, Ícones de buff)
+- **Status:** feito · **Quando:** 2026-11-08T15:47:58 · **Mapa:** Vila de Alvorada (tile [-124, -9])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** sobre essa barra, que eu consiga arrastar o canto direito inferior pra baixo, pra dar maios opcos ali de itens pra eu colocar. E tbm deixar claor que com o comando 0 eu mudo pra novas opcoes ali, pra que tenham 3'pre-sets' ao todo, pra eu ter mai espaços pra outras builds e tals
+- ![print](img/S-107.png)
+- **Resposta do Claude:** A barra de atalhos agora cresce: arraste o cantinho dourado de baixo à direita para baixo e ganhe até 3 fileiras de 9 (a 2ª fileira usa Shift+1–9; a 3ª é por clique). E há 3 conjuntos de atalhos: a tecla 0 (ou o quadradinho "1/3 · 0 troca" na ponta da barra) troca entre eles, para suas builds. Saves antigos continuam com os atalhos de antes no conjunto 1.
+
+### S-108 · Área do mapa: Área da tela (248×362 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:49:00 · **Mapa:** Vila de Alvorada (tile [-69, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** essas notinhas saindo do bardo nao quero que tenha por padrao. Apenas se ele tiver buffado co lguma skill.  E que essa skill traga elementos mais interessantes, mais parecidos com musica, notas diferntes te tals, mas bem trabalhado
+- ![print](img/S-108.png)
+- **Resposta do Claude:** O Bardo não solta mais notas por padrão. Elas só aparecem enquanto a Canção de Batalha está ativa, e agora são uma pauta dourada de 5 linhas girando na cintura com notas de formatos diferentes (semínima, colcheia, par de colcheias ligadas e clave de sol), cada uma de uma cor, subindo em espiral como uma melodia, com um brilho suave.
+
+### S-109 · Área do mapa: Área da tela (358×86 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:49:30 · **Mapa:** Vila de Alvorada (tile [-89, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** casa ficou meio voando, preciso qu e trabalhe melhor pra na oparecer isso. E o portal sempre mais proximo da entrada de fato, melhor posicionado
+- ![print](img/S-109.png)
+- **Resposta do Claude:** Prédios em encosta agora assentam no ponto mais baixo do terreno sob eles (nada de base flutuando; vale para todas as casas, taverna, ferraria, igreja, moinho e torres). E os portais da taverna e do estábulo ficam no pé da escada da porta, não mais no meio da fachada.
+
+### S-110 · Área do mapa: Área da tela (224×198 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:50:49 · **Mapa:** Vila de Alvorada (tile [-76, 20])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostei muito da ideia de ser um bicho inspirado em um tatu e que vai evoluindo tipo bulbassauro ou torterra e tudo mais, mas quero muuuuuito mais detalhes na pele, casco, etc pra que seja um bicho bonito de verdade e nao esse monte de peças todo escroto
+- ![print](img/S-110.png)
+- **Resposta do Claude:** O tatu foi refeito do zero: casco de verdade com escudo dos ombros e da garupa cobertos de escamas arredondadas e 8 cintas de placas sobrepostas (sulcos escuros, topos gastos), pele de couro com rugas no pescoço, placa de escamas na cabeça, focinho com narinas, olhinhos com pálpebra, patas aneladas e garras compridas. Rochedo ganha cristais nascendo do casco e líquen; Monolito vira uma paisagem que anda (musgo, grama, florzinhas, pedras, um grande cristal brilhante e dois chifres de pedra). Dá para ver de perto no prototipo-mascotes.html.
+
+### S-111 · Área do mapa: Área da tela (209×224 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:52:42 · **Mapa:** Vila de Alvorada (tile [-80, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esse bichinho gosto da ideia dele ser de água, mas precisa ter muito mais algo na linha de 'bolha' do que parecer uma salamandra. Ou, se parecesse a alamanra, nao pode parecer tanto aqeuele bpokemon. E o rosto dele eu nao gostei nem um pouco. Ele tem que ter mais indicativos tbm que ele cura as pessoas. Gosto que tenha mais a ver com 'bolha' do que salamandra. Mas precisa ser sim bem trabalhado
+- ![print](img/S-111.png)
+- **Resposta do Claude:** Agora é uma bolha de verdade, nada de salamandra: corpo transparente com brilho de arco-íris e borda luminosa, água balançando dentro, rosto novo e delicado (olhos grandes que piscam, bochechas e sorrisinho). Sinais de cura: cruz verde com duas folhas brilhando na testa, gotinhas verdes de cura caindo e bolhinhas em órbita. Maré ganha um anel de água ondulado; Aquária uma coroa de gotas com uma gema e luz própria.
+
+### S-112 · Área do mapa: Área da tela (157×119 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:53:44 · **Mapa:** Vila de Alvorada (tile [-79, 22])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** de todos o que eu mais gostei foi essa raposinha. So preciso que seja muuuuuuuito mais bem trabalhada, mas vc tá numa excelente linha. Gosto do rabinho pegando fogo tbm. Só preicso que deixe as 3 evolucoes infinitamente mais realistas do que está hj. Ta mto feio o modelo ainnda
+- ![print](img/S-112.png)
+- **Resposta do Claude:** A raposa foi refeita com anatomia de verdade: corpo, cabeça e focinho longo e fino numa peça lisa só, pelagem fina por cima (peito e bochechas creme), olhos âmbar amendoados com pupila em fenda, orelhas altas com pelo dentro e pontas pretas, patas finas com "meias" escuras e dedinhos. O rabo é felpudo e termina em chama que tremula sempre para cima (1, 2 e 3 rabos por estágio). Labareda ganha juba de brasas e chaminhas nas orelhas; Solaris, pelagem dourada, marca solar na testa e luz própria.
+
+### S-113 · Área do mapa: Área da tela (81×111 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:55:18 · **Mapa:** Vila de Alvorada (tile [-71, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o ataque padrao da faísca tem que ser melee, e parecido com do lobo. Nao tacando coisa de fogo. Pode ser skill futura que ela desenvolve e nao o ataque padrão
+- ![print](img/S-113.png)
+- **Resposta do Claude:** O ataque padrão da Faísca agora é corpo a corpo, como o lobo: ela corre até o alvo, se agacha e dá o bote com mordida (com o som da mordida do lobo). O fogo virou habilidade de evolução: a partir da Labareda ela cospe uma brasa a cada ~8 s, e na Solaris a brasa explode em área. Os outros mascotes também ganharam animação de ação (o tatu empina e bate o casco, a bolha solta um anel verde de cura).
+
+### S-114 · Área do mapa: Área da tela (97×92 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:56:05 · **Mapa:** Vila de Alvorada (tile [-74, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nosso mascotes tbm tem que ter vida, mas e mvez de sp, precisa ter stamina
+- ![print](img/S-114.png)
+- **Resposta do Claude:** Mascotes agora têm vida e stamina (no lugar de SP), com barras no quadro do personagem e em cima do mascote. Correr e atacar gastam stamina; cansado, ele fica mais lento e espera recuperar. Quando o mascote briga de perto, os monstros podem acertá-lo; com a vida a zero ele desmaia, descansa uns segundos e volta. Vida e stamina ficam no save.
+
+### S-115 · Área do mapa: Área da tela (243×206 px)
+- **Status:** feito · **Quando:** 2026-11-08T15:59:56 · **Mapa:** Vila de Alvorada (tile [-69, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ao inves do botao da bolinha do mouse permitir que eu visse minha car, eu gostaria que clicar nele e arrastaro mouse permitisse que eu pudesser ver o personagem por outra perspectiva, meio que poder dar um 360 em volta dele
+- ![print](img/S-115.png)
+- **Resposta do Claude:** O botão do meio (rodinha) agora gira a câmera: segure e arraste para dar a volta de 360° em volta do personagem (e para cima/baixo). Soltando, a câmera volta suave para trás dele.
+
+### S-116 · Área do mapa: Área da tela (137×76 px)
+- **Status:** feito · **Quando:** 2026-11-08T16:00:57 · **Mapa:** Dunas de Sal-Rubro (tile [-116, 179])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** isso tbm nao pode aparecer aqui. deveria te r sumido por eu estar suficientemente longe
+- ![print](img/S-116.png)
+- **Resposta do Claude:** Corrigido: nomes de monstros (inclusive o Boneco de Treino que você acertou) não aparecem mais de longe. Em combate o limite agora é 20 m, e o boneco não conta como "brigando com você".
+
+### S-119 · Área do mapa: Área da tela (1589×763 px)
+- **Status:** feito · **Quando:** 2026-11-08T16:18:59 · **Mapa:** Vila de Alvorada (tile [816, 5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao osso ter essa visualizacao dentro do pvp, ia me atrapalhar demais ficar olhando pro muro assim
+- ![print](img/S-119.png)
+- **Resposta do Claude:** Na Arena a câmera não sai mais do círculo: ela se aproxima sozinha para nunca ficar atrás do muro.
+
+### S-120 · Área do mapa: Área da tela (531×184 px)
+- **Status:** feito · **Quando:** 2026-11-08T16:19:20 · **Mapa:** Vila de Alvorada (tile [810, 3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao goto de uma forma geométrica tao disforme aqiu no meio, podia ser outra coisa
+- ![print](img/S-120.png)
+- **Resposta do Claude:** O hexágono vermelho virou um medalhão de pedra gravado: disco com borda e marcas em volta, escudo de bronze em relevo e duas espadas cruzadas.
+
+### S-121 · Área do mapa: Área da tela (989×267 px)
+- **Status:** feito · **Quando:** 2026-11-08T16:19:58 · **Mapa:** Vila de Alvorada (tile [808, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quero tornar isso tudo mais realistas, com tilojos da pedra nas pareses, a tocha realista e em vez de retangulos vermelhos e azuis tem que ser algum cartaz, algo assim
+- ![print](img/S-121.png)
+- **Resposta do Claude:** A Arena ficou de pedra de verdade: muro e pilares com tijolos de pedra em relevo (tamanhos e tons variados), tochas de parede com suporte de ferro, pano enrolado e chama em camadas que tremula, estandartes de tecido com brasão pintado (Leões e Águias) e cartazes do torneio pregados no muro.
