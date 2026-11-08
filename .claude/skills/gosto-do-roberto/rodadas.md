@@ -94,3 +94,13 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Pedidos com "parecido com RO, mas sem copiar" mostram que a referência é a **sensação** (som de subir de nível, som do esporo).
   - Ele quer ferramentas de teste práticas: boneco com DPS, God Mode rápido.
   - Uma mudança minha deixou "pontiagudo" (pelos como espinhos) e foi corrigida antes da entrega, conferindo o print com o perfil.
+
+### Pedido direto (conversa), 2026-11-08: "melhore os gráficos dos monstros como um todo, mais realistas"
+- Feito:
+  - Fungolino virou cogumelo de verdade (chapéu ondulado, verrugas variadas, lamelas, pé fibroso com saia e raízes, esporos).
+  - Coelho-Chifre ganhou pelagem curta e macia, chifre torcido e bigodes curvos.
+  - Abelha ganhou pelos, asas com nervuras, patas articuladas e olhos compostos.
+  - Esqueletos ganharam osso envelhecido e brilho nas órbitas; o Cavaleiro Caído ganhou capa rasgada e o Espectro flutua com rastro.
+- Aprendizados:
+  - Pelagem com mechas grandes vira "escama" ou "ovelha". O que funciona é mecha fina e curta, no tom do corpo; mechas maiores só onde o bicho tem juba ou rabo felpudo.
+  - Pedido "como um todo" = aplicar o mesmo nível de cuidado a todos os monstros, inclusive os modelos prontos (KayKit).

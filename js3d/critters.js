@@ -119,100 +119,184 @@ export function slime(color, boss, variant = 'agua') {
   } };
 }
 
+/* ---------- Fungolino: cogumelo vivo ----------
+   Chapéu com borda ondulada e irregular, verrugas de tamanhos variados, lamelas por baixo, pé fibroso
+   com anel (saia) e raízes, rosto embutido no pé. Pula com "achata e estica" e solta esporos. */
+const vcolor = (g, fn) => { const P = g.attributes.position, col = new Float32Array(P.count * 3), c = new THREE.Color(); for (let i = 0; i < P.count; i++) { fn(c, P.getX(i), P.getY(i), P.getZ(i)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g; };
+const VC = (r = 0.7, extra = {}) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: r, ...extra });
 export function mushroom(color) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.45, 16), mat('#efe4d0'));
-  stem.position.y = 0.23; body.add(stem);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat(color));
-  cap.scale.y = 0.75; cap.position.y = 0.42; body.add(cap);
-  for (let i = 0; i < 6; i++) {
-    const a = i / 6 * Math.PI * 2, s = new THREE.Mesh(new THREE.SphereGeometry(0.06, 20, 14), WHITE);
-    s.position.set(Math.cos(a) * 0.27, 0.62, Math.sin(a) * 0.27); body.add(s);
+  let sd = 7 + Math.floor(Math.random() * 999); const rng = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  const capC = new THREE.Color(color), dark = capC.clone().offsetHSL(0, 0.05, -0.18), rimC = capC.clone().offsetHSL(0.02, -0.1, 0.12);
+  // pé: fibroso, mais largo embaixo, com raízes
+  const stemG = new THREE.LatheGeometry([[0.001, 0], [0.24, 0], [0.27, 0.04], [0.24, 0.1], [0.2, 0.22], [0.18, 0.36], [0.16, 0.46], [0.001, 0.46]].map(([r, y]) => new THREE.Vector2(r, y)), 28);
+  { const P = stemG.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), z = P.getZ(k), a = Math.atan2(z, x), f = 1 + Math.sin(a * 14 + y * 6) * 0.025 + Math.sin(a * 5) * 0.02; P.setXYZ(k, x * f, y, z * f); } stemG.computeVertexNormals(); }
+  vcolor(stemG, (c, x, y, z) => c.set('#efe6d2').offsetHSL(0, 0, (Math.sin(Math.atan2(z, x) * 14) * 0.5 + 0.5) * -0.05 - (y < 0.06 ? 0.12 : 0)));
+  const stem = new THREE.Mesh(stemG, VC(0.85)); body.add(stem);
+  for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + rng(); const r = new THREE.Mesh(taper([V3(Math.cos(a) * 0.2, 0.05, Math.sin(a) * 0.2), V3(Math.cos(a) * 0.32, 0.01, Math.sin(a) * 0.32), V3(Math.cos(a) * 0.38, -0.03, Math.sin(a) * 0.38)], 0.04, 0.022, 10, 10), mat('#d8cdb4', { roughness: 0.9 })); body.add(r); const tip = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 8), r.material); tip.position.set(Math.cos(a) * 0.38, -0.03, Math.sin(a) * 0.38); body.add(tip); } // raízes grossas e arredondadas
+  // anel (saia) do pé
+  const skirtG = new THREE.CylinderGeometry(0.2, 0.25, 0.08, 28, 1, true); { const P = skirtG.attributes.position; for (let k = 0; k < P.count; k++) { const a = Math.atan2(P.getZ(k), P.getX(k)); if (P.getY(k) < 0) { P.setX(k, P.getX(k) * (1 + Math.sin(a * 9) * 0.06)); P.setZ(k, P.getZ(k) * (1 + Math.sin(a * 9) * 0.06)); } } skirtG.computeVertexNormals(); }
+  const skirt = new THREE.Mesh(skirtG, mat('#f4ecda', { roughness: 0.8, side: THREE.DoubleSide })); skirt.position.y = 0.4; body.add(skirt);
+  // chapéu: lathe com borda ondulada, centro mais escuro
+  const cap = new THREE.Group(); cap.position.y = 0.44; body.add(cap);
+  const prof = []; for (let k = 0; k <= 16; k++) { const u = k / 16, ang = u * Math.PI * 0.5; prof.push(new THREE.Vector2(Math.max(0.001, Math.sin(ang) * 0.46 + u * u * 0.04), Math.cos(ang) * 0.3 + 0.02)); }
+  prof.push(new THREE.Vector2(0.48, -0.02), new THREE.Vector2(0.4, -0.04)); // borda que dobra para dentro
+  const capG = new THREE.LatheGeometry(prof.reverse(), 48);
+  { const P = capG.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), z = P.getZ(k), a = Math.atan2(z, x), r = Math.hypot(x, z), edge = Math.max(0, r - 0.3) / 0.18; P.setY(k, y + Math.sin(a * 7 + 1) * 0.035 * edge + Math.sin(a * 3) * 0.02 * edge); const f = 1 + Math.sin(a * 5) * 0.03 * edge; P.setX(k, x * f); P.setZ(k, z * f); } capG.computeVertexNormals(); }
+  vcolor(capG, (c, x, y, z) => { const r = Math.hypot(x, z); c.copy(dark).lerp(capC, Math.min(1, r / 0.3)).lerp(rimC, Math.max(0, (r - 0.36) / 0.12)).offsetHSL(0, 0, (Math.sin(x * 23 + z * 17) * 0.5 + 0.5) * 0.04); });
+  cap.add(new THREE.Mesh(capG, VC(0.55)));
+  // lamelas por baixo (finas, saindo do pé até a borda)
+  const gills = []; for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2, gl = new THREE.PlaneGeometry(0.28, 0.07); gl.translate(0.27, -0.035, 0); gl.rotateY(-a); gills.push(gl); }
+  const gillM = new THREE.Mesh(mergeGeometries(gills), mat('#e9d8b8', { roughness: 0.9, side: THREE.DoubleSide })); gillM.position.y = 0.0; cap.add(gillM);
+  // verrugas brancas de tamanhos variados (espiral dourada, sem anel perfeito)
+  const warts = [];
+  for (let k = 0; k < 14; k++) { const u = (k + 0.5) / 14, a = k * 2.399 + rng() * 0.4, r = Math.sqrt(u) * 0.38, y = Math.cos(Math.asin(Math.min(1, r / 0.47))) * 0.3 + 0.02;
+    const w = new THREE.SphereGeometry(0.025 + rng() * 0.035, 14, 10); w.scale(1, 0.45, 1); { const P = w.attributes.position; for (let q = 0; q < P.count; q++) P.setY(q, P.getY(q) + Math.sin(P.getX(q) * 90) * 0.003); } w.lookAt(V3(Math.cos(a) * r, y, Math.sin(a) * r)); w.translate(Math.cos(a) * r, y - 0.005, Math.sin(a) * r); warts.push(w); }
+  cap.add(new THREE.Mesh(mergeGeometries(warts.map(w => { w.deleteAttribute('uv'); return w; })), mat('#fbf6ea', { roughness: 0.85 })));
+  // rosto no pé: olhos brilhantes com pálpebra e boquinha
+  const face = new THREE.Group(); face.position.set(0, 0.27, 0.17); body.add(face);
+  for (const sx of [-1, 1]) {
+    const ew = new THREE.Mesh(new THREE.SphereGeometry(0.042, 20, 14), mat('#1a1210', { roughness: 0.1 })); ew.scale.set(0.85, 1.1, 0.5); ew.position.set(sx * 0.07, 0.02, 0.01); face.add(ew);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), WHITE); hl.position.set(sx * 0.07 + 0.012, 0.04, 0.03); face.add(hl);
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.046, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.32), mat('#e6dcc6', { roughness: 0.8 })); lid.scale.set(0.9, 1.1, 0.6); lid.position.set(sx * 0.07, 0.022, 0.012); face.add(lid);
   }
-  eyes(body, 0.28, 0.2, 0.08, 0.05);
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.006, 8, 18, Math.PI), mat('#5a3a2a')); mouth.rotation.z = Math.PI; mouth.position.set(0, -0.045, 0.02); face.add(mouth);
+  // esporos (nuvem que sai do chapéu ao pular/atacar)
+  const sporeM = new THREE.MeshBasicMaterial({ color: capC.clone().lerp(new THREE.Color('#fff4d0'), 0.6), transparent: true, opacity: 0.6, depthWrite: false });
+  const spores = []; for (let k = 0; k < 14; k++) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.02 + rng() * 0.015, 8, 6), sporeM); sp.visible = false; root.add(sp); spores.push({ sp, v: V3(), life: 0 }); }
+  const puff = (n, y) => { let c = 0; for (const p of spores) { if (p.life > 0 || c >= n) continue; c++; p.life = 0.8 + Math.random() * 0.6; p.sp.visible = true; const a = Math.random() * 6.28; p.sp.position.set(Math.cos(a) * 0.3, y, Math.sin(a) * 0.3); p.v.set(Math.cos(a) * 0.4, 0.3 + Math.random() * 0.4, Math.sin(a) * 0.4); } };
+  bakeChildren(body);
   shadowAll(root);
-  let lt = 0, at = -9;
-  return { root, attack() { at = lt; }, animate(t, moving) {
-    lt = t; const sk = strike((t - at) / 0.5);
-    body.position.y = (moving ? Math.abs(Math.sin(t * 8)) * 0.18 : 0) + Math.max(0, sk) * 0.2;
-    body.rotation.z = Math.sin(t * 2) * 0.05; body.rotation.x = sk * 0.6; // cabeçada com o chapéu
+  let lt = 0, at = -9, ph = 0, wasUp = false;
+  return { root, attack() { at = lt; puff(8, 0.7); }, animate(t, moving, dt = 1 / 60) {
+    dt = Math.min(0.05, Math.max(0.001, t - lt)); lt = t; const sk = strike((t - at) / 0.5);
+    ph += dt * (moving ? 7.5 : 0);
+    const hop = moving ? Math.max(0, Math.sin(ph)) : 0, land = moving ? Math.max(0, -Math.sin(ph)) : 0;
+    body.position.y = hop * 0.2 + Math.max(0, sk) * 0.2;
+    body.scale.set(1 + land * 0.12 - hop * 0.05, 1 - land * 0.18 + hop * 0.08 + Math.sin(t * 2.2) * 0.015 * (moving ? 0 : 1), 1 + land * 0.12 - hop * 0.05); // achata ao cair, estica ao subir
+    cap.rotation.z = Math.sin(t * 2) * 0.05 + Math.sin(ph) * 0.06; cap.rotation.x = sk * 0.6 - land * 0.05;
+    cap.position.y = 0.44 - land * 0.02;
+    body.rotation.x = sk * 0.25;
+    const up = hop > 0.5; if (wasUp && !up && moving) puff(2, 0.1); wasUp = up; // pousa e levanta um pouco de esporo
+    for (const p of spores) { if (p.life <= 0) continue; p.life -= dt; p.sp.position.addScaledVector(p.v, dt); p.v.multiplyScalar(0.97); p.sp.material.opacity = 0.6; p.sp.scale.setScalar(1 + (1.4 - p.life) * 1.5); if (p.life <= 0) p.sp.visible = false; }
   } };
 }
 
-// coelho com proporções reais: anca grande, patas traseiras longas, orelhas compridas, olhos nas laterais
+/* ---------- Coelho-Chifre: coelho de verdade, com pelagem, olhos brilhantes e chifre torcido ---------- */
 export function rabbit(color) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const base = new THREE.Color(color), FUR = mat(base, { roughness: 0.9 }), LIGHT = mat(base.clone().offsetHSL(0, -0.05, 0.08), { roughness: 0.9 }), DARKF = mat(base.clone().offsetHSL(0, 0, -0.12), { roughness: 0.9 });
-  const PINK = mat('#e8a0a8', { roughness: 0.6 }), EYE = mat('#1a1210', { roughness: 0.15 });
-  body.add(blob(0.24, 1, 0.92, 1.05, FUR, 0, 0.25, -0.1, 20));      // anca
-  body.add(blob(0.17, 0.95, 1, 1, FUR, 0, 0.24, 0.13, 18));          // peito
-  body.add(blob(0.15, 0.9, 0.6, 1.4, LIGHT, 0, 0.14, 0.02, 16));     // barriga
-  for (const sx of [-1, 1]) body.add(blob(0.12, 0.6, 1, 1.25, FUR, sx * 0.17, 0.2, -0.12, 14)); // coxas
+  let sd = 11 + Math.floor(Math.random() * 999); const rng = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  const base = new THREE.Color(color), FUR = mat(base, { roughness: 0.9 }), LIGHT = mat(base.clone().offsetHSL(0, -0.05, 0.08), { roughness: 0.9 });
+  const PINK = mat('#e2a0a6', { roughness: 0.6 }), EYE = mat('#170d0a', { roughness: 0.05, metalness: 0.1 });
+  const STRAND = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, side: THREE.DoubleSide });
+  const tones = [base.clone().offsetHSL(0.01, 0.05, -0.12), base.clone().offsetHSL(0, -0.05, 0.08), base.clone().offsetHSL(0.03, 0.1, -0.05)];
+  const softTones = [base.clone().offsetHSL(0, 0, -0.04), base.clone().offsetHSL(0, 0, 0.04)]; // pelo curto e macio, quase da cor do corpo
+  body.add(blob(0.23, 1, 0.92, 1.05, FUR, 0, 0.25, -0.1, 22));
+  body.add(blob(0.165, 0.95, 1, 1, FUR, 0, 0.24, 0.13, 20));
+  body.add(blob(0.14, 0.9, 0.6, 1.4, LIGHT, 0, 0.14, 0.02, 18));
+  for (const sx of [-1, 1]) body.add(blob(0.12, 0.6, 1, 1.25, FUR, sx * 0.165, 0.2, -0.12, 16));
+  bakeChildren(body);
+  furPatch(body, STRAND, [{ n: 320, c: [0, 0.27, -0.08], r: [0.22, 0.2, 0.3], len: 0.32, back: 1, yMin: -0.25 }, { n: 110, c: [0, 0.26, 0.14], r: [0.16, 0.16, 0.15], len: 0.3, back: 0.6, yMin: -0.5 }], rng, base, softTones);
   const head = new THREE.Group(); head.position.set(0, 0.42, 0.25); body.add(head);
-  head.add(blob(0.12, 0.95, 0.95, 1.15, FUR, 0, 0, 0, 18));
-  head.add(blob(0.07, 1.1, 0.8, 0.9, LIGHT, 0, -0.05, 0.1, 14));   // focinho
-  const nose = blob(0.018, 1.3, 1, 0.8, PINK, 0, -0.03, 0.165, 8); head.add(nose);
+  const skull = new THREE.Group(); head.add(skull);
+  skull.add(blob(0.118, 0.95, 0.92, 1.15, FUR, 0, 0, 0, 20));
+  for (const sx of [-1, 1]) skull.add(blob(0.05, 0.9, 0.8, 1, LIGHT, sx * 0.04, -0.055, 0.1, 14)); // bochechas do focinho (o "Y" do coelho)
+  skull.add(blob(0.04, 1.2, 0.7, 0.9, LIGHT, 0, -0.085, 0.07, 12));
+  bakeChildren(skull);
+  furPatch(head, STRAND, [{ n: 110, c: [0, 0.01, -0.01], r: [0.115, 0.11, 0.13], len: 0.24, back: 0.8, yMin: -0.6 }], rng, base, softTones);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 10), PINK); nose.scale.set(1.4, 0.9, 0.8); nose.position.set(0, -0.025, 0.155); head.add(nose);
   for (const sx of [-1, 1]) {
-    head.add(blob(0.028, 0.6, 1.1, 1, EYE, sx * 0.095, 0.025, 0.05, 12));            // olho na lateral
-    head.add(blob(0.008, 1, 1, 1, mat('#ffffff', { roughness: 0.1 }), sx * 0.108, 0.035, 0.065, 6));
-    for (let w = 0; w < 3; w++) { const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.002, 0.13, 16), mat('#f4efe6')); wh.rotation.z = Math.PI / 2 + (w - 1) * 0.15; wh.rotation.y = sx * 0.3; wh.position.set(sx * 0.07, -0.04, 0.12); head.add(wh); }
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.03, 20, 14), EYE); eye.scale.set(0.6, 1.1, 1); eye.position.set(sx * 0.093, 0.025, 0.05); head.add(eye);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.006, 8, 24), mat(base.clone().offsetHSL(0, 0, -0.2))); rim.rotation.y = sx * Math.PI / 2; rim.scale.set(1.1, 1, 1); rim.position.set(sx * 0.095, 0.025, 0.05); head.add(rim);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), WHITE); hl.position.set(sx * 0.108, 0.04, 0.065); head.add(hl);
+    for (let w = 0; w < 4; w++) { const wh = new THREE.Mesh(taper([V3(0, 0, 0), V3(sx * 0.06, 0.003 * (w - 1.5), 0.02), V3(sx * 0.13, -0.01 + 0.008 * (w - 1.5), 0.01)], 0.0022, 0.0008, 8, 5), mat('#f8f4ec')); wh.position.set(sx * 0.035, -0.05, 0.13); head.add(wh); } // bigodes curvos
   }
   const ears = [-1, 1].map(sx => {
     const e = new THREE.Group(); e.position.set(sx * 0.045, 0.09, -0.02); head.add(e);
-    const outer = new THREE.Mesh(taper([V3(0, 0, 0), V3(sx * 0.02, 0.14, -0.03), V3(sx * 0.03, 0.27, -0.07)], 0.032, 0.012, 10, 10), FUR); outer.scale.set(1, 1, 0.55); e.add(outer);
-    const inner = new THREE.Mesh(taper([V3(0, 0.02, 0.012), V3(sx * 0.02, 0.14, -0.015), V3(sx * 0.028, 0.24, -0.05)], 0.02, 0.006, 10, 8), PINK); inner.scale.set(1, 1, 0.4); e.add(inner);
+    const outer = new THREE.Mesh(taper([V3(0, 0, 0), V3(sx * 0.02, 0.14, -0.03), V3(sx * 0.03, 0.27, -0.07), V3(sx * 0.032, 0.3, -0.085)], 0.034, 0.008, 14, 14), FUR); outer.scale.set(1, 1, 0.5); e.add(outer);
+    const inner = new THREE.Mesh(taper([V3(0, 0.02, 0.013), V3(sx * 0.02, 0.14, -0.012), V3(sx * 0.028, 0.25, -0.05)], 0.022, 0.006, 14, 10), PINK); inner.scale.set(1, 1, 0.35); e.add(inner);
+    const vein = new THREE.Mesh(taper([V3(0, 0.04, 0.02), V3(sx * 0.018, 0.13, -0.004), V3(sx * 0.025, 0.21, -0.04)], 0.003, 0.0015, 10, 5), mat('#c97a84')); e.add(vein); // veia
     return e;
   });
-  // o chifre (Coelho-Chifre): pequeno e espiralado na testa
-  const horn = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.14, 14, 4), mat('#e8d9a8', { roughness: 0.4 })); horn.position.set(0, 0.1, 0.07); horn.rotation.x = 0.5; head.add(horn);
-  const fronts = [-1, 1].map(sx => { const g = new THREE.Group(); g.position.set(sx * 0.07, 0.18, 0.2); body.add(g); g.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(0, -0.09, 0.01), V3(0, -0.17, 0.03)], 0.03, 0.022, 6, 8), FUR)); g.add(blob(0.028, 1, 0.6, 1.4, LIGHT, 0, -0.17, 0.04, 8)); return g; });
-  const hinds = [-1, 1].map(sx => { const g = new THREE.Group(); g.position.set(sx * 0.15, 0.12, -0.1); body.add(g); g.add(blob(0.05, 0.75, 0.6, 2.3, FUR, 0, -0.08, 0.06, 10)); return g; });
-  const tail = blob(0.06, 1, 1, 1, mat('#fbf8f2', { roughness: 1 }), 0, 0.3, -0.33, 10); body.add(tail);
+  // chifre torcido (espiral de verdade)
+  const hornG = new THREE.ConeGeometry(0.03, 0.17, 16, 12); { const P = hornG.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k) + 0.085, z = P.getZ(k), a = y * 30, c = Math.cos(a), s2 = Math.sin(a), ring = 1 + Math.sin(Math.atan2(z, x) * 2 + a) * 0.18; P.setXYZ(k, (x * c - z * s2) * ring, y - 0.085, (x * s2 + z * c) * ring); } hornG.computeVertexNormals(); }
+  vcolor(hornG, (c, x, y) => c.set('#efe3c2').lerp(new THREE.Color('#a8956a'), Math.max(0, (0.085 - y) / 0.17) * 0.5));
+  const horn = new THREE.Mesh(hornG, VC(0.35)); horn.position.set(0, 0.11, 0.07); horn.rotation.x = 0.5; head.add(horn);
+  const fronts = [-1, 1].map(sx => { const g = new THREE.Group(); g.position.set(sx * 0.07, 0.18, 0.2); body.add(g); g.add(new THREE.Mesh(taper([V3(0, 0, 0), V3(0, -0.09, 0.01), V3(0, -0.17, 0.03)], 0.03, 0.022, 10, 12), FUR)); const f = new THREE.Mesh(new THREE.SphereGeometry(0.028, 14, 10), LIGHT); f.scale.set(1, 0.55, 1.5); f.position.set(0, -0.172, 0.045); g.add(f); return g; });
+  const hinds = [-1, 1].map(sx => { const g = new THREE.Group(); g.position.set(sx * 0.15, 0.12, -0.1); body.add(g); const foot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 12), LIGHT); foot.scale.set(0.72, 0.5, 2.6); foot.position.set(0, -0.09, 0.08); g.add(foot); return g; }); // pé traseiro comprido
+  const tail = new THREE.Group(); tail.position.set(0, 0.3, -0.33); body.add(tail);
+  furPatch(tail, STRAND, [{ n: 60, c: [0, 0, 0], r: [0.05, 0.05, 0.05], len: 0.55, back: -0.3 }], rng, new THREE.Color('#fbf8f2'), [new THREE.Color('#ffffff'), new THREE.Color('#e8e2d6')]);
+  tail.add(blob(0.045, 1, 1, 1, mat('#fbf8f2', { roughness: 1 }), 0, 0, 0, 12));
   shadowAll(root);
   let lt = 0, at = -9, ph = 0;
   return { root, attack() { at = lt; }, animate(t, moving, dt = 1 / 60) {
     lt = t; ph += dt * (moving ? 9 : 0);
     const hop = moving ? Math.max(0, Math.sin(ph)) : 0, sk = strike((t - at) / 0.45);
     body.position.y = hop * 0.22 + Math.max(0, sk) * 0.12;
-    body.rotation.x = moving ? -Math.cos(ph) * 0.18 : sk * 0.35;               // inclina no salto / cabeçada
+    body.rotation.x = moving ? -Math.cos(ph) * 0.18 : sk * 0.35;
     body.position.z = sk * 0.18;
+    body.scale.set(1, 1 + Math.sin(t * 3.2) * 0.015 * (moving ? 0 : 1), 1); // respira
     hinds.forEach(h => { h.rotation.x = moving ? Math.max(0, -Math.cos(ph)) * 0.9 : 0; });
     fronts.forEach(f => { f.rotation.x = moving ? Math.cos(ph) * 0.6 : 0; });
     ears.forEach((e, i) => { e.rotation.x = -0.15 - hop * 0.4 + Math.sin(t * 1.3 + i * 2) * 0.05 * (moving ? 0 : 1); e.rotation.z = (i ? -1 : 1) * (0.05 + Math.max(0, Math.sin(t * 0.7 + i * 3) - 0.92) * 3); });
-    nose.scale.y = 1 + Math.max(0, Math.sin(t * 9)) * 0.25 * (moving ? 0 : 1); // fuça o ar
+    nose.scale.y = 0.9 + Math.max(0, Math.sin(t * 9)) * 0.25 * (moving ? 0 : 1);
     head.rotation.y = moving ? 0 : Math.sin(t * 0.6) * 0.3;
+    tail.rotation.x = Math.sin(t * 5) * 0.1 * (moving ? 1 : 0.3);
   } };
 }
 
-// abelha com tórax peludo, abdômen listrado, olhos compostos, antenas, 6 patas e 4 asas translúcidas
+/* ---------- Abelha Rubra: tórax e cabeça peludos, olhos compostos, asas com nervuras, patas articuladas ---------- */
+let WING_TEX = null;
+function wingTex() {
+  if (WING_TEX) return WING_TEX;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.clearRect(0, 0, 128, 128); g.fillStyle = 'rgba(230,240,255,0.35)'; g.beginPath(); g.ellipse(64, 64, 62, 62, 0, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(60,50,40,0.85)'; g.lineWidth = 2.2;
+  for (const [x1, y1, x2, y2] of [[4, 64, 124, 58], [10, 64, 110, 30], [10, 64, 112, 92], [40, 62, 70, 20], [40, 62, 74, 108], [70, 60, 98, 18], [70, 60, 100, 104]]) { g.beginPath(); g.moveTo(x1, y1); g.quadraticCurveTo((x1 + x2) / 2, (y1 + y2) / 2 - 6, x2, y2); g.stroke(); }
+  g.lineWidth = 1; g.strokeStyle = 'rgba(60,50,40,0.5)'; for (let k = 0; k < 7; k++) { g.beginPath(); g.moveTo(30 + k * 12, 30 + (k % 2) * 6); g.lineTo(36 + k * 12, 96 - (k % 3) * 4); g.stroke(); }
+  WING_TEX = new THREE.CanvasTexture(c); WING_TEX.colorSpace = THREE.SRGBColorSpace; return WING_TEX;
+}
 export function bee(color) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const C = mat(color, { roughness: 0.75 }), BLK = mat('#1a1416', { roughness: 0.6 }), FUZZ = mat(new THREE.Color(color).offsetHSL(0, -0.1, 0.15), { roughness: 1 });
-  body.add(blob(0.16, 1, 0.95, 1, FUZZ, 0, 0, 0.02, 18));            // tórax
+  let sd = 5 + Math.floor(Math.random() * 999); const rng = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  const base = new THREE.Color(color);
+  const C = mat(base, { roughness: 0.55 }), BLK = mat('#1a1416', { roughness: 0.45 }), FUZZ = mat(base.clone().offsetHSL(0.04, -0.15, 0.18), { roughness: 1 });
+  const STRAND = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1, side: THREE.DoubleSide });
+  body.add(blob(0.15, 1, 0.95, 1, FUZZ, 0, 0, 0.02, 20));
+  furPatch(body, STRAND, [{ n: 260, c: [0, 0, 0.02], r: [0.15, 0.143, 0.15], len: 0.45, back: 0.3 }], rng, base.clone().offsetHSL(0.04, -0.1, 0.12), [new THREE.Color('#2a1a14'), base.clone().offsetHSL(0.06, 0, 0.2)]);
   const abd = new THREE.Group(); abd.position.set(0, -0.02, -0.12); body.add(abd);
-  for (let i = 0; i < 5; i++) abd.add(blob(0.17 - Math.abs(i - 1.5) * 0.025, 1, 0.95, 0.42, i % 2 ? BLK : C, 0, -i * 0.012, -i * 0.075, 16));
-  const sting = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 14), BLK); sting.rotation.x = -Math.PI / 2; sting.position.set(0, -0.06, -0.42); abd.add(sting);
+  for (let i = 0; i < 5; i++) { const seg = blob(0.165 - Math.abs(i - 1.5) * 0.026, 1, 0.95, 0.42, i % 2 ? BLK : C, 0, -i * 0.012, -i * 0.075, 22); abd.add(seg); }
+  bakeChildren(abd);
+  furPatch(abd, STRAND, [0, 1, 2, 3, 4].map(i => ({ n: 34, c: [0, -i * 0.012, -i * 0.075], r: [0.165 - Math.abs(i - 1.5) * 0.026, (0.165 - Math.abs(i - 1.5) * 0.026) * 0.95, 0.07], len: 0.3, back: 0.6, yMin: -0.3 })), rng, base, [new THREE.Color('#1a1416'), base.clone()]);
+  const sting = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.13, 14), mat('#2a1e18', { roughness: 0.3, metalness: 0.3 })); sting.rotation.x = -Math.PI / 2; sting.position.set(0, -0.06, -0.42); abd.add(sting);
   const head = new THREE.Group(); head.position.set(0, 0.03, 0.2); body.add(head);
-  head.add(blob(0.1, 1.15, 1, 0.85, BLK, 0, 0, 0, 14));
+  head.add(blob(0.095, 1.15, 1, 0.85, BLK, 0, 0, 0, 18));
+  furPatch(head, STRAND, [{ n: 70, c: [0, 0.02, -0.02], r: [0.1, 0.09, 0.07], len: 0.3, back: -0.3, yMin: -0.2 }], rng, new THREE.Color('#2a1e18'), [new THREE.Color('#4a3a2a')]);
+  // olhos compostos: superfície com facetas finas (cor por vértice em favo) e brilho
   for (const sx of [-1, 1]) {
-    head.add(blob(0.06, 0.75, 1.15, 0.9, mat('#2a1a3a', { roughness: 0.15, metalness: 0.3 }), sx * 0.085, 0.02, 0.03, 14));
-    head.add(new THREE.Mesh(taper([V3(sx * 0.03, 0.07, 0.05), V3(sx * 0.07, 0.17, 0.12), V3(sx * 0.1, 0.2, 0.2)], 0.01, 0.006, 8, 5), BLK));
+    const eg = new THREE.SphereGeometry(0.062, 28, 20); eg.scale(0.75, 1.15, 0.9);
+    vcolor(eg, (c, x, y, z) => c.set('#3a1e3a').offsetHSL(0, 0, ((Math.sin(x * 260) + Math.sin(y * 240 + x * 130) + Math.sin(z * 250)) > 1.2 ? 0.08 : -0.03)));
+    const e = new THREE.Mesh(eg, VC(0.12, { metalness: 0.35 })); e.position.set(sx * 0.082, 0.02, 0.03); head.add(e);
+    const ant = new THREE.Mesh(taper([V3(sx * 0.03, 0.07, 0.05), V3(sx * 0.05, 0.14, 0.09), V3(sx * 0.06, 0.17, 0.14), V3(sx * 0.1, 0.2, 0.2)], 0.008, 0.005, 14, 6), BLK); head.add(ant); // antena dobrada (cotovelo)
+    const mand = new THREE.Mesh(taper([V3(sx * 0.03, -0.06, 0.06), V3(sx * 0.02, -0.08, 0.09), V3(0, -0.085, 0.1)], 0.01, 0.004, 8, 6), mat('#3a2418')); head.add(mand);
   }
-  const legs = []; for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) { const l = new THREE.Mesh(taper([V3(sx * 0.08, -0.08, 0.06 - i * 0.07), V3(sx * 0.16, -0.14, 0.04 - i * 0.07), V3(sx * 0.17, -0.26, 0.02 - i * 0.08)], 0.012, 0.007, 8, 5), BLK); body.add(l); legs.push(l); }
-  const wingMat = new THREE.MeshStandardMaterial({ color: '#eef4ff', transparent: true, opacity: 0.42, side: THREE.DoubleSide, roughness: 0.1, depthWrite: false });
+  // 6 patas com 3 segmentos e pelinhos
+  const legs = []; for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) { const z0 = 0.06 - i * 0.07; const l = new THREE.Mesh(taper([V3(sx * 0.07, -0.08, z0), V3(sx * 0.15, -0.12, z0 - 0.01), V3(sx * 0.17, -0.2, z0 - 0.03), V3(sx * 0.16, -0.28, z0 - 0.05 - i * 0.02), V3(sx * 0.17, -0.31, z0 - 0.02 - i * 0.02)], 0.014, 0.005, 16, 6), BLK); body.add(l); legs.push(l); }
+  const wingMat = new THREE.MeshStandardMaterial({ map: wingTex(), transparent: true, side: THREE.DoubleSide, roughness: 0.1, metalness: 0.2, depthWrite: false });
   const wings = []; for (const sx of [-1, 1]) for (const k of [0, 1]) {
-    const w = new THREE.Group(); w.position.set(sx * 0.08, 0.13, 0.04 - k * 0.07); body.add(w);
-    const m = new THREE.Mesh(new THREE.CircleGeometry(k ? 0.12 : 0.17, 20), wingMat); m.scale.set(1, 0.42, 1); m.rotation.x = -Math.PI / 2; m.position.x = sx * (k ? 0.11 : 0.16); w.add(m); wings.push({ w, sx });
+    const w = new THREE.Group(); w.position.set(sx * 0.07, 0.13, 0.04 - k * 0.07); body.add(w);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(k ? 0.24 : 0.34, k ? 0.11 : 0.15), wingMat); m.rotation.x = -Math.PI / 2; m.position.x = sx * (k ? 0.11 : 0.16); if (sx < 0) m.scale.x = -1; w.add(m); wings.push({ w, sx });
   }
   body.position.y = 1.1;
   shadowAll(root);
   let lt = 0, at = -9;
   return { root, flying: true, attack() { at = lt; }, animate(t) {
     lt = t; const sk = strike((t - at) / 0.45);
-    body.position.y = 1.1 + Math.sin(t * 4) * 0.1 - Math.max(0, sk) * 0.4;
-    body.position.z = sk * 0.45; body.rotation.x = -sk * 0.9;              // mergulha e ferroa
+    body.position.y = 1.1 + Math.sin(t * 4) * 0.1 + Math.sin(t * 9.7) * 0.02 - Math.max(0, sk) * 0.4;
+    body.position.z = sk * 0.45; body.rotation.x = -sk * 0.9 + Math.sin(t * 3.1) * 0.05; body.rotation.z = Math.sin(t * 2.3) * 0.06;
     abd.rotation.x = 0.15 + Math.sin(t * 6) * 0.06 + Math.max(0, sk) * 0.6;
     wings.forEach(({ w, sx }) => { w.rotation.z = sx * Math.sin(t * 55) * 0.7; });
+    legs.forEach((l, i) => { l.rotation.x = Math.sin(t * 3 + i) * 0.08; });
   } };
 }
 
@@ -223,7 +307,7 @@ function bakeChildren(g) {
   for (const o of [...g.children]) {
     if (!o.isMesh || o.isInstancedMesh) continue;
     o.updateMatrix(); const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrix);
-    for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal') geo.deleteAttribute(k);
+    for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'color') geo.deleteAttribute(k);
     (by.get(o.material) || by.set(o.material, []).get(o.material)).push(geo); g.remove(o);
   }
   for (const [m, geos] of by) g.add(new THREE.Mesh(mergeGeometries(geos), m));

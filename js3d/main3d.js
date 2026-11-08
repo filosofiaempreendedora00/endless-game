@@ -809,6 +809,38 @@ function spawnPoint(zoneId) {
   }
   return { x: zn.x, z: zn.z };
 }
+// brilho nas órbitas, capa rasgada (cavaleiro) e rastro etéreo (espectro): esqueletos com mais presença
+const EYE_GLOW = {}, GHOST_TEX = { t: null };
+function skeletonExtras(ch, d) {
+  const head = ch.root.getObjectByName('head') || ch.root.getObjectByName('Head'); if (!head) return null;
+  ch.root.updateMatrixWorld(true);
+  const ws = new THREE.Vector3(); head.getWorldScale(ws); const os = ch.obj.scale.x || 1;
+  const g = new THREE.Group(); g.scale.setScalar(1 / ws.x * (ch.root.scale.x)); head.add(g); // a partir daqui: unidades do modelo (como o resto do esqueleto)
+  const col = d.shape === 'ghost' ? '#8fb4ff' : d.boss ? '#c06aff' : d.shape === 'knight' ? '#ff5a3a' : '#7fe0ff';
+  const m = EYE_GLOW[col] || (EYE_GLOW[col] = new THREE.MeshBasicMaterial({ color: col }));
+  const halo = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+  const eyes = [];
+  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), m); e.position.set(sx * 0.17, 0.42, 0.38); g.add(e); const h = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), halo); h.position.copy(e.position); g.add(h); eyes.push(h); }
+  const parts = [];
+  if (d.shape === 'knight') { // capa rasgada nas costas
+    const chest = ch.root.getObjectByName('chest') || ch.root.getObjectByName('Chest');
+    if (chest) { const cg = new THREE.PlaneGeometry(0.9, 1.3, 8, 10), P = cg.attributes.position;
+      for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k); if (y < -0.45) P.setY(k, y + (Math.sin(x * 23) * 0.5 + 0.5) * 0.25); P.setZ(k, Math.sin(x * 3) * 0.05); } cg.translate(0, -0.6, 0); cg.computeVertexNormals();
+      const cape = new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ color: '#4a1a1e', roughness: 0.95, side: THREE.DoubleSide })); const cw = new THREE.Vector3(); chest.getWorldScale(cw);
+      const holder = new THREE.Group(); holder.scale.setScalar(1 / cw.x * ch.root.scale.x); chest.add(holder); cape.position.set(0, 0.35, -0.42); cape.rotation.x = 0.12; cape.castShadow = true; holder.add(cape); parts.push(cape); }
+  }
+  let trail = null;
+  if (d.shape === 'ghost') { // rastro etéreo que some no chão
+    if (!GHOST_TEX.t) { const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(160,190,255,0.32)'); gr.addColorStop(1, 'rgba(160,190,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); GHOST_TEX.t = new THREE.CanvasTexture(c); }
+    trail = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 20, 1, true), new THREE.MeshBasicMaterial({ map: GHOST_TEX.t, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    trail.rotation.x = Math.PI; trail.position.y = 0.42; ch.obj.add(trail);
+  }
+  return t => {
+    for (const [i, h] of eyes.entries()) h.scale.setScalar(0.8 + Math.sin(t * 3 + i) * 0.2);
+    for (const c of parts) c.rotation.x = 0.12 + Math.sin(t * 1.7) * 0.06;
+    if (trail) { ch.root.position.y = 0.25 + Math.sin(t * 1.6) * 0.1; trail.scale.set(1 + Math.sin(t * 2.3) * 0.08, 1, 1); trail.rotation.y = t * 0.6; } // espectro flutua
+  };
+}
 function monsterVisual(m) {
   const d = m.def;
   if (d.shape === 'skeleton' || d.shape === 'knight' || d.shape === 'ghost') {
@@ -817,10 +849,14 @@ function monsterVisual(m) {
     if (d.shape === 'ghost') attach(ch.root, 'sk_staff', 'r');
     else if (d.shape === 'knight') { attach(ch.root, 'sk_axe', 'r'); attach(ch.root, 'sk_shield', 'l'); }
     else attach(ch.root, 'sk_blade', 'r');
-    if (d.shape === 'ghost') ch.root.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.7; o.material.emissive = new THREE.Color('#5a7aff'); o.material.emissiveIntensity = 0.35; } });
-    if (d.shape === 'knight') ch.root.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.color.multiplyScalar(0.55); } });
+    // osso envelhecido (amarelado, fosco); cavaleiro mais escuro e enferrujado; espectro translúcido e azulado
+    const boneTint = new THREE.Color(d.shape === 'knight' ? '#9a8f7a' : '#e6dbc2');
+    ch.root.traverse(o => { if (!o.isMesh) return; o.material = o.material.clone(); o.material.roughness = 0.85;
+      if (d.shape === 'ghost') { o.material.transparent = true; o.material.opacity = 0.62; o.material.emissive = new THREE.Color('#5a7aff'); o.material.emissiveIntensity = 0.45; o.material.depthWrite = false; }
+      else { o.material.color.multiply(boneTint); if (d.shape === 'knight') o.material.color.multiplyScalar(0.62); } });
+    const fx = skeletonExtras(ch, d);
     ch.anim.play('Idle');
-    return { ...ch, kind: 'skel', height: 1.9 * (d.shape === 'knight' ? 1.18 : 1) * (d.boss ? 1.55 : 1), radius: 0.55 * (d.boss ? 1.5 : 1) };
+    return { ...ch, fx, kind: 'skel', height: 1.9 * (d.shape === 'knight' ? 1.18 : 1) * (d.boss ? 1.55 : 1), radius: 0.55 * (d.boss ? 1.5 : 1) };
   }
   const cr = makeCritter(d.shape, d.color, d.mini || d.boss, d.variant);
   const s = Math.max(0.6, d.size) * (d.shape === 'blob' ? 1.1 : 1);
@@ -884,6 +920,7 @@ function updateMonster(m, dt) {
   const t = S.time, d = m.def, P = S.pos;
   if (d.dummy) { m.vis.critter.animate(t, false, dt); return; } // boneco: só balança
   if (m.vis.anim) m.vis.anim.update(dt);
+  if (m.vis.fx) m.vis.fx(t);
   if (m.dead) {
     const k = t - m.deathT;
     if (m.vis.kind === 'critter') {
