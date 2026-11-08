@@ -12,6 +12,9 @@ const UI = {
   wins: {}, z: 60, dirty: false, invTab: 'all', invSel: null, cardMode: null, treeSel: null, dlg: null,
 
   init() {
+    // menu lateral com ícones pintados (sem emoji)
+    { const zb = document.querySelector('.st-zeny'); if (zb && typeof uiIcon === 'function') zb.innerHTML = zb.innerHTML.replace('💰', `<img class="mb-coin" src="${uiIcon('zeny')}" alt="">`); }
+    document.querySelectorAll('#menubar [data-win]').forEach(b => { const k = b.dataset.win, sp = b.querySelector('span'); if (typeof uiIcon === 'function' && UI_ICONS[k]) { b.innerHTML = `<img class="mb-ic" src="${uiIcon(k)}" alt="">`; if (sp) b.appendChild(sp); } });
     document.querySelectorAll('#menubar [data-win]').forEach(b => b.onclick = () => { Sound.play('click'); this.toggle(b.dataset.win); });
     if ($('btn-sound')) $('btn-sound').onclick = () => toggleSound();
     // hotbar (S-107): até 3 fileiras de 9 (arraste o canto de baixo à direita) e 3 conjuntos trocados com a tecla 0
@@ -252,6 +255,7 @@ const UI = {
       case 'petset': if (typeof H3 !== 'undefined' && H3.setPet) { H3.setPet(ds.k, +ds.st); this.render_tree(); } break;
       case 'bestsel': this.bestSel = ds.id; this.render_bestiario(); break;
       case 'bestf': this.bestF = ds.f; this.render_bestiario(); break;
+      case 'bestpop': if (typeof H3 !== 'undefined' && H3.monsterPopup) H3.monsterPopup(ds.id); break;
       case 'dlg': { const opt = this.dlg && this.dlg.options[+ds.i]; if (opt) opt.fn(); break; }
     }
   },
@@ -539,7 +543,7 @@ const UI = {
     this.body('bestiario').innerHTML = `<div class="bs">
       <div class="bs-left">${counter}<input class="bs-search" id="bs-q" placeholder="🔍 Buscar nome, raça ou elemento" value="${esc(this.bestQ || '')}"><div class="bs-filt">${[['all', 'Todos'], ['boss', '👑 Chefes'], ['mini', '⭐ Mini'], ['comum', 'Comuns']].map(([k, n]) => `<button class="${F === k ? 'on' : ''}" data-act="bestf" data-f="${k}">${n}</button>`).join('')}</div><div class="bs-list">${list}</div></div>
       <div class="bs-right">
-        <div class="bs-head"><div class="bs-big">${typeof H3 !== 'undefined' && H3.monsterLive ? '<canvas id="bs-live" width="200" height="200"></canvas>' : m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
+        <div class="bs-head"><div class="bs-big">${typeof H3 !== 'undefined' && H3.monsterLive ? '<canvas id="bs-live" width="200" height="200"></canvas>' : m.icon}</div><div><div class="bs-name">${esc(m.name)}</div><button class="btn small bs-360" data-act="bestpop" data-id="${sel}">🔍 Ver em 360°</button><div class="muted">Nível ${m.lv} · ${m.race} · ${size} · <span style="color:${ELEMENTS[m.element].color}">${ELEMENTS[m.element].name}</span></div></div></div>
         <div class="bs-stats">${stat('HP', m.hp.toLocaleString('pt-BR'))}${stat('Ataque', m.atk[0] + '–' + m.atk[1])}${stat('Defesa', m.def)}${stat('Def. Mágica', m.mdef)}${stat('Precisão', m.hit)}${stat('Esquiva', m.flee)}${stat('EXP Base', m.exp.toLocaleString('pt-BR'))}${stat('EXP Classe', m.jexp.toLocaleString('pt-BR'))}</div>
         <h4>Elemento</h4><div class="bs-p">Leva <b>+50%</b> de dano de: ${weak} · causa +50% em: ${strongVs}</div>
         <h4>Comportamento</h4><div class="bs-p">${traits.join('<br>')}</div>

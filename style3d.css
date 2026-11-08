@@ -168,3 +168,10 @@ body.g3d { background: #9fd3ff; }
 .q-obj { display: flex; justify-content: space-between; padding: 2px 0; }
 .qd-where { font-size: 12.5px; padding: 2px 0; } .qd-foot { display: flex; gap: 10px; align-items: center; font-size: 11.5px; margin-top: 4px; }
 .qt-w { font-size: 10.5px; color: #ffd84a; text-shadow: 0 1px 2px #000; }
+#o-aimw { margin-left: auto; background: rgba(0,0,0,0.4); color: var(--text); border: 1px solid var(--border-soft); border-radius: 6px; padding: 3px 6px; font: inherit; }
+/* S-237: visualizador grande do monstro */
+.mon-pop { position: fixed; inset: 0; z-index: 300; background: rgba(5,4,10,0.72); display: grid; place-items: center; }
+.mon-pop-box { background: radial-gradient(ellipse at 50% 45%, #2e2648, #0d0b16 75%); border: 1px solid #c9a24a; border-radius: 14px; padding: 10px 12px 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.mon-pop-h { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; } .mon-pop-h b { font-family: Cinzel, serif; color: var(--gold); font-size: 17px; } .mon-pop-h span { flex: 1; font-size: 11.5px; }
+.mon-pop-x { background: none; border: 1px solid rgba(255,255,255,0.2); color: #eee; border-radius: 6px; cursor: pointer; padding: 2px 8px; }
+.mon-pop canvas { width: min(760px, 90vw); height: auto; display: block; }

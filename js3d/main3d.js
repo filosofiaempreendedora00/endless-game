@@ -442,7 +442,8 @@ function lojaThumb(kind, k) {
   const o = lojaObj(kind, k); o.obj.position.set(900, 0, 900); o.obj.rotation.y = 0.6; scene.add(o.obj); o.tick(0.3, 1);
   const url = renderObj(o.obj, 120, 120); scene.remove(o.obj); return (lojaThumbs[key] = url);
 }
-function lojaLive(kind, k, cv) {
+function lojaLive(kind, k, cv) { return objViewer(cv, () => { const o = lojaObj(kind, k); return { obj: o.obj, tick: o.tick }; }, { yaw: 0.6, autoSpin: 0.4, dist: 0.92 }); } // S-240: sem travar ao arrastar
+function lojaLiveOld(kind, k, cv) {
   const o = lojaObj(kind, k); o.obj.position.set(940, 0, 900); scene.add(o.obj); o.obj.traverse(x => x.layers.enable(1)); o.tick(0.1, 0); o.obj.updateMatrixWorld(true);
   const W = cv.width, H = cv.height, rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
   const g = cv.getContext('2d'), img = g.createImageData(W, H), buf = new Uint8Array(W * H * 4);
@@ -1059,8 +1060,9 @@ const CLASS_ATTACK = {
 };
 function attackAnim(p, me) {
   const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
-  S.atkN = (S.atkN || 0) + 1; const clip = ca.clips[S.atkN % ca.clips.length];
-  me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: ca.speed * Math.max(1, 900 / p.d.aspd) });
+  S.atkN = (S.atkN || 0) + 1; const clip = ca.clips[S.atkN % ca.clips.length]; S.lastAtk = S.time;
+  if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = true; } // S-236: andando, o golpe vai só no tronco e as pernas seguem andando
+  else { me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = false; }
   if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
   return ca;
 }
@@ -1109,12 +1111,18 @@ function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]
 const aimRay = new THREE.Raycaster();
 // S-141: no modo clássico a mira é o CURSOR do mouse (estilo Skyrim, sem alvo travado); nos modos de ação, o centro da tela
 const mouseNdc = new THREE.Vector2(0, 0), NDC0 = new THREE.Vector2(0, 0);
+const AIM_WEIGHT = { leve: 0.0035, medio: 0.0022, pesado: 0.0012, travado: 0 }; // S-234: quanto a câmera gira ao mexer o mouse segurando o ataque
+try { S.aimWeight = localStorage.getItem('aethra_aimw') || 'pesado'; } catch (e) { }
 const aimNdc = () => isAction() ? NDC0 : mouseNdc;
 function aimTarget(maxRange) {
   aimRay.setFromCamera(aimNdc(), camera);
   const hit = aimRay.intersectObjects(hitboxes, false).find(h => { const r = h.object.userData.ref; return r && !r.isNpc && !r.dead && Math.hypot(r.x - S.pos.x, r.z - S.pos.z) <= maxRange; });
   if (hit) return hit.object.userData.ref;
-  if (!isAction()) return null; // com o cursor: só acerta quem está debaixo da mira
+  if (!isAction()) { // com o cursor: quem está debaixo da mira ou bem perto do ponto do chão que ela aponta (hitbox um pouco generosa, como no WoW)
+    const q = aimPoint(maxRange + 6); let best = null, bd = 1e9;
+    for (const m of [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])]) { if (m.dead || !m.obj.visible) continue; const dP = Math.hypot(m.x - S.pos.x, m.z - S.pos.z); if (dP > maxRange) continue; const dA = Math.hypot(m.x - q.x, m.z - q.z); if (dA < (m.radius || 0.5) + 0.9 && dA < bd) { bd = dA; best = m; } }
+    return best;
+  }
   let best = null, bd = 1e9;
   for (const m of [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])]) {
     if (m.dead || !m.obj.visible) continue; const d = Math.hypot(m.x - S.pos.x, m.z - S.pos.z); if (d > Math.min(maxRange, 4.5)) continue;
@@ -1138,9 +1146,9 @@ function actionFire() {
   if (m) { setTarget(m); playerAttack(m); return; }
   // S-192: no vazio o golpe é idêntico ao golpe num alvo (mesma animação, tempo e som) — só não dá dano; projétil segue reto
   if (S.riding && !S.riding.war) dismount(true);
-  const me = S.me, ca = attackAnim(p, me); S.lockAnim = t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
+  const me = S.me, ca = attackAnim(p, me); S.lockAnim = S.overlayAtk ? t : t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
   if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : 0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bow'); }
-  else Sound.play(ca.sound || 'swing');
+  else { Sound.play(ca.sound || 'swing'); later(0.25, () => { const q = aimPoint(3); floatAt(new THREE.Vector3(q.x, groundAt(q.x, q.z), q.z), 'Errou', '#cfd6e0', 1.2); Sound.play('miss'); }); } // S-233: golpe no vazio mostra "Errou" com som
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
 let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing';
@@ -1292,7 +1300,45 @@ function monsterThumb(type) {
   const url = renderObj(v.obj, 96, 96); scene.remove(v.obj);
   return (thumbCache[type] = url);
 }
-function monsterLive(type, cv) {
+/* Visualizador próprio (renderizador separado, sem ler pixels do jogo): rápido de arrastar (S-240) e com zoom (S-237).
+   makeObj() → { obj, tick(dt, t), attack?() }. Devolve stop(). */
+function objViewer(cv, makeObj, o = {}) {
+  const rr = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true }); rr.setPixelRatio(Math.min(2, devicePixelRatio)); rr.setSize(cv.width, cv.height, false);
+  rr.outputColorSpace = THREE.SRGBColorSpace; rr.toneMapping = THREE.ACESFilmicToneMapping; rr.setClearColor(0, 0);
+  const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#e0ecff', '#5a4a3a', 1.2)); const k = new THREE.DirectionalLight('#fff3e0', 2.4); k.position.set(2, 4, 3); const rim = new THREE.DirectionalLight('#9fc4ff', 1.2); rim.position.set(-3, 2, -3); sc.add(k, rim);
+  const it = makeObj(); sc.add(it.obj); it.obj.position.set(0, 0, 0); it.obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(it.obj), sph = box.getBoundingSphere(new THREE.Sphere()), cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, 0.02, 200);
+  let t = 0, last = performance.now(), alive = true, spin = o.yaw ?? 0.6, drag = null, zoom = 1, zoomT = 1, pitch = 0.18, nextAtk = 2;
+  cv.style.cursor = 'grab'; cv.style.touchAction = 'none';
+  cv.onpointerdown = e => { if (e.button !== 0 || (typeof FB !== 'undefined' && (FB.picking || FB.box))) return; e.preventDefault(); e.stopPropagation(); drag = [e.clientX, e.clientY]; cv.style.cursor = 'grabbing'; try { cv.setPointerCapture(e.pointerId); } catch (er) { } };
+  cv.onpointermove = e => { if (!drag) return; spin += (e.clientX - drag[0]) * 0.012; if (o.zoom) pitch = clamp(pitch + (e.clientY - drag[1]) * 0.006, -0.3, 1.1); drag = [e.clientX, e.clientY]; };
+  cv.onpointerup = cv.onpointercancel = () => { drag = null; cv.style.cursor = 'grab'; };
+  if (o.zoom) cv.onwheel = e => { e.preventDefault(); zoomT = clamp(zoomT * (e.deltaY > 0 ? 1.15 : 0.87), 0.25, 2.2); };
+  const frame = () => {
+    if (!alive || !document.body.contains(cv)) { stop(); return; }
+    const now = performance.now(), dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt; if (!drag) spin += dt * (o.autoSpin ?? 0.35);
+    zoom += (zoomT - zoom) * Math.min(1, dt * 8);
+    it.obj.rotation.y = spin; it.tick && it.tick(dt, t);
+    if (it.attack && t > nextAtk) { it.attack(); nextAtk = t + 3 + Math.random() * 2; }
+    const d = sph.radius / Math.sin(15 * Math.PI / 180) * (o.dist || 1) * zoom, cy = sph.center.y + (o.zoom ? (1 - zoom) * sph.radius * 0.35 : 0);
+    cam.position.set(sph.center.x, cy + Math.sin(pitch) * d, sph.center.z + Math.cos(pitch) * d); cam.lookAt(sph.center.x, cy, sph.center.z);
+    rr.render(sc, cam); requestAnimationFrame(frame);
+  };
+  function stop() { if (!alive) return; alive = false; sc.remove(it.obj); rr.dispose(); try { rr.forceContextLoss(); } catch (e) { } }
+  requestAnimationFrame(frame); return stop;
+}
+function monsterObj(type) { const v = monsterVisual({ def: MONSTERS[type] }); if (v.anim) v.anim.play(MONSTERS[type].aggressive ? 'Idle_Combat' : 'Idle'); return { obj: v.obj, tick: (dt, t) => { if (v.critter) v.critter.animate(t, false, dt); else if (v.anim) v.anim.update(dt); }, attack: v.critter && v.critter.attack ? () => v.critter.attack() : null }; }
+function monsterPopup(type) { // S-237: janela grande para girar 360°, inclinar e dar zoom no monstro
+  const d = MONSTERS[type], w = document.createElement('div'); w.className = 'mon-pop'; w.innerHTML = `<div class="mon-pop-box"><div class="mon-pop-h"><b>${escH(d.name)}</b><span class="muted">Nv. ${d.lv} · arraste para girar e inclinar · rodinha aproxima</span><button class="mon-pop-x">✕</button></div><canvas width="760" height="560"></canvas></div>`;
+  document.body.appendChild(w); const cv = w.querySelector('canvas'), stop = objViewer(cv, () => monsterObj(type), { zoom: true, autoSpin: 0.15 });
+  const close = () => { stop(); w.remove(); removeEventListener('keydown', esc); }; const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  w.querySelector('.mon-pop-x').onclick = close; w.onclick = e => { if (e.target === w) close(); }; addEventListener('keydown', esc, true);
+}
+function monsterLive(type, cv) { // Bestiário: visualizador próprio (S-240) e clique abre a janela grande (S-237)
+  cv.title = 'Arraste para girar · clique duplo abre a visualização grande'; cv.ondblclick = () => monsterPopup(type);
+  return objViewer(cv, () => monsterObj(type), {});
+}
+function monsterLiveOld(type, cv) {
   const v = monsterVisual({ def: MONSTERS[type] }); v.obj.position.set(920, 0, 900); scene.add(v.obj);
   if (v.anim) v.anim.play(MONSTERS[type].aggressive ? 'Idle_Combat' : 'Idle');
   const W = cv.width, H = cv.height, rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace;
@@ -1536,7 +1582,7 @@ const NPC3D = [
   // S-126: o NPC da história principal fica na praça, ao sul do poço
   { ...QUEST_GIVERS_NPC.teodoro, dx: -1, dz: -11, lines: 'Alvorada já viu muitos aventureiros partirem por aquele portão. Poucos voltaram com histórias tão boas quanto as que você ainda vai viver.' },
   // look: rosto 3D + cabelo (mesmo sistema do jogador); hat = o acessório cobre a cabeça
-  { id: 'ivra', name: 'Mestra Ivra', title: 'Mentora de Classes', model: 'Mage', show: ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], dx: -8, dz: -6, hat: true, look: { race: 'elfo', face: 'gentil', hair: { style: 'longo', color: 'platinado' } } },
+  { id: 'ivra', name: 'Mestra Ivra', title: 'Mentora de Classes', model: 'Mage', show: [], dx: -8, dz: -6, look: { race: 'elfo', face: 'alegre', hair: { style: 'longo', color: 'platinado' } } }, // S-231: visual único de mentora (vestido, tiara e grimório)
   { id: 'bento', name: 'Bento', title: 'Mercador', model: 'Barbarian', show: ['Mug', 'Barbarian_Hat'], dx: 9, dz: -7, hat: true, look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'castanho' }, beard: true } },
   { id: 'clara', name: 'Irmã Clara', title: 'Curandeira', model: 'Mage', show: ['Spellbook_open', 'Mage_Cape'], dx: -7, dz: 7, look: { race: 'humano', face: 'sereno', hair: { style: 'coque', color: 'loiro' } } },
   { id: 'tobias', name: 'Guarda Tobias', title: 'Guia da Vila', model: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], dx: 15, dz: 2, hat: true, look: { race: 'humano', face: 'valente', hair: { style: 'curto', color: 'castanho_escuro' } } },
@@ -1644,6 +1690,14 @@ function makeSongAura() {
 }
 const keys = {};
 const mouse = { left: false, right: false, moved: 0, x: 0, y: 0 };
+const _tq = new THREE.Quaternion(), _tq2 = new THREE.Quaternion(), _ty = new THREE.Quaternion(), _UP = new THREE.Vector3(0, 1, 0);
+function legTwist(me, ang) {
+  const r = me.root, pel = me._pel || (me._pel = r.getObjectByName('pelvis')), sp = me._sp || (me._sp = r.getObjectByName('spine_01')); if (!pel || !sp) return;
+  pel.parent.updateWorldMatrix(true, false); pel.parent.getWorldQuaternion(_tq);
+  _ty.setFromAxisAngle(_UP, ang); _tq2.copy(_tq).invert().multiply(_ty).multiply(_tq); pel.quaternion.premultiply(_tq2); // gira o quadril (e as pernas) em volta do "para cima" do mundo
+  pel.updateWorldMatrix(false, false); pel.getWorldQuaternion(_tq);
+  _ty.setFromAxisAngle(_UP, -ang); _tq2.copy(_tq).invert().multiply(_ty).multiply(_tq); sp.quaternion.premultiply(_tq2); // e devolve o tronco para a mira
+}
 function moveInput() {
   const k = keys;
   let fwd = 0, strafe = 0, turn = 0;
@@ -1686,6 +1740,11 @@ function resolve(x, z, r) {
 function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
   me.anim.update(dt);
+  { // S-236: mirando (botão esquerdo) e andando de lado, as pernas viram para onde você anda e o tronco continua na mira
+    const mi0 = moveInput(), want = S.fire && !isAction() && !S.riding && mi0.any ? (mi0.fwd > 0 ? mi0.strafe * -0.6 : mi0.fwd < 0 ? mi0.strafe * 0.5 : mi0.strafe * -Math.PI / 2 * 0.9) : 0;
+    S.legTwist = angLerp(S.legTwist || 0, want, Math.min(1, dt * 10));
+    if (Math.abs(S.legTwist) > 0.01) legTwist(me, S.legTwist);
+  }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));
   if (p.dead) return;
@@ -1698,6 +1757,7 @@ function updatePlayer(dt) {
   if (S.god) { p.hp = p.d.maxHp; p.sp = p.d.maxSp; }
   // movimento
   const mi = moveInput();
+  if (!isAction()) updateAimCursor();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
   else if (S.fire) { const q = aimPoint(30); P.yaw = angLerp(P.yaw, Math.atan2(q.x - P.x, q.z - P.z), Math.min(1, dt * 14)); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
   else {
@@ -1707,7 +1767,7 @@ function updatePlayer(dt) {
   }
   if ((mi.any || mi.turn) && S.sitting) S.sitting = false;
   if (mi.any && S.casting) { S.casting = null; log('Conjuração cancelada.', 'warn'); $('castbar3d').classList.add('hidden'); }
-  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? (S.riding.war ? 1.25 : MOUNT_SPEED) : 1);
+  const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? (S.riding.war ? 1.25 : MOUNT_SPEED) : 1) * ((S.fire || S.time - (S.lastAtk || -9) < 0.6) && !S.riding ? 0.55 : 1); // S-236: atacando você anda mais devagar (estilo WoW)
   const inLake = !S.interior && lakeDist(P.x, P.z) < LAKE.r + 1;
   let vx = 0, vz = 0;
   if (mi.any && !S.casting) {
@@ -1812,7 +1872,7 @@ function playerAttack(m) {
   if (S.riding && !S.riding.war) dismount(true); // na Montaria de Guerra dá para lutar montado
   const p = S.p, me = S.me, st = me.look.style;
   const ca = attackAnim(p, me);
-  S.lockAnim = S.time + Math.min(0.55, p.d.aspd / 1000 * 0.7);
+  S.lockAnim = S.overlayAtk ? S.time : S.time + Math.min(0.55, p.d.aspd / 1000 * 0.7);
   S.sitting = false;
   const hit = () => {
     if (m.dead) return;
@@ -2543,9 +2603,14 @@ canvas.addEventListener('mousedown', e => {
   if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
 });
+// S-233: enquanto o botão esquerdo está apertado, o cursor vira uma mira (branca; vermelha quando há um inimigo debaixo dela)
+const AIM_CUR = c => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><g fill='none' stroke='${c}' stroke-width='2'><circle cx='16' cy='16' r='9'/><path d='M16 2v7M16 23v7M2 16h7M23 16h7'/></g><circle cx='16' cy='16' r='1.6' fill='${c}'/><g fill='none' stroke='rgba(0,0,0,0.6)' stroke-width='1'><circle cx='16' cy='16' r='10.5'/></g></svg>`)}") 16 16, crosshair`;
+const AIM_W = AIM_CUR('#ffffff'), AIM_R = AIM_CUR('#ff4a3a');
+function updateAimCursor() { if (isAction()) return; const want = S.fire ? (aimTarget(S.p && (S.p.d.ranged || S.p.d.magicAuto) ? 32 : 3.5) ? AIM_R : AIM_W) : ''; if (canvas.style.cursor !== want) canvas.style.cursor = want; }
 addEventListener('mousemove', e => {
   mouseNdc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
+  if (S.fire && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'pesado']; S.cam.yaw -= e.movementX * w; S.cam.pitch = clamp(S.cam.pitch + e.movementY * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
   if (mouse.mid) { S.lookYaw -= e.movementX * 0.006; S.cam.pitch = clamp(S.cam.pitch + e.movementY * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; return; }
   if (!mouse.left && !mouse.right) return;
   const dx = e.movementX, dy = e.movementY;
@@ -2588,6 +2653,8 @@ function showSettings() {
     <label class="opt-sw"><input type="checkbox" id="o-all" ${Sound.enabled ? 'checked' : ''}><span>Som do jogo (tudo)</span></label>
     <label class="opt-sw"><input type="checkbox" id="o-mon" ${Sound.musicOn ? 'checked' : ''}><span>🎵 Música</span><input type="range" id="o-mv" min="0" max="100" value="${pct(Sound.musicVol)}"><b id="o-mv-t">${pct(Sound.musicVol)}%</b></label>
     <label class="opt-sw"><input type="checkbox" id="o-son" ${Sound.sfxOn ? 'checked' : ''}><span>💥 Efeitos <small class="muted">(golpes, saltos, monstros, passos...)</small></span><input type="range" id="o-sv" min="0" max="100" value="${pct(Sound.sfxVol)}"><b id="o-sv-t">${pct(Sound.sfxVol)}%</b></label>
+    <div class="opt-sec">🎯 Combate</div>
+    <div class="opt-sw"><span>Peso da mira ao atacar <small class="muted">(quanto a câmera gira ao mexer o mouse segurando o ataque)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     <div class="menu-btns" style="margin-top:14px"><button class="btn" id="o-test">▶ Testar efeito</button><button class="btn gold" id="o-back">← Voltar</button></div></div>`;
   $('o-all').onchange = e => { Sound.setEnabled(e.target.checked); try { localStorage.setItem('aethra_sound', e.target.checked ? '1' : '0'); } catch (er) { } if (e.target.checked && Sound.music) { Sound.songId = null; Sound.playSong(S.zone ? S.zone.music : 'vila'); } };
   $('o-mon').onchange = e => Sound.setMusicOn(e.target.checked);
@@ -2595,6 +2662,7 @@ function showSettings() {
   $('o-mv').oninput = e => { Sound.setVolumes(e.target.value / 100, null); $('o-mv-t').textContent = e.target.value + '%'; };
   $('o-sv').oninput = e => { Sound.setVolumes(null, e.target.value / 100); $('o-sv-t').textContent = e.target.value + '%'; };
   $('o-test').onclick = () => Sound.play('levelup');
+  $('o-aimw').onchange = e => { S.aimWeight = e.target.value; try { localStorage.setItem('aethra_aimw', S.aimWeight); } catch (er) { } };
   $('o-back').onclick = () => { S.menuOpen = false; toggleMenu(); };
 }
 function toggleMenu() {
@@ -2865,7 +2933,7 @@ async function chooseCharacter() {
     <div class="cs-head"><h1>${GAME_TITLE}</h1><div class="sub">SEUS PERSONAGENS</div></div>
     <div class="cs-main">
       <button class="cs-arrow" id="cs-prev" title="Anterior (←)">‹</button>
-      <div class="cs-stage"><canvas id="cs-cv" width="760" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
+      <div class="cs-stage"><canvas id="cs-cv" width="640" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
       <button class="cs-arrow" id="cs-next" title="Próximo (→)">›</button>
       <div class="cs-info" id="cs-info"></div>
     </div>
@@ -3138,7 +3206,7 @@ function installIntegration() {
   UI.render_loja = renderLoja;
   UI.render_mapa = renderMapa;
   Object.assign(H3, {
-    save: save3d, useItem: use3d, useSlot, levelFx, portrait, monsterThumb, monsterLive, refineFx: (ok, broke) => { ring(S.pos, ok ? 1.8 : 1.4, ok ? '#ffd76a' : broke ? '#ff4a3a' : '#9a9a9a'); if (ok) ring(S.pos, 1.0, '#fff6c0'); floatAt(S.me.obj.position, ok ? 'Refino bem-sucedido!' : broke ? 'Quebrou!' : 'Falhou', ok ? '#ffd76a' : '#ff6a5a', 2.4); },
+    save: save3d, useItem: use3d, useSlot, levelFx, portrait, monsterThumb, monsterLive, monsterPopup, refineFx: (ok, broke) => { ring(S.pos, ok ? 1.8 : 1.4, ok ? '#ffd76a' : broke ? '#ff4a3a' : '#9a9a9a'); if (ok) ring(S.pos, 1.0, '#fff6c0'); floatAt(S.me.obj.position, ok ? 'Refino bem-sucedido!' : broke ? 'Quebrou!' : 'Falhou', ok ? '#ffd76a' : '#ff6a5a', 2.4); },
     setPet: (k, st, force) => { if (!isAdmin() || (!G.god && !force)) return; const pt = newPet(k); pt.lv = st ? PET_EVOLVE[st] : 1; S.p.pet = pt; buildPet(); hudDirty = true; log(`⚡ Mascote trocado: ${petInfo(pt).name} (Nv. ${pt.lv}).`, 'sys'); save3d(); },
     spawnInfo: () => { const o = {}, c = {}; for (const [zone, type, n] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; if (!zn) continue; const k = type + '|' + zn.name; c[k] = (c[k] || 0) + (n || 1); } for (const k in c) { const [type, name] = k.split('|'); (o[type] = o[type] || []).push(`${name} <b>×${c[k]}</b>`); } return o; }, // S-171: onde e quantos
     zoneMobs: () => { const o = {}; for (const [zone, type, n] of SPAWNS) { const zn = ZONES.find(q => q.id === zone) || INTERIORS[zone]; if (!zn) continue; const a = (o[zn.name] = o[zn.name] || {}); a[type] = (a[type] || 0) + (n || 1); } return o; },
@@ -3202,7 +3270,6 @@ function adminRender() {
     <div class="adm-card"><div class="adm-card-h">🌍 Teleporte <span class="muted" style="font-weight:400">— clique no mapa onde quer aparecer</span></div>
       <div class="adm-mapframe"><canvas id="adm-map3d" width="560" height="560"></canvas></div>
       <div id="adm-info" class="adm-info">Passe o mouse no mapa e clique para ir</div>
-      <div class="adm-chips">${pois.map((o, i) => `<button class="adm-chip" data-poi="${i}">${o.label}</button>`).join('')}</div>
     </div>
     <div class="adm-card"><div class="adm-card-h">🧬 Raça e aparência</div>
       <div class="adm-chips">${Object.entries(RACES).map(([k, r]) => `<button class="adm-chip ${(p.look && (p.look.race || 'humano')) === k ? 'on' : ''}" data-race="${k}">${r.icon} ${r.name}</button>`).join('')}</div>
@@ -3229,10 +3296,10 @@ function adminRender() {
   body.querySelectorAll('[data-poi]').forEach(el => el.onclick = () => { const o = pois[+el.dataset.poi]; UI.close('admin'); teleport3d(o.x, o.z); log(`Teleportado: ${o.label}`); });
   const cv = body.querySelector('#adm-map3d');
   const toWorld = e => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width * 2 - 1) * HALF, z: ((e.clientY - r.top) / r.height * 2 - 1) * HALF }; };
-  cv.onmousemove = e => { admHover = toWorld(e); drawAdmMap(cv); const zn = zoneAt(admHover.x, admHover.z), lim = Math.abs(admHover.x) > PLAY_LIMIT || Math.abs(admHover.z) > PLAY_LIMIT; $('adm-info').innerHTML = `<b>${zn.name}</b> <span class="muted">${zn.lvl}</span> · (${Math.round(admHover.x)}, ${Math.round(admHover.z)})${lim ? ' · <span style="color:#ffb070">fora da área jogável — você aparece na borda</span>' : ''}`; };
-  cv.onmouseleave = () => { admHover = null; drawAdmMap(cv); $('adm-info').textContent = 'Passe o mouse no mapa e clique para ir'; };
+  cv.onmousemove = e => { admHover = toWorld(e); drawAdmMap(cv, true); const zn = zoneAt(admHover.x, admHover.z), lim = Math.abs(admHover.x) > PLAY_LIMIT || Math.abs(admHover.z) > PLAY_LIMIT; $('adm-info').innerHTML = `<b>${zn.name}</b> <span class="muted">${zn.lvl}</span> · (${Math.round(admHover.x)}, ${Math.round(admHover.z)})${lim ? ' · <span style="color:#ffb070">fora da área jogável — você aparece na borda</span>' : ''}`; };
+  cv.onmouseleave = () => { admHover = null; drawAdmMap(cv, true); $('adm-info').textContent = 'Passe o mouse no mapa e clique para ir'; };
   cv.onclick = e => { const w = toWorld(e); UI.close('admin'); teleport3d(w.x, w.z); log(`Teleportado para (${Math.round(w.x)}, ${Math.round(w.z)}).`); };
-  drawAdmMap(cv);
+  drawAdmMap(cv, true);
 }
 /* S-176: onde fazer cada missão — pontos no mapa (NPC para falar/entregar, regiões dos monstros ou de quem deixa cair o item) */
 function zonePos(zoneId) { const z = ZONES.find(q => q.id === zoneId); if (z) return { x: z.x, z: z.z, name: z.name }; const I = INTERIORS[zoneId]; if (I && I.door) return { x: I.door.x, z: I.door.z, name: I.name || zoneId }; return null; }
@@ -3249,7 +3316,7 @@ function questTargets(id) {
   }
   return out;
 }
-function drawAdmMap(cv) {
+function drawAdmMap(cv, clean) { // clean (S-232): no Painel do Mestre só o mapa, sem NPCs, missões nem marcadores
   const c = cv.getContext('2d'), W = cv.width, pt = (x, z) => [(x / HALF + 1) / 2 * W, (z / HALF + 1) / 2 * W];
   c.imageSmoothingEnabled = true; c.drawImage(worldMap, 0, 0, W, W);
   // vinheta suave nas bordas
@@ -3257,10 +3324,10 @@ function drawAdmMap(cv) {
   c.fillStyle = v; c.fillRect(0, 0, W, W);
   const label = (txt, x, y, size, col) => { c.font = `700 ${size}px Cinzel, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = 'rgba(20,14,4,0.85)'; c.strokeText(txt, x, y); c.fillStyle = col; c.fillText(txt, x, y); };
   for (const z of ZONES) { const [x, y] = pt(z.x, z.z); label(z.name, x, y - 22, 15, '#ffe9a8'); c.font = '11px Nunito'; c.fillStyle = '#e8dcc0'; c.fillText(z.lvl, x, y - 6); }
-  for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) { const [x, y] = pt(m.x, m.z); c.font = '15px sans-serif'; c.fillText(m.def.boss ? '👑' : '💀', x, y); }
-  for (const n of S.npcs) { if (Math.abs(n.x) > HALF) continue; const [x, y] = pt(n.x, n.z); c.fillStyle = '#ffe36a'; c.font = '13px sans-serif'; c.fillText('★', x, y); }
+  if (!clean) for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) { const [x, y] = pt(m.x, m.z); c.font = '15px sans-serif'; c.fillText(m.def.boss ? '👑' : '💀', x, y); }
+  if (!clean) for (const n of S.npcs) { if (Math.abs(n.x) > HALF) continue; const [x, y] = pt(n.x, n.z); c.fillStyle = '#ffe36a'; c.font = '13px sans-serif'; c.fillText('★', x, y); }
   // S-176: marcadores das missões ativas (a selecionada pisca)
-  if (S.p && typeof QUESTS !== 'undefined') { const act = Object.keys(questState(S.p).active), selQ = UI.qSel || act[0];
+  if (!clean && S.p && typeof QUESTS !== 'undefined') { const act = Object.keys(questState(S.p).active), selQ = UI.qSel || act[0];
     for (const qid of act) for (const tg of questTargets(qid)) { const [x, y] = pt(tg.x, tg.z), on = qid === selQ, pulse = on ? 1 + Math.sin(performance.now() / 200) * 0.25 : 1;
       c.fillStyle = on ? 'rgba(255,216,74,0.30)' : 'rgba(255,216,74,0.14)'; c.beginPath(); c.arc(x, y, (tg.kind === '⚔' ? 22 : 12) * pulse, 0, 7); c.fill();
       c.font = `900 ${on ? 18 : 14}px Cinzel, serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = 'rgba(20,14,4,0.9)'; c.strokeText(tg.kind, x, y); c.fillStyle = '#ffd84a'; c.fillText(tg.kind, x, y);

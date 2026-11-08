@@ -438,7 +438,7 @@ const ITEMS = {
 const MONSTERS = {
   // Gotinhas: gotas d'água vivas (corpo de gota com crista, núcleo brilhante, nadadeiras). Cada elemento tem a sua.
   gotinha: {
-    name: 'Gotinha', lv: 1, hp: 45, atk: [5, 9], def: 0, exp: 7, jexp: 6, element: 'agua', shape: 'blob', variant: 'agua', color: '#5ec8ff', size: 0.75, speed: 45,
+    name: 'Orvalhinho', lv: 1, hp: 45, atk: [5, 9], def: 0, exp: 7, jexp: 6, element: 'agua', shape: 'blob', variant: 'agua', color: '#5ec8ff', size: 0.75, speed: 45,
     drops: [['gosma', 0.7], ['maca', 0.25], ['pocao_vermelha', 0.04], ['adaga_simples', 0.015]],
     card: { equip: 'armadura', bonuses: { vit: 1, hp: 80 } },
   },
@@ -458,7 +458,7 @@ const MONSTERS = {
     card: { equip: 'escudo', bonuses: { mdef: 6, hp: 200 } },
   },
   gotinha_sombria: {
-    name: 'Gotinha Sombria', lv: 40, hp: 3000, atk: [80, 104], def: 24, exp: 1400, jexp: 1050, element: 'sombra', shape: 'blob', variant: 'sombra', color: '#6a3aa8', size: 0.9, speed: 60, aggressive: true, aggroRange: 6,
+    name: 'Orvalhinho Sombrio', lv: 40, hp: 3000, atk: [80, 104], def: 24, exp: 1400, jexp: 1050, element: 'sombra', shape: 'blob', variant: 'sombra', color: '#6a3aa8', size: 0.9, speed: 60, aggressive: true, aggroRange: 6,
     drops: [['essencia_sombria', 0.4], ['ectoplasma', 0.25], ['pocao_azul', 0.08]],
     card: { equip: 'acessorio', bonuses: { int: 3, sp: 60 } },
   },

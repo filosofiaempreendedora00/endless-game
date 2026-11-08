@@ -571,12 +571,12 @@ export const RARITY = {
 export const SKINS = {
   campones: { name: 'Traje do Campo', rarity: 'comum', price: 150, desc: 'Tons de terra e linho, para quem gosta do simples.', tint: { body: '#a8865a', legs: '#6a5236', cape: '#8a6a44', hat: '#c9a46a' } },
   marinho: { name: 'Uniforme Marinho', rarity: 'comum', price: 150, desc: 'Azul e branco, como os guardas do porto.', tint: { body: '#2f5a9a', legs: '#e8e8ee', cape: '#1f3a6a', hat: '#2f5a9a' } },
-  floral: { name: 'Primavera Florida', rarity: 'rara', price: 350, desc: 'Verde-folha e rosa-pétala. Pétalas caem ao seu redor.', tint: { body: '#4f9a4a', legs: '#2f6a3a', cape: '#ff8ab8', hat: '#ff9ac8' }, aura: { color: '#ff9ac8', kind: 'petalas' } },
-  glacial: { name: 'Coração Glacial', rarity: 'rara', price: 350, desc: 'Azul-gelo com brilho cristalino.', tint: { body: '#9fd8ff', legs: '#3a6a9a', cape: '#cfefff', hat: '#9fd8ff', helmet: '#cfefff' }, aura: { color: '#9fe8ff', kind: 'flocos' } },
-  sombrio: { name: 'Manto do Eclipse', rarity: 'epica', price: 750, desc: 'Negro e roxo, com fumaça sombria nos pés.', tint: { body: '#2a2238', legs: '#1a1624', cape: '#5a2a8a', hat: '#2a2238', helmet: '#3a2a5a' }, aura: { color: '#a77bff', kind: 'fumaça' } },
-  brasa: { name: 'Coração de Brasa', rarity: 'epica', price: 750, desc: 'Vermelho-fogo; faíscas sobem enquanto você anda.', tint: { body: '#a8301e', legs: '#3a1a14', cape: '#ff6a2a', hat: '#a8301e', helmet: '#5a2a1a' }, aura: { color: '#ff8a3a', kind: 'faíscas' } },
-  real: { name: 'Majestade Dourada', rarity: 'lendaria', price: 1500, desc: 'Branco e ouro, com uma auréola de luz e brilho constante.', tint: { body: '#f2ead8', legs: '#c9a14a', cape: '#ffd76a', hat: '#ffd76a', helmet: '#ffe9a8' }, aura: { color: '#ffd76a', kind: 'luz', light: true } },
-  estelar: { name: 'Viajante Estelar', rarity: 'lendaria', price: 1500, desc: 'O céu noturno no tecido, com estrelas orbitando você.', tint: { body: '#1a2050', legs: '#10142e', cape: '#3a3aa8', hat: '#1a2050', helmet: '#2a3070' }, aura: { color: '#9fb4ff', kind: 'estrelas', light: true } },
+  floral: { name: 'Primavera Florida', rarity: 'rara', price: 350, desc: 'Verde-folha e rosa-pétala, bordado com flores.', tint: { body: '#4f9a4a', legs: '#2f6a3a', cape: '#ff8ab8', hat: '#ff9ac8' } },
+  glacial: { name: 'Coração Glacial', rarity: 'rara', price: 350, desc: 'Azul-gelo e branco, como o inverno do Vale da Geada.', tint: { body: '#9fd8ff', legs: '#3a6a9a', cape: '#cfefff', hat: '#9fd8ff', helmet: '#cfefff' } },
+  sombrio: { name: 'Manto do Eclipse', rarity: 'epica', price: 750, desc: 'Negro e roxo profundo, para quem caminha nas sombras.', tint: { body: '#2a2238', legs: '#1a1624', cape: '#5a2a8a', hat: '#2a2238', helmet: '#3a2a5a' } },
+  brasa: { name: 'Coração de Brasa', rarity: 'epica', price: 750, desc: 'Vermelho-fogo e couro escuro, cor de brasa.', tint: { body: '#a8301e', legs: '#3a1a14', cape: '#ff6a2a', hat: '#a8301e', helmet: '#5a2a1a' } },
+  real: { name: 'Majestade Dourada', rarity: 'lendaria', price: 1500, desc: 'Branco e ouro, digno de uma corte real.', tint: { body: '#f2ead8', legs: '#c9a14a', cape: '#ffd76a', hat: '#ffd76a', helmet: '#ffe9a8' } },
+  estelar: { name: 'Viajante Estelar', rarity: 'lendaria', price: 1500, desc: 'Azul-noite profundo, como o céu de inverno.', tint: { body: '#1a2050', legs: '#10142e', cape: '#3a3aa8', hat: '#1a2050', helmet: '#2a3070' } },
 };
 export function applySkin(ch, id) {
   const S = SKINS[id]; if (!S) return null;
@@ -590,7 +590,8 @@ export function applySkin(ch, id) {
     else if (t.hat && /_Hat$/.test(n)) tintMesh(o, t.hat);
     else if (t.helmet && /_Helmet$/.test(n)) tintMesh(o, t.helmet, 0.7);
   });
-  if (!S.aura) return null;
+  return null; // S-241: skin é só roupa (cores e brilho do tecido) — sem auréola nem partículas
+  // (código antigo da aura mantido abaixo, não é mais usado)
   // aura: partículas ao redor do personagem (presas no objeto, não no osso)
   const g = new THREE.Group(); ch.obj.add(g);
   const c = new THREE.Color(S.aura.color), N = S.aura.kind === 'luz' ? 10 : 14;
@@ -1255,7 +1256,7 @@ export function applyArmor(root, setId, fx = []) {
   if (S.cape) clothCape(root, fx, S.cape);
 }
 /* papéis de NPC (S-193 freira/sacerdotisa, S-197 guarda) — o main3d chama dressNpcRole(ch, n.id, MODELS) */
-const NPC_ROLE = { clara: 'sacerdotisa', mirela: 'sacerdotisa', tobias: 'guarda', bastiao: 'guarda' };
+const NPC_ROLE = { clara: 'sacerdotisa', mirela: 'sacerdotisa', tobias: 'guarda', bastiao: 'guarda', ivra: 'mentora', bento: 'mercador' };
 export function dressNpcRole(ch, npcId, MODELS) {
   const role = NPC_ROLE[npcId], root = ch.root; if (!role || !root.userData.human) return null;
   const fx = [];
@@ -1264,7 +1265,77 @@ export function dressNpcRole(ch, npcId, MODELS) {
     applyArmor(root, 'guarda', fx);
     // elmo: mais fundo na cabeça, cobrindo até o queixo (S-197: a boca não fica para fora)
   } else if (role === 'sacerdotisa') habit(root);
+  else if (role === 'mentora') mentorGown(root, fx);
+  else if (role === 'mercador') merchantHat(root);
   return fx.length ? t => fx.forEach(f => f(t)) : null;
+}
+// tira itens emprestados do KayKit que não combinam (cajado gigante, chapéu de bruxa, capa chapada, chapéu de urso)
+function dropBorrowed(root, re) { const kill = []; root.traverse(o => { if (o !== root && re.test(o.name || '')) kill.push(o); }); for (const o of kill) if (o.parent) o.parent.remove(o); }
+/* S-231: Mestra Ivra — mentora de classes com visual único (no espírito das NPCs de troca de classe do RO):
+   vestido longo marfim e azul-petróleo com barra dourada, corpete justo, estola bordada sobre os ombros,
+   diadema com gema na testa e um grimório de classes que flutua girando devagar ao lado dela, com runas. */
+function mentorGown(root, fx) {
+  root.userData.outfitKey = root.userData.outfitKey || outfitKey(root);
+  dropBorrowed(root, /2H_Staff|Mage_Hat|Mage_Cape|Spellbook/);
+  const ivory = new THREE.MeshStandardMaterial({ color: '#efe6d2', map: metalTex('couro'), roughness: 0.85, side: THREE.DoubleSide });
+  const teal = new THREE.MeshStandardMaterial({ color: '#1f5a66', map: metalTex('couro'), roughness: 0.8, side: THREE.DoubleSide });
+  const gold = armorMat('#d8b45a', 'ouro');
+  root.traverse(o => { if (o.isSkinnedMesh && /_(Body|Legs|Arms)/.test(o.name)) { o.material = o.material.clone(); o.material.color = new THREE.Color('#ffffff').lerp(new THREE.Color('#1f5a66'), 0.7); } });
+  // saia longa em dois tecidos: forro azul-petróleo e sobressaia marfim aberta na frente, com pregas
+  const pv = bonePos(root, 'pelvis'), top = pv.y + 0.08;
+  const lathe = (r0, r1, arc) => { const g = new THREE.LatheGeometry(Array.from({ length: 16 }, (_, k) => { const t = k / 15; return new THREE.Vector2(r0 + t * t * r1 + Math.sin(t * 3) * 0.01, top - t * (top - 0.02)); }).reverse(), 48, arc ? arc[0] : 0, arc ? arc[1] : Math.PI * 2);
+    const P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), z = P.getZ(k), y = P.getY(k), a = Math.atan2(z, x), f = 1 + Math.sin(a * 13) * 0.05 * Math.min(1, (top - y) / top * 1.4); P.setX(k, x * f); P.setZ(k, z * f); } g.computeVertexNormals(); return g; };
+  const under = new THREE.Mesh(lathe(0.19, 0.2), teal); under.position.set(pv.x, 0, pv.z + 0.01); under.scale.set(1, 1, 0.84); pinToBone(root, 'pelvis', under);
+  const over = new THREE.Mesh(lathe(0.2, 0.22, [Math.PI * 0.62, Math.PI * 1.76]), ivory); over.position.set(pv.x, 0, pv.z + 0.01); over.scale.set(1, 1, 0.86); pinToBone(root, 'pelvis', over); // aberta na frente (mostra o azul)
+  const hem = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.012, 6, 64, Math.PI * 1.14), gold); hem.rotation.set(Math.PI / 2, 0, Math.PI * 0.62); hem.position.set(pv.x, 0.04, pv.z + 0.01); hem.scale.set(1, 0.86, 1); pinToBone(root, 'pelvis', hem);
+  // corpete justo marfim, cinto dourado com fivela
+  const bod = wrapCached(root, 'mentorTop', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'pelvis'], /_Body/), nk = bonePos(root, 'neck_01'), sp = bonePos(root, 'spine_01'); return wrapShell(pts, new THREE.Vector3(nk.x, sp.y - 0.08, nk.z), new THREE.Vector3(nk.x, nk.y - 0.03, nk.z), { bins: 12, sec: 32, off: 0.012, th: 0.006, smooth: 4 }); });
+  pinToBone(root, 'spine_02', new THREE.Mesh(bod, ivory));
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.148, 0.011, 8, 40), gold); belt.rotation.x = Math.PI / 2; belt.scale.set(1, 0.78, 1); belt.position.set(pv.x, pv.y + 0.17, pv.z + 0.005); pinToBone(root, 'pelvis', belt);
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.022, 1), new THREE.MeshStandardMaterial({ color: '#5ad8e8', emissive: '#2a9ab0', emissiveIntensity: 0.8, metalness: 0.3, roughness: 0.15 }));
+  const buckle = gem.clone(); buckle.position.set(pv.x, pv.y + 0.17, pv.z + 0.12); pinToBone(root, 'pelvis', buckle);
+  // estola: duas faixas azul-petróleo com bordado dourado descendo dos ombros pela frente
+  const nk = bonePos(root, 'neck_01');
+  for (const sx of [-1, 1]) {
+    const st = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.72, 2, 14), teal); { const P = st.geometry.attributes.position; for (let k = 0; k < P.count; k++) P.setZ(k, -Math.abs(P.getX(k)) * 0.3); st.geometry.translate(0, -0.36, 0); st.geometry.computeVertexNormals(); }
+    st.position.set(nk.x + sx * 0.075, nk.y - 0.02, nk.z + 0.13); st.rotation.set(0.12, 0, sx * 0.06); pinToBone(root, 'spine_03', st);
+    for (let k = 0; k < 4; k++) { const d = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.004, 6, 16), gold); d.position.set(nk.x + sx * 0.075, nk.y - 0.14 - k * 0.15, nk.z + 0.15 + k * 0.008); pinToBone(root, 'spine_03', d); }
+  }
+  // gola alta marfim com borda dourada atrás do pescoço
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.1, 32, 1, true, Math.PI * 0.35, Math.PI * 1.3), ivory); col.position.set(nk.x, nk.y + 0.02, nk.z - 0.01); pinToBone(root, 'spine_03', col);
+  // diadema com gema na testa
+  const hd = bonePos(root, 'Head'), headPts = sampleBody(root, ['Head'], /SuperHero/i);
+  let top2 = -1e9; for (const q of headPts) top2 = Math.max(top2, q.y);
+  const circ = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.007, 8, 48), gold); circ.rotation.x = Math.PI / 2 - 0.3; circ.scale.set(1, 1.12, 1); circ.position.set(hd.x, top2 - 0.075, hd.z + 0.01); pinToBone(root, 'Head', circ);
+  const fg = gem.clone(); fg.scale.set(0.5, 0.75, 0.4); fg.position.set(hd.x, top2 - 0.088, hd.z + 0.122); pinToBone(root, 'Head', fg);
+  // grimório das classes flutuando ao lado (capa de couro azul, cantos dourados, páginas claras, runas girando)
+  const book = new THREE.Group(), cov = new THREE.MeshStandardMaterial({ color: '#173c48', roughness: 0.6 }), pages = new THREE.MeshStandardMaterial({ color: '#f4ecd8', roughness: 0.9 });
+  for (const sx of [-1, 1]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.01, 0.2), cov); c.position.set(sx * 0.075, 0, 0); c.rotation.z = -sx * 0.32; book.add(c); const pg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.016, 0.19), pages); pg.position.set(sx * 0.07, 0.014, 0); pg.rotation.z = -sx * 0.32; book.add(pg); for (const sz of [-1, 1]) { const cn = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.03), gold); cn.position.set(sx * 0.135, -0.03, sz * 0.09); cn.rotation.z = -sx * 0.32; book.add(cn); } }
+  const runeM = new THREE.MeshBasicMaterial({ color: '#8af0ff', transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }), runes = [];
+  for (let k = 0; k < 6; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.003, 4, 12, Math.PI * (1 + (k % 3) * 0.3)), runeM); book.add(r); runes.push(r); }
+  const holder = new THREE.Group(); holder.position.set(hd.x + 0.45, hd.y - 0.22, hd.z + 0.18); holder.scale.setScalar(1.35); holder.add(book); root.add(holder);
+  fx.push(t => { book.position.y = Math.sin(t * 1.4) * 0.04; book.rotation.set(-0.5, 0.4 + Math.sin(t * 0.5) * 0.3, 0); runes.forEach((r, i) => { const a = t * 0.8 + i * 1.05; r.position.set(Math.cos(a) * 0.17, 0.08 + Math.sin(t * 2 + i) * 0.04, Math.sin(a) * 0.17); r.rotation.set(t + i, t * 0.7, 0); }); });
+}
+/* S-239: Bento — no lugar do "chapéu de urso" do KayKit, um chapéu de mercador de feltro: copa amassada, aba larga
+   levemente caída, faixa de couro com fivela e uma pena — assentado na cabeça de verdade */
+function merchantHat(root) {
+  dropBorrowed(root, /Barbarian_Hat/);
+  const hd = bonePos(root, 'Head'), headPts = sampleBody(root, ['Head'], /SuperHero/i);
+  let top = -1e9, cx = 0, cz = 0, n = 0; for (const q of headPts) { top = Math.max(top, q.y); } for (const q of headPts) if (q.y > top - 0.08) { cx += q.x; cz += q.z; n++; } cx /= n || 1; cz /= n || 1;
+  const felt = new THREE.MeshStandardMaterial({ color: '#6a4a2e', map: metalTex('couro'), roughness: 0.95, side: THREE.DoubleSide });
+  const hat = new THREE.Group();
+  const crown = new THREE.LatheGeometry([[0.0, 0.13], [0.06, 0.128], [0.1, 0.11], [0.112, 0.07], [0.115, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)), 40);
+  { const P = crown.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), z = P.getZ(k), y = P.getY(k); if (y > 0.115) P.setY(k, y - Math.max(0, 0.03 - Math.abs(x) * 0.5)); P.setZ(k, z * 1.12); } crown.computeVertexNormals(); } // vinco no topo, copa oval
+  hat.add(new THREE.Mesh(crown, felt));
+  const brim = new THREE.RingGeometry(0.1, 0.22, 48, 3); { const P = brim.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), r = Math.hypot(x, y), a = Math.atan2(y, x); P.setXYZ(k, x, y * 1.1, -(r - 0.1) * 0.25 * (0.6 + 0.4 * Math.cos(a * 2))); } brim.rotateX(-Math.PI / 2); brim.computeVertexNormals(); }
+  hat.add(new THREE.Mesh(brim, felt));
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.116, 0.117, 0.03, 40, 1, true), new THREE.MeshStandardMaterial({ color: '#2e1c10', roughness: 0.7 })); band.position.y = 0.025; band.scale.z = 1.12; hat.add(band);
+  const bk = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.026, 0.006), armorMat('#c8a24a', 'ouro')); bk.position.set(0, 0.025, 0.131); hat.add(bk);
+  const feather = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), new THREE.MeshStandardMaterial({ color: '#c8402a', roughness: 0.8 })); feather.scale.set(0.35, 3.2, 0.9); feather.position.set(0.1, 0.09, -0.04); feather.rotation.z = -0.7; hat.add(feather);
+  hat.position.set(cx, top - 0.045, cz + 0.005); hat.rotation.x = -0.06;
+  hat.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  pinToBone(root, 'Head', hat);
+  hairUnderHat(root, true);
 }
 // hábito de freira/sacerdotisa: túnica longa, escapulário, véu com touca branca, cordão e cruz
 function habit(root) {

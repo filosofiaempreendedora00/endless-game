@@ -2,79 +2,13 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (15)
+## Pendentes (4)
 
 ### S-230 · Área do mapa: Área da tela (360×230 px)
 - **Status:** pendente · **Quando:** 2026-11-08T19:01:57 · **Mapa:** Vila de Alvorada (tile [-34, 25])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
 - **Sugestão:** queria melhorar muuuuito esse animal parecendo mais um pegasus. Melhorar MUITO esse grafico, que ainda ta muito baixo. QUero penas, rosto mais realistas, perna nao torta, rabo de cabalo, asas maiores. que nao pareçam morcego...
 - ![print](img/S-230.png)
-
-### S-231 · Área do mapa: Área da tela (298×311 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:03:21 · **Mapa:** Vila de Alvorada (tile [-78, 14])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** a mestra das classes precisa ter uma fisionomia unica, nao com chapeu e cajado, e sim algo mais unico e parecido com o ragnarok online, roupas mais especiais e feicao mais amigavel
-- ![print](img/S-231.png)
-
-### S-232 · Interface: Área de 553×704 px em Janela "👑 Painel do Mestre" — "🫧 Bolhinha · Nv. 1 · 📍 Vila de Alvorada · 📍 Campos de Verdelume · 📍 Bosque Sussurrante · 📍 Ruínas de Kael · 📍 Coli"
-- **Status:** pendente · **Quando:** 2026-11-08T19:07:49 · **Mapa:** Dunas de Sal-Rubro (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** nao quero que o menu de master dê essas possibilidades , e sim o mapa. Nao quero todos npcs e tudo mais
-- ![print](img/S-232.png)
-
-### S-233 · Área do mapa: Área da tela (294×210 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:13:53 · **Mapa:** Vila de Alvorada (tile [-72, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostaria que enquanto o boto esquerdo do mouse esteja sendo pressionado, que o cursor funcione como um alvo, nao colorido como emoji e sim algo que deixe claro onde está sendo mirado. E essa mecânica de atacar e poder anr enquanto seguraa, e tbm lidar com range e etc, hit box, a forma de andar... tudo isso precisa ser melhorado pra que seja mais fiel à realidade. E tambem quero sons de ataque com laminas, espadas etc. Precisa sair som pra ficar initivo quando um golpe acertou e quando deu miss. E o Miss tbm tem que aparecer. quando vc acera o nada, fora do range
-- ![print](img/S-233.png)
-
-### S-234 · Área do mapa: Área da tela (170×76 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:15:18 · **Mapa:** Vila de Alvorada (tile [-73, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** quando eu tiver com o botao esquerdo selecionado e mover o cursor, tbm tem que fazer com que eu consiga mover a camera cmo um todo, mesmo que de forma mais 'devagar', como se com o mouse mais 'pesado' e nao leve. E esse pesado ou leve pode ser mudado tbm nas configuracoes. Pesado ou leve de ataque no caso
-- ![print](img/S-234.png)
-
-### S-235 · Interface: Área de 973×683 px em Palco do personagem — "‹ · arraste ou / para girar · rodinha aproxi · A · D · ← · → · ›"
-- **Status:** pendente · **Quando:** 2026-11-08T19:17:20 · **Tela:** Seleção de personagens
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** gostei que resolver os bugs. So acho que ficou muito espaço vazio do lado direito de forma desnecessaria
-- ![print](img/S-235.png)
-
-### S-236 · Área do mapa: Área da tela (370×249 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:18:41 · **Mapa:** Vila de Alvorada (tile [-74, 29])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** me incomoda muito o fato de meu modelo ir 'slidando' pro lado quando eu to atacando. Preciso que as pernas se mexam se e utiver andando pro lado, de forma real. Precisa ser mais realista isso. E eu preciso me mover mais devagar enquanto eu estiver atacando, obrigatoriamente, pra ser real. Estilo wow
-- ![print](img/S-236.png)
-
-### S-237 · Interface: Área de 145×123 px em Janela "📖 Bestiário"
-- **Status:** pendente · **Quando:** 2026-11-08T19:20:41 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** clicando no mosntro gostaria de uma pup-up na tela tal que eu consiga mexer nele 360 e ver com mais detalhes, dar zoom e etc
-- ![print](img/S-237.png)
-
-### S-238 · Interface: Área de 133×40 px em Janela "📖 Bestiário"
-- **Status:** pendente · **Quando:** 2026-11-08T19:21:05 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** nao gostei desse nome
-- ![print](img/S-238.png)
-
-### S-239 · Área do mapa: Área da tela (145×129 px)
-- **Status:** pendente · **Quando:** 2026-11-08T19:22:24 · **Mapa:** Vila de Alvorada (tile [-61, 13])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** esse hat de urso aqui ainda icou zoado, muito estrsnho
-- ![print](img/S-239.png)
-
-### S-240 · Interface: Área de 333×323 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
-- **Status:** pendente · **Quando:** 2026-11-08T19:23:08 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** está com muito lag ao arrastar
-- ![print](img/S-240.png)
-
-### S-241 · Interface: Área de 321×313 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
-- **Status:** pendente · **Quando:** 2026-11-08T19:23:22 · **Mapa:** Vila de Alvorada (tile None)
-- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
-- **Sugestão:** nao quero isso de aureola. So roupa mesmo
-- ![print](img/S-241.png)
 
 ### S-242 · Interface: Área de 299×266 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)>"
 - **Status:** pendente · **Quando:** 2026-11-08T19:24:23 · **Mapa:** Vila de Alvorada (tile None)
@@ -94,7 +28,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas
 - ![print](img/S-244.png)
 
-## Feitas (229)
+## Feitas (240)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -1708,3 +1642,80 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** esse chao cheio de quadrados nao ta legal
 - ![print](img/S-229.png)
 - **Resposta do Claude:** O quadriculado vinha do ruído do lago congelado no terreno; o chão foi suavizado e o lago ganhou uma camada de gelo de verdade, com rachaduras ramificadas, bolhas presas e neve soprada nas bordas.
+
+### S-231 · Área do mapa: Área da tela (298×311 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:03:21 · **Mapa:** Vila de Alvorada (tile [-78, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** a mestra das classes precisa ter uma fisionomia unica, nao com chapeu e cajado, e sim algo mais unico e parecido com o ragnarok online, roupas mais especiais e feicao mais amigavel
+- ![print](img/S-231.png)
+- **Resposta do Claude:** A Mestra Ivra ganhou visual próprio de mentora, sem chapéu nem cajado: vestido longo em duas camadas (saia turquesa por baixo, sobressaia marfim aberta na frente com barra dourada), corpete marfim, cinto dourado com fivela brilhante, estola turquesa com argolas, gola alta, tiara dourada com uma gema na testa, um grimório flutuando ao lado com runas em órbita e um rosto mais simpático.
+
+### S-232 · Interface: Área de 553×704 px em Janela "👑 Painel do Mestre" — "🫧 Bolhinha · Nv. 1 · 📍 Vila de Alvorada · 📍 Campos de Verdelume · 📍 Bosque Sussurrante · 📍 Ruínas de Kael · 📍 Coli"
+- **Status:** feito · **Quando:** 2026-11-08T19:07:49 · **Mapa:** Dunas de Sal-Rubro (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao quero que o menu de master dê essas possibilidades , e sim o mapa. Nao quero todos npcs e tudo mais
+- ![print](img/S-232.png)
+- **Resposta do Claude:** O Painel do Mestre agora mostra só o mapa para teleportar, limpo: sem a lista de botões de lugares, sem NPCs, missões nem marcadores por cima.
+
+### S-233 · Área do mapa: Área da tela (294×210 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:13:53 · **Mapa:** Vila de Alvorada (tile [-72, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostaria que enquanto o boto esquerdo do mouse esteja sendo pressionado, que o cursor funcione como um alvo, nao colorido como emoji e sim algo que deixe claro onde está sendo mirado. E essa mecânica de atacar e poder anr enquanto seguraa, e tbm lidar com range e etc, hit box, a forma de andar... tudo isso precisa ser melhorado pra que seja mais fiel à realidade. E tambem quero sons de ataque com laminas, espadas etc. Precisa sair som pra ficar initivo quando um golpe acertou e quando deu miss. E o Miss tbm tem que aparecer. quando vc acera o nada, fora do range
+- ![print](img/S-233.png)
+- **Resposta do Claude:** Enquanto o botão esquerdo está apertado, o cursor vira uma mira (círculo com cruz, branca; fica vermelha quando há um inimigo ao alcance debaixo dela). A mira ficou mais justa, como no WoW: acerta quem está debaixo do cursor ou bem perto do ponto que ele aponta, sempre dentro do alcance da arma. Golpe no vazio ou fora do alcance mostra "Errou" no chão com som de erro, e golpe que acerta faz uma pancada (lâmina cortando o ar + impacto).
+
+### S-234 · Área do mapa: Área da tela (170×76 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:15:18 · **Mapa:** Vila de Alvorada (tile [-73, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** quando eu tiver com o botao esquerdo selecionado e mover o cursor, tbm tem que fazer com que eu consiga mover a camera cmo um todo, mesmo que de forma mais 'devagar', como se com o mouse mais 'pesado' e nao leve. E esse pesado ou leve pode ser mudado tbm nas configuracoes. Pesado ou leve de ataque no caso
+- ![print](img/S-234.png)
+- **Resposta do Claude:** Segurando o botão esquerdo, mexer o mouse também gira a câmera, de forma mais "pesada" (devagar). Em Esc → Configurações → Combate dá para escolher o peso: Leve, Médio, Pesado (padrão) ou Câmera parada.
+
+### S-235 · Interface: Área de 973×683 px em Palco do personagem — "‹ · arraste ou / para girar · rodinha aproxi · A · D · ← · → · ›"
+- **Status:** feito · **Quando:** 2026-11-08T19:17:20 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** gostei que resolver os bugs. So acho que ficou muito espaço vazio do lado direito de forma desnecessaria
+- ![print](img/S-235.png)
+- **Resposta do Claude:** A vitrine ficou mais estreita, sem o espaço vazio dos lados.
+
+### S-236 · Área do mapa: Área da tela (370×249 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:18:41 · **Mapa:** Vila de Alvorada (tile [-74, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** me incomoda muito o fato de meu modelo ir 'slidando' pro lado quando eu to atacando. Preciso que as pernas se mexam se e utiver andando pro lado, de forma real. Precisa ser mais realista isso. E eu preciso me mover mais devagar enquanto eu estiver atacando, obrigatoriamente, pra ser real. Estilo wow
+- ![print](img/S-236.png)
+- **Resposta do Claude:** Atacando você anda mais devagar (estilo WoW), e o golpe agora é só no tronco e nos braços, somado por cima da caminhada: as pernas continuam andando de verdade. Mirando e andando de lado, o quadril e as pernas viram para onde você anda e o tronco continua na mira, nada de deslizar.
+
+### S-237 · Interface: Área de 145×123 px em Janela "📖 Bestiário"
+- **Status:** feito · **Quando:** 2026-11-08T19:20:41 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** clicando no mosntro gostaria de uma pup-up na tela tal que eu consiga mexer nele 360 e ver com mais detalhes, dar zoom e etc
+- ![print](img/S-237.png)
+- **Resposta do Claude:** No Bestiário, o botão "🔍 Ver em 360°" (ou duplo clique no bicho) abre uma janela grande: arraste para girar e inclinar, rodinha para dar zoom, Esc para fechar.
+
+### S-238 · Interface: Área de 133×40 px em Janela "📖 Bestiário"
+- **Status:** feito · **Quando:** 2026-11-08T19:21:05 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao gostei desse nome
+- ![print](img/S-238.png)
+- **Resposta do Claude:** A Gotinha ganhou nome novo: Orvalhinho (e o Orvalhinho Sombrio).
+
+### S-239 · Área do mapa: Área da tela (145×129 px)
+- **Status:** feito · **Quando:** 2026-11-08T19:22:24 · **Mapa:** Vila de Alvorada (tile [-61, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** esse hat de urso aqui ainda icou zoado, muito estrsnho
+- ![print](img/S-239.png)
+- **Resposta do Claude:** O chapéu de urso do Bento saiu: agora ele usa um chapéu de mercador de feltro marrom (copa amassada, aba larga caindo um pouco, faixa de couro com fivela dourada e pena vermelha), bem assentado na cabeça.
+
+### S-240 · Interface: Área de 333×323 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
+- **Status:** feito · **Quando:** 2026-11-08T19:23:08 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** está com muito lag ao arrastar
+- ![print](img/S-240.png)
+- **Resposta do Claude:** A prévia da Loja de Auroras (e a do Bestiário) agora tem um renderizador próprio, sem ler a imagem do jogo a cada quadro: arrastar ficou liso, sem travar.
+
+### S-241 · Interface: Área de 321×313 px em Janela "✦ Loja de Auroras" — "Capitão Bravo · <Mestre da Arena (PvP)> · arraste para girar"
+- **Status:** feito · **Quando:** 2026-11-08T19:23:22 · **Mapa:** Vila de Alvorada (tile None)
+- **Onde no código:** js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)
+- **Sugestão:** nao quero isso de aureola. So roupa mesmo
+- ![print](img/S-241.png)
+- **Resposta do Claude:** As skins da Loja de Auroras agora são só roupa: sem auréola, sem partículas, só cores e acabamento.

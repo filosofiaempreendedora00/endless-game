@@ -217,6 +217,7 @@ export function makeHuman(opts = {}) {
   if (opts.beard && sex === 'm') tint(add(G.Hair_Beard.scene));
   const obj = new THREE.Group(); obj.add(root);
   const mixer = new THREE.AnimationMixer(root), acts = {};
+  const upperClips = {}, UPPER_RE = /spine|neck|head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky/i;
   const anim = {
     name: '', cur: null,
     play(n, o = {}) { const list = animsFor(sex, dwarf), clip = THREE.AnimationClip.findByName(list, humanAnimName(n)) || THREE.AnimationClip.findByName(list, 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
@@ -224,6 +225,14 @@ export function makeHuman(opts = {}) {
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(o.once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = !!o.once;
       if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, o.fade ?? 0.2, false); a.play(); this.cur = a; this.name = n; },
     update(dt) { mixer.update(dt); },
+    /* S-236: golpe só no tronco e nos braços, somado por cima da corrida (as pernas continuam andando de verdade) */
+    overlay(n, o = {}) {
+      const list = animsFor(sex, dwarf), src = THREE.AnimationClip.findByName(list, humanAnimName(n)); if (!src) return;
+      const key = 'up:' + src.name; let clip = upperClips[key];
+      if (!clip) { clip = src.clone(); clip.name = key; clip.tracks = clip.tracks.filter(tk => UPPER_RE.test(tk.name.split('.')[0]) && !/position|scale/.test(tk.name)); THREE.AnimationUtils.makeClipAdditive(clip); upperClips[key] = clip; }
+      const a = acts[key] || (acts[key] = mixer.clipAction(clip)); a.blendMode = THREE.AdditiveAnimationBlendMode;
+      a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(THREE.LoopOnce); a.clampWhenFinished = false; a.setEffectiveWeight(1); a.play();
+    },
   };
   root.userData.human = true; root.userData.sex = sex;
   if (sex === 'f') feminize(skel);
