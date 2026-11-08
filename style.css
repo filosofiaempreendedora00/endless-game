@@ -459,7 +459,7 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .cs-head h1 { margin: 0; font-family: Cinzel, serif; color: var(--gold); font-size: 34px; text-shadow: 0 0 22px rgba(255, 200, 90, 0.35); }
 .cs-head .sub { letter-spacing: 0.35em; font-size: 11px; color: #b9a98a; }
 .cs-main { flex: 1; display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 0; padding: 0 18px; }
-.cs-stage, .cc-stage { position: relative; height: min(62vh, 620px); aspect-ratio: 52 / 62; }
+.cs-stage, .cc-stage { position: relative; height: min(62vh, 620px); aspect-ratio: 76 / 62; max-width: 100%; }
 .cs-stage canvas, .cc-stage canvas { position: relative; width: 100%; height: 100%; display: block; touch-action: none; }
 .cs-podium { position: absolute; left: 12%; right: 12%; bottom: 7%; height: 14%; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 210, 120, 0.35), rgba(255, 210, 120, 0.08) 55%, transparent 70%); box-shadow: 0 0 60px rgba(255, 200, 90, 0.15); }
 .cs-hint { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 11px; color: #8d86a0; }
@@ -493,7 +493,7 @@ body.fb-picking canvas { cursor: crosshair !important; }
 /* ===== Criador de personagem ===== */
 .cc { flex-direction: row; align-items: center; justify-content: center; gap: 22px; padding: 16px; }
 .cc-stagewrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.cc-stage { height: min(66vh, 660px); aspect-ratio: 56 / 66; }
+.cc-stage { height: min(66vh, 660px); aspect-ratio: 76 / 66; max-width: min(760px, 52vw); }
 .cc-tools { display: flex; gap: 6px; }
 .cc-tools .btn { padding: 6px 12px; }
 .cc-prev { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; align-items: center; font-size: 11px; max-width: 520px; }
@@ -550,3 +550,12 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .fb-why input { flex: 1; min-width: 0; }
 .fb-badge.new { background: rgba(255, 215, 106, 0.22); color: #ffe36a; }
 .fb-why input { background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-soft); border-radius: 6px; color: inherit; padding: 4px 8px; font: 13px Nunito, sans-serif; }
+/* criador: escolha do rosto (S-073) */
+.cc-faces { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cc-face { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px; border-radius: 9px; border: 2px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.04); color: #eee; font: inherit; cursor: pointer; text-align: center; }
+.cc-face .i { font-size: 20px; }
+.cc-face b { font-size: 12px; }
+.cc-face small { font-size: 10px; color: var(--muted); line-height: 1.2; }
+.cc-face:hover { background: rgba(255, 255, 255, 0.08); }
+.cc-face.on { border-color: var(--gold); background: rgba(255, 215, 106, 0.12); }
+@media (max-width: 900px) { .cc-faces { grid-template-columns: repeat(3, 1fr); } }

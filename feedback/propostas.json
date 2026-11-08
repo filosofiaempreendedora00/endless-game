@@ -68,5 +68,46 @@
     ],
     "status": "feita",
     "resposta": "É esta aba! Aprovar ou recusar aqui fica salvo em feedback/propostas.json."
+  },
+  {
+    "id": "P-006",
+    "titulo": "Voar de grifo de verdade",
+    "detalhe": "Em vez de aparecer no destino, montar num grifo animado e sobrevoar o mundo até lá (dá para ver os Colossos de cima).",
+    "principios": [
+      "Vivo e animado",
+      "Referências fortes (WoW)"
+    ],
+    "evidencias": [
+      "S-076",
+      "S-015"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-007",
+    "titulo": "Clima por região",
+    "detalhe": "Neve caindo no Vale da Geada, areia levantada pelo vento nas Dunas e névoa baixa entre os Colossos.",
+    "principios": [
+      "Nada de fake ou perfeitinho",
+      "Vivo e animado"
+    ],
+    "evidencias": [
+      "S-037",
+      "S-076"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-008",
+    "titulo": "Missões que levam às regiões novas",
+    "detalhe": "Uma linha de missões curtas (NPCs da vila e de Pedraclara) que guiam o jogador do vale até o Santuário, com recompensas e história dos Colossos.",
+    "principios": [
+      "Onboarding guiado"
+    ],
+    "evidencias": [
+      "S-038",
+      "S-076"
+    ],
+    "status": "proposta"
   }
 ]

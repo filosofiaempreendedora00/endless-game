@@ -420,6 +420,10 @@ const ITEMS = {
   pedra_musgo: { name: 'Pedra com Musgo', type: 'etc', icon: '🪨', price: 180 },
   ectoplasma: { name: 'Ectoplasma', type: 'etc', icon: '👻', price: 200 },
   fragmento_ferro: { name: 'Fragmento de Ferro', type: 'etc', icon: '⚙️', price: 260 },
+  brasa_viva: { name: 'Brasa Viva', type: 'etc', icon: '🔥', price: 140, desc: 'Ainda quente. Tirada do núcleo de uma Brasinha.' },
+  broto_umido: { name: 'Broto Úmido', type: 'etc', icon: '🌱', price: 55, desc: 'Brota de novo se plantado na lama.' },
+  cristal_de_geada: { name: 'Cristal de Geada', type: 'etc', icon: '❄️', price: 260, desc: 'Nunca derrete, nem no sol do meio-dia.' },
+  essencia_sombria: { name: 'Essência Sombria', type: 'etc', icon: '🟣', price: 340, desc: 'Sussurra quando ninguém está olhando.' },
   casca_ancestral: { name: 'Casca Ancestral', type: 'etc', icon: '🪵', price: 5000, desc: 'Prova de que você derrotou o Guardião.' },
 };
 
@@ -427,10 +431,31 @@ const ITEMS = {
    Cada monstro tem UMA carta. A carta é gerada automaticamente como item.
 ------------------------------------------------- */
 const MONSTERS = {
+  // Gotinhas: gotas d'água vivas (corpo de gota com crista, núcleo brilhante, nadadeiras). Cada elemento tem a sua.
   gotinha: {
-    name: 'Gotinha', lv: 1, hp: 45, atk: [5, 9], def: 0, exp: 7, jexp: 6, element: 'agua', shape: 'blob', color: '#5ec8ff', size: 0.75, speed: 45,
+    name: 'Gotinha', lv: 1, hp: 45, atk: [5, 9], def: 0, exp: 7, jexp: 6, element: 'agua', shape: 'blob', variant: 'agua', color: '#5ec8ff', size: 0.75, speed: 45,
     drops: [['gosma', 0.7], ['maca', 0.25], ['pocao_vermelha', 0.04], ['adaga_simples', 0.015]],
     card: { equip: 'armadura', bonuses: { vit: 1, hp: 80 } },
+  },
+  musguinho: {
+    name: 'Musguinho', lv: 9, hp: 260, atk: [16, 24], def: 6, exp: 62, jexp: 46, element: 'terra', shape: 'blob', variant: 'terra', color: '#79b85a', size: 0.8, speed: 42,
+    drops: [['broto_umido', 0.6], ['gosma', 0.5], ['frutinha_azul', 0.15], ['pocao_vermelha', 0.06]],
+    card: { equip: 'botas', bonuses: { vit: 2, def: 2 } },
+  },
+  brasinha: {
+    name: 'Brasinha', lv: 26, hp: 1300, atk: [52, 70], def: 14, exp: 520, jexp: 390, element: 'fogo', shape: 'blob', variant: 'fogo', color: '#ff7a36', size: 0.85, speed: 55, aggressive: true, aggroRange: 5,
+    drops: [['brasa_viva', 0.5], ['gosma', 0.4], ['pocao_vermelha', 0.12], ['pocao_azul', 0.03]],
+    card: { equip: 'arma', bonuses: { atk: 8, str: 1 } },
+  },
+  geadinha: {
+    name: 'Geadinha', lv: 34, hp: 2100, atk: [64, 86], def: 20, exp: 900, jexp: 680, element: 'agua', shape: 'blob', variant: 'gelo', color: '#cfeeff', size: 0.85, speed: 48,
+    drops: [['cristal_de_geada', 0.45], ['gosma', 0.4], ['pocao_azul', 0.06]],
+    card: { equip: 'escudo', bonuses: { mdef: 6, hp: 200 } },
+  },
+  gotinha_sombria: {
+    name: 'Gotinha Sombria', lv: 40, hp: 3000, atk: [80, 104], def: 24, exp: 1400, jexp: 1050, element: 'sombra', shape: 'blob', variant: 'sombra', color: '#6a3aa8', size: 0.9, speed: 60, aggressive: true, aggroRange: 6,
+    drops: [['essencia_sombria', 0.4], ['ectoplasma', 0.25], ['pocao_azul', 0.08]],
+    card: { equip: 'acessorio', bonuses: { int: 3, sp: 60 } },
   },
   fungolino: {
     name: 'Fungolino', lv: 3, hp: 80, atk: [8, 13], def: 3, exp: 14, jexp: 10, element: 'terra', shape: 'mushroom', color: '#d8574b', size: 0.8, speed: 40,
@@ -447,8 +472,13 @@ const MONSTERS = {
     drops: [['ferrao', 0.5], ['mel', 0.15], ['luvas_couro', 0.01]],
     card: { equip: 'arma', bonuses: { dmgVs: { agua: 20 }, dex: 1 } },
   },
+  sentinela_silente: {
+    name: 'Sentinela Silente', lv: 55, hp: 42000, atk: [190, 250], def: 60, mdef: 40, exp: 65000, jexp: 48000, element: 'sombra', shape: 'knight', color: '#5a5a7a', size: 1.6, speed: 60, aggressive: true, aggroRange: 9, boss: true, respawn: 600000,
+    drops: [['essencia_sombria', 1], ['fragmento_ferro', 0.8], ['anel_de_forca', 0.25], ['pocao_azul', 0.6]],
+    card: { equip: 'armadura', bonuses: { vit: 4, def: 6, hp: 400 } }, cardRate: 0.05,
+  },
   gosmao: {
-    name: 'Gosmão', lv: 12, hp: 1100, atk: [30, 45], def: 8, exp: 420, jexp: 300, element: 'agua', shape: 'blob', color: '#3a8fe0', size: 2, speed: 35, mini: true, respawn: 90000,
+    name: 'Gosmão', lv: 12, hp: 1100, atk: [30, 45], def: 8, exp: 420, jexp: 300, element: 'agua', shape: 'blob', variant: 'agua', color: '#3a8fe0', size: 2, speed: 35, mini: true, respawn: 90000,
     drops: [['geleia_real', 1], ['pocao_vermelha', 0.5], ['anel_de_forca', 0.08], ['espada_curta', 0.1]],
     card: { equip: 'arma', bonuses: { str: 2, atk: 12 } }, cardRate: 0.08,
   },

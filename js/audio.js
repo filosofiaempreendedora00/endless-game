@@ -35,6 +35,37 @@ const SONGS = {
     melody: `D5 - - - F5 - E5 - | D5 - - - A#4 - - - | G4 - A#4 - D5 - C5 - | C#5 - - - A4 - - - |
              D5 - - - A5 - G5 - | F5 - - - D5 - F5 - | E5 - - - C5 - G5 - | A4 - - - - - . . |`,
   },
+  // --- regiões novas (todas composições originais) ---
+  colossos: { // vasta e solene em Mi menor: notas longas sobre a planície dos gigantes
+    bpm: 66, stepsPerBar: 8, style: 'mystic', lead: 'sine', leadVol: 0.5,
+    chords: 'Em C G D Em C Am B',
+    melody: `B4 - - - E5 - - - | G5 - - - F#5 - E5 - | D5 - - - B4 - - - | A4 - - - - - . . |
+             B4 - - - E5 - G5 - | A5 - - - G5 - E5 - | C5 - - - E5 - A5 - | F#5 - - - - - . . |`,
+  },
+  geada: { // cristalina em Ré maior
+    bpm: 84, stepsPerBar: 6, style: 'mystic', lead: 'triangle', leadVol: 0.45,
+    chords: 'D A Bm G D G A A',
+    melody: `F#5 - A5 - D6 - | C#6 - - A5 E5 - | D5 - F#5 - B5 - | G5 - - - - . |
+             A5 - F#5 - D5 - | B4 - D5 - G5 - | E5 - - C#5 A4 - | A4 - - - - . |`,
+  },
+  dunas: { // exótica, modo frígio em Mi
+    bpm: 104, stepsPerBar: 8, style: 'march', lead: 'triangle', leadVol: 0.32,
+    chords: 'Em F Em D Em F G Em',
+    melody: `E5 - F5 - G#5 - A5 - | G#5 - F5 - E5 - - - | B4 - C5 - B4 - A4 - | B4 - - - - - . . |
+             E5 - F5 - G#5 - B5 - | C6 - B5 - A5 - G#5 - | A5 - G#5 - F5 - E5 - | E5 - - - - - . . |`,
+  },
+  cidade: { // valsa nobre em Fá maior (Pedraclara)
+    bpm: 108, stepsPerBar: 6, style: 'waltz', lead: 'triangle', leadVol: 0.48,
+    chords: 'F C Dm Bb F C Bb C',
+    melody: `A5 - C6 - F6 - | E6 - - D6 C6 - | D6 - - A5 F5 - | G5 - - - - . |
+             A5 - C6 - A5 - | F5 - G5 - A5 - | Bb5 - A5 - G5 - | F5 - - - - . |`,
+  },
+  catacumbas: { // escura e lenta em Dó menor
+    bpm: 60, stepsPerBar: 8, style: 'dark', lead: 'sine', leadVol: 0.5,
+    chords: 'Cm Ab Fm G Cm Ab Bb G',
+    melody: `C5 - - - D#5 - D5 - | C5 - - - G#4 - - - | F4 - G#4 - C5 - B4 - | B4 - - - G4 - - - |
+             C5 - - - G5 - F5 - | D#5 - - - C5 - - - | D5 - - - D#5 - F5 - | G4 - - - - - . . |`,
+  },
 };
 
 const NOTE_IDX = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };

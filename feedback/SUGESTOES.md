@@ -2,21 +2,105 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (2)
+## Pendentes (16)
 
-### S-069 · Interface: Área de 911×756 px em Palco do personagem — "‹ · arraste para girar · rodinha aproxima"
-- **Status:** pendente · **Quando:** 2026-11-08T13:10:52
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** aqui está com muito lag no personagem. Além disso percebo que partes tanto do personagem quanto do mascote estão invadindo o lado externo da box e cortando parte de ambos eu preciso que você garante aqui nada será cortado
-- ![print](img/S-069.png)
+### S-077 · Área do mapa: Área da tela (438×298 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:20:13 · **Mapa:** Vila de Alvorada (tile [659, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao tem como ela ficar assim so com a cabeça de fora. Preciso ver o rosto dela. Talvz ela estar em cima de um balcao que dê altura pra eu ver o rosto
+- ![print](img/S-077.png)
 
-### S-070 · Interface: Área de 429×573 px em Palco do personagem
-- **Status:** pendente · **Quando:** 2026-11-08T13:11:23
-- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
-- **Sugestão:** Gostaria que fosse possível virar o personagem com a tecla a e tecla de da mesma forma com que eu consigo mexer nele a partir do mouse
-- ![print](img/S-070.png)
+### S-078 · Área do mapa: Área da tela (352×117 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:20:25 · **Mapa:** Vila de Alvorada (tile [658, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** trazer algo aqui em cima da mesa mais realista que esses copos
+- ![print](img/S-078.png)
 
-## Feitas (68)
+### S-079 · Área do mapa: Área da tela (350×298 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:20:47 · **Mapa:** Vila de Alvorada (tile [664, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ficou sentado bugado pro lado errado e entrando na mesa
+- ![print](img/S-079.png)
+
+### S-080 · Área do mapa: Área da tela (594×746 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:21:04 · **Mapa:** Vila de Alvorada (tile [659, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** fogueira muito bugada que pode e deve ser melhorada
+- ![print](img/S-080.png)
+
+### S-081 · Área do mapa: Área da tela (556×263 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:21:32 · **Mapa:** Vila de Alvorada (tile [660, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhorar detalhes das meses, pao e cervejas. Precisa ser caneca clara na cerveja com o lugar de puxar
+- ![print](img/S-081.png)
+
+### S-082 · Área do mapa: Área da tela (290×201 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:22:41 · **Mapa:** Vila de Alvorada (tile [-79, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** melhora o gráfico disso
+- ![print](img/S-082.png)
+
+### S-083 · Área do mapa: Área da tela (326×114 px) (sobre: Painel de status, Barra de atalhos, Ícones de buff)
+- **Status:** pendente · **Quando:** 2026-11-08T13:23:16 · **Mapa:** Vila de Alvorada (tile [-34, 19])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** nao quero que apareça o hp dos npcs
+- ![print](img/S-083.png)
+
+### S-084 · Área do mapa: Área da tela (679×454 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:24:48 · **Mapa:** Campos de Verdelume (tile [22, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Melhor o efeito de quando eu aumento de nível gostaria de algum efeito sonoro parecido com Ragnarok online e também aquela aquelas asinhas bem elaboradas em volta do meu personagem quero uma animação bem robusta para quando a gente passar de nível tanto a nível efeito sonoro quanto visual quero deixar algo bastante incrementado mesmo
+- ![print](img/S-084.png)
+
+### S-085 · Área do mapa: Área da tela (295×147 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:25:14 · **Mapa:** Bosque Sussurrante (tile [57, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o que eu pedi pra mudar o poring obio que tbm vale pra esse mini-boss aqui
+- ![print](img/S-085.png)
+
+### S-086 · Área do mapa: Área da tela (583×229 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:27:05 · **Mapa:** Bosque Sussurrante (tile [64, 15])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu percebi que você sumiu com o botão do Som Mas eu não encontrei ele no esc então preciso que você inclua ele nas configurações que fiquem dentro do esc para que eu possa voltar com o som e eu consigo ouvir a música e também ouvir todos os outros efeitos sonoros você pode dentro desse som desabilitar música de jogo e também desabilitar efeitos sonoros como todo como por exemplo barulhos de saltar barulhos de monstro atacando monstro morrendo e todos os outros efeitos sonoros naturais
+- ![print](img/S-086.png)
+
+### S-087 · Área do mapa: Área da tela (303×309 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:27:52 · **Mapa:** Bosque Sussurrante (tile [65, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Vi que você melhorou consideravelmente a estética dos lobos e inclusive fez efeitos de ataques porém eles ainda tem muita a melhorar a nível gráfico pois eu entendo que tá muito pontiagudo e com muitas formas geométricas como as orelhas deles estão esquisitas as bochechas esquisitas não dá para ver os pelos deles o pé deles também está uma bola e poderia ser muito mais interessante o efeito dos movimentos que tudo mais acredito que há muito o que melhorar na construção deste monstro
+- ![print](img/S-087.png)
+
+### S-088 · Área do mapa: Área da tela (336×301 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:28:58 · **Mapa:** Bosque Sussurrante (tile [58, 15])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Preciso que os Monstros tenham uma Box própria de forma com que um não consiga ficar dentro do outro eles não podem ocupar o mesmo lugar no espaço preciso que você melhore as físicas desse jogo como um todo
+- ![print](img/S-088.png)
+
+### S-089 · Área do mapa: Área da tela (647×508 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:29:38 · **Mapa:** Vila de Alvorada (tile [-46, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que aumente a velocidade de andar no god mode, pra eu conseguir ser mais rápido
+- ![print](img/S-089.png)
+
+### S-090 · Área do mapa: Área da tela (102×81 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:31:13 · **Mapa:** Vila de Alvorada (tile [-72, 32])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Preciso que você queria aqui um boneco para testes de forma com que ele tenha HP infinito e eu possa ficar dando golpes neles para testar tanto os meus ataques físicos sejam eles sejam eles ranged e também habilidades e obviamente eles nunca podem morrer faça por favor esse boneco como com um gráfico muito interessante e pode até se inspirar no filme de Hércules
+- ![print](img/S-090.png)
+
+### S-091 · Área do mapa: Área da tela (128×99 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:31:58 · **Mapa:** Campos de Verdelume (tile [-29, 41])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Este monstro ao andar tem que fazer efeitos sonoros bastante parecidos com o do esporo do Ragnarok online e inclusive quando eles morrerem tem que fazer um barulho parecido também reparem que eu digo parecido e não igual para que não seja uma cópia Descarada
+- ![print](img/S-091.png)
+
+### S-092 · Área do mapa: Área da tela (1113×521 px)
+- **Status:** pendente · **Quando:** 2026-11-08T13:37:48 · **Mapa:** Ruínas de Kael (tile [21, -64])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá
+- ![print](img/S-092.png)
+
+## Feitas (76)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -495,3 +579,59 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** vi que tem monstros que entraram na agua, mas os monstros nao podem entrar na agua. Tem que ter regra que impeça deles se aproximarem demais dos lagos sempre
 - ![print](img/S-068.png)
 - **Resposta do Claude:** Os monstros não entram mais no lago: eles não escolhem passeios perto da água e, se chegarem na beira, são empurrados de volta para a margem.
+
+### S-069 · Interface: Área de 911×756 px em Palco do personagem — "‹ · arraste para girar · rodinha aproxima"
+- **Status:** feito · **Quando:** 2026-11-08T13:10:52 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** aqui está com muito lag no personagem. Além disso percebo que partes tanto do personagem quanto do mascote estão invadindo o lado externo da box e cortando parte de ambos eu preciso que você garante aqui nada será cortado
+- ![print](img/S-069.png)
+- **Resposta do Claude:** Vitrine sem lag: o palco do personagem ganhou um renderizador próprio (antes copiava pixel a pixel do mundo a cada quadro) e o mundo atrás da vitrine/criador nem é mais desenhado. O enquadramento agora mede o personagem, a arma e o mascote girando em qualquer ângulo: nada fica cortado (palco também mais largo).
+
+### S-070 · Interface: Área de 429×573 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-08T13:11:23 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** Gostaria que fosse possível virar o personagem com a tecla a e tecla de da mesma forma com que eu consigo mexer nele a partir do mouse
+- ![print](img/S-070.png)
+- **Resposta do Claude:** Na vitrine e no criador, A e D giram o personagem (como arrastar com o mouse). ← e → continuam trocando de personagem.
+
+### S-071 · Área do mapa: Área da tela (340×291 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:12:50 · **Mapa:** Vila de Alvorada (tile [-60, 23])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu vi que o instrumento do Barro está totalmente quadriculado e isso eu acho horroroso eu prefiro o melhor eu preciso que você melhore a estética do instrumento e leve essa consideração de elementos quadriculados feios para todos os locais onde os gráficos estiverem assim pois quero que você resolva pois são algo que eu detesto
+- ![print](img/S-071.png)
+- **Resposta do Claude:** Alaúde refeito: caixa em forma de pera com costas abauladas, tampo claro, roseta, escala com trastes, cravelhal dobrado para trás e 6 cordas. E acabei com o quadriculado em todo o jogo: acessórios das classes, mascotes, monstros, montarias, móveis e pedrinhas agora têm sombreamento liso e mais detalhe; o cabelo também deixou de ter facetas.
+
+### S-072 · Área do mapa: Área da tela (1089×260 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:13:45 · **Mapa:** Vila de Alvorada (tile [-48, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse muros estão muito mal acabados eu gostaria que se a ideia fosse que eles fossem feitos de madeira que assim seja e sim troncos que estivesse interligados de uma forma mais harmoniosa e bonita e não parecessem com vários lápis grudados um no outro e um outro ponto que me incomodou foi a conexão entre esse elemento e o chão pois eles parecem estar flutuando e inclusive repare que um está dentro do outro com acabamento tenebroso
+- ![print](img/S-072.png)
+- **Resposta do Claude:** A cerca da vila virou uma paliçada de troncos de verdade: troncos encostados (nenhum entra no outro), topo serrado e arredondado (nada de lápis), enterrados no chão (não flutuam), com duas travessas amarradas por cordas por dentro e colisão do tamanho real.
+
+### S-073 · Área do mapa: Área da tela (188×173 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:14:58 · **Mapa:** Vila de Alvorada (tile [-57, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu já falei para você que o personagem padrão está com muita cara de bunda e isso é muito feio eu preciso que tenha traços muito mais humanos e semelhantes a uma pessoa real e não tão figurativa Como está o boneco ele está muito feio sem nariz e esquisito Inclusive eu quero que durante a criação do personagem eu possa selecionar entre cinco rostos diferentes e todos obviamente melhores do que este padrão atual
+- ![print](img/S-073.png)
+- **Resposta do Claude:** Rostos novos em 3D, bem mais humanos: nariz de verdade (dorso, ponta, asas e narinas), olhos com íris, pupila, brilho, pálpebra e cílios, sobrancelhas curvas na cor do cabelo e lábios. No criador há 5 rostos para escolher (Sereno, Valente, Alegre, Astuto e Gentil) e a câmera aproxima no rosto ao escolher. Os NPCs (Capitão Bravo, Tobias, Bento, Ivra, Clara, Flora...) também usam os rostos novos, e personagens antigos ganham o rosto Sereno.
+
+### S-074 · Área do mapa: Área da tela (157×96 px)
+- **Status:** feito · **Quando:** 2026-11-08T13:16:07 · **Mapa:** Vila de Alvorada (tile [-29, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Percebi que você fez uma cópia muito escrachada do poring do Ragnarok online e tudo bem ter gosmas pois elas são muito comuns aos jogos de MMO RPG porém ficou muito escancarado que você copiou poring Então eu preciso que você crie algum outro tipo de monstro característica deste meu jogo que não seja simplesmente uma bola Idêntica ao boring e também quero que seja possível outras cores desse mesmo monstro de forma análoga ao que existe em Ragnarok com o porém com o drops com o mar em azul e diversos outros também
+- ![print](img/S-074.png)
+- **Resposta do Claude:** A Gotinha virou uma criatura própria: uma gota d'água viva com a ponta virada para trás como crista, base derretida escorrendo em ondinhas, núcleo brilhante com bolhas subindo e nadadeiras; ela desliza em vez de quicar. E ganhou variantes por elemento: Musguinho (terra, com brotinho), Brasinha (fogo, soltando brasas), Geadinha (gelo, com cristais) e Gotinha Sombria (sombra), cada uma com drops e carta próprios.
+
+### S-075 · Área do mapa: Área da tela (651×1050 px) (sobre: Janela "👑 Painel do Mestre")
+- **Status:** feito · **Quando:** 2026-11-08T13:17:31 · **Mapa:** Vila de Alvorada (tile [-51, 29])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Aqui no meu painel de mestre Também senti falta de eu conseguir mudar Qual é o meu mascote tanto a nível um dos três mascotes quanto as evoluções deles eu preciso ser capaz de trocar isso também no painel de Mestre
+- ![print](img/S-075.png)
+- **Resposta do Claude:** Painel do Mestre ganhou o card 🐾 Mascote: os 3 bichos com as 3 evoluções cada; um clique troca na hora (funciona mesmo sem o God Mode ligado).
+
+### S-076 · Área do mapa: Área da tela (662×604 px) (sobre: Janela "👑 Painel do Mestre")
+- **Status:** feito · **Quando:** 2026-11-08T13:18:42 · **Mapa:** Vila de Alvorada (tile [-47, 43])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Agora vou te fazer um pedido maior e isso certamente vai requerer um pouco mais de processamento o que eu quero é começar a expandir a quantidade de cidades de Campos e de Dungeons e eu quero que você se inspire muito no mundo aberto primeiro do jogo Shadow of the Colossus e também do próprio World of Warcraft
+- ![print](img/S-076.png)
+- **Resposta do Claude:** O mundo ficou 9× maior (900×900 m). A serra do vale ganhou passagens e, além dela: Colinas de Âmbar e a Cidadela de Pedraclara (2ª cidade, muralha de pedra) a leste; Dunas de Sal-Rubro com cactos ao sul; Vale da Geada com neve e lago congelado a oeste; e ao norte a Planície dos Colossos (gigantes de pedra ajoelhados, monólitos, arcos e uma calçada antiga) até o Santuário Silente, entrada da masmorra Catacumbas do Santuário, com a chefe Sentinela Silente. Mestres-grifo (estilo WoW) levam você entre os pontos que já conheceu, e cada região nova tem música própria.

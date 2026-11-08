@@ -8,8 +8,10 @@ import * as THREE from 'three';
 import { vlight } from './lights3d.js';
 
 export const INTERIORS = {
-  estabulo: { name: 'Estábulo do Tomé', x: 600, z: 0, w: 16, d: 13, h: 5.2, wall: '#b39570', floor: '#8a6a44', beam: '#5a3d24' },
-  taverna: { name: 'Taverna Caneca Alegre', x: 660, z: 0, w: 15, d: 12, h: 4.8, wall: '#c9b48e', floor: '#6e4e30', beam: '#4a3220' },
+  // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 450 e as montanhas do horizonte até ~740)
+  estabulo: { name: 'Estábulo do Tomé', x: 1300, z: 0, w: 16, d: 13, h: 5.2, wall: '#b39570', floor: '#8a6a44', beam: '#5a3d24' },
+  taverna: { name: 'Taverna Caneca Alegre', x: 1360, z: 0, w: 15, d: 12, h: 4.8, wall: '#c9b48e', floor: '#6e4e30', beam: '#4a3220' },
+  catacumbas: { name: 'Catacumbas do Santuário', x: 1500, z: 0, w: 64, d: 64, h: 6, wall: '#4f4a44', floor: '#3a3631', beam: '#2a2622', stone: true, dungeon: true, region: 'Santuário Silente', music: 'catacumbas' },
 };
 
 const mat = (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...e });
@@ -29,7 +31,11 @@ function planks(w, d, color) {
 // sala: chão, 4 paredes finas (a câmera bate nelas), vigas, teto e janelas com luz do dia
 export function buildRoomShell(def) {
   const { w, d, h } = def, g = new THREE.Group(), walls = [];
-  g.add(planks(w, d, def.floor));
+  if (def.stone) { // lajes de pedra (masmorra): uma malha só com cor por vértice
+    const fg = new THREE.PlaneGeometry(w, d, Math.round(w / 2), Math.round(d / 2)); fg.rotateX(-Math.PI / 2); const P = fg.attributes.position, col = new Float32Array(P.count * 3), base = new THREE.Color(def.floor), c = new THREE.Color();
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i); c.copy(base).offsetHSL(0, 0, ((Math.floor(x / 2) * 7 + Math.floor(z / 2) * 13) % 5) * 0.012 - 0.024); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+    fg.setAttribute('color', new THREE.BufferAttribute(col, 3)); const fm = new THREE.Mesh(fg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 })); fm.position.y = 0.01; fm.receiveShadow = true; g.add(fm);
+  } else g.add(planks(w, d, def.floor));
   const WM = mat(def.wall), BM = mat(def.beam);
   const wallN = box(w, h, 0.3, WM, 0, h / 2, -d / 2), wallW = box(0.3, h, d, WM, -w / 2, h / 2, 0), wallE = box(0.3, h, d, WM, w / 2, h / 2, 0);
   // parede sul com o vão da porta no meio
@@ -67,8 +73,8 @@ export function table(len = 2.2) {
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(0.12, 0.85, 0.12, W, sx * (len / 2 - 0.15), 0.42, sz * 0.38));
   // canecas e pão
   const mug = mat('#c9a15a'), foam = mat('#fff8e8');
-  for (let i = 0; i < 3; i++) { const x = -len / 3 + i * len / 3; const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.16, 10), mug); m.position.set(x, 1.0, (i % 2 ? 0.2 : -0.2)); g.add(m); const f = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.03, 10), foam); f.position.set(x, 1.09, (i % 2 ? 0.2 : -0.2)); g.add(f); }
-  const bread = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), mat('#c98a3a')); bread.scale.set(1.4, 0.6, 1); bread.position.set(0.1, 0.97, 0); g.add(bread);
+  for (let i = 0; i < 3; i++) { const x = -len / 3 + i * len / 3; const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.16, 16), mug); m.position.set(x, 1.0, (i % 2 ? 0.2 : -0.2)); g.add(m); const f = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.03, 16), foam); f.position.set(x, 1.09, (i % 2 ? 0.2 : -0.2)); g.add(f); }
+  const bread = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 14), mat('#c98a3a')); bread.scale.set(1.4, 0.6, 1); bread.position.set(0.1, 0.97, 0); g.add(bread);
   return g;
 }
 export function bench(len = 2.2) {
@@ -80,15 +86,15 @@ export function bench(len = 2.2) {
 export function counter(len = 5) {
   const g = new THREE.Group(), W = mat('#5e3e24'), T = mat('#8a6040');
   g.add(box(len, 1.1, 0.8, W, 0, 0.55, 0)); g.add(box(len + 0.2, 0.1, 1.0, T, 0, 1.15, 0));
-  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 8), mat(['#3a7a3a', '#7a2a2a', '#c9a15a', '#3a4a8a'][i], { roughness: 0.3 })); b.position.set(-len / 2 + 0.6 + i * 0.35, 1.35, 0); g.add(b); }
+  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 16), mat(['#3a7a3a', '#7a2a2a', '#c9a15a', '#3a4a8a'][i], { roughness: 0.3 })); b.position.set(-len / 2 + 0.6 + i * 0.35, 1.35, 0); g.add(b); }
   return g;
 }
 export function fireplace() {
-  const g = new THREE.Group(), S = mat('#7d776d', { flatShading: true }), D = mat('#2a221c');
+  const g = new THREE.Group(), S = mat('#7d776d', { flatShading: false }), D = mat('#2a221c');
   g.add(box(2.6, 2.2, 0.9, S, 0, 1.1, 0)); g.add(box(1.5, 1.1, 0.5, D, 0, 0.6, 0.25)); g.add(box(1.4, 3.0, 0.7, S, 0, 3.0, -0.1));
   const fire = new THREE.Group(); fire.position.set(0, 0.25, 0.35); g.add(fire);
   const fm = new THREE.MeshStandardMaterial({ color: '#ff9a3a', emissive: '#ff7a1a', emissiveIntensity: 2, roughness: 0.4 });
-  const flames = []; for (let i = 0; i < 5; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 6), fm); f.position.set((i - 2) * 0.13, 0.22, (i % 2) * 0.08); fire.add(f); flames.push(f); }
+  const flames = []; for (let i = 0; i < 5; i++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 14), fm); f.position.set((i - 2) * 0.13, 0.22, (i % 2) * 0.08); fire.add(f); flames.push(f); }
   const light = vlight('#ff9a4a', 8, 9, 1.5); light.position.set(0, 0.8, 0.9); g.add(light);
   g.userData.update = t => { flames.forEach((f, i) => { f.scale.y = 0.8 + Math.sin(t * 9 + i * 1.7) * 0.25; f.scale.x = 1 + Math.sin(t * 7 + i) * 0.1; }); light.intensity = 7 + Math.sin(t * 11) * 1.2 + Math.sin(t * 17) * 0.6; };
   return g;
@@ -169,7 +175,7 @@ export function makePortal(color = '#7fd4ff') {
 /* ---------- alvo de treino redondo (palha com anéis coloridos, tripé de madeira) ---------- */
 export function makeTarget() {
   const g = new THREE.Group(), W = mat('#7a5432'), WD = mat('#5e3e22');
-  const leg = (x, z, rx, rz) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.75, 10), W); l.position.set(x, 0.85, z); l.rotation.set(rx, 0, rz); g.add(l); };
+  const leg = (x, z, rx, rz) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.75, 16), W); l.position.set(x, 0.85, z); l.rotation.set(rx, 0, rz); g.add(l); };
   leg(-0.42, 0.1, 0.05, 0.22); leg(0.42, 0.1, 0.05, -0.22); leg(0, -0.42, -0.35, 0);
   const face = new THREE.Group(); face.position.set(0, 1.15, 0.16); face.rotation.x = -0.12; g.add(face);
   const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.2, 48, 1), mat('#d9b866', { roughness: 1 })); straw.rotation.x = Math.PI / 2; face.add(straw);
@@ -178,7 +184,7 @@ export function makeTarget() {
   rings.forEach(([r, c], i) => { const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.012, 48), mat(c, { roughness: 0.75 })); d.rotation.x = Math.PI / 2; d.position.z = 0.1 + i * 0.004; face.add(d); });
   for (const [x, y, a] of [[0.12, 0.08, 0.2], [-0.2, -0.15, -0.3], [0.05, -0.3, 0.1]]) { // flechas cravadas
     const ar = new THREE.Group(); ar.position.set(x, y, 0.13); ar.rotation.set(a * 0.3, a, 0); face.add(ar);
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), WD); shaft.rotation.x = Math.PI / 2; shaft.position.z = 0.25; ar.add(shaft);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 16), WD); shaft.rotation.x = Math.PI / 2; shaft.position.z = 0.25; ar.add(shaft);
     for (let k = 0; k < 3; k++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.1), new THREE.MeshStandardMaterial({ color: '#e8e2d0', side: THREE.DoubleSide })); f.position.z = 0.47; f.rotation.set(Math.PI / 2, 0, k * 2.09); ar.add(f); }
   }
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -196,10 +202,10 @@ export function makeFruitStand(seed = 7) {
   for (let i = 0; i < 9; i++) g.add(box(0.2, 0.3, 0.025, mat('#f1e7d2'), -1.6 + i * 0.4, 0.72, 0.565));
   const S = (r, c, ws = 12, hs = 9) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), mat(c, { roughness: 0.45 })); return m; };
   const fruits = {
-    maca: (x, y, z) => { const f = new THREE.Group(); const b = S(0.065, rnd() < 0.7 ? '#c92a26' : '#8fc23a'); b.scale.set(1, 0.92, 1); f.add(b); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.006, 0.04, 5), DARK); st.position.y = 0.065; f.add(st); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 4), mat('#4f8a34')); lf.scale.set(1.6, 0.25, 0.8); lf.position.set(0.02, 0.075, 0); f.add(lf); f.position.set(x, y, z); return f; },
+    maca: (x, y, z) => { const f = new THREE.Group(); const b = S(0.065, rnd() < 0.7 ? '#c92a26' : '#8fc23a'); b.scale.set(1, 0.92, 1); f.add(b); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.006, 0.04, 16), DARK); st.position.y = 0.065; f.add(st); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.02, 20, 14), mat('#4f8a34')); lf.scale.set(1.6, 0.25, 0.8); lf.position.set(0.02, 0.075, 0); f.add(lf); f.position.set(x, y, z); return f; },
     laranja: (x, y, z) => { const f = S(0.07, '#f08a1c'); f.material.roughness = 0.8; f.position.set(x, y, z); return f; },
-    pera: (x, y, z) => { const f = new THREE.Group(), c = rnd() < 0.5 ? '#c9c64a' : '#9fbf45'; const lo = S(0.06, c); lo.scale.set(1, 0.95, 1); f.add(lo); const hi = S(0.038, c); hi.position.y = 0.065; f.add(hi); const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.055, 0.05, 12), mat(c, { roughness: 0.45 })); nk.position.y = 0.035; f.add(nk); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.005, 0.04, 5), DARK); st.position.y = 0.11; st.rotation.z = 0.3; f.add(st); f.position.set(x, y, z); f.rotation.z = (rnd() - 0.5) * 0.8; return f; },
-    uva: (x, y, z) => { const f = new THREE.Group(); const c = rnd() < 0.6 ? '#5a2a6a' : '#9ac04a'; for (let i = 0; i < 18; i++) { const row = Math.floor(i / 5), ang = i * 2.3; const b = S(0.022, c, 8, 6); b.position.set(Math.cos(ang) * (0.05 - row * 0.012), -row * 0.03, Math.sin(ang) * (0.05 - row * 0.012)); f.add(b); } const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 4), mat('#6a5030')); st.position.y = 0.035; f.add(st); f.position.set(x, y + 0.05, z); f.rotation.x = 1.2; return f; },
+    pera: (x, y, z) => { const f = new THREE.Group(), c = rnd() < 0.5 ? '#c9c64a' : '#9fbf45'; const lo = S(0.06, c); lo.scale.set(1, 0.95, 1); f.add(lo); const hi = S(0.038, c); hi.position.y = 0.065; f.add(hi); const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.055, 0.05, 16), mat(c, { roughness: 0.45 })); nk.position.y = 0.035; f.add(nk); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.005, 0.04, 16), DARK); st.position.y = 0.11; st.rotation.z = 0.3; f.add(st); f.position.set(x, y, z); f.rotation.z = (rnd() - 0.5) * 0.8; return f; },
+    uva: (x, y, z) => { const f = new THREE.Group(); const c = rnd() < 0.6 ? '#5a2a6a' : '#9ac04a'; for (let i = 0; i < 18; i++) { const row = Math.floor(i / 5), ang = i * 2.3; const b = S(0.022, c, 8, 6); b.position.set(Math.cos(ang) * (0.05 - row * 0.012), -row * 0.03, Math.sin(ang) * (0.05 - row * 0.012)); f.add(b); } const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 16), mat('#6a5030')); st.position.y = 0.035; f.add(st); f.position.set(x, y + 0.05, z); f.rotation.x = 1.2; return f; },
     banana: (x, y, z) => { const f = new THREE.Group(); for (let i = 0; i < 5; i++) { const pts = []; for (let k = 0; k <= 8; k++) { const u = k / 8; pts.push(new THREE.Vector3(Math.sin(u * 1.4) * 0.12, Math.cos(u * 1.4) * 0.12 - 0.12, 0)); } const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.018, 6), mat('#f2d23a', { roughness: 0.6 })); tube.rotation.y = (i - 2) * 0.22; tube.position.y = i * 0.004; f.add(tube); } f.position.set(x, y + 0.02, z); f.rotation.z = Math.PI / 2; return f; },
     melancia: (x, y, z) => { const f = S(0.17, '#2f6a2a', 16, 12); f.scale.set(1, 0.88, 1.25); f.position.set(x, y + 0.08, z); return f; },
   };
@@ -217,9 +223,9 @@ export function makeFruitStand(seed = 7) {
   // melancias no chão, uma cortada ao meio
   for (const [x, z] of [[-1.9, 0.75], [-1.55, 0.95], [1.95, 0.8]]) g.add(fruits.melancia(x, 0.05, z));
   const half = new THREE.Group(); half.position.set(1.6, 0.17, 0.98); half.rotation.set(-1.25, 0.4, 0); g.add(half);
-  const rind = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat('#2f6a2a', { side: THREE.DoubleSide })); rind.scale.set(1, 0.9, 1); half.add(rind);
+  const rind = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2), mat('#2f6a2a', { side: THREE.DoubleSide })); rind.scale.set(1, 0.9, 1); half.add(rind);
   const flesh = new THREE.Mesh(new THREE.CircleGeometry(0.155, 24), mat('#e8405a', { roughness: 0.7 })); flesh.rotation.x = Math.PI / 2; half.add(flesh);
-  for (let i = 0; i < 10; i++) { const sd = new THREE.Mesh(new THREE.SphereGeometry(0.008, 4, 3), mat('#1a1414')); const an = rnd() * 6.28, rr = 0.04 + rnd() * 0.08; sd.position.set(Math.cos(an) * rr, -0.002, Math.sin(an) * rr); half.add(sd); }
+  for (let i = 0; i < 10; i++) { const sd = new THREE.Mesh(new THREE.SphereGeometry(0.008, 20, 14), mat('#1a1414')); const an = rnd() * 6.28, rr = 0.04 + rnd() * 0.08; sd.position.set(Math.cos(an) * rr, -0.002, Math.sin(an) * rr); half.add(sd); }
   // placa
   const sign = box(0.9, 0.32, 0.04, mat('#e9dcc0'), 0, 1.55, -0.45); g.add(sign); g.add(box(0.05, 0.75, 0.05, DARK, -0.42, 1.2, -0.45)); g.add(box(0.05, 0.75, 0.05, DARK, 0.42, 1.2, -0.45));
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });

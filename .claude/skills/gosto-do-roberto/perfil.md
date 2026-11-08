@@ -1,13 +1,15 @@
 # Perfil de gosto do Roberto
 
-Destilado de S-001 a S-068 (atualizado em 2026-11-08) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
+Destilado de S-001 a S-076 (atualizado em 2026-11-08, rodada 9) e da conversa direta. Os pesos vão de ★ (aparece pouco) a ★★★★★ (aparece sempre e com força). Entre aspas, palavras dele.
 
 ## Princípios
 
 ### 1. Nada de "fake", "perfeitinho" ou "quadradão": realismo estilizado ★★★★★
 Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara de primitivo geométrico.
 - Evidências: grama (S-008, S-031), árvores (S-012), troncos (S-025), lago (S-034), montanhas (S-037), lobo "cara de Minecraft" e pedras (S-039), montarias (S-042, S-059), monstros (S-044, S-053), portal "perfeitinho" (S-061), alvo "quadrado" (S-063), frutas (S-065), vitórias-régias (S-067).
-- Ele mesmo pediu para generalizar: "leve a essência desse meu feedback... para tudo" (S-039).
+- Mais evidências: instrumento "quadriculado", que ele diz detestar (S-071); muro de "lápis grudados" (S-072).
+- Ele mesmo pediu para generalizar: "leve a essência desse meu feedback... para tudo" (S-039, e de novo em S-071).
+- **Quadriculado = facetas** (`flatShading`, pouca subdivisão, normais recalculadas depois de juntar peças). Ele detesta: use sempre sombreamento liso e subdivisão suficiente.
 - Como aplicar:
   - Silhuetas arredondadas, variação de tamanho, cor e rotação, e irregularidade natural.
   - Nada de cones, cubos ou esferas puros à mostra, nem repetição idêntica ("vários tufos idênticos").
@@ -23,6 +25,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
   - Monstros na água (S-068).
   - Bordas da água bugadas (S-014, S-056).
   - Pernas da montaria no salto (S-043, S-059).
+  - Muro flutuando e "um dentro do outro" (S-072).
+  - Personagem e mascote cortados pela borda da vitrine (S-069).
 - Como aplicar:
   - Tudo encosta no chão de verdade, e colisão do tamanho real do objeto.
   - Animais respeitam a água.
@@ -44,7 +48,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 
 ### 5. Personagens humanos e bonitos; o personagem é "meu" ★★★★
 - Evidências:
-  - Rostos feios (S-041, S-045), com a reincidência: "já falei que esse rosto é horrendo".
+  - Rostos feios (S-041, S-045 "já falei que esse rosto é horrendo", S-073 "eu já falei... cara de bunda... sem nariz"): **4 reclamações**. Melhorar a textura não bastou; o rosto precisou de 3D de verdade.
+  - 5 rostos à escolha no criador, todos com traços humanos (S-073). Vale também para os NPCs.
   - Trocar de classe mantém cabelo e aparência (S-016).
   - Chapéu só como equipamento, como no RO (S-066).
   - Criador com cortes e cores combináveis (pedido na conversa).
@@ -102,6 +107,21 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
   - Toda tela ou janela nova precisa funcionar com o Q.
   - Teste o Q nela antes de entregar.
 
+### 14. Original de verdade: nada que pareça cópia de outro jogo ★★★★
+- Evidências: a Gotinha era "uma cópia muito escrachada do poring" (S-074). Ele aceita os **sistemas** (variantes de cor por elemento, como no RO), mas o **visual** tem que ser próprio do Aethra.
+- Como aplicar: antes de criar um monstro, item ou cena, pergunte "isso lembra demais algo famoso?". Mude a silhueta, o comportamento e os detalhes até ficar com cara própria.
+
+### 15. Mundo grande, com escala épica ★★★★
+- Evidências: expandir cidades, campos e masmorras inspirado em Shadow of the Colossus e WoW (S-076).
+- Ele quer vastidão, marcos gigantes, regiões bem distintas e viagem (grifos).
+- Como aplicar:
+  - Cada região nova precisa de identidade (chão, relevo, névoa, música, monstros) e de um marco visível de longe.
+  - O mundo grande não pode travar: use blocos, distância de desenho e merges.
+
+### 16. Desempenho é parte do gosto ★★★
+- Evidências: "muito lag" no jogo (antes da S-042) e "muito lag no personagem" da vitrine (S-069).
+- Como aplicar: meça (ms por quadro, número de chamadas de desenho) antes de entregar algo pesado. Ele percebe a lentidão.
+
 ### 13. Som limpo ★★
 - Evidências: duas músicas sobrepostas (S-002, reincidência em S-032).
 - Como aplicar: em toda troca de zona, tela ou interior, garanta que só uma música toca.
@@ -117,13 +137,18 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Rolagem horizontal.
 - Duas músicas tocando ao mesmo tempo.
 - Monstros parados, sem animação de ataque ou de morte.
+- Visual "quadriculado" (facetas).
+- Monstro ou cena que lembra demais outro jogo (ex.: poring).
 
 ## Checklist de entrega
 Passe pelo que você tocou antes de dizer "feito":
 - [ ] Escala comparada com o herói (`HERO_H`) e os vizinhos.
 - [ ] Encosta no chão, sem flutuar; não atravessa nada, e a colisão tem o tamanho real.
 - [ ] Visto de perto e de longe, de frente e de costas.
-- [ ] Formas orgânicas, com variação; nada de primitivo puro à mostra.
+- [ ] Formas orgânicas, com variação; nada de primitivo puro à mostra. **Nada facetado** (sem `flatShading`, sem recalcular normais em geometria não indexada).
+- [ ] Nada lembra demais algo de outro jogo (silhueta própria).
+- [ ] Rostos humanos, com nariz e olhos com pálpebra; vale para NPCs também.
+- [ ] Desempenho medido (ms por quadro, chamadas de desenho) depois de mudanças grandes.
 - [ ] Animação de entrada, uso e saída, quando fizer sentido.
 - [ ] Água, bordas e lagos sem artefatos; monstros fora da água.
 - [ ] Uma música só.

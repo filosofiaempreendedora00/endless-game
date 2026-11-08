@@ -3136,9 +3136,10 @@
     "mapa": null,
     "jogador": null,
     "id": "S-069",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:10:52",
-    "imagem": "img/S-069.png"
+    "imagem": "img/S-069.png",
+    "resposta": "Vitrine sem lag: o palco do personagem ganhou um renderizador próprio (antes copiava pixel a pixel do mundo a cada quadro) e o mundo atrás da vitrine/criador nem é mais desenhado. O enquadramento agora mede o personagem, a arma e o mascote girando em qualquer ângulo: nada fica cortado (palco também mais largo)."
   },
   {
     "texto": "Gostaria que fosse possível virar o personagem com a tecla a e tecla de da mesma forma com que eu consigo mexer nele a partir do mouse",
@@ -3167,8 +3168,1062 @@
     "mapa": null,
     "jogador": null,
     "id": "S-070",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T13:11:23",
-    "imagem": "img/S-070.png"
+    "imagem": "img/S-070.png",
+    "resposta": "Na vitrine e no criador, A e D giram o personagem (como arrastar com o mouse). ← e → continuam trocando de personagem."
+  },
+  {
+    "texto": "Eu vi que o instrumento do Barro está totalmente quadriculado e isso eu acho horroroso eu prefiro o melhor eu preciso que você melhore a estética do instrumento e leve essa consideração de elementos quadriculados feios para todos os locais onde os gráficos estiverem assim pois quero que você resolva pois são algo que eu detesto",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (340×291 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Bardo)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -60,
+        23
+      ],
+      "pos": [
+        -60,
+        23
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-071",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:12:50",
+    "imagem": "img/S-071.png",
+    "resposta": "Alaúde refeito: caixa em forma de pera com costas abauladas, tampo claro, roseta, escala com trastes, cravelhal dobrado para trás e 6 cordas. E acabei com o quadriculado em todo o jogo: acessórios das classes, mascotes, monstros, montarias, móveis e pedrinhas agora têm sombreamento liso e mais detalhe; o cabelo também deixou de ter facetas."
+  },
+  {
+    "texto": "Esse muros estão muito mal acabados eu gostaria que se a ideia fosse que eles fossem feitos de madeira que assim seja e sim troncos que estivesse interligados de uma forma mais harmoniosa e bonita e não parecessem com vários lápis grudados um no outro e um outro ponto que me incomodou foi a conexão entre esse elemento e o chão pois eles parecem estar flutuando e inclusive repare que um está dentro do outro com acabamento tenebroso",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1089×260 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Coelho-Chifre": 1,
+          "Abelha Rubra": 1,
+          "Esqueleto Vigia": 4,
+          "Cavaleiro Caído": 2,
+          "Espectro Pálido": 2
+        },
+        "npcs": [],
+        "cenario": {
+          "Torre": 1,
+          "Cerca": 4,
+          "Carvalho": 3,
+          "Pinheiro": 4,
+          "Rocha": 4,
+          "Pedra": 3,
+          "Rocha musgosa": 1,
+          "Toco": 1
+        },
+        "centro": "Torre",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -48,
+        11
+      ],
+      "pos": [
+        -48,
+        11
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-072",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:13:45",
+    "imagem": "img/S-072.png",
+    "resposta": "A cerca da vila virou uma paliçada de troncos de verdade: troncos encostados (nenhum entra no outro), topo serrado e arredondado (nada de lápis), enterrados no chão (não flutuam), com duas travessas amarradas por cordas por dentro e colisão do tamanho real."
+  },
+  {
+    "texto": "Eu já falei para você que o personagem padrão está com muita cara de bunda e isso é muito feio eu preciso que tenha traços muito mais humanos e semelhantes a uma pessoa real e não tão figurativa Como está o boneco ele está muito feio sem nariz e esquisito Inclusive eu quero que durante a criação do personagem eu possa selecionar entre cinco rostos diferentes e todos obviamente melhores do que este padrão atual",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (188×173 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Capitão Bravo"
+        ],
+        "cenario": {},
+        "centro": "Capitão Bravo",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -57,
+        11
+      ],
+      "pos": [
+        -57,
+        11
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-073",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:14:58",
+    "imagem": "img/S-073.png",
+    "resposta": "Rostos novos em 3D, bem mais humanos: nariz de verdade (dorso, ponta, asas e narinas), olhos com íris, pupila, brilho, pálpebra e cílios, sobrancelhas curvas na cor do cabelo e lábios. No criador há 5 rostos para escolher (Sereno, Valente, Alegre, Astuto e Gentil) e a câmera aproxima no rosto ao escolher. Os NPCs (Capitão Bravo, Tobias, Bento, Ivra, Clara, Flora...) também usam os rostos novos, e personagens antigos ganham o rosto Sereno."
+  },
+  {
+    "texto": "Percebi que você fez uma cópia muito escrachada do poring do Ragnarok online e tudo bem ter gosmas pois elas são muito comuns aos jogos de MMO RPG porém ficou muito escancarado que você copiou poring Então eu preciso que você crie algum outro tipo de monstro característica deste meu jogo que não seja simplesmente uma bola Idêntica ao boring e também quero que seja possível outras cores desse mesmo monstro de forma análoga ao que existe em Ragnarok com o porém com o drops com o mar em azul e diversos outros também",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (157×96 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gotinha": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Gotinha",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -29,
+        24
+      ],
+      "pos": [
+        -29,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-074",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:16:07",
+    "imagem": "img/S-074.png",
+    "resposta": "A Gotinha virou uma criatura própria: uma gota d'água viva com a ponta virada para trás como crista, base derretida escorrendo em ondinhas, núcleo brilhante com bolhas subindo e nadadeiras; ela desliza em vez de quicar. E ganhou variantes por elemento: Musguinho (terra, com brotinho), Brasinha (fogo, soltando brasas), Geadinha (gelo, com cristais) e Gotinha Sombria (sombra), cada uma com drops e carta próprios."
+  },
+  {
+    "texto": "Aqui no meu painel de mestre Também senti falta de eu conseguir mudar Qual é o meu mascote tanto a nível um dos três mascotes quanto as evoluções deles eu preciso ser capaz de trocar isso também no painel de Mestre",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (651×1050 px) (sobre: Janela \"👑 Painel do Mestre\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Feira": 1,
+          "Torre": 1,
+          "Bandeira": 1,
+          "Cerca": 4
+        },
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D",
+        "interface": [
+          "Janela \"👑 Painel do Mestre\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -51,
+        29
+      ],
+      "pos": [
+        -51,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-075",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:17:31",
+    "imagem": "img/S-075.png",
+    "resposta": "Painel do Mestre ganhou o card 🐾 Mascote: os 3 bichos com as 3 evoluções cada; um clique troca na hora (funciona mesmo sem o God Mode ligado)."
+  },
+  {
+    "texto": "Agora vou te fazer um pedido maior e isso certamente vai requerer um pouco mais de processamento o que eu quero é começar a expandir a quantidade de cidades de Campos e de Dungeons e eu quero que você se inspire muito no mundo aberto primeiro do jogo Shadow of the Colossus e também do próprio World of Warcraft",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (662×604 px) (sobre: Janela \"👑 Painel do Mestre\")",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Feira": 1,
+          "Torre": 1,
+          "Bandeira": 1,
+          "Cerca": 4
+        },
+        "centro": "Cerca",
+        "versao": "3D",
+        "interface": [
+          "Janela \"👑 Painel do Mestre\""
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -47,
+        43
+      ],
+      "pos": [
+        -47,
+        43
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-076",
+    "status": "feito",
+    "criadoEm": "2026-11-08T13:18:42",
+    "imagem": "img/S-076.png",
+    "resposta": "O mundo ficou 9× maior (900×900 m). A serra do vale ganhou passagens e, além dela: Colinas de Âmbar e a Cidadela de Pedraclara (2ª cidade, muralha de pedra) a leste; Dunas de Sal-Rubro com cactos ao sul; Vale da Geada com neve e lago congelado a oeste; e ao norte a Planície dos Colossos (gigantes de pedra ajoelhados, monólitos, arcos e uma calçada antiga) até o Santuário Silente, entrada da masmorra Catacumbas do Santuário, com a chefe Sentinela Silente. Mestres-grifo (estilo WoW) levam você entre os pontos que já conheceu, e cada região nova tem música própria."
+  },
+  {
+    "texto": "nao tem como ela ficar assim so com a cabeça de fora. Preciso ver o rosto dela. Talvz ela estar em cima de um balcao que dê altura pra eu ver o rosto",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (438×298 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Dona Rosa"
+        ],
+        "cenario": {},
+        "centro": "Dona Rosa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        659,
+        -5
+      ],
+      "pos": [
+        659,
+        -5
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-077",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:20:13",
+    "imagem": "img/S-077.png"
+  },
+  {
+    "texto": "trazer algo aqui em cima da mesa mais realista que esses copos",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (352×117 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        658,
+        0
+      ],
+      "pos": [
+        658,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-078",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:20:25",
+    "imagem": "img/S-078.png"
+  },
+  {
+    "texto": "ficou sentado bugado pro lado errado e entrando na mesa",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (350×298 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Velho Gui"
+        ],
+        "cenario": {},
+        "centro": "Velho Gui",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        664,
+        2
+      ],
+      "pos": [
+        664,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-079",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:20:47",
+    "imagem": "img/S-079.png"
+  },
+  {
+    "texto": "fogueira muito bugada que pode e deve ser melhorada",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (594×746 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Dona Flora"
+        ],
+        "cenario": {
+          "Saco": 1,
+          "Toras": 1
+        },
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        659,
+        1
+      ],
+      "pos": [
+        659,
+        1
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-080",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:21:04",
+    "imagem": "img/S-080.png"
+  },
+  {
+    "texto": "melhorar detalhes das meses, pao e cervejas. Precisa ser caneca clara na cerveja com o lugar de puxar",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (556×263 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        660,
+        2
+      ],
+      "pos": [
+        660,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-081",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:21:32",
+    "imagem": "img/S-081.png"
+  },
+  {
+    "texto": "melhora o gráfico disso",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (290×201 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Carrinho de mão": 1
+        },
+        "centro": "Carrinho de mão",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -79,
+        27
+      ],
+      "pos": [
+        -79,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-082",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:22:41",
+    "imagem": "img/S-082.png"
+  },
+  {
+    "texto": "nao quero que apareça o hp dos npcs",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (326×114 px) (sobre: Painel de status, Barra de atalhos, Ícones de buff)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Carvalho",
+        "versao": "3D",
+        "interface": [
+          "Painel de status",
+          "Barra de atalhos",
+          "Ícones de buff"
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -34,
+        19
+      ],
+      "pos": [
+        -34,
+        19
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 4,
+      "nivelClasse": 7,
+      "hp": "99/99",
+      "sp": "27/27"
+    },
+    "id": "S-083",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:23:16",
+    "imagem": "img/S-083.png"
+  },
+  {
+    "texto": "Melhor o efeito de quando eu aumento de nível gostaria de algum efeito sonoro parecido com Ragnarok online e também aquela aquelas asinhas bem elaboradas em volta do meu personagem quero uma animação bem robusta para quando a gente passar de nível tanto a nível efeito sonoro quanto visual quero deixar algo bastante incrementado mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (679×454 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Campos de Verdelume",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        22,
+        26
+      ],
+      "pos": [
+        22,
+        26
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-084",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:24:48",
+    "imagem": "img/S-084.png"
+  },
+  {
+    "texto": "o que eu pedi pra mudar o poring obio que tbm vale pra esse mini-boss aqui",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (295×147 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Gosmão": 1,
+          "Lobo Cinzento": 2
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Gosmão",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        57,
+        13
+      ],
+      "pos": [
+        57,
+        13
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-085",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:25:14",
+    "imagem": "img/S-085.png"
+  },
+  {
+    "texto": "Eu percebi que você sumiu com o botão do Som Mas eu não encontrei ele no esc então preciso que você inclua ele nas configurações que fiquem dentro do esc para que eu possa voltar com o som e eu consigo ouvir a música e também ouvir todos os outros efeitos sonoros você pode dentro desse som desabilitar música de jogo e também desabilitar efeitos sonoros como todo como por exemplo barulhos de saltar barulhos de monstro atacando monstro morrendo e todos os outros efeitos sonoros naturais",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (583×229 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Bosque Sussurrante",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        64,
+        15
+      ],
+      "pos": [
+        64,
+        15
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-086",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:27:05",
+    "imagem": "img/S-086.png"
+  },
+  {
+    "texto": "Vi que você melhorou consideravelmente a estética dos lobos e inclusive fez efeitos de ataques porém eles ainda tem muita a melhorar a nível gráfico pois eu entendo que tá muito pontiagudo e com muitas formas geométricas como as orelhas deles estão esquisitas as bochechas esquisitas não dá para ver os pelos deles o pé deles também está uma bola e poderia ser muito mais interessante o efeito dos movimentos que tudo mais acredito que há muito o que melhorar na construção deste monstro",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (303×309 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Cinzento": 3,
+          "Lobo Alfa": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Cinzento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        65,
+        11
+      ],
+      "pos": [
+        65,
+        11
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-087",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:27:52",
+    "imagem": "img/S-087.png"
+  },
+  {
+    "texto": "Preciso que os Monstros tenham uma Box própria de forma com que um não consiga ficar dentro do outro eles não podem ocupar o mesmo lugar no espaço preciso que você melhore as físicas desse jogo como um todo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (336×301 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Cinzento": 3,
+          "Lobo Alfa": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Alfa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        58,
+        15
+      ],
+      "pos": [
+        58,
+        15
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-088",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:28:58",
+    "imagem": "img/S-088.png"
+  },
+  {
+    "texto": "preciso que aumente a velocidade de andar no god mode, pra eu conseguir ser mais rápido",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (647×508 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Bardo)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -46,
+        24
+      ],
+      "pos": [
+        -46,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-089",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:29:38",
+    "imagem": "img/S-089.png"
+  },
+  {
+    "texto": "Preciso que você queria aqui um boneco para testes de forma com que ele tenha HP infinito e eu possa ficar dando golpes neles para testar tanto os meus ataques físicos sejam eles sejam eles ranged e também habilidades e obviamente eles nunca podem morrer faça por favor esse boneco como com um gráfico muito interessante e pode até se inspirar no filme de Hércules",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (102×81 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -72,
+        32
+      ],
+      "pos": [
+        -72,
+        32
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-090",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:31:13",
+    "imagem": "img/S-090.png"
+  },
+  {
+    "texto": "Este monstro ao andar tem que fazer efeitos sonoros bastante parecidos com o do esporo do Ragnarok online e inclusive quando eles morrerem tem que fazer um barulho parecido também reparem que eu digo parecido e não igual para que não seja uma cópia Descarada",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (128×99 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Fungolino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Fungolino",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:campos",
+      "nome": "Campos de Verdelume",
+      "tile": [
+        -29,
+        41
+      ],
+      "pos": [
+        -29,
+        41
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Bardo",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "115/115",
+      "sp": "31/31"
+    },
+    "id": "S-091",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:31:58",
+    "imagem": "img/S-091.png"
+  },
+  {
+    "texto": "Esse muro tá muito Chapadão de uma cor só eu gostaria que fosse mais realista para não ser que não sei o que lá",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1113×521 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 2,
+          "Cavaleiro Caído": 2,
+          "Espectro Pálido": 2
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui"
+        ],
+        "cenario": {
+          "Rocha musgosa": 3,
+          "Rocha": 4,
+          "Tronco caído": 2,
+          "Toco": 3,
+          "Prédio em ruínas": 1,
+          "Muro (canto)": 1,
+          "Muro": 2,
+          "Pinheiro": 3
+        },
+        "centro": "Muro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        21,
+        -64
+      ],
+      "pos": [
+        21,
+        -64
+      ]
+    },
+    "jogador": {
+      "nome": "Paulico lico",
+      "classe": "Caçador",
+      "nivelBase": 1,
+      "nivelClasse": 1,
+      "hp": "53/53",
+      "sp": "15/15"
+    },
+    "id": "S-092",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T13:37:48",
+    "imagem": "img/S-092.png"
   }
 ]
