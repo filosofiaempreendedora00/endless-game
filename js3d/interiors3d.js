@@ -115,25 +115,113 @@ export function lantern() {
   return g;
 }
 
-/* ---------- portal (redemoinho de luz na porta) ---------- */
+/* ---------- portal: redemoinho de energia com ondas na base e partículas que sobem e evaporam ---------- */
 export function makePortal(color = '#7fd4ff') {
-  const g = new THREE.Group();
-  const c = new THREE.Color(color);
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.95, 40), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending }));
-  disc.rotation.x = -Math.PI / 2; disc.position.y = 0.04; g.add(disc);
-  const ringM = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending });
-  const rings = [0.95, 0.65, 0.38].map((r, i) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, 0.035, 6, 40), ringM); m.rotation.x = -Math.PI / 2; m.position.y = 0.06 + i * 0.02; g.add(m); return m; });
-  // coluna de luz suave
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 2.6, 24, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
-  beam.position.y = 1.3; g.add(beam);
-  // faíscas em espiral
-  const sparkM = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
-  const sparks = []; for (let i = 0; i < 18; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), sparkM); g.add(s); sparks.push({ s, o: i / 18 }); }
+  const g = new THREE.Group(), c = new THREE.Color(color), uT = { value: 0 };
+  // redemoinho no chão (espiral animada no shader, borda que se desfaz)
+  const swirl = new THREE.Mesh(new THREE.CircleGeometry(1.05, 64), new THREE.ShaderMaterial({
+    uniforms: { uT, uC: { value: c } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vUv;
+      void main(){ vec2 p = vUv * 2.0 - 1.0; float r = length(p), a = atan(p.y, p.x);
+        float arms = sin(a * 3.0 + r * 9.0 - uT * 3.2) * 0.5 + 0.5, wob = sin(a * 7.0 - r * 14.0 + uT * 2.1) * 0.5 + 0.5;
+        float core = smoothstep(0.55, 0.0, r), edge = smoothstep(1.0, 0.55, r) * smoothstep(0.0, 0.25, r);
+        float k = edge * (0.25 + arms * 0.55 + wob * 0.2) + core * 0.55;
+        gl_FragColor = vec4(mix(uC, vec3(1.0), core * 0.6 + arms * 0.15) * k, k); }` }));
+  swirl.rotation.x = -Math.PI / 2; swirl.position.y = 0.04; g.add(swirl);
+  // ondas que nascem embaixo e se espalham
+  const waves = [0, 1, 2].map(i => { const m = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.y = 0.05 + i * 0.005; g.add(m); return m; });
+  // névoa de luz subindo (coluna que some no alto)
+  const veil = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.95, 2.8, 32, 1, true), new THREE.ShaderMaterial({
+    uniforms: { uT, uC: { value: c } }, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform float uT; uniform vec3 uC; varying vec2 vUv;
+      void main(){ float streak = sin(vUv.x * 40.0 + vUv.y * 6.0 - uT * 2.5) * 0.5 + 0.5; streak *= sin(vUv.x * 17.0 - uT * 1.3) * 0.5 + 0.5;
+        float fade = pow(1.0 - vUv.y, 2.2) * smoothstep(0.0, 0.08, vUv.y); float a = fade * (0.1 + streak * 0.25);
+        gl_FragColor = vec4(uC * a * 1.6, a); }` }));
+  veil.position.y = 1.4; g.add(veil);
+  // partículas fluidas: sobem em espiral, se afastam e evaporam
+  const N = 90, seeds = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) { seeds[i * 3] = Math.random(); seeds[i * 3 + 1] = Math.random(); seeds[i * 3 + 2] = Math.random(); }
+  const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3)); pg.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));
+  const pts = new THREE.Points(pg, new THREE.ShaderMaterial({
+    uniforms: { uT, uC: { value: c } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `uniform float uT; attribute vec3 aSeed; varying float vA;
+      void main(){ float life = fract(uT * (0.18 + aSeed.y * 0.22) + aSeed.x);
+        float ang = aSeed.z * 6.2832 + life * (2.5 + aSeed.y * 3.0) + uT * 0.3;
+        float rad = 0.25 + aSeed.y * 0.7 + life * life * 0.55;
+        vec3 p = vec3(cos(ang) * rad, life * (2.2 + aSeed.x * 1.4), sin(ang) * rad);
+        p.x += sin(uT * 1.7 + aSeed.z * 9.0) * 0.08 * life;
+        vA = smoothstep(0.0, 0.12, life) * (1.0 - smoothstep(0.55, 1.0, life));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_PointSize = (9.0 + aSeed.x * 10.0) * (1.0 - life * 0.6) * (6.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform vec3 uC; varying float vA;
+      void main(){ vec2 q = gl_PointCoord - 0.5; float d = length(q); float a = smoothstep(0.5, 0.0, d) * vA; gl_FragColor = vec4(mix(uC, vec3(1.0), 0.45) * a, a); }` }));
+  pts.frustumCulled = false; g.add(pts);
   const light = vlight(c, 2.5, 5, 1.6); light.position.y = 1; g.add(light);
   g.userData.update = t => {
-    rings.forEach((r, i) => { r.rotation.z = t * (1.2 + i * 0.7) * (i % 2 ? -1 : 1); r.scale.setScalar(1 + Math.sin(t * 2 + i) * 0.05); });
-    disc.material.opacity = 0.28 + Math.sin(t * 3) * 0.08; beam.material.opacity = 0.12 + Math.sin(t * 2.2) * 0.05;
-    sparks.forEach(({ s, o }) => { const k = (t * 0.45 + o) % 1, a = o * Math.PI * 2 * 3 + t * 2.5; s.position.set(Math.cos(a) * (0.85 - k * 0.5), k * 2.6, Math.sin(a) * (0.85 - k * 0.5)); s.scale.setScalar(1 - k * 0.7); });
+    uT.value = t;
+    waves.forEach((w, i) => { const k = (t * 0.45 + i / 3) % 1; w.scale.setScalar(0.25 + k * 1.35); w.material.opacity = Math.sin(k * Math.PI) * 0.55 * (1 - k * 0.4); });
+    light.intensity = 2.2 + Math.sin(t * 2.3) * 0.5;
   };
+  return g;
+}
+
+/* ---------- alvo de treino redondo (palha com anéis coloridos, tripé de madeira) ---------- */
+export function makeTarget() {
+  const g = new THREE.Group(), W = mat('#7a5432'), WD = mat('#5e3e22');
+  const leg = (x, z, rx, rz) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.75, 10), W); l.position.set(x, 0.85, z); l.rotation.set(rx, 0, rz); g.add(l); };
+  leg(-0.42, 0.1, 0.05, 0.22); leg(0.42, 0.1, 0.05, -0.22); leg(0, -0.42, -0.35, 0);
+  const face = new THREE.Group(); face.position.set(0, 1.15, 0.16); face.rotation.x = -0.12; g.add(face);
+  const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.2, 48, 1), mat('#d9b866', { roughness: 1 })); straw.rotation.x = Math.PI / 2; face.add(straw);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 10, 48), mat('#8a6a3a')); face.add(band);
+  const rings = [[0.58, '#f4efe4'], [0.47, '#2a2a2e'], [0.36, '#2f6fd0'], [0.25, '#d63a2a'], [0.13, '#f2c43a']];
+  rings.forEach(([r, c], i) => { const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.012, 48), mat(c, { roughness: 0.75 })); d.rotation.x = Math.PI / 2; d.position.z = 0.1 + i * 0.004; face.add(d); });
+  for (const [x, y, a] of [[0.12, 0.08, 0.2], [-0.2, -0.15, -0.3], [0.05, -0.3, 0.1]]) { // flechas cravadas
+    const ar = new THREE.Group(); ar.position.set(x, y, 0.13); ar.rotation.set(a * 0.3, a, 0); face.add(ar);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.5, 6), WD); shaft.rotation.x = Math.PI / 2; shaft.position.z = 0.25; ar.add(shaft);
+    for (let k = 0; k < 3; k++) { const f = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.1), new THREE.MeshStandardMaterial({ color: '#e8e2d0', side: THREE.DoubleSide })); f.position.z = 0.47; f.rotation.set(Math.PI / 2, 0, k * 2.09); ar.add(f); }
+  }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  return g;
+}
+
+/* ---------- barraca de frutas (feira da vila) ---------- */
+export function makeFruitStand(seed = 7) {
+  let a = seed; const rnd = () => ((a = (a * 16807 + 3) % 2147483647) / 2147483647);
+  const g = new THREE.Group(), W = mat('#7a5432'), WL = mat('#9a6e42'), DARK = mat('#4e3420');
+  // mesa comprida com toalha e caixotes inclinados
+  g.add(box(3.6, 0.08, 1.1, WL, 0, 0.82, 0));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(0.09, 0.82, 0.09, DARK, sx * 1.7, 0.41, sz * 0.46));
+  const cloth = box(3.7, 0.3, 0.02, mat('#c8423a'), 0, 0.72, 0.56); g.add(cloth);
+  for (let i = 0; i < 9; i++) g.add(box(0.2, 0.3, 0.025, mat('#f1e7d2'), -1.6 + i * 0.4, 0.72, 0.565));
+  const S = (r, c, ws = 12, hs = 9) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), mat(c, { roughness: 0.45 })); return m; };
+  const fruits = {
+    maca: (x, y, z) => { const f = new THREE.Group(); const b = S(0.065, rnd() < 0.7 ? '#c92a26' : '#8fc23a'); b.scale.set(1, 0.92, 1); f.add(b); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.006, 0.04, 5), DARK); st.position.y = 0.065; f.add(st); const lf = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 4), mat('#4f8a34')); lf.scale.set(1.6, 0.25, 0.8); lf.position.set(0.02, 0.075, 0); f.add(lf); f.position.set(x, y, z); return f; },
+    laranja: (x, y, z) => { const f = S(0.07, '#f08a1c'); f.material.roughness = 0.8; f.position.set(x, y, z); return f; },
+    pera: (x, y, z) => { const f = new THREE.Group(), c = rnd() < 0.5 ? '#c9c64a' : '#9fbf45'; const lo = S(0.06, c); lo.scale.set(1, 0.95, 1); f.add(lo); const hi = S(0.038, c); hi.position.y = 0.065; f.add(hi); const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.055, 0.05, 12), mat(c, { roughness: 0.45 })); nk.position.y = 0.035; f.add(nk); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.005, 0.04, 5), DARK); st.position.y = 0.11; st.rotation.z = 0.3; f.add(st); f.position.set(x, y, z); f.rotation.z = (rnd() - 0.5) * 0.8; return f; },
+    uva: (x, y, z) => { const f = new THREE.Group(); const c = rnd() < 0.6 ? '#5a2a6a' : '#9ac04a'; for (let i = 0; i < 18; i++) { const row = Math.floor(i / 5), ang = i * 2.3; const b = S(0.022, c, 8, 6); b.position.set(Math.cos(ang) * (0.05 - row * 0.012), -row * 0.03, Math.sin(ang) * (0.05 - row * 0.012)); f.add(b); } const st = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.05, 4), mat('#6a5030')); st.position.y = 0.035; f.add(st); f.position.set(x, y + 0.05, z); f.rotation.x = 1.2; return f; },
+    banana: (x, y, z) => { const f = new THREE.Group(); for (let i = 0; i < 5; i++) { const pts = []; for (let k = 0; k <= 8; k++) { const u = k / 8; pts.push(new THREE.Vector3(Math.sin(u * 1.4) * 0.12, Math.cos(u * 1.4) * 0.12 - 0.12, 0)); } const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.018, 6), mat('#f2d23a', { roughness: 0.6 })); tube.rotation.y = (i - 2) * 0.22; tube.position.y = i * 0.004; f.add(tube); } f.position.set(x, y + 0.02, z); f.rotation.z = Math.PI / 2; return f; },
+    melancia: (x, y, z) => { const f = S(0.17, '#2f6a2a', 16, 12); f.scale.set(1, 0.88, 1.25); f.position.set(x, y + 0.08, z); return f; },
+  };
+  // caixotes com frutas empilhadas
+  const crates = [['maca', -1.35], ['laranja', -0.7], ['pera', -0.05], ['uva', 0.6], ['banana', 1.25]];
+  for (const [kind, cx] of crates) {
+    const c = new THREE.Group(); c.position.set(cx, 0.86, 0.02); c.rotation.x = -0.22; g.add(c);
+    c.add(box(0.6, 0.05, 0.62, W, 0, 0.02, 0)); for (const sz of [-1, 1]) c.add(box(0.6, 0.14, 0.04, W, 0, 0.09, sz * 0.31)); for (const sx of [-1, 1]) c.add(box(0.04, 0.14, 0.62, W, sx * 0.3, 0.09, 0));
+    const n = kind === 'uva' ? 5 : kind === 'banana' ? 3 : 14;
+    for (let i = 0; i < n; i++) {
+      const fx = (rnd() - 0.5) * 0.44, fz = (rnd() - 0.5) * 0.46, fy = 0.11 + (i > 9 ? 0.09 : 0) + rnd() * 0.03;
+      const f = fruits[kind](fx, fy, fz); f.rotation.y = rnd() * 6.28; c.add(f);
+    }
+  }
+  // melancias no chão, uma cortada ao meio
+  for (const [x, z] of [[-1.9, 0.75], [-1.55, 0.95], [1.95, 0.8]]) g.add(fruits.melancia(x, 0.05, z));
+  const half = new THREE.Group(); half.position.set(1.6, 0.17, 0.98); half.rotation.set(-1.25, 0.4, 0); g.add(half);
+  const rind = new THREE.Mesh(new THREE.SphereGeometry(0.17, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat('#2f6a2a', { side: THREE.DoubleSide })); rind.scale.set(1, 0.9, 1); half.add(rind);
+  const flesh = new THREE.Mesh(new THREE.CircleGeometry(0.155, 24), mat('#e8405a', { roughness: 0.7 })); flesh.rotation.x = Math.PI / 2; half.add(flesh);
+  for (let i = 0; i < 10; i++) { const sd = new THREE.Mesh(new THREE.SphereGeometry(0.008, 4, 3), mat('#1a1414')); const an = rnd() * 6.28, rr = 0.04 + rnd() * 0.08; sd.position.set(Math.cos(an) * rr, -0.002, Math.sin(an) * rr); half.add(sd); }
+  // placa
+  const sign = box(0.9, 0.32, 0.04, mat('#e9dcc0'), 0, 1.55, -0.45); g.add(sign); g.add(box(0.05, 0.75, 0.05, DARK, -0.42, 1.2, -0.45)); g.add(box(0.05, 0.75, 0.05, DARK, 0.42, 1.2, -0.45));
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }

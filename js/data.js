@@ -340,6 +340,11 @@ const ITEMS = {
   // Consumíveis
   maca: { name: 'Maçã', type: 'consumivel', icon: '🍎', price: 15, use: { hp: 30 }, desc: 'Uma maçã fresca e crocante.' },
   pocao_vermelha: { name: 'Poção Vermelha', type: 'consumivel', icon: '🧪', price: 50, use: { hp: 90 }, desc: 'Poção básica de cura.' },
+  laranja: { name: 'Laranja', type: 'consumivel', icon: '🍊', price: 25, use: { hp: 25, sp: 8 }, desc: 'Docinha e cheia de suco.' },
+  pera: { name: 'Pera', type: 'consumivel', icon: '🍐', price: 30, use: { hp: 55 }, desc: 'Macia e perfumada.' },
+  uvas: { name: 'Cacho de Uvas', type: 'consumivel', icon: '🍇', price: 45, use: { sp: 18 }, desc: 'Uma por uma, recupera o fôlego.' },
+  banana: { name: 'Banana', type: 'consumivel', icon: '🍌', price: 35, use: { hp: 70 }, desc: 'Energia rápida para a caçada.' },
+  melancia: { name: 'Fatia de Melancia', type: 'consumivel', icon: '🍉', price: 80, use: { hp: 120, sp: 15 }, desc: 'Refrescante! Cura bastante.' },
   carne_assada: { name: 'Carne Assada', type: 'consumivel', icon: '🍖', price: 220, use: { hp: 260 }, desc: 'Sustância de aventureiro.' },
   frutinha_azul: { name: 'Frutinha Azul', type: 'consumivel', icon: '🫐', price: 60, use: { sp: 20 }, desc: 'Azedinha. Clareia a mente.' },
   pocao_azul: { name: 'Poção Azul', type: 'consumivel', icon: '💧', price: 320, use: { sp: 70 }, desc: 'Restaura energia espiritual.' },
@@ -371,6 +376,12 @@ const ITEMS = {
   chapeu_de_palha: { name: 'Chapéu de Palha', type: 'cabeca', icon: '👒', price: 400, def: 2, slots: 0, lv: 1, bonuses: { vit: 1, luk: 1 } },
   coroa_de_flores: { name: 'Coroa de Flores', type: 'cabeca', icon: '💐', price: 1200, def: 1, slots: 0, lv: 1, bonuses: { luk: 3, spRegen: 3 }, desc: 'Rara! Cheira a primavera.' },
   elmo_de_ferro: { name: 'Elmo de Ferro', type: 'cabeca', icon: '⛑️', price: 2000, def: 6, slots: 1, lv: 18 },
+  chapeu_de_mago: { name: 'Chapéu de Mago', type: 'cabeca', icon: '🎩', price: 900, mdef: 3, slots: 1, lv: 5, bonuses: { int: 2 }, desc: 'Pontudo e cheio de estrelinhas bordadas.' },
+  chapeu_de_bardo: { name: 'Chapéu de Bardo', type: 'cabeca', icon: '🪶', price: 800, def: 1, slots: 1, lv: 5, bonuses: { dex: 1, luk: 1 }, desc: 'Com uma pena de faisão.' },
+  tricornio: { name: 'Tricórnio', type: 'cabeca', icon: '🏴‍☠️', price: 1100, def: 2, slots: 1, lv: 8, bonuses: { luk: 2 }, desc: 'Chapéu de três pontas, de quem gosta de um bom saque.' },
+  capuz_sombrio: { name: 'Capuz Sombrio', type: 'cabeca', icon: '🥷', price: 1300, def: 2, slots: 1, lv: 10, bonuses: { agi: 2 }, desc: 'Esconde o rosto nas sombras.' },
+  tiara_arcana: { name: 'Tiara Arcana', type: 'cabeca', icon: '👑', price: 1500, mdef: 4, slots: 0, lv: 12, bonuses: { int: 1, spRegen: 2 } },
+  faixa_de_penas: { name: 'Faixa de Penas', type: 'cabeca', icon: '🪶', price: 600, def: 1, slots: 0, lv: 3, bonuses: { dex: 1 } },
 
   // Cabeça (meio e baixo)
   oculos_redondos: { name: 'Óculos Redondos', type: 'rosto', icon: '👓', price: 500, mdef: 2, slots: 0, lv: 5, bonuses: { int: 1 } },
@@ -595,9 +606,10 @@ const PETS = {
 SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive', maxLv: 1, bonuses: () => ({}), desc: () => 'Escudo de água do seu mascote: mais DEF e regeneração de HP por 20s.' };
 
 /* ---------------- Loja ---------------- */
+const FRUIT_SHOP = ['maca', 'laranja', 'pera', 'banana', 'uvas', 'melancia', 'frutinha_azul'];
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
   'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto',
-  'tunica_algodao', 'colete_couro', 'bandana', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
+  'tunica_algodao', 'colete_couro', 'bandana', 'chapeu_de_palha', 'chapeu_de_mago', 'chapeu_de_bardo', 'tricornio', 'capuz_sombrio', 'faixa_de_penas', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
 
 /* ---------------- Rótulos de bônus ---------------- */
 const BONUS_LABELS = {

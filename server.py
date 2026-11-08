@@ -28,6 +28,53 @@ MD = os.path.join(FB_DIR, 'SUGESTOES.md')
 LOCK = threading.Lock()
 MAX_BODY = 8 * 1024 * 1024
 DEFAULT_PORT = 5577
+
+# ---------------- Arena PvP (em memória; o servidor é o juiz do HP) ----------------
+import math
+import random
+import time
+ARENA_LOCK = threading.Lock()
+ARENA = {'players': {}, 'events': [], 'seq': 0}
+ARENA_FIELDS = ('name', 'cls', 'look', 'hat', 'skin', 'x', 'z', 'yaw', 'moving', 'anim', 'maxHp', 'def', 'mdef', 'flee', 'baseLv')
+
+
+def arena_event(kind, **kw):
+    ARENA['seq'] += 1
+    ARENA['events'].append({'seq': ARENA['seq'], 'kind': kind, 't': time.time(), **kw})
+    ARENA['events'] = ARENA['events'][-200:]
+
+
+def arena_spawn():
+    a = random.random() * 6.283
+    r = 6 + random.random() * 9
+    return {'x': 800 + r * math.cos(a), 'z': r * math.sin(a)}
+
+
+def arena_tick():
+    now = time.time()
+    for pid, p in list(ARENA['players'].items()):
+        if now - p['seen'] > 8:  # saiu (fechou a aba) — some da arena
+            del ARENA['players'][pid]
+            arena_event('saiu', who=p.get('name'))
+        elif p['dead'] and now >= p['respawn']:
+            p['dead'] = False
+            p['hp'] = p.get('maxHp', 100)
+            sp = arena_spawn()
+            p['tp'] = sp  # o cliente reaparece aqui
+            arena_event('voltou', who=p.get('name'), id=pid)
+
+
+def arena_view(pid, since):
+    me = ARENA['players'].get(pid)
+    others = [{'id': k, **{f: v.get(f) for f in ARENA_FIELDS}, 'hp': v['hp'], 'dead': v['dead'], 'kills': v['kills'], 'deaths': v['deaths']}
+              for k, v in ARENA['players'].items() if k != pid]
+    you = None
+    if me:
+        you = {'hp': me['hp'], 'dead': me['dead'], 'kills': me['kills'], 'deaths': me['deaths'], 'respawn': max(0, me['respawn'] - time.time())}
+        if me.get('tp'):
+            you['tp'] = me.pop('tp')
+    evs = [e for e in ARENA['events'] if e['seq'] > since]
+    return {'you': you, 'players': others, 'events': evs, 'seq': ARENA['seq']}
 SAVES_DIR = os.path.join(ROOT, 'saves')
 TRASH_DIR = os.path.join(SAVES_DIR, 'lixeira')
 SAVE_LOCK = threading.Lock()
@@ -212,9 +259,53 @@ class Handler(SimpleHTTPRequestHandler):
             os.replace(p, os.path.join(TRASH_DIR, f'{os.path.basename(p)[:-5]}-{stamp}.json'))
         return self.send_json(200, {'ok': True})
 
+    def arena(self, path):
+        data = self.read_json(64 * 1024)
+        if not isinstance(data, dict) or not data.get('id'):
+            return self.send_json(400, {'erro': 'dados inválidos'})
+        pid = str(data['id'])[:64]
+        with ARENA_LOCK:
+            arena_tick()
+            P = ARENA['players']
+            if path == '/api/arena/sync':
+                p = P.get(pid)
+                if not p:
+                    p = P[pid] = {'hp': int(data.get('maxHp') or 100), 'dead': False, 'kills': 0, 'deaths': 0, 'respawn': 0, 'seen': time.time()}
+                    arena_event('entrou', who=str(data.get('name'))[:24])
+                for f in ARENA_FIELDS:
+                    if f in data:
+                        p[f] = data[f]
+                p['seen'] = time.time()
+                p['hp'] = min(p['hp'], int(p.get('maxHp') or 100))
+                return self.send_json(200, arena_view(pid, int(data.get('since') or 0)))
+            if path == '/api/arena/hit':
+                a, t = P.get(pid), P.get(str(data.get('to')))
+                if not a or not t or a['dead'] or t['dead']:
+                    return self.send_json(200, {'ok': False})
+                dmg = max(1, min(99999, int(data.get('dmg') or 0)))
+                miss = bool(data.get('miss'))
+                if not miss:
+                    t['hp'] = max(0, t['hp'] - dmg)
+                arena_event('golpe', frm=pid, to=data.get('to'), dmg=0 if miss else dmg, crit=bool(data.get('crit')), miss=miss, tipo=str(data.get('kind') or 'fisico')[:12])
+                if t['hp'] <= 0 and not t['dead']:
+                    t['dead'] = True
+                    t['deaths'] += 1
+                    a['kills'] += 1
+                    t['respawn'] = time.time() + 5
+                    arena_event('morte', killer=a.get('name'), victim=t.get('name'), to=data.get('to'))
+                return self.send_json(200, {'ok': True, 'hp': t['hp']})
+            if path == '/api/arena/leave':
+                if pid in P:
+                    arena_event('saiu', who=P[pid].get('name'))
+                    del P[pid]
+                return self.send_json(200, {'ok': True})
+        return self.send_json(404, {'erro': 'rota desconhecida'})
+
     def do_POST(self):
         if self.path.split('?')[0] == '/api/save':
             return self.save_character()
+        if self.path.split('?')[0].startswith('/api/arena/'):
+            return self.arena(self.path.split('?')[0])
         if self.path.split('?')[0] != '/api/feedback':
             return self.send_json(404, {'erro': 'rota desconhecida'})
         n = int(self.headers.get('Content-Length') or 0)

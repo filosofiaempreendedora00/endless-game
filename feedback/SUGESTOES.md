@@ -2,63 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (9)
+## Pendentes (0)
 
-### S-060 · Área do mapa: Área da tela (51×57 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:31:48 · **Mapa:** Vila de Alvorada (tile [-58, 16])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso que haja aqui um NPC de pvp, e conversando com ele ele nos leve pra um mapa em que eu possa cair na porrada com outro playr. Aí preciso que vc crie tudo desse novo local, torne possivel uma briga entre players, descer hp, etc etc
-- ![print](img/S-060.png)
+_Nenhuma._
 
-### S-061 · Área do mapa: Área da tela (229×202 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:33:02 · **Mapa:** Vila de Alvorada (tile [-90, 26])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** gostaria de um efeito mais real desse portal, ele ta muito 'perfeitinho'. Gostaria de ele ser melhor trabalhado com as ondas ali da pate de baixo aumentando e as particulas fluidas indo subindo e sumindo meio como se evaporassem. Preciso de algo mais legal e bem trabalhado aqui no portal
-- ![print](img/S-061.png)
-
-### S-062 · Área do mapa: Área da tela (700×409 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:34:24 · **Mapa:** Vila de Alvorada (tile [-44, 24])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** preciso que o god mode nao me torne inalvejavel, no sentido dos monstros nao me colocarem como target, e sim so indestrutivel, com hp infinito
-- ![print](img/S-062.png)
-
-### S-063 · Área do mapa: Área da tela (204×162 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:34:54 · **Mapa:** Vila de Alvorada (tile [-76, 6])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** tornar mais redondidnho aqui e mais realsta, e nao meio quadrado
-- ![print](img/S-063.png)
-
-### S-064 · Área do mapa: Área da tela (325×259 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:36:03 · **Mapa:** Vila de Alvorada (tile [-59, 30])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** minha cabeça ta dentro dos objetos e isso nao é desejavel. Seja mais rigoroso no que da pra minha box entrar ou nao entrar nos objetos ao meu redor
-- ![print](img/S-064.png)
-
-### S-065 · Área do mapa: Área da tela (1014×750 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:36:41 · **Mapa:** Vila de Alvorada (tile [-56, 37])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** torne isso mais bonito com frutas mais reais eproporcionais. E inclua uma feirante aquitbm em que eu possa comprar frutas
-- ![print](img/S-065.png)
-
-### S-066 · Área do mapa: Área da tela (437×445 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:39:18 · **Mapa:** Vila de Alvorada (tile [-43, 24])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Nessa classe Além Deste chapéu não está conectando a cabeça eu gostaria de fazer um combinado com você nenhuma classe inclusive nem o Mago e evoluções deve ter por padrão um chapéu eu quero que assim como o Ragnarok online o chapéu seja a única coisa que eu consiga customizar o meu personagem e portanto ele precisa ser um equipamento ou visual e não algo por padrão da classe isso vale para todas as classes
-- ![print](img/S-066.png)
-
-### S-067 · Área do mapa: Área da tela (347×172 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:41:19 · **Mapa:** Campos de Verdelume (tile [15, 50])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Gostaria de tornar as vitórias régias mais realistas e principalmente perceba que existe um triângulo ali aberto e esse triângulo não pode ser fechado com o perímetro Ou seja a parte externa é como se fosse uma pizza que tem um pedacinho aí e isso obviamente está incorreto e precisa ser corrigido Em resumo eu prefiro que você melhore o acabamento dessas vitórias Régia para que seja muito mais
-- ![print](img/S-067.png)
-
-### S-068 · Área do mapa: Área da tela (271×152 px)
-- **Status:** pendente · **Quando:** 2026-11-08T09:42:00 · **Mapa:** Campos de Verdelume (tile [17, 62])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** vi que tem monstros que entraram na agua, mas os monstros nao podem entrar na agua. Tem que ter regra que impeça deles se aproximarem demais dos lagos sempre
-- ![print](img/S-068.png)
-
-## Feitas (59)
+## Feitas (68)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -474,3 +422,66 @@ Outra coisa. QUando eu clicar em enter aqui na sugestao tem que ir direto e nao 
 - **Sugestão:** gostaria de montarias mais erealistas e tbm ue o salto fizesse as pernas da montaria se mexerem de forma diferente. Pois ta muito esdruxulo
 - ![print](img/S-059.png)
 - **Resposta do Claude:** O salto das montarias ficou realista: as patas da frente dobram sob o peito, as de trás esticam para trás, o corpo empina na subida e abaixa o focinho na descida, e o rabo levanta. Os corcéis já tinham ganhado corpo de cavalo de verdade.
+
+### S-060 · Área do mapa: Área da tela (51×57 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:31:48 · **Mapa:** Vila de Alvorada (tile [-58, 16])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que haja aqui um NPC de pvp, e conversando com ele ele nos leve pra um mapa em que eu possa cair na porrada com outro playr. Aí preciso que vc crie tudo desse novo local, torne possivel uma briga entre players, descer hp, etc etc
+- ![print](img/S-060.png)
+- **Resposta do Claude:** Nova Arena PvP! O Capitão Bravo (perto do Guarda Tobias, na vila) leva você à Arena de Aethra: um coliseu redondo com areia, muralha, tochas e estandartes. Lá você enfrenta outros jogadores com Tab/clique para escolher o adversário, R para atacar, golpes e magias de alvo único, e até o mascote ajuda. O servidor controla o HP de todos; derrotado, você volta em 5 s. Há placar de abates/derrotas e você não perde EXP nem itens. Sai pelo portal dourado. Para testar sozinho, abra o jogo em outra janela com outro personagem.
+
+### S-061 · Área do mapa: Área da tela (229×202 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:33:02 · **Mapa:** Vila de Alvorada (tile [-90, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** gostaria de um efeito mais real desse portal, ele ta muito 'perfeitinho'. Gostaria de ele ser melhor trabalhado com as ondas ali da pate de baixo aumentando e as particulas fluidas indo subindo e sumindo meio como se evaporassem. Preciso de algo mais legal e bem trabalhado aqui no portal
+- ![print](img/S-061.png)
+- **Resposta do Claude:** O portal foi refeito: redemoinho animado no chão, ondas que nascem na base e se espalham, uma névoa de luz que some no alto e dezenas de partículas que sobem em espiral e evaporam.
+
+### S-062 · Área do mapa: Área da tela (700×409 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:34:24 · **Mapa:** Vila de Alvorada (tile [-44, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** preciso que o god mode nao me torne inalvejavel, no sentido dos monstros nao me colocarem como target, e sim so indestrutivel, com hp infinito
+- ![print](img/S-062.png)
+- **Resposta do Claude:** God Mode agora só deixa você indestrutível: os monstros te enxergam e atacam normalmente, mas o HP não desce (aparece o dano com "imune").
+
+### S-063 · Área do mapa: Área da tela (204×162 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:34:54 · **Mapa:** Vila de Alvorada (tile [-76, 6])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** tornar mais redondidnho aqui e mais realsta, e nao meio quadrado
+- ![print](img/S-063.png)
+- **Resposta do Claude:** O alvo de treino agora é redondo e feito em código: disco de palha com anéis coloridos, aro, tripé de madeira e flechas cravadas.
+
+### S-064 · Área do mapa: Área da tela (325×259 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:36:03 · **Mapa:** Vila de Alvorada (tile [-59, 30])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** minha cabeça ta dentro dos objetos e isso nao é desejavel. Seja mais rigoroso no que da pra minha box entrar ou nao entrar nos objetos ao meu redor
+- ![print](img/S-064.png)
+- **Resposta do Claude:** Colisão mais rigorosa: tendas, caixotes, barris, casas, muros e cercas agora têm uma "caixa" do tamanho real do objeto (girada junto), então você não entra mais neles.
+
+### S-065 · Área do mapa: Área da tela (1014×750 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:36:41 · **Mapa:** Vila de Alvorada (tile [-56, 37])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** torne isso mais bonito com frutas mais reais eproporcionais. E inclua uma feirante aquitbm em que eu possa comprar frutas
+- ![print](img/S-065.png)
+- **Resposta do Claude:** A feira ficou bonita: saíram os caixotes quadradões e entrou uma barraca de frutas realistas (maçãs com cabinho e folha, laranjas, peras, cachos de uva, bananas e melancias, uma cortada ao meio). Nova feirante, a Dona Flora, vende maçã, laranja, pera, banana, uvas, melancia e frutinha azul, e cada fruta cura HP e/ou SP.
+
+### S-066 · Área do mapa: Área da tela (437×445 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:39:18 · **Mapa:** Vila de Alvorada (tile [-43, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Nessa classe Além Deste chapéu não está conectando a cabeça eu gostaria de fazer um combinado com você nenhuma classe inclusive nem o Mago e evoluções deve ter por padrão um chapéu eu quero que assim como o Ragnarok online o chapéu seja a única coisa que eu consiga customizar o meu personagem e portanto ele precisa ser um equipamento ou visual e não algo por padrão da classe isso vale para todas as classes
+- ![print](img/S-066.png)
+- **Resposta do Claude:** Combinado! Nenhuma classe tem mais chapéu fixo (nem os magos). O chapéu agora é o equipamento do topo da cabeça e aparece no boneco: bandana, chapéu de palha, coroa de flores, elmo de ferro e, novos na loja do Bento, chapéu de mago, chapéu de bardo, tricórnio, capuz sombrio e faixa de penas. A tiara arcana também existe como item. O cabelo se ajusta debaixo do chapéu.
+
+### S-067 · Área do mapa: Área da tela (347×172 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:41:19 · **Mapa:** Campos de Verdelume (tile [15, 50])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria de tornar as vitórias régias mais realistas e principalmente perceba que existe um triângulo ali aberto e esse triângulo não pode ser fechado com o perímetro Ou seja a parte externa é como se fosse uma pizza que tem um pedacinho aí e isso obviamente está incorreto e precisa ser corrigido Em resumo eu prefiro que você melhore o acabamento dessas vitórias Régia para que seja muito mais
+- ![print](img/S-067.png)
+- **Resposta do Claude:** As vitórias-régias foram refeitas no estilo das amazônicas: folha redonda e inteira com a borda levantada (avermelhada por fora), nervuras e só uma fendinha estreita na borda. Nada mais de "pedaço de pizza".
+
+### S-068 · Área do mapa: Área da tela (271×152 px)
+- **Status:** feito · **Quando:** 2026-11-08T09:42:00 · **Mapa:** Campos de Verdelume (tile [17, 62])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** vi que tem monstros que entraram na agua, mas os monstros nao podem entrar na agua. Tem que ter regra que impeça deles se aproximarem demais dos lagos sempre
+- ![print](img/S-068.png)
+- **Resposta do Claude:** Os monstros não entram mais no lago: eles não escolhem passeios perto da água e, se chegarem na beira, são empurrados de volta para a margem.

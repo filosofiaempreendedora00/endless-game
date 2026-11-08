@@ -21,17 +21,17 @@ export const ACCESSORIES = {
 export const CLASS_LOOKS = {
   aprendiz: { outfit: 'Rogue', show: [], borrow: [['Knight', '1H_Sword']], tint: { body: '#b89a6a', legs: '#6a5038' }, style: '1h', extras: ['belt'] },
   guerreiro: { outfit: 'Knight', show: ['1H_Sword', 'Round_Shield', 'Knight_Cape'], tint: { body: '#9aa2b0', legs: '#5a4a3a', cape: '#b8332a' }, style: '1h', extras: ['belt'] },
-  cavaleiro_runico: { outfit: 'Knight', show: ['2H_Sword', 'Knight_Helmet', 'Knight_Cape'], tint: { body: '#3a4258', legs: '#262c3c', cape: '#7a1020', helmet: '#3a4258' }, glow: { '2H_Sword': '#4ad0ff' }, style: '2h', extras: ['pauldrons', 'runes'] },
+  cavaleiro_runico: { outfit: 'Knight', show: ['2H_Sword', 'Knight_Cape'], tint: { body: '#3a4258', legs: '#262c3c', cape: '#7a1020' }, glow: { '2H_Sword': '#4ad0ff' }, style: '2h', extras: ['pauldrons', 'runes'] },
   guardiao_sagrado: { outfit: 'Knight', show: ['1H_Sword', 'Badge_Shield', 'Knight_Cape'], tint: { body: '#fff6dc', legs: '#e8c860', cape: '#ffffff' }, glow: { '1H_Sword': '#ffd76a', 'Badge_Shield': '#ffcf4a' }, style: '1h', extras: ['halo', 'holyWings', 'tabard'] },
   mago: { outfit: 'Mage', show: ['2H_Staff', 'Mage_Cape'], tint: { body: '#3a5ad8', legs: '#2a3470', cape: '#1e2a78' }, style: 'cast' },
-  arquimago: { outfit: 'Mage', show: ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], scale: { Mage_Hat: 0.72 }, tint: { body: '#4a2a7a', legs: '#2a1446', cape: '#24103c', hat: '#3a1a5a' }, glow: { '2H_Staff': '#c07aff' }, style: 'cast', extras: ['arcaneRings', 'starMotes'] },
-  sabio_elemental: { outfit: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Cape'], tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, glow: { '1H_Wand': '#7affd0', 'Spellbook_open': '#7affd0' }, style: 'cast', extras: ['circlet', 'elementOrbs'] },
+  arquimago: { outfit: 'Mage', show: ['2H_Staff', 'Mage_Cape'], tint: { body: '#4a2a7a', legs: '#2a1446', cape: '#24103c' }, glow: { '2H_Staff': '#c07aff' }, style: 'cast', extras: ['arcaneRings', 'starMotes'] },
+  sabio_elemental: { outfit: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Cape'], tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, glow: { '1H_Wand': '#7affd0', 'Spellbook_open': '#7affd0' }, style: 'cast', extras: ['elementOrbs'] },
   arqueiro: { outfit: 'Rogue', show: ['2H_Crossbow', 'Rogue_Cape'], tint: { body: '#4f8a45', legs: '#5a4430', cape: '#2f5a2a' }, style: 'ranged', extras: ['quiver'] },
-  cacador: { outfit: 'Barbarian', show: ['Barbarian_Cape'], borrow: [['Rogue', '2H_Crossbow']], tint: { body: '#8a6a3a', legs: '#5a4028', cape: '#4a3020' }, style: 'ranged', extras: ['quiver', 'featherBand', 'falcon'] },
-  menestrel: { outfit: 'Rogue', show: ['1H_Crossbow', 'Rogue_Cape'], tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute', 'bardHat', 'musicNotes'] },
-  ladino: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#4a4a55', legs: '#33333c', cape: '#2a2a33' }, style: 'dual', extras: ['bandana', 'scarf'] },
-  lamina_sombria: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#221a2e', legs: '#18121f', cape: '#2a1440' }, glow: { Knife: '#b06aff', Knife_Offhand: '#b06aff' }, style: 'dual', extras: ['shadowHood', 'shoulderSpikes', 'shadowWisps'] },
-  saqueador: { outfit: 'Barbarian', show: ['1H_Axe', '1H_Axe_Offhand', 'Barbarian_Cape'], tint: { body: '#7a5a3a', legs: '#4a3a2a', cape: '#a8842a' }, style: 'dual', extras: ['tricorn', 'lootBag', 'goldCoins'] },
+  cacador: { outfit: 'Barbarian', show: ['Barbarian_Cape'], borrow: [['Rogue', '2H_Crossbow']], tint: { body: '#8a6a3a', legs: '#5a4028', cape: '#4a3020' }, style: 'ranged', extras: ['quiver', 'falcon'] },
+  menestrel: { outfit: 'Rogue', show: ['1H_Crossbow', 'Rogue_Cape'], tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute', 'musicNotes'] },
+  ladino: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#4a4a55', legs: '#33333c', cape: '#2a2a33' }, style: 'dual', extras: ['scarf'] },
+  lamina_sombria: { outfit: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], tint: { body: '#221a2e', legs: '#18121f', cape: '#2a1440' }, glow: { Knife: '#b06aff', Knife_Offhand: '#b06aff' }, style: 'dual', extras: ['shoulderSpikes', 'shadowWisps'] },
+  saqueador: { outfit: 'Barbarian', show: ['1H_Axe', '1H_Axe_Offhand', 'Barbarian_Cape'], tint: { body: '#7a5a3a', legs: '#4a3a2a', cape: '#a8842a' }, style: 'dual', extras: ['lootBag', 'goldCoins'] },
 };
 
 const bone = (root, n) => root.getObjectByName(n.replace(/\./g, '')) || root.getObjectByName(n);
@@ -170,6 +170,16 @@ const EXTRAS = {
     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.PI / 2; const brim = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.03), std('#2a1e14')); brim.position.set(Math.cos(a) * 0.2, 0.04, Math.sin(a) * 0.2); brim.rotation.y = -a + Math.PI / 2; brim.rotation.x = -0.35; hat.add(brim); const trim = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.015, 0.035), std('#d8b04a', { metalness: 0.7 })); trim.position.set(Math.cos(a) * 0.205, 0.1, Math.sin(a) * 0.205); trim.rotation.y = -a + Math.PI / 2; trim.rotation.x = -0.35; hat.add(trim); }
     const skull = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), std('#f2ecd8')); skull.position.set(0, 0.06, 0.2); hat.add(skull);
   },
+  strawHat(root) { const g = socket(root, 'head'); const h = new THREE.Group(); h.position.y = 0.44; g.add(h); const straw = std('#d9b866', { roughness: 1 });
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.48, 0.025, 28), straw); h.add(brim);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.2, 20), straw); crown.position.y = 0.1; h.add(crown);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.252, 0.252, 0.05, 20, 1, true), std('#b8332a')); band.position.y = 0.04; h.add(band); },
+  flowerCrown(root) { const g = socket(root, 'head'); const ring = new THREE.Group(); ring.position.y = 0.4; g.add(ring);
+    const vine = new THREE.Mesh(new THREE.TorusGeometry(0.255, 0.018, 6, 30), std('#4f8a34')); vine.rotation.x = Math.PI / 2; ring.add(vine);
+    const cols = ['#ff8ab8', '#ffffff', '#ffd84a', '#b48cff', '#ff9a4a'];
+    for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2, f = new THREE.Group(); f.position.set(Math.cos(a) * 0.26, 0.02, Math.sin(a) * 0.26); ring.add(f);
+      for (let k = 0; k < 5; k++) { const pt = new THREE.Mesh(new THREE.SphereGeometry(0.028, 6, 4), std(cols[i % cols.length])); pt.scale.set(1, 0.4, 0.6); const b = k / 5 * Math.PI * 2; pt.position.set(Math.cos(b) * 0.03, 0.01, Math.sin(b) * 0.03); f.add(pt); }
+      const c = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 4), std('#f2c43a')); c.position.y = 0.02; f.add(c); } },
   lootBag(root) { const g = socket(root, 'chest'); const b = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), std('#8a6a3a')); b.position.set(-0.08, -0.05, -0.33); b.scale.set(1, 1.1, 0.8); g.add(b); const tie = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 12), std('#d8b04a')); tie.position.set(-0.08, 0.12, -0.33); tie.rotation.x = Math.PI / 2; g.add(tie); },
   goldCoins(root, fx) {
     const g = new THREE.Group(); root.parent.add(g); const cs = [];
@@ -579,4 +589,30 @@ export function applyHair(ch, look, hat = false) {
   bindToHead(head, geo, mat, 'PlayerHair');
 }
 // a classe usa chapéu/elmo/capuz? (cabelo só nas laterais e atrás)
-export function classHasHat(cls) { const L = CLASS_LOOKS[cls]; return !!(L && (L.show || []).some(n => /_Hat$|_Helmet$|Hood/.test(n))) || (L && (L.extras || []).some(e => /hood|Hat|tricorn|bandana/i.test(e))); }
+export function classHasHat(cls) { return false; } // (antigo) nenhuma classe tem chapéu fixo agora
+function classHasHatOld(cls) { const L = CLASS_LOOKS[cls]; return !!(L && (L.show || []).some(n => /_Hat$|_Helmet$|Hood/.test(n))) || (L && (L.extras || []).some(e => /hood|Hat|tricorn|bandana/i.test(e))); }
+
+/* ---------- CHAPÉUS: só como equipamento (topo da cabeça) — nenhuma classe tem chapéu fixo ---------- */
+// covers = esconde o topo do cabelo (o corte fica só nas laterais e atrás)
+export const HATS = {
+  bandana: { extra: 'bandana', covers: true, dy: -0.07 },
+  chapeu_de_palha: { extra: 'strawHat', covers: true, dy: -0.13 },
+  coroa_de_flores: { extra: 'flowerCrown', covers: false, dy: -0.09 },
+  elmo_de_ferro: { borrow: ['Knight', 'Knight_Helmet'], covers: true },
+  chapeu_de_mago: { borrow: ['Mage', 'Mage_Hat'], scale: 0.8, covers: true },
+  chapeu_de_bardo: { extra: 'bardHat', covers: true, dy: -0.12 },
+  tricornio: { extra: 'tricorn', covers: true, dy: -0.15 },
+  capuz_sombrio: { extra: 'shadowHood', covers: true, dy: -0.1 },
+  tiara_arcana: { extra: 'circlet', covers: false, dy: -0.07 },
+  faixa_de_penas: { extra: 'featherBand', covers: false, dy: -0.08 },
+};
+export function hatCovers(hatId) { return !!(HATS[hatId] && HATS[hatId].covers); }
+export function applyHat(ch, hatId, MODELS, customHead = true) {
+  const H = HATS[hatId]; if (!H) return null;
+  const fx = [];
+  const hb = bone(ch.root, 'head'), before = hb ? new Set(hb.children) : null;
+  if (H.extra && EXTRAS[H.extra]) EXTRAS[H.extra](ch.root, fx);
+  if (hb && H.dy) for (const c of hb.children) if (!before.has(c)) c.position.y += H.dy * c.scale.y * (customHead ? 1 : 0.4); // (em unidades do soquete) assenta o chapéu na cabeça (a cabeça nova é mais baixa)
+  if (H.borrow) { const [model, item] = H.borrow; borrow(ch.root, MODELS, model, item); if (H.scale) { const o = ch.root.getObjectByName(item); if (o) o.scale.multiplyScalar(H.scale); } }
+  return fx.length ? t => fx.forEach(f => f(t)) : null;
+}

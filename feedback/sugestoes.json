@@ -2732,9 +2732,10 @@
       "sp": "23/23"
     },
     "id": "S-060",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:31:48",
-    "imagem": "img/S-060.png"
+    "imagem": "img/S-060.png",
+    "resposta": "Nova Arena PvP! O Capitão Bravo (perto do Guarda Tobias, na vila) leva você à Arena de Aethra: um coliseu redondo com areia, muralha, tochas e estandartes. Lá você enfrenta outros jogadores com Tab/clique para escolher o adversário, R para atacar, golpes e magias de alvo único, e até o mascote ajuda. O servidor controla o HP de todos; derrotado, você volta em 5 s. Há placar de abates/derrotas e você não perde EXP nem itens. Sai pelo portal dourado. Para testar sozinho, abra o jogo em outra janela com outro personagem."
   },
   {
     "texto": "gostaria de um efeito mais real desse portal, ele ta muito 'perfeitinho'. Gostaria de ele ser melhor trabalhado com as ondas ali da pate de baixo aumentando e as particulas fluidas indo subindo e sumindo meio como se evaporassem. Preciso de algo mais legal e bem trabalhado aqui no portal",
@@ -2777,9 +2778,10 @@
       "sp": "23/23"
     },
     "id": "S-061",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:33:02",
-    "imagem": "img/S-061.png"
+    "imagem": "img/S-061.png",
+    "resposta": "O portal foi refeito: redemoinho animado no chão, ondas que nascem na base e se espalham, uma névoa de luz que some no alto e dezenas de partículas que sobem em espiral e evaporam."
   },
   {
     "texto": "preciso que o god mode nao me torne inalvejavel, no sentido dos monstros nao me colocarem como target, e sim so indestrutivel, com hp infinito",
@@ -2820,9 +2822,10 @@
       "sp": "20/20"
     },
     "id": "S-062",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:34:24",
-    "imagem": "img/S-062.png"
+    "imagem": "img/S-062.png",
+    "resposta": "God Mode agora só deixa você indestrutível: os monstros te enxergam e atacam normalmente, mas o HP não desce (aparece o dano com \"imune\")."
   },
   {
     "texto": "tornar mais redondidnho aqui e mais realsta, e nao meio quadrado",
@@ -2865,9 +2868,10 @@
       "sp": "20/20"
     },
     "id": "S-063",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:34:54",
-    "imagem": "img/S-063.png"
+    "imagem": "img/S-063.png",
+    "resposta": "O alvo de treino agora é redondo e feito em código: disco de palha com anéis coloridos, aro, tripé de madeira e flechas cravadas."
   },
   {
     "texto": "minha cabeça ta dentro dos objetos e isso nao é desejavel. Seja mais rigoroso no que da pra minha box entrar ou nao entrar nos objetos ao meu redor",
@@ -2911,9 +2915,10 @@
       "sp": "20/20"
     },
     "id": "S-064",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:36:03",
-    "imagem": "img/S-064.png"
+    "imagem": "img/S-064.png",
+    "resposta": "Colisão mais rigorosa: tendas, caixotes, barris, casas, muros e cercas agora têm uma \"caixa\" do tamanho real do objeto (girada junto), então você não entra mais neles."
   },
   {
     "texto": "torne isso mais bonito com frutas mais reais eproporcionais. E inclua uma feirante aquitbm em que eu possa comprar frutas",
@@ -2960,9 +2965,10 @@
       "sp": "20/20"
     },
     "id": "S-065",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:36:41",
-    "imagem": "img/S-065.png"
+    "imagem": "img/S-065.png",
+    "resposta": "A feira ficou bonita: saíram os caixotes quadradões e entrou uma barraca de frutas realistas (maçãs com cabinho e folha, laranjas, peras, cachos de uva, bananas e melancias, uma cortada ao meio). Nova feirante, a Dona Flora, vende maçã, laranja, pera, banana, uvas, melancia e frutinha azul, e cada fruta cura HP e/ou SP."
   },
   {
     "texto": "Nessa classe Além Deste chapéu não está conectando a cabeça eu gostaria de fazer um combinado com você nenhuma classe inclusive nem o Mago e evoluções deve ter por padrão um chapéu eu quero que assim como o Ragnarok online o chapéu seja a única coisa que eu consiga customizar o meu personagem e portanto ele precisa ser um equipamento ou visual e não algo por padrão da classe isso vale para todas as classes",
@@ -3003,9 +3009,10 @@
       "sp": "22/22"
     },
     "id": "S-066",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:39:18",
-    "imagem": "img/S-066.png"
+    "imagem": "img/S-066.png",
+    "resposta": "Combinado! Nenhuma classe tem mais chapéu fixo (nem os magos). O chapéu agora é o equipamento do topo da cabeça e aparece no boneco: bandana, chapéu de palha, coroa de flores, elmo de ferro e, novos na loja do Bento, chapéu de mago, chapéu de bardo, tricórnio, capuz sombrio e faixa de penas. A tiara arcana também existe como item. O cabelo se ajusta debaixo do chapéu."
   },
   {
     "texto": "Gostaria de tornar as vitórias régias mais realistas e principalmente perceba que existe um triângulo ali aberto e esse triângulo não pode ser fechado com o perímetro Ou seja a parte externa é como se fosse uma pizza que tem um pedacinho aí e isso obviamente está incorreto e precisa ser corrigido Em resumo eu prefiro que você melhore o acabamento dessas vitórias Régia para que seja muito mais",
@@ -3046,9 +3053,10 @@
       "sp": "25/25"
     },
     "id": "S-067",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:41:19",
-    "imagem": "img/S-067.png"
+    "imagem": "img/S-067.png",
+    "resposta": "As vitórias-régias foram refeitas no estilo das amazônicas: folha redonda e inteira com a borda levantada (avermelhada por fora), nervuras e só uma fendinha estreita na borda. Nada mais de \"pedaço de pizza\"."
   },
   {
     "texto": "vi que tem monstros que entraram na agua, mas os monstros nao podem entrar na agua. Tem que ter regra que impeça deles se aproximarem demais dos lagos sempre",
@@ -3093,8 +3101,9 @@
       "sp": "25/25"
     },
     "id": "S-068",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T09:42:00",
-    "imagem": "img/S-068.png"
+    "imagem": "img/S-068.png",
+    "resposta": "Os monstros não entram mais no lago: eles não escolhem passeios perto da água e, se chegarem na beira, são empurrados de volta para a margem."
   }
 ]

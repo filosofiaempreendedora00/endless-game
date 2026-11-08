@@ -173,7 +173,7 @@ const UI = {
     if (id === 'equip') { this.charTab = 'equip'; id = 'char'; } else if (id === 'char' && !this.charTab) this.charTab = 'stats';
     if (id === 'char' && this.wins.char) { this.render_char(); return; }
     const pos = { char: [Math.max(10, innerWidth / 2 - 300), 60, Math.min(600, innerWidth - 20)], inv: [innerWidth - 390, 70, 330], equip: [Math.max(10, innerWidth - 980), 70, Math.min(560, innerWidth - 20)], skills: [300, 70, 420], tree: [Math.max(10, innerWidth / 2 - 330), 60, Math.min(660, innerWidth - 20)], bestiario: [Math.max(10, innerWidth / 2 - 380), 60, Math.min(760, innerWidth - 20)], loja: [Math.max(10, innerWidth / 2 - 390), 60, Math.min(780, innerWidth - 20)], mapa: [Math.max(10, innerWidth / 2 - 360), 40, Math.min(720, innerWidth - 20)], help: [innerWidth / 2 - 260, 80, 520], shop: [innerWidth / 2 - 330, 90, 620], dialog: [innerWidth / 2 - 230, innerHeight - 330], sugestoes: [Math.max(10, innerWidth / 2 - 290), 70, Math.min(580, innerWidth - 20)], admin: [Math.max(10, innerWidth / 2 - 320), 50, Math.min(640, innerWidth - 20)] };
-    const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
+    const titles = { mapa: '🗺️ Mapa de Aethra', char: 'Personagem', inv: 'Inventário', equip: 'Equipamento', skills: 'Habilidades', tree: 'Árvore de Classes', bestiario: '📖 Bestiário', loja: '✦ Loja de Auroras', help: 'Como Jogar', shop: this.shopTitle || 'Loja do Bento', dialog: 'Conversa', sugestoes: 'Minhas Sugestões', admin: '👑 Painel do Mestre' };
     const [x, y, w] = pos[id];
     this.makeWin(id, titles[id], x, y, w);
     this['render_' + id]();
@@ -479,7 +479,7 @@ const UI = {
   /* ---------- Loja ---------- */
   render_shop() {
     const p = G.player;
-    const buy = SHOP_ITEMS.map(id => { const it = ITEMS[id]; return `<div class="shop-item" data-act="buy" data-id="${id}" data-tip="item:${id}"><span class="ic">${it.icon}</span><span class="nm">${it.name}</span><span class="pr">${it.price} z</span></div>`; }).join('');
+    const buy = (this.shopList || SHOP_ITEMS).map(id => { const it = ITEMS[id]; return `<div class="shop-item" data-act="buy" data-id="${id}" data-tip="item:${id}"><span class="ic">${it.icon}</span><span class="nm">${it.name}</span><span class="pr">${it.price} z</span></div>`; }).join('');
     const sell = p.inventory.map(en => { const it = ITEMS[en.id]; return `<div class="shop-item" data-act="sell" data-uid="${en.uid}" data-tip="inv:${en.uid}"><span class="ic">${it.icon}</span><span class="nm">${it.name}${en.qty > 1 ? ' x' + en.qty : ''}</span><span class="pr">${sellPrice(en.id)} z</span></div>`; }).join('') || '<span class="muted">Nada para vender.</span>';
     this.body('shop').innerHTML = `<div class="shop"><div><h4>Comprar</h4><div class="shop-list">${buy}</div></div><div><h4>Vender</h4><div class="shop-list">${sell}</div></div></div>
       <div style="margin-top:8px;display:flex;justify-content:space-between"><span class="muted" style="font-size:11px">Clique = 1 • Shift+Clique = 10 (comprar) / tudo (vender)</span><b class="gold">💰 ${p.zeny.toLocaleString('pt-BR')} z</b></div>`;

@@ -36,6 +36,7 @@ Na tela inicial, escolha um personagem ou crie um novo. O personagem é o **mesm
 | Bestiário (todos os monstros) | **B** |
 | Mapa de Aethra | **G** ou clique no minimapa |
 | Loja de Auroras (skins e montarias) | **O** |
+| Arena PvP | fale com o **Capitão Bravo** na vila |
 | Pular | **Espaço** |
 | Escolher inimigo / atacar | **Tab** / **R** ou botão direito no alvo |
 | Habilidades e itens | **1–9** |

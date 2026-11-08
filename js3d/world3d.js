@@ -246,33 +246,42 @@ export function buildReeds(rng) {
   inst.count = n; inst.castShadow = true;
   return inst;
 }
-// vitórias-régias grandes (dá para pular em cima delas)
+// vitórias-régias (estilo Victoria amazonica): folha redonda e lisa com a borda levantada, nervuras e uma fendinha na borda
 export function lilyPadGeometry(seed, r) {
-  let a = seed; const rng = () => ((a = (a * 16807) % 2147483647) / 2147483647);
-  const parts = [];
-  const notch = 0.35 + rng() * 0.2;
-  const pad = new THREE.CylinderGeometry(r, r * 0.97, 0.06, 28, 1, false, notch / 2, Math.PI * 2 - notch); pad.translate(0, 0.03, 0);
-  parts.push([pad, null]);
-  const rim = new THREE.TorusGeometry(r * 0.98, 0.035, 4, 28, Math.PI * 2 - notch); rim.rotateX(Math.PI / 2); rim.rotateY(-notch / 2 - Math.PI / 2 + Math.PI / 2); rim.translate(0, 0.05, 0);
-  parts.push([rim, '#3f6e2a']);
-  if (rng() < 0.45) { // flor
-    for (let i = 0; i < 8; i++) { const pt = new THREE.ConeGeometry(0.08, 0.28, 5); pt.translate(0, 0.14, 0); pt.rotateX(0.7); pt.rotateY(i / 8 * Math.PI * 2); pt.translate(r * 0.25, 0.08, r * 0.2); parts.push([pt, i % 2 ? '#ffb6d2' : '#ffd6e6']); }
-    const c = new THREE.SphereGeometry(0.07, 6, 5); c.translate(r * 0.25, 0.16, r * 0.2); parts.push([c, '#ffd23a']);
+  let a = seed; const rng = () => ((a = (a * 16807 + 11) % 2147483647) / 2147483647);
+  const RS = 72, RINGS = 10, pos = [], col = [], idx = [];
+  const leaf = new THREE.Color('#4f8f34'), vein = new THREE.Color('#7fb45a'), dark = new THREE.Color('#3a6f28'), rimOut = new THREE.Color('#8a3446'), rimIn = new THREE.Color('#5d9a3e');
+  const gap = 0.08 + rng() * 0.05, gapAt = rng() * Math.PI * 2; // fenda estreita só na borda
+  const rimH = r * (0.09 + rng() * 0.03);
+  const prof = [];
+  for (let k = 0; k <= RINGS; k++) prof.push([r * k / RINGS * 0.97, 0.02 + (k / RINGS) * (k / RINGS) * 0.03, 'top']);
+  prof.push([r * 0.985, rimH * 0.55, 'rimIn'], [r * 1.0, rimH, 'lip'], [r * 1.025, rimH * 0.6, 'rimOut'], [r * 1.02, 0.0, 'rimOut']);
+  for (let k = 0; k < prof.length; k++) for (let j = 0; j <= RS; j++) {
+    const ang = j / RS * Math.PI * 2, [rr, yy, part] = prof[k];
+    const da = Math.abs(((ang - gapAt + Math.PI * 3) % (Math.PI * 2)) - Math.PI), inGap = da < gap / 2;
+    const y = part === 'top' ? yy + Math.sin(ang * 5 + rr * 3) * 0.004 : inGap ? Math.min(yy, 0.03) : yy;
+    pos.push(Math.cos(ang) * rr, y, Math.sin(ang) * rr);
+    const c = new THREE.Color();
+    if (part === 'top') { const v = Math.pow(Math.abs(Math.cos(ang * 14)), 18) * Math.min(1, rr / (r * 0.3)); c.copy(leaf).lerp(dark, 0.25 * (1 - rr / r)).lerp(vein, v * 0.75); c.offsetHSL(0, 0, (rng() - 0.5) * 0.03); }
+    else c.copy(part === 'rimOut' ? rimOut : part === 'lip' ? rimOut.clone().lerp(rimIn, 0.4) : rimIn);
+    col.push(c.r, c.g, c.b);
   }
-  const light = new THREE.Color('#5f9e3a'), dark = new THREE.Color('#3d7426');
-  const geos = parts.map(([g, col]) => {
-    const ng = g.index ? g.toNonIndexed() : g, P = ng.attributes.position, arr = new Float32Array(P.count * 3), c = new THREE.Color();
-    for (let k = 0; k < P.count; k++) {
-      if (col) c.set(col); else { const x = P.getX(k), z = P.getZ(k), ang = Math.atan2(z, x), d = Math.hypot(x, z) / r; c.copy(light).lerp(dark, Math.max(0, Math.cos(ang * 9)) * 0.35 * d + (1 - d) * 0.15); }
-      arr[k * 3] = c.r; arr[k * 3 + 1] = c.g; arr[k * 3 + 2] = c.b;
+  for (let k = 0; k < prof.length - 1; k++) for (let j = 0; j < RS; j++) { const p0 = k * (RS + 1) + j, p1 = p0 + RS + 1; idx.push(p0, p0 + 1, p1, p1, p0 + 1, p1 + 1); } // virado para cima
+  let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx);
+  g = g.toNonIndexed(); g.computeVertexNormals();
+  const parts = [g];
+  if (rng() < 0.4) { // flor grande branco-rosada em camadas
+    const fx = (rng() - 0.5) * r * 0.6, fz = (rng() - 0.5) * r * 0.6;
+    for (let layer = 0; layer < 3; layer++) for (let i = 0; i < 9; i++) {
+      const pt = new THREE.SphereGeometry(0.09 - layer * 0.015, 8, 6); pt.scale(0.55, 0.25, 1.6); pt.translate(0, 0, 0.12 - layer * 0.02); pt.rotateX(-0.35 - layer * 0.35); pt.rotateY(i / 9 * Math.PI * 2 + layer * 0.35); pt.translate(fx, 0.09 + layer * 0.04, fz);
+      const ng = pt.toNonIndexed(), n = ng.attributes.position.count, cc = new THREE.Color(layer === 2 ? '#ffd2e2' : layer ? '#fff4f8' : '#ffffff'), arr = new Float32Array(n * 3);
+      for (let v = 0; v < n; v++) { arr[v * 3] = cc.r; arr[v * 3 + 1] = cc.g; arr[v * 3 + 2] = cc.b; }
+      ng.setAttribute('color', new THREE.BufferAttribute(arr, 3)); ng.deleteAttribute('uv'); parts.push(ng);
     }
-    ng.setAttribute('color', new THREE.BufferAttribute(arr, 3)); ng.deleteAttribute('uv'); if (ng.attributes.normal) ng.deleteAttribute('normal');
-    return ng;
-  });
-  const g = mergeGeometries(geos); g.computeVertexNormals();
-  return g;
+    const cen = new THREE.SphereGeometry(0.05, 8, 6).toNonIndexed(); cen.translate(fx, 0.2, fz); const n = cen.attributes.position.count, arr = new Float32Array(n * 3); for (let v = 0; v < n; v++) { arr[v * 3] = 1; arr[v * 3 + 1] = 0.82; arr[v * 3 + 2] = 0.25; } cen.setAttribute('color', new THREE.BufferAttribute(arr, 3)); cen.deleteAttribute('uv'); parts.push(cen);
+  }
+  return mergeGeometries(parts);
 }
-
 // céu com gradiente (cúpula)
 export function buildSky(top = '#4f9be8', horizon = '#cfe7ff') {
   const geo = new THREE.SphereGeometry(480, 32, 16);

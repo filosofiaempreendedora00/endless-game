@@ -517,3 +517,10 @@ body.fb-picking canvas { cursor: crosshair !important; }
   .cc-stage { height: 46vh; } .cc-panel { width: 100%; max-height: none; }
   .cs-main { flex-wrap: wrap; } .cs-info { width: 100%; } .cs-stage { height: 44vh; } .cs-arrow { width: 42px; height: 42px; font-size: 26px; }
 }
+
+/* Arena PvP */
+#arena-hud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 30; padding: 6px 16px; border-radius: 20px; background: rgba(40, 10, 10, 0.75); border: 1px solid rgba(255, 120, 90, 0.5); color: #ffe6d8; font-size: 13px; text-align: center; pointer-events: none; }
+#arena-hud.hidden { display: none; }
+#arena-hud b { color: #ffd76a; }
+#arena-hud .ar-dead { margin-top: 4px; font-size: 16px; font-weight: 800; color: #ff8a7a; }
+#arena-hud .ar-wait { margin-top: 3px; font-size: 11px; color: #d8b8a8; }

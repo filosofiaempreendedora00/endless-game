@@ -8,11 +8,11 @@ import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry } from './world3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat } from './looks3d.js';
+import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
-import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal } from './interiors3d.js';
+import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
-import { makeLightPool } from './lights3d.js';
+import { makeLightPool, vlight } from './lights3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -112,8 +112,16 @@ function place(name, x, z, o = {}) {
   if (o.solid !== false && !/^(fence|flag|lily|cloud)/.test(name)) occluders.push(obj);
   if (o.solid !== false) {
     const b = bbox(name);
-    const r = o.r ?? (native && g.radius ? g.radius * s : Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 * s * (o.rf || 0.75));
-    colliders.push({ x, z, r, name });
+    if (native || o.r || /^(lily|cloud|mountain)/.test(name)) {
+      const r = o.r ?? (native && g.radius ? g.radius * s : Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2 * s * (o.rf || 0.75));
+      colliders.push({ x, z, r, name });
+    } else { // caixa do tamanho real do objeto (girada junto): nada de entrar em tenda, caixote, casa...
+      const rot = obj.rotation.y, cs = Math.cos(rot), sn = Math.sin(rot);
+      const lcx = (b.min.x + b.max.x) / 2 * s, lcz = (b.min.z + b.max.z) / 2 * s;
+      const hx = (b.max.x - b.min.x) / 2 * s * 0.97, hz = (b.max.z - b.min.z) / 2 * s * 0.97;
+      const cx = x + lcx * cs + lcz * sn, cz = z - lcx * sn + lcz * cs;
+      colliders.push({ x: cx, z: cz, r: Math.max(hx, hz), box: true, hx, hz, rot, name });
+    }
   }
   return obj;
 }
@@ -145,6 +153,29 @@ function updatePads(dt) {
     pd.mesh.position.y = LAKE.level + Math.sin(S.time * 1.3 + pd.ph) * 0.02 - pd.load * 0.07; // afunda um pouquinho quando você pisa
     pd.mesh.rotation.z = Math.sin(S.time * 0.9 + pd.ph) * 0.015;
   }
+}
+
+/* ---------- feira: tira os caixotes quadradões do modelo e põe uma barraca de frutas com feirante ---------- */
+function buildFruitMarket(mk) {
+  const mesh = mk.getObjectByProperty('isMesh', true);
+  if (mesh) { // remove os caixotes/frutas em bloco da frente do modelo
+    const g = mesh.geometry.clone(), P = g.attributes.position, idx = g.index ? g.index.array : null, keep = [], tri = idx ? idx.length / 3 : P.count / 3;
+    for (let t = 0; t < tri; t++) { const vs = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k); if (!vs.every(v => P.getZ(v) > 0.17 && P.getY(v) > 0.035 && P.getY(v) < 0.37)) keep.push(...vs); }
+    g.setIndex(keep); mesh.geometry = g;
+  }
+  const rot = mk.rotation.y, fx = Math.sin(rot), fz = Math.cos(rot), s = mk.scale.x;
+  const mc = colliders.find(c => c.name === 'market'); // a caixa da feira passa a cobrir só o prédio (a barraca fica na frente)
+  if (mc && mc.box) { const lz = (-0.71 + 0.17) / 2 * s; mc.hz = (0.71 + 0.17) / 2 * s * 0.97; mc.x = mk.position.x + fx * lz; mc.z = mk.position.z + fz * lz; mc.r = Math.max(mc.hx, mc.hz); }
+  const sx = mk.position.x + fx * 0.42 * s, sz = mk.position.z + fz * 0.42 * s;
+  const stand = makeFruitStand(); stand.position.set(sx, heightAt(sx, sz), sz); stand.rotation.y = rot; scene.add(stand);
+  stand.userData.asset = 'fruitstand'; placed.push(stand); occluders.push(stand);
+  colliders.push({ x: sx, z: sz, r: 1.9, box: true, hx: 1.95, hz: 0.6, rot, name: 'fruitstand' });
+  // feirante atrás da mesa, virada para a praça
+  const nx = sx - fx * 1.05, nz = sz - fz * 1.05;
+  const ch = makeChar('Rogue', []); dressLook(ch, 'aprendiz', { race: 'humano', hair: { style: 'coque', color: 'acobreado' }, beard: false });
+  ch.obj.position.set(nx, heightAt(nx, nz), nz); ch.obj.rotation.y = rot; ch.anim.play('Idle', { speed: 0.9 });
+  const npc = { id: 'flora', name: 'Dona Flora', title: 'Feirante', x: nx, z: nz, ...ch, isNpc: true, height: 1.6, radius: 0.5 };
+  ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x: nx, z: nz, r: 0.5 }); S.npcs.push(npc);
 }
 
 /* ---------- chão: terreno lá fora, piso dentro das casas ---------- */
@@ -215,6 +246,7 @@ function enterInterior(id, from) {
 }
 function leaveInterior(instant) {
   const back = S.interior && S.interior.back; if (!back) return;
+  if (S.arena) arenaLeave();
   const go = () => {
     S.interior = null; S.zone = null;
     Object.assign(S.pos, { x: back.x, z: back.z, y: heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw });
@@ -295,29 +327,163 @@ function renderLoja() {
   body.querySelectorAll('[data-mnt]').forEach(el => el.onclick = () => { S.p.mount = { kind: el.dataset.mnt }; if (S.riding) { dismount(true); mount(); } Sound.play('click'); save3d(); renderLoja(); });
 }
 
+/* =========================================================================
+   ARENA PvP — o servidor guarda o HP de todos; cada aba manda posição e golpes
+   ========================================================================= */
+const ARENA_I = { name: 'Arena de Aethra', x: 800, z: 0, w: 46, d: 46, h: 8, round: 21 };
+function buildArena() {
+  const A = ARENA_I, g = new THREE.Group(); g.position.set(A.x, 0, A.z); scene.add(g);
+  const M = (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, ...e });
+  // chão de areia batida com desenho
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(23, 72), M('#cdb386')); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; g.add(floor);
+  for (const [r, w, c] of [[4, 0.25, '#a8885a'], [9, 0.18, '#b89a68'], [15, 0.18, '#b89a68'], [20.6, 0.4, '#8f7550']]) { const ring = new THREE.Mesh(new THREE.RingGeometry(r - w, r, 72), M(c)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; g.add(ring); }
+  const emb = new THREE.Mesh(new THREE.CircleGeometry(2.2, 6), M('#9a2f2a')); emb.rotation.x = -Math.PI / 2; emb.position.y = 0.015; g.add(emb);
+  // muralha circular com ameias e arquibancada
+  const wallM = M('#8d877b', { flatShading: false });
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(21.6, 21.6, 3.2, 72, 1, true), new THREE.MeshStandardMaterial({ color: '#8d877b', roughness: 0.95, side: THREE.DoubleSide })); wall.position.y = 1.6; wall.receiveShadow = true; g.add(wall);
+  for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; const b = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.6), wallM); b.position.set(Math.cos(a) * 21.7, 3.55, Math.sin(a) * 21.7); b.rotation.y = -a + Math.PI / 2; b.castShadow = true; g.add(b); }
+  for (let k = 0; k < 5; k++) { const st = new THREE.Mesh(new THREE.CylinderGeometry(23 + k * 1.3, 23 + k * 1.3, 0.6, 72, 1, true), new THREE.MeshStandardMaterial({ color: k % 2 ? '#7a5a3a' : '#6a4a2e', roughness: 1, side: THREE.DoubleSide })); st.position.y = 3.6 + k * 0.6; g.add(st); }
+  // pilares com tochas e estandartes (vermelho x azul)
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2, x = Math.cos(a) * 20.4, z = Math.sin(a) * 20.4;
+    if (Math.abs(a - Math.PI / 2) < 0.2) continue; // vão do portão (sul)
+    const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 4.6, 12), M('#7a746a')); pil.position.set(x, 2.3, z); pil.castShadow = true; g.add(pil);
+    colliders.push({ x: A.x + x, z: A.z + z, r: 0.7 });
+    const torch = new THREE.Group(); torch.position.set(x * 0.97, 4.8, z * 0.97); g.add(torch);
+    torch.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.4, 8), M('#3a2a1e')));
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 8), new THREE.MeshStandardMaterial({ color: '#ffb04a', emissive: '#ff7a1a', emissiveIntensity: 2 })); fl.position.y = 0.4; torch.add(fl); arenaFlames.push(fl);
+    if (i % 3 === 0) { const l = vlight('#ffb060', 5, 14, 1.6); l.position.set(0, 0.6, 0); torch.add(l); }
+    const ban = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 2.2), new THREE.MeshStandardMaterial({ color: i % 2 ? '#b8332a' : '#2f5aa8', side: THREE.DoubleSide, roughness: 0.8 })); ban.position.set(x * 0.95, 3.1, z * 0.95); ban.rotation.y = -a - Math.PI / 2; g.add(ban);
+  }
+  g.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+  INTERIORS.arena = ARENA_I;
+  const ex = makePortal('#ffd27a'); ex.position.set(A.x, 0, A.z + 18.5); scene.add(ex);
+  portals.push({ kind: 'exit', from: 'arena', x: A.x, z: A.z + 18.5, mesh: ex });
+  const el = document.createElement('div'); el.id = 'arena-hud'; el.className = 'hidden'; document.body.appendChild(el);
+}
+const arenaFlames = [];
+function enterArena() {
+  const n = S.npcs.find(x => x.id === 'bravo');
+  const back = { x: n.x + 2, z: n.z + 1.5, yaw: 0 };
+  fadeTo(() => {
+    if (S.riding) dismount(true);
+    S.interior = { id: 'arena', ...ARENA_I, back };
+    const a = Math.random() * 6.28, r = 6 + Math.random() * 8;
+    Object.assign(S.pos, { x: ARENA_I.x + Math.cos(a) * r, z: ARENA_I.z + Math.sin(a) * r, y: 0, vy: 0, ground: true });
+    S.vel = { x: 0, z: 0 }; setTarget(null); S.casting = null;
+    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.vx = S.pet.vz = 0; }
+    S.arena = { id: (S.p.charId || 'x') + '-' + Math.random().toString(36).slice(2, 7), since: 0, rivals: new Map(), savedHp: S.p.hp, kills: 0, deaths: 0, dead: false, busy: false, last: 0 };
+    S.p.hp = S.p.d.maxHp;
+    $('mapname').innerHTML = 'Arena de Aethra <small>PvP</small>'; banner('⚔️ Arena de Aethra', 'Tab escolhe adversário • R ataca • portal dourado para sair');
+    log('⚔️ Você entrou na Arena. Outros jogadores que estiverem aqui aparecem em vermelho.', 'sys');
+    $('arena-hud').classList.remove('hidden');
+    S.portalCd = S.time + 1.5; Sound.play('portal');
+    arenaSync();
+  });
+}
+function arenaLeave() {
+  const A = S.arena; if (!A) return;
+  fetch('/api/arena/leave', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: A.id }), keepalive: true }).catch(() => { });
+  for (const r of A.rivals.values()) removeRival(r);
+  S.p.hp = Math.max(1, Math.min(S.p.d.maxHp, A.savedHp)); S.arena = null; setTarget(null);
+  $('arena-hud').classList.add('hidden'); hudDirty = true;
+  log('Você saiu da Arena.', 'sys');
+}
+addEventListener('beforeunload', () => { if (S.arena) navigator.sendBeacon && navigator.sendBeacon('/api/arena/leave', new Blob([JSON.stringify({ id: S.arena.id })], { type: 'application/json' })); });
+async function arenaSync() {
+  const A = S.arena; if (!A || A.busy) return; A.busy = true; A.last = S.time;
+  const p = S.p, d = p.d;
+  const body = { id: A.id, name: p.name, cls: p.cls, look: p.look, hat: hatOf(p), skin: (p.cosmetics || {}).skin || null, x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw, moving: Math.hypot(S.vel.x, S.vel.z) > 0.5, anim: S.me.anim.name, maxHp: d.maxHp, def: d.def, mdef: d.mdef, flee: d.flee, baseLv: p.baseLv, since: A.since };
+  try {
+    const r = await (await fetch('/api/arena/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+    if (S.arena !== A) return;
+    A.since = r.seq;
+    if (r.you) {
+      p.hp = r.you.hp; A.kills = r.you.kills; A.deaths = r.you.deaths; hudDirty = true;
+      if (r.you.dead && !A.dead) { A.dead = true; S.autoAttack = false; S.me.anim.play('Death_A', { once: true, fade: 0.1 }); Sound.play('death'); }
+      if (r.you.dead) $('arena-hud').dataset.dead = Math.ceil(r.you.respawn);
+      if (!r.you.dead && A.dead) { A.dead = false; S.me.anim.play('Idle', { restart: true }); delete $('arena-hud').dataset.dead; }
+      if (r.you.tp) { Object.assign(S.pos, { x: r.you.tp.x, z: r.you.tp.z, y: 0, vy: 0, ground: true }); ring(S.pos, 2, '#ffd76a'); Sound.play('portal'); }
+    }
+    const seen = new Set();
+    for (const o of r.players) { seen.add(o.id); let rv = A.rivals.get(o.id); if (!rv || rv.lookKey !== JSON.stringify([o.cls, o.look, o.hat, o.skin])) { if (rv) removeRival(rv); rv = makeRival(o); A.rivals.set(o.id, rv); } updateRival(rv, o); }
+    for (const [id, rv] of A.rivals) if (!seen.has(id)) { removeRival(rv); A.rivals.delete(id); if (S.target === rv) setTarget(null); }
+    for (const e of r.events) arenaEvent(e);
+  } catch (e) { } finally { A.busy = false; }
+}
+function makeRival(o) {
+  const pc = buildPreviewChar(o.look, o.cls, o.skin ? { skin: o.skin } : null, o.hat);
+  const obj = pc.ch.obj; obj.position.set(o.x, 0, o.z); scene.add(obj);
+  const rv = { id: o.id, isRival: true, aggro: true, obj, ch: pc.ch, fx: pc.fx, x: o.x, z: o.z, tx: o.x, tz: o.z, yaw: o.yaw, height: 1.6, radius: 0.5, hp: o.hp, maxHp: o.maxHp, dead: o.dead, status: {}, lookKey: JSON.stringify([o.cls, o.look, o.hat, o.skin]),
+    def: { name: o.name, lv: o.baseLv, element: 'neutro', aggressive: true, def: o.def || 0, mdef: o.mdef || 0, flee: o.flee || 0, size: 1 } };
+  obj.add(hitbox(rv, 0.6, 1.8));
+  return rv;
+}
+function updateRival(rv, o) {
+  rv.tx = o.x; rv.tz = o.z; rv.tyaw = o.yaw; rv.moving = o.moving; rv.hp = o.hp; rv.maxHp = o.maxHp || rv.maxHp; rv.anim = o.anim;
+  Object.assign(rv.def, { name: o.name, lv: o.baseLv, def: o.def || 0, mdef: o.mdef || 0, flee: o.flee || 0 });
+  if (o.dead && !rv.dead) { rv.ch.anim.play('Death_A', { once: true, fade: 0.1 }); if (S.target === rv) S.autoAttack = false; }
+  if (!o.dead && rv.dead) rv.ch.anim.play('Idle', { restart: true });
+  rv.dead = o.dead;
+}
+function removeRival(rv) { scene.remove(rv.obj); const hi = hitboxes.findIndex(h => h.userData.ref === rv); if (hi >= 0) hitboxes.splice(hi, 1); }
+function updateArena(dt) {
+  const A = S.arena; if (!A) return;
+  if (S.time - A.last > 0.12) arenaSync();
+  for (const f of arenaFlames) f.scale.y = 0.85 + Math.sin(S.time * 11 + f.id) * 0.2;
+  for (const rv of A.rivals.values()) {
+    const k = 1 - Math.exp(-dt * 12);
+    rv.x += (rv.tx - rv.x) * k; rv.z += (rv.tz - rv.z) * k; rv.yaw = angLerp(rv.yaw, rv.tyaw ?? rv.yaw, k);
+    rv.obj.position.set(rv.x, 0, rv.z); rv.obj.rotation.y = rv.yaw;
+    if (!rv.dead) { const want = rv.anim && /Attack|Shoot|Spell|Chop|Slice|Stab/.test(rv.anim) ? rv.anim : rv.moving ? 'Running_A' : 'Idle'; if (rv.ch.anim.name !== want) rv.ch.anim.play(want, /Attack|Shoot|Spell|Chop|Slice|Stab/.test(want) ? { once: true } : {}); }
+    rv.ch.anim.update(dt); rv.fx(S.time);
+  }
+  const hud = $('arena-hud'), dead = hud.dataset.dead;
+  hud.innerHTML = `⚔️ <b>Arena</b> · Abates <b>${A.kills}</b> · Derrotas <b>${A.deaths}</b> · Adversários <b>${A.rivals.size}</b>${dead ? `<div class="ar-dead">Você foi derrotado — voltando em ${dead}s</div>` : A.rivals.size ? '' : '<div class="ar-wait">Esperando adversários… (abra o jogo em outra janela com outro personagem para testar)</div>'}`;
+}
+function arenaHit(rv, res, elem) {
+  if (rv.dead || !S.arena) return;
+  if (res.miss) floatAt(rv.obj.position, 'Errou', '#cfd6e0', rv.height + 0.4);
+  fetch('/api/arena/hit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: S.arena.id, to: rv.id, dmg: Math.round(res.dmg || 0), crit: !!res.crit, miss: !!res.miss, kind: elem || 'fisico' }) }).catch(() => { });
+}
+function arenaEvent(e) {
+  const A = S.arena; if (!A) return;
+  if (e.kind === 'golpe') {
+    if (e.to === A.id) { if (!e.miss) { floatAt(S.me.obj.position, '-' + e.dmg, '#ff5a5a', 2.1); Sound.play('hurt'); } }
+    else { const rv = A.rivals.get(e.to); if (rv && !e.miss) { floatAt(rv.obj.position, (e.crit ? '💥 ' : '') + e.dmg, e.crit ? '#ffd76a' : '#ffffff', rv.height + 0.4); Sound.play(e.crit ? 'crit' : 'hit'); } }
+  } else if (e.kind === 'morte') {
+    log(`☠️ ${escH(e.killer || '?')} derrotou ${escH(e.victim || '?')}!`, 'card');
+    if (e.killer === S.p.name && e.to !== A.id) { banner('Vitória!', `Você derrotou ${e.victim}`); Sound.play('levelup'); }
+  } else if (e.kind === 'entrou') log(`⚔️ ${escH(e.who || '?')} entrou na Arena.`, 'sys');
+  else if (e.kind === 'saiu') log(`${escH(e.who || '?')} saiu da Arena.`, 'sys');
+}
+
 /* =========================== Montagem do mundo =========================== */
 const clouds = [];
 function buildWorld() {
   const hb = bbox('home_A'); WS = 6.5 / Math.max(0.01, hb.max.y - hb.min.y);
+  MODELS.target_round = { scene: makeTarget(), radius: 0.6, native: true }; // alvo de treino feito em código
   const V = VILLAGE;
   // vila: poço no centro, casas em anel virado para a praça (a leste fica a saída da estrada)
   place('well', V.x, V.z, { rot: 0, rf: 0.6 });
   const ring = [['tavern', 160, 23], ['home_A', 200, 22], ['home_B', 235, 22], ['blacksmith', 270, 23], ['home_A_red', 305, 23], ['church', 120, 25], ['home_B_red', 85, 22], ['market', 50, 22]];
   for (const [n, deg, r] of ring) {
     const a = deg * Math.PI / 180, x = V.x + Math.cos(a) * r, z = V.z + Math.sin(a) * r;
-    place(n, x, z, { rot: Math.atan2(V.x - x, V.z - z), rf: 0.62 });
+    const bo = place(n, x, z, { rot: Math.atan2(V.x - x, V.z - z), rf: 0.62 });
+    if (n === 'market') buildFruitMarket(bo);
     const inside = { tavern: 'taverna', home_B_red: 'estabulo' }[n];
     if (inside) { // porta com portal: entra na casa
-      const hr = colliders[colliders.length - 1].r, dr = r - hr - 1.3;
-      addDoorPortal(inside, V.x + Math.cos(a) * dr, V.z + Math.sin(a) * dr, Math.atan2(V.x - x, V.z - z));
+      const hc = colliders[colliders.length - 1], ux = (V.x - x) / r, uz = (V.z - z) / r, off = (hc.box ? hc.hz : hc.r) + 1.0;
+      addDoorPortal(inside, hc.x + ux * off, hc.z + uz * off, Math.atan2(V.x - x, V.z - z)); // na frente da porta, fora da caixa da casa
     }
   }
   buildInteriors();
+  buildArena();
   place('windmill', V.x - 34, V.z - 26, { rf: 0.4 });
   place('tower', V.x + 22, V.z - 9, { rf: 0.5 }); place('tower', V.x + 22, V.z + 14, { rf: 0.5 });
   place('flag_blue', V.x + 18, V.z - 6, { solid: false }); place('flag_blue', V.x + 18, V.z + 11, { solid: false });
   // feira e enfeites
-  const props = [['barrel', 6, -9], ['barrel', 7, -8], ['crate_A', 9, -10], ['sack', 5, -11], ['wheelbarrow', -9, 7], ['tent', 11, 9], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 2, 3], ['crate_B', 10, 11], ['target_prop', -6, -14], ['flag_red', 12, -12]];
+  const props = [['barrel', 6, -9], ['barrel', 7, -8], ['crate_A', 9, -10], ['sack', 5, -11], ['wheelbarrow', -9, 7], ['tent', 11, 9], ['weaponrack', -12, -4], ['lumber', -14, 10], ['bucket', 2, 3], ['crate_B', 10, 11], ['target_round', -6, -14], ['flag_red', 12, -12]];
   for (const [n, dx, dz] of props) place(n, V.x + dx, V.z + dz, { rf: 0.6 });
   // cerca ao redor da vila (com aberturas para as estradas)
   for (let deg = 0; deg < 360; deg += 9) {
@@ -562,8 +728,8 @@ function updateMonster(m, dt) {
   if (frozen || stunned) { m.moving = false; if (m.vis.critter) m.vis.critter.animate(t, false, dt); return; }
   const dp = Math.hypot(P.x - m.x, P.z - m.z);
   const safe = zoneAt(P.x, P.z).safe;
-  if (!m.aggro && d.aggressive && !S.p.dead && !S.god && !safe && dp < d.aggroRange * TM * 1.3) { m.aggro = true; m.returning = false; }
-  if (m.aggro && (S.p.dead || safe || Math.hypot(m.x - m.home.x, m.z - m.home.z) > 38 || (S.god && !m.hitByPlayer))) { m.aggro = false; m.returning = true; m.hp = m.maxHp; }
+  if (!m.aggro && d.aggressive && !S.p.dead && !safe && dp < d.aggroRange * TM * 1.3) { m.aggro = true; m.returning = false; }
+  if (m.aggro && (S.p.dead || safe || Math.hypot(m.x - m.home.x, m.z - m.home.z) > 38)) { m.aggro = false; m.returning = true; m.hp = m.maxHp; }
   let goal = null, speed = d.speed / 32 * TM;
   if (m.aggro) {
     const reach = d.range * TM + m.radius + 0.7;
@@ -576,7 +742,7 @@ function updateMonster(m, dt) {
     goal = m.home; speed *= 1.4;
     if (Math.hypot(m.x - m.home.x, m.z - m.home.z) < 1.5) m.returning = false;
   } else {
-    if (t >= m.nextThink) { m.nextThink = t + 2 + rng() * 5; m.wander = rng() < 0.6 ? { x: m.home.x + (rng() * 2 - 1) * 8, z: m.home.z + (rng() * 2 - 1) * 8 } : null; }
+    if (t >= m.nextThink) { m.nextThink = t + 2 + rng() * 5; m.wander = rng() < 0.6 ? { x: m.home.x + (rng() * 2 - 1) * 8, z: m.home.z + (rng() * 2 - 1) * 8 } : null; if (m.wander && lakeDist(m.wander.x, m.wander.z) < LAKE.r + 3) m.wander = null; }
     if (m.wander) { goal = m.wander; speed *= 0.5; if (Math.hypot(m.x - m.wander.x, m.z - m.wander.z) < 0.6) m.wander = null; }
   }
   m.moving = false;
@@ -586,6 +752,8 @@ function updateMonster(m, dt) {
     const nx = m.x + Math.sin(ang) * speed * dt, nz = m.z + Math.cos(ang) * speed * dt;
     const r = resolve(nx, nz, m.radius);
     m.x = r.x; m.z = r.z; m.moving = true;
+    const ld = lakeDist(m.x, m.z), lim = LAKE.r + 2.5; // monstros não entram no lago
+    if (!m.interior && ld < lim) { const a = Math.atan2(m.z - LAKE.z, m.x - LAKE.x), rr = lim * lakeShape(LAKE.x + Math.cos(a), LAKE.z + Math.sin(a)) + 0.1; m.x = LAKE.x + Math.cos(a) * rr; m.z = LAKE.z + Math.sin(a) * rr; if (m.wander) m.wander = null; }
   }
   m.obj.position.set(m.x, heightAt(m.x, m.z), m.z);
   m.obj.rotation.y = m.yaw;
@@ -607,11 +775,11 @@ function monsterHit(m) {
 }
 function hurtPlayer(m, raw) {
   const p = S.p;
-  if (S.god) { floatAt(S.me.obj.position, 'Imune', '#ffd76a', 2); return; }
   let dmg = raw * 100 / (100 + p.d.def);
   dmg *= 1 - Math.min(80, p.d.resist[m.def.element] || 0) / 100;
   if (p.pet && PETS[p.pet.species].role === 'guardiao' && petNear()) dmg *= 1 - petPower(p.pet).guard / 100;
   dmg = Math.max(1, Math.round(dmg));
+  if (S.god) { floatAt(S.me.obj.position, `-${dmg} (imune)`, '#ffd76a', 2); return; } // God Mode: os monstros atacam, mas o HP não desce
   p.hp -= dmg; S.sitting = false;
   floatAt(S.me.obj.position, '-' + dmg, '#ff5a5a', 2.1);
   Sound.play('hurt');
@@ -620,6 +788,7 @@ function hurtPlayer(m, raw) {
 }
 function hurtMonster(m, res, elem) {
   if (m.dead) return;
+  if (m.isRival) return arenaHit(m, res, elem); // PvP: quem decide o HP é o servidor
   const p = S.p;
   if (res.miss) { floatAt(m.obj.position, 'Errou', '#cfd6e0', m.height + 0.4); Sound.play('miss'); m.aggro = true; m.hitByPlayer = true; return; }
   m.hp -= res.dmg; m.aggro = true; m.returning = false; m.hitByPlayer = true;
@@ -655,6 +824,7 @@ const NPC3D = [
   { id: 'bento', name: 'Bento', title: 'Mercador', model: 'Barbarian', show: ['Mug', 'Barbarian_Hat'], dx: 9, dz: -7 },
   { id: 'clara', name: 'Irmã Clara', title: 'Curandeira', model: 'Mage', show: ['Spellbook_open', 'Mage_Cape'], dx: -7, dz: 7 },
   { id: 'tobias', name: 'Guarda Tobias', title: 'Guia da Vila', model: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], dx: 15, dz: 2 },
+  { id: 'bravo', name: 'Capitão Bravo', title: 'Mestre da Arena (PvP)', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], dx: 13, dz: -9 },
 ];
 function spawnNpcs() {
   for (const n of NPC3D) {
@@ -672,20 +842,22 @@ function spawnNpcs() {
 
 /* =========================== Jogador =========================== */
 // veste o personagem com a aparência dele: cabelo personalizado (novo) ou cabeça pronta (personagens antigos)
-function dressLook(ch, cls, look = {}) {
+function dressLook(ch, cls, look = {}, hatId = null) {
   const custom = !!(look && look.hair);
   const d = dress(ch, cls, MODELS, custom ? 'Barbarian' : (look && look.head) || 'Knight');
-  if (custom) applyHair(ch, look, classHasHat(cls));
+  if (custom) applyHair(ch, look, hatCovers(hatId));
   applyRace(ch, look && look.race);
-  return d;
+  const hfx = hatId ? applyHat(ch, hatId, MODELS, custom) : null; // chapéu = o que estiver equipado no topo da cabeça
+  return hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d;
 }
+const hatOf = p => (p && p.equip && p.equip.cabeca && p.equip.cabeca.id) || null;
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
   const ch = makeChar(L.outfit, L.show);
-  const d = dressLook(ch, S.p.cls, S.p.look);
+  const d = dressLook(ch, S.p.cls, S.p.look, hatOf(S.p));
   const skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null;
-  S.me = { ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
+  S.me = { hatId: hatOf(S.p), ...ch, look: { model: L.outfit, show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
 }
@@ -703,10 +875,20 @@ function moveInput() {
 }
 function resolve(x, z, r) {
   for (let it = 0; it < 2; it++) for (const c of colliders) {
-    const dx = x - c.x, dz = z - c.z, d = Math.hypot(dx, dz), min = c.r + r;
+    const dx = x - c.x, dz = z - c.z;
+    if (c.box) {
+      if (Math.abs(dx) > c.r + r + 0.5 || Math.abs(dz) > c.r + r + 0.5) continue;
+      const cs = Math.cos(c.rot), sn = Math.sin(c.rot);
+      let lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
+      const px = c.hx + r - Math.abs(lx), pz = c.hz + r - Math.abs(lz);
+      if (px > 0 && pz > 0) { if (px < pz) lx = Math.sign(lx || 1) * (c.hx + r); else lz = Math.sign(lz || 1) * (c.hz + r); x = c.x + lx * cs + lz * sn; z = c.z - lx * sn + lz * cs; }
+      continue;
+    }
+    const d = Math.hypot(dx, dz), min = c.r + r;
     if (d < min && d > 0.0001) { x = c.x + dx / d * min; z = c.z + dz / d * min; }
   }
-  if (S.interior) { const I = S.interior; x = clamp(x, I.x - I.w / 2 + 0.6, I.x + I.w / 2 - 0.6); z = clamp(z, I.z - I.d / 2 + 0.6, I.z + I.d / 2 - 0.3); }
+  if (S.interior && S.interior.round) { const I = S.interior, dx = x - I.x, dz = z - I.z, d = Math.hypot(dx, dz), R = I.round - 0.6; if (d > R) { x = I.x + dx / d * R; z = I.z + dz / d * R; } }
+  else if (S.interior) { const I = S.interior; x = clamp(x, I.x - I.w / 2 + 0.6, I.x + I.w / 2 - 0.6); z = clamp(z, I.z - I.d / 2 + 0.6, I.z + I.d / 2 - 0.3); }
   else { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); }
   return { x, z };
 }
@@ -715,6 +897,7 @@ function updatePlayer(dt) {
   me.anim.update(dt);
   if (me.lookFx) me.lookFx(t);
   if (p.dead) return;
+  if (S.arena && S.arena.dead) return; // derrotado na arena: esperando voltar
   // buffs e regeneração
   for (const id in p.buffs) if (p.buffs[id].until <= t) { delete p.buffs[id]; recalc(p); log(`${SKILLS[id].name} terminou.`); hudDirty = true; }
   S.regenHp = (S.regenHp || 0) + dt; S.regenSp = (S.regenSp || 0) + dt;
@@ -1115,7 +1298,7 @@ const plateEls = new Map();
 function updatePlates() {
   const P = S.pos;
   const shown = new Set();
-  for (const e of [...S.monsters, ...S.npcs]) {
+  for (const e of [...S.monsters, ...S.npcs, ...(S.arena ? S.arena.rivals.values() : [])]) {
     if (e.dead && !e.isNpc) continue;
     const d = Math.hypot(e.x - P.x, e.z - P.z);
     // nomes só de perto: monstros até 13 m (ou o alvo / quem está brigando com você), NPCs até 24 m
@@ -1179,10 +1362,10 @@ function pick(cx, cy) {
 function setTarget(e) { S.target = e; if (!e) S.autoAttack = false; hudDirty = true; }
 function tabTarget() {
   const P = S.pos;
-  const cands = S.monsters.filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 40)
+  const cands = (S.arena ? [...S.arena.rivals.values()] : S.monsters).filter(m => !m.dead && Math.hypot(m.x - P.x, m.z - P.z) < 40)
     .map(m => { const a = Math.atan2(m.x - P.x, m.z - P.z) - S.cam.yaw; return { m, d: Math.hypot(m.x - P.x, m.z - P.z), front: Math.cos(a) }; })
     .filter(c => c.front > 0.2).sort((a, b) => a.d - b.d);
-  if (!cands.length) return msgOnce('tab', 'Nenhum inimigo à frente.');
+  if (!cands.length) return msgOnce('tab', S.arena ? 'Nenhum adversário à frente.' : 'Nenhum inimigo à frente.');
   const i = cands.findIndex(c => c.m === S.target);
   setTarget(cands[(i + 1) % cands.length].m);
 }
@@ -1200,7 +1383,8 @@ function talk(n) {
   const p = S.p, bye = { label: 'Até logo.', fn: () => UI.close('dialog') };
   n.anim.play('Interact', { once: true, restart: true }); later(1.2, () => n.anim.play('Idle'));
   if (n.id === 'clara') { p.hp = p.d.maxHp; p.sp = p.d.maxSp; Sound.play('heal'); ring(S.me.obj.position, 1.6, '#7dff9a'); UI.dialog(n, 'Que a luz te guarde, viajante. Suas feridas estão curadas.\nVolte sempre que precisar.', [bye]); }
-  else if (n.id === 'bento') UI.dialog(n, 'Bem-vindo, bem-vindo! Poções fresquinhas, armas para toda classe... e compro qualquer tralha que você trouxer dos campos!', [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.open('shop'); } }, bye]);
+  else if (n.id === 'bento') UI.dialog(n, 'Bem-vindo, bem-vindo! Poções fresquinhas, armas para toda classe... e compro qualquer tralha que você trouxer dos campos!', [{ label: '🛒 Ver mercadorias', gold: true, fn: () => { UI.close('dialog'); UI.close('shop'); UI.shopList = null; UI.shopTitle = null; UI.open('shop'); } }, bye]);
+  else if (n.id === 'flora') UI.dialog(n, 'Olha a fruta fresquinha! Maçã, laranja, pera, uva, banana e melancia, tudo colhido hoje cedo nos Campos de Verdelume. Cada uma recupera um pouquinho de vida ou de fôlego!', [{ label: '🍎 Ver as frutas', gold: true, fn: () => { UI.close('dialog'); UI.close('shop'); UI.shopList = FRUIT_SHOP; UI.shopTitle = '🍎 Barraca da Dona Flora'; UI.open('shop'); } }, bye]);
   else if (n.id === 'tome') {
     const cur = p.mount && MOUNTS[p.mount.kind];
     const opts = Object.entries(MOUNTS).filter(([k, m]) => !m.premium).map(([k, m]) => ({ label: `${p.mount && p.mount.kind === k ? '✔ ' : '🐎 '}${m.name} <span class="muted">— ${m.desc}</span>`, gold: !p.mount, fn: () => {
@@ -1214,6 +1398,7 @@ function talk(n) {
       p.zeny -= 10; p.sp = p.d.maxSp; Sound.play('heal'); hudDirty = true; UI.close('dialog'); log('🍹 Delícia! SP recuperado.', 'item');
     } }, bye]);
   else if (n.id === 'gui') UI.dialog(n, 'Dizem que nas Ruínas de Kael dorme um Guardião Ancestral, feito de raiz e pedra...\nQuem o derrota leva uma carta que faz o coração bater mais forte. Mas cuidado: ele bate o chão e tudo treme!', [bye]);
+  else if (n.id === 'bravo') UI.dialog(n, 'Quer testar sua força contra outros aventureiros? Na Arena de Aethra vale tudo: golpes, magias e até o seu mascote!\n<span class="muted">Ninguém perde EXP nem itens lá dentro. Derrotado, você volta em 5 segundos. Para sair, use o portal dourado.</span>', [{ label: '⚔️ Entrar na Arena (PvP)', gold: true, fn: () => { UI.close('dialog'); enterArena(); } }, bye]);
   else if (n.id === 'tobias') UI.dialog(n, 'Bem-vindo ao mundo aberto de Aethra!\n<b>W/S</b> anda, <b>A/D</b> vira, <b>botão direito segurado</b> + A/D anda de lado, <b>Espaço</b> pula.\n<b>Tab</b> escolhe um inimigo, <b>R</b> ou botão direito nele ataca, <b>1–9</b> usa habilidades.\nOs campos ficam a leste; o bosque, mais a leste; as ruínas, ao norte.', [bye]);
   else if (n.id === 'ivra') {
     const c = CLASSES[p.cls];
@@ -1492,7 +1677,8 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > 170) c.position.x = -170; }
-    updateNature(S.time); updatePads(dt); updatePortals(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
+    if (S.me && S.me.hatId !== hatOf(S.p)) buildPlayerModel(); // trocou o chapéu
+    updateNature(S.time); updatePads(dt); updatePortals(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
 }
@@ -1551,9 +1737,9 @@ for (const l of [stageKey, stageRim]) { l.layers.set(1); scene.add(l, l.target);
 const STAGE_POS = new THREE.Vector3(1000, 0, 1000);
 stageKey.position.set(STAGE_POS.x + 2, 3, STAGE_POS.z + 4); stageKey.target.position.copy(STAGE_POS);
 stageRim.position.set(STAGE_POS.x - 3, 2.5, STAGE_POS.z - 3); stageRim.target.position.copy(STAGE_POS);
-function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null) {
+function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null, hatId = null) {
   const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, ch = makeChar(L.outfit, L.show);
-  const d = dressLook(ch, cls, look || {});
+  const d = dressLook(ch, cls, look || {}, hatId);
   const skinFx = cosmetics && cosmetics.skin ? applySkin(ch, cosmetics.skin) : null;
   ch.anim.play('Idle');
   return { ch, fx: t => { d.update(t); if (skinFx) skinFx(t); } };
@@ -1606,9 +1792,9 @@ const fmtAgo = ms => { if (!ms) return '—'; const m = Math.floor((Date.now() -
 const lookLabel = l => l && l.hair ? `${(HAIR_STYLES[l.hair.style] || {}).name || ''} · ${(HAIR_COLORS[l.hair.color] || {}).name || ''}` : (FACES.find(f => f[0] === ((l && l.head) || 'Knight')) || [0, 'Clássico'])[1];
 const thumbCacheChars = {};
 function charThumb(s) {
-  const key = s.slug + '|' + s.cls + '|' + JSON.stringify(s.look || {}) + '|' + JSON.stringify((s.cosmetics || {}).skin || '');
+  const key = s.slug + '|' + s.cls + '|' + JSON.stringify(s.look || {}) + '|' + JSON.stringify((s.cosmetics || {}).skin || '') + '|' + hatOf(s);
   if (thumbCacheChars[key]) return thumbCacheChars[key];
-  const pc = buildPreviewChar(s.look, s.cls, s.cosmetics); const o = pc.ch.obj; o.position.set(1100, 0, 1000); o.rotation.y = 0.35; scene.add(o); pc.ch.anim.update(0.3); pc.fx(0.5);
+  const pc = buildPreviewChar(s.look, s.cls, s.cosmetics, hatOf(s)); const o = pc.ch.obj; o.position.set(1100, 0, 1000); o.rotation.y = 0.35; scene.add(o); pc.ch.anim.update(0.3); pc.fx(0.5);
   const url = renderObj(o, 140, 180); scene.remove(o);
   return (thumbCacheChars[key] = url);
 }
@@ -1643,7 +1829,7 @@ async function chooseCharacter() {
   const show = k => {
     i = (k + full.length) % full.length; const c = full[i], cl = CLASSES[c.cls];
     o.querySelectorAll('.cs-card[data-k]').forEach(el => el.classList.toggle('on', +el.dataset.k === i));
-    csStage.setChar(buildPreviewChar(c.look, c.cls, c.cosmetics)); csStage.setPet(c.pet && c.pet.species);
+    csStage.setChar(buildPreviewChar(c.look, c.cls, c.cosmetics, hatOf(c))); csStage.setPet(c.pet && c.pet.species);
     const race = RACES[(c.look && c.look.race) || 'humano'], pi = c.pet ? petInfo(c.pet) : null;
     const zn = c.pos3d ? zoneAt(c.pos3d.x, c.pos3d.z) : null, bxp = Math.floor((c.baseExp || 0) / baseExpNext(c.baseLv) * 100);
     $('cs-info').innerHTML = `<div class="cs-name">${escH(c.name)}</div>
@@ -1664,7 +1850,7 @@ async function chooseCharacter() {
     $('cs-play').onclick = play;
     $('cs-del').onclick = () => askDelete(c);
   };
-  const play = async () => { Sound.init(); removeEventListener('keydown', keys); csStage.dispose(); csStage = null; const s = await (await fetch('/api/save/' + full[i].slug)).json(); startWith(s); };
+  const play = async () => { if (!csStage) return; Sound.init(); removeEventListener('keydown', keys); csStage.dispose(); csStage = null; const s = await (await fetch('/api/save/' + full[i].slug)).json(); startWith(s); };
   const keys = e => { if (!o.querySelector('.cs')) { removeEventListener('keydown', keys); return; } if (e.key === 'ArrowLeft') show(i - 1); else if (e.key === 'ArrowRight') show(i + 1); else if (e.key === 'Enter') play(); };
   addEventListener('keydown', keys);
   $('cs-prev').onclick = () => { Sound.init(); Sound.play('click'); show(i - 1); };
@@ -1790,7 +1976,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino' };
+const ASSET_NAMES = { oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonedark_0: 'Rocha musgosa', stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;
