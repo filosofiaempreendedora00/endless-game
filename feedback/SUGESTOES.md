@@ -2,15 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (1)
+## Pendentes (0)
 
-### S-303 · Área do mapa: Área da tela (526×263 px)
-- **Status:** pendente · **Quando:** 2026-11-08T23:28:07 · **Mapa:** Ruínas dos Colossos (tile [1471, -10])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** ideal o portal se parecer com um portal no minimapa e nao com um triangulo e ele ficzar mais nas extremidades do mapa e nao assim no meio de um corredor
-- ![print](img/S-303.png)
+_Nenhuma._
 
-## Feitas (302)
+## Feitas (303)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2135,3 +2131,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** ideal seria meu char nao poder atravaessar esse escombro. A fisica precisa ser melhor
 - ![print](img/S-302.png)
 - **Resposta do Claude:** O Titã caído e os outros colossos têm colisão que segue a forma deles: não dá mais para atravessar braço, corpo ou escombros.
+
+### S-303 · Área do mapa: Área da tela (526×263 px)
+- **Status:** feito · **Quando:** 2026-11-08T23:28:07 · **Mapa:** Ruínas dos Colossos (tile [1471, -10])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** ideal o portal se parecer com um portal no minimapa e nao com um triangulo e ele ficzar mais nas extremidades do mapa e nao assim no meio de um corredor
+- ![print](img/S-303.png)
+- **Resposta do Claude:** No mapa da masmorra as escadas agora aparecem como portal (anel brilhante com redemoinho, roxo para descer e azul para subir), e a descida de cada andar fica num beco na borda do labirinto, nunca no meio de um corredor.

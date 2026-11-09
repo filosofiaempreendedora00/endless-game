@@ -120,7 +120,18 @@ function farthest(maze) {
   while (q.length) {
     const [r, c] = q.shift();
     const moves = [[r, c + 1, c < GRID - 1 && !maze.e[r][c]], [r, c - 1, c > 0 && !maze.e[r][c - 1]], [r + 1, c, r < GRID - 1 && !maze.s[r][c]], [r - 1, c, r > 0 && !maze.s[r - 1][c]]];
-    for (const [a, b, ok] of moves) if (ok && dist[a][b] < 0) { dist[a][b] = dist[r][c] + 1; q.push([a, b]); if (a < GRID - 2 && dist[a][b] > dist[best[0]][best[1]]) best = [a, b]; }
+    for (const [a, b, ok] of moves) if (ok && dist[a][b] < 0) { dist[a][b] = dist[r][c] + 1; q.push([a, b]); }
+  }
+  // S-303: a escada que desce fica num canto do labirinto — de preferência um beco sem saída encostado na borda, longe da entrada (nunca no meio de um corredor)
+  let maxD = 0; for (let r = 0; r < GRID - 2; r++) for (let c = 0; c < GRID; c++) maxD = Math.max(maxD, dist[r][c]);
+  let bestScore = -1e9;
+  for (let r = maze.bossRows || 0; r < GRID - 2; r++) for (let c = 0; c < GRID; c++) {
+    const d = dist[r][c]; if (d < maxD * 0.55) continue;
+    const opens = (c < GRID - 1 && !maze.e[r][c]) + (c > 0 && !maze.e[r][c - 1]) + (r < GRID - 1 && !maze.s[r][c]) + (r > 0 && !maze.s[r - 1][c]);
+    const edge = (r === (maze.bossRows || 0) || c === 0 || c === GRID - 1) ? 1 : 0, corner = (c === 0 || c === GRID - 1) && r === (maze.bossRows || 0) ? 1 : 0;
+    const inRoom = (maze.rooms || []).some(([rr, cc]) => r >= rr && r <= rr + 1 && c >= cc && c <= cc + 1);
+    const score = d + (opens === 1 ? 8 : 0) + edge * 6 + corner * 3 - (inRoom ? 10 : 0);
+    if (score > bestScore) { bestScore = score; best = [r, c]; }
   }
   return { best, dist };
 }
@@ -309,7 +320,14 @@ export function dungeonMap(c, W, px, pz, range, opts = {}) {
   }
   c.stroke();
   const icon = (p, txt, col) => { if (!p) return; const [x, y] = pt(p.x, p.z); c.fillStyle = col; c.font = 'bold 13px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, x, y); };
-  icon(F.down, '▼', '#ffd76a'); icon(F.up, '▲', '#9ae0ff'); if (F.n === 1) icon({ x: X, z: Z + half - 1.2 }, '⌂', '#9ae0ff'); icon(F.boss, '☠', '#ff6a5a');
+  // S-303: escadas/portais aparecem como portal (anel brilhante com redemoinho), não como triângulo
+  const portalIcon = (p, col, glow) => { if (!p) return; const [x, y] = pt(p.x, p.z), r = Math.max(6, Math.min(11, CELL * k * 0.32));
+    const g = c.createRadialGradient(x, y, 0, x, y, r * 1.9); g.addColorStop(0, glow); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r * 1.9, 0, 7); c.fill();
+    c.save(); c.translate(x, y); c.scale(1, 0.78); c.fillStyle = '#0a0612'; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+    c.strokeStyle = col; c.lineWidth = 2.4; c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke();
+    c.lineWidth = 1.4; for (let k2 = 0; k2 < 3; k2++) { c.beginPath(); c.arc(0, 0, r * (0.32 + k2 * 0.2), k2 * 2.1, k2 * 2.1 + 3.6); c.stroke(); } // redemoinho
+    c.restore(); };
+  portalIcon(F.down, '#c9a2ff', 'rgba(160,110,255,0.55)'); portalIcon(F.up, '#9ae0ff', 'rgba(110,190,255,0.5)'); if (F.n === 1) icon({ x: X, z: Z + half - 1.2 }, '⌂', '#9ae0ff'); icon(F.boss, '☠', '#ff6a5a');
   if (opts.whole) {
     for (const m of opts.monsters || []) { const [x, y] = pt(m.x, m.z); c.fillStyle = m.boss ? '#ffb84a' : '#ff5a5a'; c.beginPath(); c.arc(x, y, m.boss ? 6 : 3.5, 0, 7); c.fill(); }
     const [x, y] = pt(me.x, me.z); c.save(); c.translate(x, y); c.rotate(-(opts.yaw || 0) + Math.PI); c.fillStyle = '#fff'; c.strokeStyle = '#1a3a8a'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -11); c.lineTo(7.5, 8); c.lineTo(0, 4); c.lineTo(-7.5, 8); c.closePath(); c.fill(); c.stroke(); c.restore();

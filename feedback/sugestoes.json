@@ -14824,8 +14824,9 @@
       "sp": "38/38"
     },
     "id": "S-303",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T23:28:07",
-    "imagem": "img/S-303.png"
+    "imagem": "img/S-303.png",
+    "resposta": "No mapa da masmorra as escadas agora aparecem como portal (anel brilhante com redemoinho, roxo para descer e azul para subir), e a descida de cada andar fica num beco na borda do labirinto, nunca no meio de um corredor."
   }
 ]
