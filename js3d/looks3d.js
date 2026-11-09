@@ -1010,6 +1010,65 @@ function pinToBone(root, boneName, mesh) {
   const holder = new THREE.Group(); b.add(holder); fitToBone(root, b, holder, new THREE.Quaternion(), new THREE.Vector3());
   holder.add(mesh); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false; return mesh;
 }
+/* saia de tecido que acompanha as pernas (auditoria): a saia fica presa à pélvis e, a cada quadro, cada anel do pano
+   abre por onde as coxas, joelhos e pés passam (sem nunca deixar a perna atravessar). O pano estica como uma tenda
+   entre a perna da frente e o resto da saia e cai reto a partir do joelho, com pregas e barra irregular.
+   o: { top, bot, r0, r1 (raio na cintura e quanto abre até a barra), arc:[a0,len], pleats, pleatAmp, sz (achatamento), seed, hemRows } */
+const SK_ROWS = 22;
+function gownGeo(root, o) {
+  const pv = bonePos(root, 'pelvis'), top = o.top, bot = o.bot ?? 0.03, ROWS = SK_ROWS, SEG = o.seg || 64, a0 = o.arc ? o.arc[0] : 0, al = o.arc ? o.arc[1] : Math.PI * 2, closed = !o.arc;
+  const pos = [], uv = [], cols = closed ? SEG : SEG + 1, sz = o.sz ?? 0.84, cx = pv.x, cz = pv.z + 0.01, rb = [], yb = [], ang = [];
+  for (let i = 0; i <= ROWS; i++) {
+    const t = i / ROWS;
+    for (let j = 0; j < cols; j++) {
+      const a = a0 + j / SEG * al;
+      const pl = (Math.sin(a * (o.pleats || 13) + (o.seed || 0)) * 0.6 + Math.sin(a * (o.pleats || 13) * 0.5 + 1.7) * 0.4) * (o.pleatAmp ?? 0.05) * Math.min(1, t * 1.5); // pregas: fundas embaixo
+      const r = (o.r0 + t * t * o.r1 + Math.sin(t * 3) * 0.01) * (1 + pl);
+      const y = top - t * (top - bot) + (t > 0.9 ? (Math.sin(a * 5 + 0.7) * 0.012 + Math.sin(a * 11 + 2.1) * 0.006) * (t - 0.9) * 10 : 0); // barra irregular
+      pos.push(cx + Math.sin(a) * r, y, cz + Math.cos(a) * r * sz); uv.push(j / SEG * 3, t * 2); rb.push(r); yb.push(y); ang.push(a);
+    }
+  }
+  const main = [], hem = [], hr = o.hemRows || 0;
+  for (let i = 0; i < ROWS; i++) for (let j = 0; j < SEG; j++) { const j2 = closed ? (j + 1) % SEG : j + 1, A = i * cols + j, B = i * cols + j2, C = (i + 1) * cols + j, D = (i + 1) * cols + j2; (i >= ROWS - hr ? hem : main).push(A, C, B, B, C, D); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex([...main, ...hem]);
+  if (hr) { g.addGroup(0, main.length, 0); g.addGroup(main.length, hem.length, 1); }
+  g.computeVertexNormals();
+  g.userData.skirt = { rows: ROWS + 1, cols, cx, cz, sz, rb, yb, ang, dA: al / SEG, closed };
+  return g;
+}
+const _skW = new THREE.Vector3(), _skInv = new THREE.Matrix4();
+function clothSkirt(root, geo, mat, margin = 0.03) {
+  const mesh = pinToBone(root, 'pelvis', new THREE.Mesh(geo, mat));
+  const legs = ['l', 'r'].map(s => ['thigh_' + s, 'calf_' + s, 'foot_' + s, 'ball_' + s].map(n => bone(root, n) || root.getObjectByName(n)).filter(Boolean));
+  if (legs.some(l => l.length < 3)) return mesh;
+  const RAD = [0.125, 0.075, 0.06, 0.05], K = geo.userData.skirt, P = geo.attributes.position, N = K.rows * K.cols, rr = new Float32Array(N), need = new Float32Array(K.cols);
+  const lp = legs.map(l => l.map(() => new THREE.Vector3()));
+  let lastFrame = -1;
+  mesh.onBeforeRender = (renderer) => {
+    const f = renderer.info.render.frame; if (f === lastFrame) return; lastFrame = f;
+    _skInv.copy(mesh.matrixWorld).invert();
+    legs.forEach((l, li) => l.forEach((b, k) => lp[li][k].copy(b.getWorldPosition(_skW)).applyMatrix4(_skInv)));
+    for (let i = 0; i < K.rows; i++) {
+      const y = K.yb[i * K.cols];
+      need.fill(0);
+      for (const L of lp) for (let k = 0; k < L.length - 1; k++) {
+        const A = L[k], B = L[k + 1]; if ((y - A.y) * (y - B.y) > 0) continue; const u = Math.abs(B.y - A.y) < 1e-4 ? 0.5 : (y - A.y) / (B.y - A.y);
+        const ox = A.x + (B.x - A.x) * u - K.cx, oz = (A.z + (B.z - A.z) * u - K.cz) / K.sz, R = RAD[k] + (RAD[k + 1] - RAD[k]) * u, c2 = ox * ox + oz * oz;
+        for (let j = 0; j < K.cols; j++) { const a = K.ang[i * K.cols + j], dc = Math.sin(a) * ox + Math.cos(a) * oz, disc = R * R - c2 + dc * dc; if (disc > 0) { const t = dc + Math.sqrt(disc) + margin; if (t > need[j]) need[j] = t; } }
+      }
+      for (let j = 0; j < K.cols; j++) { // o pano estica em volta da perna (tenda) em vez de fazer um bico
+        const v = i * K.cols + j; let r = K.rb[v];
+        for (let d = -10; d <= 10; d++) { let jj = j + d; if (K.closed) jj = (jj + K.cols) % K.cols; else if (jj < 0 || jj >= K.cols) continue; const nd = need[jj]; if (nd > 0) { const e = nd - Math.abs(d) * K.dA * nd * 0.55; if (e > r) r = e; } }
+        if (i > 0) { const up = (i - 1) * K.cols + j, ex = rr[up] - K.rb[up]; if (K.rb[v] + ex * 0.985 > r) r = K.rb[v] + ex * 0.985; } // do joelho para baixo o pano cai reto
+        rr[v] = r;
+        const ex = r - K.rb[v], a = K.ang[v];
+        P.setXYZ(v, K.cx + Math.sin(a) * r, K.yb[v] + ex * 0.22 * (i / (K.rows - 1)), K.cz + Math.cos(a) * r * K.sz); // a barra sobe um pouco quando o pano abre
+      }
+    }
+    P.needsUpdate = true; geo.computeVertexNormals();
+  };
+  return mesh;
+}
 // texturas de metal (riscos, desgaste) e de couro, geradas uma vez
 const _tex = {};
 function metalTex(kind = 'aco') {
@@ -1280,14 +1339,11 @@ function mentorGown(root, fx) {
   const ivory = new THREE.MeshStandardMaterial({ color: '#efe6d2', map: metalTex('couro'), roughness: 0.85, side: THREE.DoubleSide });
   const teal = new THREE.MeshStandardMaterial({ color: '#1f5a66', map: metalTex('couro'), roughness: 0.8, side: THREE.DoubleSide });
   const gold = armorMat('#d8b45a', 'ouro');
-  root.traverse(o => { if (o.isSkinnedMesh && /_(Body|Legs|Arms)/.test(o.name)) { o.material = o.material.clone(); o.material.color = new THREE.Color('#ffffff').lerp(new THREE.Color('#1f5a66'), 0.7); } });
-  // saia longa em dois tecidos: forro azul-petróleo e sobressaia marfim aberta na frente, com pregas
+  root.traverse(o => { if (o.isSkinnedMesh && /_(Body|Legs|Arms)/.test(o.name)) { o.material = o.material.clone(); o.material.color = /_Arms/.test(o.name) ? new THREE.Color('#f4ead6') : new THREE.Color('#ffffff').lerp(new THREE.Color('#1f5a66'), 0.7); } }); // mangas claras (marfim), não escuras
+  // saia longa em dois tecidos que acompanha as pernas: forro azul-petróleo e sobressaia marfim aberta na frente, com pregas e barra dourada
   const pv = bonePos(root, 'pelvis'), top = pv.y + 0.08;
-  const lathe = (r0, r1, arc) => { const g = new THREE.LatheGeometry(Array.from({ length: 16 }, (_, k) => { const t = k / 15; return new THREE.Vector2(r0 + t * t * r1 + Math.sin(t * 3) * 0.01, top - t * (top - 0.02)); }).reverse(), 48, arc ? arc[0] : 0, arc ? arc[1] : Math.PI * 2);
-    const P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), z = P.getZ(k), y = P.getY(k), a = Math.atan2(z, x), f = 1 + Math.sin(a * 13) * 0.05 * Math.min(1, (top - y) / top * 1.4); P.setX(k, x * f); P.setZ(k, z * f); } g.computeVertexNormals(); return g; };
-  const under = new THREE.Mesh(lathe(0.19, 0.2), teal); under.position.set(pv.x, 0, pv.z + 0.01); under.scale.set(1, 1, 0.84); pinToBone(root, 'pelvis', under);
-  const over = new THREE.Mesh(lathe(0.2, 0.22, [Math.PI * 0.62, Math.PI * 1.76]), ivory); over.position.set(pv.x, 0, pv.z + 0.01); over.scale.set(1, 1, 0.86); pinToBone(root, 'pelvis', over); // aberta na frente (mostra o azul)
-  const hem = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.012, 6, 64, Math.PI * 1.14), gold); hem.rotation.set(Math.PI / 2, 0, Math.PI * 0.62); hem.position.set(pv.x, 0.04, pv.z + 0.01); hem.scale.set(1, 0.86, 1); pinToBone(root, 'pelvis', hem);
+  clothSkirt(root, gownGeo(root, { top, r0: 0.19, r1: 0.2, pleats: 13, pleatAmp: 0.05, sz: 0.84, seed: 0.3 }), teal, 0.03);
+  clothSkirt(root, gownGeo(root, { top: top + 0.005, r0: 0.2, r1: 0.22, arc: [Math.PI * 0.12, Math.PI * 1.76], seg: 56, pleats: 15, pleatAmp: 0.045, sz: 0.86, seed: 1.1, hemRows: 1 }), [ivory, gold], 0.05); // aberta na frente (mostra o azul)
   // corpete justo marfim, cinto dourado com fivela
   const bod = wrapCached(root, 'mentorTop', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'pelvis'], /_Body/), nk = bonePos(root, 'neck_01'), sp = bonePos(root, 'spine_01'); return wrapShell(pts, new THREE.Vector3(nk.x, sp.y - 0.08, nk.z), new THREE.Vector3(nk.x, nk.y - 0.03, nk.z), { bins: 12, sec: 32, off: 0.012, th: 0.006, smooth: 4 }); });
   pinToBone(root, 'spine_02', new THREE.Mesh(bod, ivory));
@@ -1342,10 +1398,9 @@ function habit(root) {
   root.userData.outfitKey = root.userData.outfitKey || outfitKey(root);
   const robe = new THREE.MeshStandardMaterial({ color: '#2a2630', map: metalTex('couro'), roughness: 0.95, side: THREE.DoubleSide }), white = new THREE.MeshStandardMaterial({ color: '#f2efe8', map: metalTex('couro'), roughness: 0.9, side: THREE.DoubleSide });
   root.traverse(o => { if (o.isSkinnedMesh && /_(Body|Legs|Arms)/.test(o.name)) { o.material = o.material.clone(); o.material.color = new THREE.Color('#ffffff').lerp(new THREE.Color('#2a2630'), 0.8); } });
-  // túnica do peito até os pés (cone suave preso à pélvis: a NPC fica parada, então não atravessa as pernas)
-  const pv = bonePos(root, 'pelvis'), ft = bonePos(root, 'foot_l'), sk = new THREE.LatheGeometry(Array.from({ length: 14 }, (_, k) => { const t = k / 13; return new THREE.Vector2(0.16 + t * t * 0.13 + Math.sin(t * 3) * 0.01, (pv.y + 0.08) - t * (pv.y + 0.08 - 0.02)); }).reverse(), 40);
-  { const P = sk.attributes.position, top = pv.y + 0.08; for (let k = 0; k < P.count; k++) { const x = P.getX(k), z = P.getZ(k), y = P.getY(k), a = Math.atan2(z, x), f = 1 + Math.sin(a * 11) * 0.06 * Math.min(1, (top - y) / top * 1.4); P.setX(k, x * f); P.setZ(k, z * f); } sk.computeVertexNormals(); } // pregas do tecido
-  const skirt = new THREE.Mesh(sk, robe); skirt.position.set(pv.x, 0, pv.z + 0.01); skirt.scale.set(1, 1, 0.82); void ft; pinToBone(root, 'pelvis', skirt);
+  // túnica do peito até os pés, com pregas, que acompanha as pernas ao andar
+  const pv = bonePos(root, 'pelvis');
+  clothSkirt(root, gownGeo(root, { top: pv.y + 0.08, r0: 0.16, r1: 0.13, pleats: 11, pleatAmp: 0.06, sz: 0.82, seed: 0.8 }), robe, 0.03);
   // corpo: couraça de pano (mesma técnica da armadura) por cima da blusa
   const top = wrapCached(root, 'robeTop', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'pelvis'], /_Body/), nk = bonePos(root, 'neck_01'), sp = bonePos(root, 'spine_01'); return wrapShell(pts, new THREE.Vector3(nk.x, sp.y - 0.08, nk.z), new THREE.Vector3(nk.x, nk.y - 0.02, nk.z), { bins: 12, sec: 32, off: 0.012, th: 0.006, smooth: 4 }); });
   pinToBone(root, 'spine_02', new THREE.Mesh(top, robe));

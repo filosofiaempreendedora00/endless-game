@@ -81,6 +81,10 @@ function fishStall(seed) {
 // casa do litoral: base de pedra, paredes caiadas ou de tábuas pintadas, enxaimel, beiral, chaminé, janelas com moldura,
 // floreira e venezianas, porta com batente e degrau, alpendre com corrimão; às vezes um anexo em L
 const HOUSE_PAINT = ['#3e6a8a', '#8a3a2e', '#3e7a5a', '#c8a03a', '#5a4a7a'];
+function gableWall(K, w, h, mat, x, y, z, ry = 0, th = 0.14) { // parede do oitão (triângulo sob o telhado), na frente da ponta do prisma do telhado
+  const sh = new THREE.Shape(); sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(0, h); sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false }); K.add(g, mat, x, y, z, ry);
+}
 function coastHouse(seed, w, d, door = true) {
   const K = new Kit(), r = rngOf(seed), h = 3.3 + r() * 0.6, wd = M.darkWood(), pl = M.plaster(), paint = plain('paint' + seed % 5, HOUSE_PAINT[seed % 5], { rough: 0.8 });
   const tile = r() < 0.6, roof = tile ? M.clay() : M.thatch();
@@ -89,7 +93,8 @@ function coastHouse(seed, w, d, door = true) {
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.26, h + 0.05, 0.26, wd, sx * (w / 2 - 0.02), 0.3 + h / 2, sz * (d / 2 - 0.02)); // cantos
   for (const sz of [-1, 1]) { K.box(w + 0.1, 0.2, 0.22, wd, 0, 0.3 + h, sz * d / 2); K.box(w, 0.16, 0.2, wd, 0, 0.3 + h * 0.48, sz * d / 2); }
   for (const sx of [-1, 1]) K.box(0.2, 0.16, d, wd, sx * w / 2, 0.3 + h * 0.48, 0);
-  const rh = 2.0 + r() * 0.6; gable(K, w + 0.15, d + 0.15, rh, roof, 0, 0.3 + h, 0, 0, tile ? 0.55 : 0.75);
+  const rh = 2.0 + r() * 0.6, ov = tile ? 0.55 : 0.75; gable(K, w + 0.15, d + 0.15, rh, roof, 0, 0.3 + h, 0, 0, ov);
+  for (const sz of [-1, 1]) { const ez = sz * ((d + 0.15) / 2 + ov + 0.01); gableWall(K, w * 0.96, rh * 0.96, pl, 0, 0.3 + h - 0.05, sz > 0 ? ez : ez - 0.14); K.box(0.16, rh * 0.86, 0.1, wd, 0, 0.3 + h + rh * 0.43, ez + sz * 0.08); K.box(w * 0.9, 0.16, 0.1, wd, 0, 0.3 + h + 0.05, ez + sz * 0.08); K.box(0.5, 0.45, 0.05, M.glass(), 0, 0.3 + h + rh * 0.38, ez + sz * 0.1); } // oitão rebocado com montante e janelinha
   K.box(0.22, 0.22, d + 1.6, wd, 0, 0.3 + h + rh + 0.05, 0); // cumeeira
   for (const sz of [-1, 1]) K.box(w + 1.2, 0.12, 0.18, wd, 0, 0.3 + h - 0.05, sz * (d / 2 + 0.55)); // beiral
   // chaminé de pedra
@@ -500,3 +505,149 @@ export function buildMerchants(ctx) {
 /* Auditoria: as casas da Vila de Alvorada usam o mesmo estilo cuidado das casas do porto (base de pedra, enxaimel,
    venezianas, floreiras, chaminé) no lugar das casinhas de desenho. Devolve { obj, box } em coordenadas locais. */
 export function villageHouse(seed, w = 7.5, d = 6.5) { const { K, box } = coastHouse(seed, w, d, true); return { obj: K.build(), box }; }
+
+/* ---------------- auditoria: prédios da vila feitos em código (no lugar dos modelos de desenho) ----------------
+   Frente = +z (virada para a praça). Cada um devolve { obj, box: [[lx, lz, hx, hz]...], door: [lx, lz] }. */
+function signTex(text, icon) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#6a4426'); g.addColorStop(1, '#4a2e18'); x.fillStyle = g; x.fillRect(0, 0, 256, 128);
+  for (let k = 0; k < 40; k++) { x.strokeStyle = `rgba(0,0,0,${0.05 + Math.random() * 0.1})`; x.beginPath(); const y = Math.random() * 128; x.moveTo(0, y); x.bezierCurveTo(80, y + 6, 170, y - 6, 256, y + 2); x.stroke(); }
+  x.strokeStyle = '#c9a24a'; x.lineWidth = 5; x.strokeRect(7, 7, 242, 114);
+  x.fillStyle = '#e8c868'; x.textAlign = 'center'; x.font = 'bold 22px Georgia, serif'; x.fillText(text, 128, 108);
+  x.save(); x.translate(128, 52); icon(x); x.restore();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+function lancet(w, h) { // janela em arco apontado (gótico): dois arcos de raio = vão
+  const s = new THREE.Shape(), hs = h - w * 0.866; s.moveTo(-w / 2, 0); s.lineTo(w / 2, 0); s.lineTo(w / 2, hs); s.absarc(-w / 2, hs, w, 0, Math.PI / 3, false); s.absarc(w / 2, hs, w, Math.PI * 2 / 3, Math.PI, false); s.lineTo(-w / 2, 0);
+  return new THREE.ShapeGeometry(s, 8);
+}
+function hayBaleK(K, x, y, z, ry = 0) {
+  K.box(1.05, 0.48, 0.58, M.thatch(), x, y + 0.24, z, ry);
+  for (const o of [-0.28, 0.28]) K.box(0.03, 0.5, 0.6, plain('twine', '#8a6a3a', { rough: 1 }), x + Math.cos(ry) * o, y + 0.24, z - Math.sin(ry) * o, ry);
+}
+function timberX(K, mat, x0, x1, y0, y1, z, ry = 0) { // trama de enxaimel: montantes e mãos-francesas num painel
+  const n = Math.max(2, Math.round((x1 - x0) / 1.25)), st = (x1 - x0) / n, hh = y1 - y0, cs = Math.cos(ry), sn = Math.sin(ry), P = (lx, y, lz, w, h, d, rz = 0) => K.box(w, h, d, mat, lx * cs + lz * sn, y, -lx * sn + lz * cs, ry, 0, rz);
+  for (let k = 0; k <= n; k++) P(x0 + k * st, y0 + hh / 2, z, 0.16, hh, 0.12);
+  for (let k = 0; k < n; k++) if (k % 2 === 0) { const L = Math.hypot(st, hh); P(x0 + (k + 0.5) * st, y0 + hh / 2, z, 0.13, L * 0.98, 0.1, Math.atan2(st, hh) * (k % 4 ? -1 : 1)); }
+  P((x0 + x1) / 2, y0 + 0.06, z, x1 - x0, 0.16, 0.14); P((x0 + x1) / 2, y1 - 0.06, z, x1 - x0, 0.16, 0.14);
+}
+export function villageTavern(seed = 7) {
+  const K = new Kit(), w = 10.4, d = 8, h1 = 3.2, h2 = 2.8, wd = M.darkWood(), pl = M.plaster(), st = M.greyStone(), J = 0.35;
+  K.box(w + 0.4, 0.9, d + 0.4, st, 0, -0.2, 0);
+  K.box(w, h1, d, st, 0, 0.25 + h1 / 2, 0);                                             // térreo de pedra
+  K.box(w + J * 2, 0.26, d + J * 2, wd, 0, 0.25 + h1 + 0.13, 0);                          // vigas do piso de cima (sobressai)
+  for (let k = 0; k < 9; k++) K.box(0.18, 0.2, 0.5, wd, -w / 2 + 0.6 + k * (w - 1.2) / 8, 0.25 + h1 - 0.05, d / 2 + 0.15); // cabeças de viga
+  const y2 = 0.25 + h1 + 0.26, W2 = w + J * 2, D2 = d + J * 2;
+  K.box(W2, h2, D2, pl, 0, y2 + h2 / 2, 0);                                               // andar de cima rebocado
+  timberX(K, wd, -W2 / 2, W2 / 2, y2, y2 + h2, D2 / 2 + 0.03); timberX(K, wd, -W2 / 2, W2 / 2, y2, y2 + h2, -D2 / 2 - 0.03);
+  timberX(K, wd, -D2 / 2, D2 / 2, y2, y2 + h2, W2 / 2 + 0.03, Math.PI / 2); timberX(K, wd, -D2 / 2, D2 / 2, y2, y2 + h2, -W2 / 2 - 0.03, Math.PI / 2);
+  const yr = y2 + h2, rh = 3.4, roof = M.slate();
+  gable(K, D2 + 0.1, W2 + 0.1, rh, roof, 0, yr, 0, Math.PI / 2, 0.6);                    // telhado: cumeeira ao longo da fachada
+  K.box(W2 + 1.6, 0.22, 0.24, wd, 0, yr + rh + 0.05, 0);
+  for (const sx of [-1, 1]) { const ex = sx * ((W2 + 0.1) / 2 + 0.61); gableWall(K, D2, rh * 0.97, pl, sx > 0 ? ex : ex - 0.14, yr - 0.02, 0, Math.PI / 2); timberX(K, wd, -D2 / 2 + 0.6, D2 / 2 - 0.6, yr, yr + rh * 0.5, ex + sx * 0.03, Math.PI / 2); K.box(0.16, rh * 0.9, 0.12, wd, ex + sx * 0.04, yr + rh * 0.45, 0, Math.PI / 2); }
+  for (const s of [-1, 1]) { K.box(0.2, 0.2, D2 + 1.3, wd, s * (W2 / 2 + 0.05), yr - 0.02, 0); }
+  // trapeiras (janelinhas no telhado)
+  for (const dx of [-2.6, 2.6]) { const zz = D2 / 4 + 0.15, yy = yr + rh * 0.42; K.box(1.5, 1.3, 1.6, pl, dx, yy + 0.4, zz); K.box(0.8, 0.7, 0.05, M.glass(), dx, yy + 0.45, zz + 0.81); K.box(1.0, 0.1, 0.1, wd, dx, yy + 0.84, zz + 0.84); gable(K, 1.6, 1.8, 0.8, roof, dx, yy + 1.05, zz + 0.1, 0, 0.18); }
+  // chaminé de pedra no oitão
+  K.box(1.1, h1 + h2 + rh + 1.6, 1.0, st, W2 / 2 + 0.35, 0.25 + (h1 + h2 + rh + 1.6) / 2, -0.8); K.box(1.3, 0.22, 1.2, st, W2 / 2 + 0.35, 0.25 + h1 + h2 + rh + 1.7, -0.8);
+  for (let k = 0; k < 2; k++) K.cyl(0.13, 0.15, 0.5, plain('pot', '#8a4a2e', { rough: 0.8 }), W2 / 2 + 0.2 + k * 0.32, 0.25 + h1 + h2 + rh + 2.05, -0.8, 10);
+  // porta dupla com arco de pedra
+  const dx = -w * 0.25, fz = d / 2;
+  K.box(1.7, 2.5, 0.14, M.wood(), dx, 0.25 + 1.25, fz + 0.04);
+  K.box(0.05, 2.5, 0.16, wd, dx, 0.25 + 1.25, fz + 0.06);
+  for (const y of [0.7, 1.8]) for (const s of [-1, 1]) K.box(0.62, 0.06, 0.04, M.iron(), dx + s * 0.45, 0.25 + y, fz + 0.13);
+  for (const s of [-1, 1]) K.add(new THREE.TorusGeometry(0.07, 0.014, 6, 14), M.iron(), dx + s * 0.18, 1.45, fz + 0.15);
+  archBlocks(K, 1.7, 0.36, 0.4, st, dx, 0.25 + 2.5, fz + 0.06, 0, 9);
+  for (const s of [-1, 1]) K.box(0.36, 2.5, 0.4, st, dx + s * 1.03, 0.25 + 1.25, fz + 0.06);
+  K.box(2.3, 0.2, 0.9, st, dx, 0.3, fz + 0.45);
+  // janelas do térreo (grandes, com caixilho) e do andar de cima
+  for (const wx of [0.9, 3.4]) { K.box(1.5, 1.2, 0.06, M.glass(), wx, 1.85, fz + 0.03); K.box(0.07, 1.2, 0.09, wd, wx, 1.85, fz + 0.06); K.box(1.5, 0.07, 0.09, wd, wx, 1.85, fz + 0.06); K.box(1.8, 0.16, 0.4, st, wx, 1.17, fz + 0.15); K.box(1.75, 0.2, 0.2, st, wx, 2.55, fz + 0.08); }
+  for (const wx of [-3.6, -1.2, 1.2, 3.6]) { K.box(0.85, 0.9, 0.06, M.glass(), wx, y2 + 1.45, D2 / 2 + 0.06); for (const s of [-1, 1]) K.box(0.42, 0.95, 0.05, plain('shutT', '#2e5a3e', { rough: 0.8 }), wx + s * 0.66, y2 + 1.45, D2 / 2 + 0.1); K.box(1.0, 0.1, 0.25, wd, wx, y2 + 0.95, D2 / 2 + 0.14); }
+  // placa pendurada no braço de ferro, com a caneca
+  const sm = new THREE.MeshStandardMaterial({ map: signTex('Caneca Alegre', x => { x.fillStyle = '#e8c868'; x.fillRect(-26, -30, 44, 52); x.fillStyle = '#4a2e18'; x.fillRect(-20, -22, 32, 38); x.strokeStyle = '#e8c868'; x.lineWidth = 8; x.beginPath(); x.arc(22, -4, 14, -1.3, 1.3); x.stroke(); x.fillStyle = '#fff4d8'; x.beginPath(); x.ellipse(-4, -32, 28, 9, 0, 0, 7); x.fill(); }), roughness: 0.8 });
+  const sx = dx - 1.7; K.box(0.08, 0.08, 1.4, M.iron(), sx, 3.15, fz + 0.7); K.box(0.06, 0.06, 0.9, M.iron(), sx, 2.8, fz + 0.35, 0, 0.75);
+  K.add(new THREE.BoxGeometry(0.06, 0.6, 1.1), sm, sx, 2.65, fz + 0.9); for (const s of [-1, 1]) K.box(0.02, 0.22, 0.02, M.iron(), sx, 3.0, fz + 0.9 + s * 0.42);
+  // lampião junto à porta, banco e barris na calçada
+  K.box(0.06, 0.06, 0.4, M.iron(), dx + 1.45, 2.6, fz + 0.2); K.box(0.22, 0.32, 0.22, M.iron(), dx + 1.45, 2.4, fz + 0.42); K.box(0.15, 0.24, 0.15, M.glass(), dx + 1.45, 2.4, fz + 0.42);
+  K.box(2.2, 0.08, 0.42, M.wood(), 2.2, 0.75, fz + 0.55); for (const s of [-1, 1]) K.box(0.1, 0.45, 0.36, wd, 2.2 + s * 0.95, 0.5, fz + 0.55);
+  return { obj: K.build(), box: [[0, 0, w / 2 + 0.3, d / 2 + 0.3], [W2 / 2 + 0.35, -0.8, 0.6, 0.6]], door: [dx, fz + 0.9] };
+}
+export function villageStable(seed = 9) {
+  const K = new Kit(), w = 9.6, d = 7.2, h = 3.8, wd = M.darkWood(), pk = M.wood(), st = M.greyStone();
+  K.box(w + 0.3, 0.9, d + 0.3, st, 0, -0.15, 0);
+  K.box(w, h, d, pk, 0, 0.3 + h / 2, 0);                                                    // paredes de tábua
+  for (const [ax, len, rot, off] of [[0, w, 0, d / 2], [0, w, 0, -d / 2], [0, d, Math.PI / 2, w / 2], [0, d, Math.PI / 2, -w / 2]]) // mata-juntas verticais
+    for (let k = 0; k <= Math.floor(len / 0.42); k++) { const t = -len / 2 + k * 0.42; const lx = rot ? off + Math.sign(off) * 0.03 : t, lz = rot ? t : off + Math.sign(off) * 0.03; K.box(rot ? 0.05 : 0.07, h, rot ? 0.07 : 0.05, wd, lx, 0.3 + h / 2, lz); }
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.3, h + 0.1, 0.3, wd, sx * (w / 2), 0.3 + h / 2, sz * (d / 2));
+  for (const sz of [-1, 1]) K.box(w + 0.2, 0.22, 0.26, wd, 0, 0.3 + h, sz * d / 2);
+  // telhado de palha com caimento quebrado (celeiro)
+  const yr = 0.3 + h, th = M.thatch();
+  for (const s of [-1, 1]) { K.box(w + 1.2, 0.35, 2.6, th, 0, yr + 0.85, s * (d / 2 - 0.55), 0, s * 0.95); K.box(w + 1.2, 0.35, 2.4, th, 0, yr + 2.25, s * (d / 4 - 0.65), 0, s * 0.42); }
+  K.box(w + 1.3, 0.3, 0.5, th, 0, yr + 2.72, 0);
+  for (const s of [-1, 1]) { const g = new THREE.Shape(); g.moveTo(-d / 2, 0); g.lineTo(-d / 2 + 1.0, 1.55); g.lineTo(0, 2.7); g.lineTo(d / 2 - 1.0, 1.55); g.lineTo(d / 2, 0); g.closePath(); K.add(new THREE.ExtrudeGeometry(g, { depth: 0.12, bevelEnabled: false }), pk, s > 0 ? w / 2 - 0.1 : -w / 2 - 0.02, yr, 0, Math.PI / 2); }
+  // portas grandes de celeiro (abertas pela metade), com travessas em Z
+  const dx = 1.6, fz = d / 2, dw = 2.8, dh = 2.9;
+  K.box(dw + 0.4, 0.26, 0.3, wd, dx, 0.3 + dh + 0.13, fz + 0.1); for (const s of [-1, 1]) K.box(0.24, dh, 0.3, wd, dx + s * (dw / 2 + 0.08), 0.3 + dh / 2, fz + 0.1);
+  K.box(dw, dh, 0.05, plain('barnDark', '#1e140c', { rough: 1 }), dx, 0.3 + dh / 2, fz - 0.02);
+  for (const s of [-1, 1]) { // folhas abertas para fora
+    const lx = dx + s * (dw / 2 + 0.55), lz = fz + 0.65, ry = s * 1.15;
+    K.box(dw / 2, dh, 0.1, pk, lx, 0.3 + dh / 2, lz, ry);
+    for (const y of [0.25, dh / 2, dh - 0.25]) K.box(dw / 2, 0.14, 0.06, wd, lx + Math.cos(ry) * 0 + 0.05 * Math.sin(ry), 0.3 + y, lz + 0.05 * Math.cos(ry), ry);
+    K.box(0.12, Math.hypot(dw / 2, dh / 2) * 0.95, 0.06, wd, lx + 0.05 * Math.sin(ry), 0.3 + dh * 0.5, lz + 0.05 * Math.cos(ry), ry, 0, -s * Math.atan2(dw / 2, dh / 2));
+  }
+  K.add(new THREE.TorusGeometry(0.16, 0.04, 6, 14, Math.PI * 1.4), M.iron(), dx, 0.3 + dh + 0.45, fz + 0.22, 0, 0, -Math.PI * 0.2); // ferradura sobre a porta
+  // portinhola do palheiro com feno à mostra e a viga da roldana
+  K.box(1.4, 1.2, 0.05, plain('barnDark', '#1e140c', { rough: 1 }), -2.0, yr - 1.0, fz + 0.04); K.box(1.6, 0.14, 0.14, wd, -2.0, yr - 0.32, fz + 0.08); K.box(1.6, 0.14, 0.14, wd, -2.0, yr - 1.66, fz + 0.08);
+  hayBaleK(K, -2.2, yr - 1.6, fz - 0.1, 0.1); K.box(1.1, 0.35, 0.3, th, -1.8, yr - 1.2, fz + 0.02, 0.2);
+  K.box(0.16, 0.16, 1.4, wd, -2.0, yr + 0.05, fz + 0.5); K.cyl(0.1, 0.1, 0.08, M.iron(), -2.0, yr - 0.08, fz + 1.1, 12, 0, 0, Math.PI / 2); K.cyl(0.012, 0.012, 2.2, M.rope(), -2.0, yr - 1.2, fz + 1.18, 4);
+  K.box(0.85, 0.85, 0.05, plain('barnDark', '#1e140c', { rough: 1 }), -2.0, 1.9, fz + 0.03); K.box(1.05, 0.1, 0.12, wd, -2.0, 2.38, fz + 0.07); K.box(1.05, 0.1, 0.2, wd, -2.0, 1.42, fz + 0.1);
+  // alpendre lateral aberto com fardos de feno e cocho
+  const lx0 = -w / 2 - 1.6;
+  for (const z of [-d / 2 + 0.3, 0, d / 2 - 0.3]) K.box(0.2, 2.6, 0.2, wd, lx0 - 1.0, 1.6, z);
+  K.box(3.2, 0.16, d + 0.6, th, lx0 - 0.4, 3.05, 0, 0, 0, 0.3);
+  for (const [x, y, z, r] of [[-0.6, 0.3, -2.2, 0], [-0.6, 0.3, -1.1, 0.05], [-0.6, 0.78, -1.65, -0.04], [-1.5, 0.3, -2.0, Math.PI / 2], [-0.6, 0.3, 0.3, 0.1]]) hayBaleK(K, lx0 + x, y, z, r);
+  K.box(1.8, 0.45, 0.6, wd, lx0 - 0.4, 0.5, 2.0); K.box(1.6, 0.06, 0.45, plain('trough', '#3e5a6a', { rough: 0.2, metal: 0.2 }), lx0 - 0.4, 0.68, 2.0);
+  // varal de amarrar cavalos na frente
+  for (const x of [-4.2, -0.6]) K.box(0.16, 1.1, 0.16, wd, x, 0.75, fz + 2.0); K.cyl(0.06, 0.06, 3.9, wd, -2.4, 1.2, fz + 2.0, 8, 0, 0, Math.PI / 2);
+  return { obj: K.build(), box: [[0, 0, w / 2 + 0.25, d / 2 + 0.25], [lx0 - 0.4, 0, 1.5, d / 2 + 0.2], [-2.4, fz + 2.0, 1.95, 0.12]], door: [dx, fz + 1.2] };
+}
+export function villageChurch(seed = 11) {
+  const K = new Kit(), w = 7.6, d = 13, h = 6.2, st = M.greyStone(), dk = M.darkWood(), roof = M.slate();
+  const stain = plain('stainGlass', '#7aa8d8', { emissive: '#3a6aa8', ei: 0.55, rough: 0.15, side: THREE.DoubleSide }), stainW = plain('stainGlassW', '#f2c86a', { emissive: '#c88a2a', ei: 0.6, rough: 0.15, side: THREE.DoubleSide });
+  K.box(w + 0.6, 1.0, d + 0.6, st, 0, -0.2, 0);
+  K.box(w, h, d, st, 0, 0.3 + h / 2, 0);
+  K.box(w + 0.3, 0.3, d + 0.3, st, 0, 0.3 + h, 0); // cornija
+  gable(K, w + 0.3, d + 0.2, 4.2, roof, 0, 0.3 + h + 0.12, 0, 0, 0.45);
+  const gz = (d + 0.2) / 2 + 0.46; gableWall(K, w + 0.2, 4.1, st, 0, 0.3 + h + 0.02, gz); gableWall(K, w + 0.2, 4.1, st, 0, 0.3 + h + 0.02, -gz - 0.14);
+  K.box(0.24, 0.24, d + 1.2, dk, 0, 0.3 + h + 4.25, 0);
+  // contrafortes e janelas ogivais nas laterais
+  for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+    const z = -d / 2 + 1.6 + k * 3.3; K.box(0.7, 4.6, 1.0, st, s * (w / 2 + 0.35), 0.3 + 2.3, z); K.box(0.7, 1.2, 1.0, st, s * (w / 2 + 0.2), 0.3 + 4.8, z, 0, 0, s * -0.5);
+    if (k < 3) { const zz = z + 1.65; K.add(lancet(0.9, 2.8), stain, s * (w / 2 + 0.03), 2.2, zz, s * Math.PI / 2); K.add(lancet(1.2, 3.1), plain('frameSt', '#5a564e', { rough: 0.9, side: THREE.DoubleSide }), s * (w / 2 + 0.015), 2.05, zz, s * Math.PI / 2); for (const y of [2.9, 3.8]) K.box(0.03, 0.05, 0.9, M.iron(), s * (w / 2 + 0.05), y, zz); }
+  }
+  // fachada: portal em arco com degraus, rosácea e o símbolo do sol no topo
+  const fz = d / 2;
+  K.box(2.6, 4.2, 0.6, st, 0, 0.3 + 2.1, fz + 0.3); K.box(1.6, 2.8, 0.1, M.wood(), 0, 0.3 + 1.4, fz + 0.62); K.box(0.05, 2.8, 0.12, dk, 0, 0.3 + 1.4, fz + 0.64);
+  for (const y of [0.6, 1.4, 2.2]) for (const s of [-1, 1]) K.box(0.6, 0.06, 0.04, M.iron(), s * 0.42, 0.3 + y, fz + 0.69);
+  archBlocks(K, 1.6, 0.3, 0.7, plain('archSt', '#8a8478', { rough: 0.9 }), 0, 0.3 + 2.8, fz + 0.32, 0, 11);
+  K.add(new THREE.CircleGeometry(0.78, 24, 0, Math.PI), plain('tympan', '#3a2a1e', { rough: 0.9 }), 0, 0.3 + 2.8, fz + 0.63);
+  for (let k = 0; k < 3; k++) K.box(3.2 + k * 0.6, 0.18, 0.5, st, 0, 0.12 + (2 - k) * 0.18, fz + 0.85 + k * 0.42);
+  const ry = 0.3 + h + 1.45, rz = gz + 0.16; K.add(new THREE.CircleGeometry(0.95, 32), stainW, 0, ry, rz); K.add(new THREE.TorusGeometry(1.0, 0.13, 8, 32), plain('archSt', '#8a8478', { rough: 0.9 }), 0, ry, rz + 0.03);
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.06, 0.95, 0.05, M.iron(), Math.cos(a) * 0.47, ry + Math.sin(a) * 0.47, rz + 0.05, 0, 0, a + Math.PI / 2); }
+  // abside semicircular atrás
+  K.add(new THREE.CylinderGeometry(w / 2 - 0.4, w / 2 - 0.4, h - 1.2, 20, 1, false, Math.PI / 2, Math.PI), st, 0, 0.3 + (h - 1.2) / 2, -d / 2);
+  K.add(new THREE.ConeGeometry(w / 2 - 0.2, 2.6, 20, 1, false, Math.PI / 2, Math.PI), roof, 0, 0.3 + h - 1.2 + 1.3, -d / 2);
+  // torre do sino no canto da frente, com campanário aberto e agulha
+  const tx = -(w / 2 + 1.0), tz = fz - 1.4, tw = 3.0, TH = 13;
+  K.box(tw, TH, tw, st, tx, 0.3 + TH / 2, tz); for (const y of [4.6, 9.0]) K.box(tw + 0.25, 0.25, tw + 0.25, st, tx, 0.3 + y, tz);
+  for (const [ox, oz, r] of [[0, tw / 2, 0], [0, -tw / 2, 0], [tw / 2, 0, Math.PI / 2], [-tw / 2, 0, Math.PI / 2]]) {
+    K.box(0.95, 2.0, 0.05, plain('belfry', '#120e0a', { rough: 1 }), tx + ox * 1.01, 0.3 + TH - 2.0, tz + oz * 1.01, r); archBlocks(K, 0.95, 0.22, 0.3, st, tx + ox, 0.3 + TH - 1.0, tz + oz, r, 7);
+    K.add(lancet(0.45, 1.3), plain('belfryD', '#120e0a', { rough: 1, side: THREE.DoubleSide }), tx + ox * 1.01, 0.3 + 6.2, tz + oz * 1.01, r);
+  }
+  K.add(new THREE.CylinderGeometry(0.25, 0.55, 0.8, 16, 1, true), plain('bronze', '#9a6a2a', { metal: 0.85, rough: 0.35, side: THREE.DoubleSide }), tx, 0.3 + TH - 1.9, tz);
+  K.box(tw + 0.4, 0.3, tw + 0.4, st, tx, 0.3 + TH + 0.15, tz);
+  K.add(new THREE.ConeGeometry(tw * 0.78, 6.5, 4, 1), roof, tx, 0.3 + TH + 0.3 + 3.25, tz, Math.PI / 4);
+  const top = 0.3 + TH + 6.9; K.cyl(0.04, 0.04, 0.8, M.gold(), tx, top, tz, 6); K.add(new THREE.TorusGeometry(0.26, 0.04, 8, 24), M.gold(), tx, top + 0.55, tz); K.add(new THREE.SphereGeometry(0.12, 12, 10), M.gold(), tx, top + 0.55, tz);
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.04, 0.18, 0.03, M.gold(), tx + Math.cos(a) * 0.38, top + 0.55 + Math.sin(a) * 0.38, tz, 0, 0, a - Math.PI / 2); }
+  return { obj: K.build(), box: [[0, 0, w / 2 + 0.7, d / 2 + 0.3], [tx, tz, tw / 2 + 0.1, tw / 2 + 0.1], [0, fz + 0.9, 1.9, 0.6]], door: [0, fz + 2.2] };
+}

@@ -182,3 +182,7 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Aprendizados:
   - Quando ele delega ("eu confio em você"), priorize o que ele mais repete: realismo das formas (nada de bolota/cone/caixa), coisas flutuando, emojis, lag e animação deslizando.
   - "Terra arrasada", "escombros", "Troia", "Fortaleza Vermelha": referência de cinema/série = clima e escala, não cópia.
+
+### Auditoria 2 (pedido "então faça isso que falou"), 2026-11-08
+- Fechou os "pontos a melhorar" que eu mesmo listei no relatório: taverna (enxaimel, trapeiras, placa "Caneca Alegre"), estábulo (celeiro de tábuas, portas abertas, palheiro com roldana, alpendre com feno e cocho) e igreja (Capela do Sol: torre com sino e agulha, rosácea, ogivas, contrafortes, abside) feitos em código — na vila e em Pedraclara; oitões fechados com parede (antes o telhado tapava a fachada); cabeça de cavalo realista com cabeçada de couro; saias da Ivra/freira que acompanham as pernas; efeitos de roupa dos NPCs passaram a animar.
+- Aprendizado: quando listo "pontos a melhorar" no relatório, ele pede para fazer — liste só o que estou disposto a fazer e já deixe pronto o plano.

@@ -652,13 +652,20 @@ function horseParts() {
   C([0, 1.3, 0.62], [0, 1.62, 0.9], 0.24, 0.16, 'neck', 0.1);
   C([0, 1.62, 0.9], [0, 1.84, 1.04], 0.16, 0.12, 'neck', 0.08);
   E([0, 1.56, 0.78], [0.13, 0.26, 0.18], 'neck', 0.1);           // crista do pescoço
-  E([0, 1.86, 1.1], [0.11, 0.12, 0.14], 'head', 0.05);           // crânio
-  C([0, 1.82, 1.14], [0, 1.6, 1.42], 0.1, 0.062, 'head', 0.05); // chanfro até o focinho (afina)
-  E([0, 1.575, 1.45], [0.066, 0.07, 0.078], 'head', 0.035);      // focinho macio, estreito
-  E([0, 1.52, 1.4], [0.05, 0.035, 0.06], 'head', 0.03);           // beiço de baixo
-  E([0, 1.72, 1.17], [0.1, 0.12, 0.11], 'head', 0.05);           // ganacha (bochecha)
+  // cabeça (refeita na auditoria): longa e em cunha, a ~45°, com nuca, testa larga e plana entre os olhos,
+  // ganachas largas e redondas atrás, chanfro reto e fino descendo até um focinho macio com narinas e beiços
+  E([0, 1.92, 1.07], [0.085, 0.08, 0.1], 'head', 0.04);          // nuca
+  E([0, 1.86, 1.14], [0.1, 0.095, 0.09], 'head', 0.04);          // testa larga e plana
+  for (let i = 0; i <= 5; i++) { const u = i / 5; E([0, 1.83 - u * 0.25, 1.19 + u * 0.27], [0.088 - u * 0.03, 0.085 - u * 0.012, 0.085 - u * 0.012], 'head', 0.05); } // chanfro (afina para o focinho)
+  for (let i = 0; i <= 4; i++) { const u = i / 4; E([0, 1.675 - u * 0.17, 1.18 + u * 0.27], [0.07 - u * 0.025, 0.06 - u * 0.02, 0.06 - u * 0.02], 'head', 0.06); } // mandíbula (linha do queixo)
+  E([0, 1.54, 1.5], [0.066, 0.072, 0.07], 'head', 0.03);          // focinho macio
+  E([0, 1.475, 1.46], [0.04, 0.032, 0.05], 'head', 0.02);         // beiço de baixo / queixo
   for (const s of [-1, 1]) {
-    E([s * 0.075, 1.99, 1.06], [0.032, 0.085, 0.03], 'head', 0.02); // orelhas em pé
+    E([s * 0.062, 1.73, 1.1], [0.055, 0.115, 0.115], 'head', 0.045); // ganacha (bochecha larga e redonda)
+    E([s * 0.04, 1.565, 1.525], [0.034, 0.04, 0.034], 'head', 0.02); // asa da narina
+    E([s * 0.075, 1.85, 1.12], [0.03, 0.035, 0.04], 'head', 0.02);   // arcada do olho
+  }
+  for (const s of [-1, 1]) {
     // dianteira: escápula, braço, antebraço, joelho, canela, boleto, quartela e casco
     E([s * 0.16, 1.24, 0.52], [0.09, 0.22, 0.15], 'up' + s, 0.08);
     C([s * 0.17, 1.1, 0.56], [s * 0.17, 0.86, 0.5], 0.13, 0.1, 'up' + s, 0.07);
@@ -679,7 +686,9 @@ function horseParts() {
   E([0, 1.33, -0.86], [0.07, 0.07, 0.08], 'tail', 0.06); // raiz da cauda
   return P;
 }
-let _horseGeo = null;
+let _horseGeo = null, _headParts = null;
+// ponto na pele da cabeça (lado s) na altura y/profundidade z: anda de dentro para fora até sair do corpo
+function horseSkin(s, y, z, off = 0.004) { const P = _headParts || (_headParts = horseParts().filter(q => q.bone === 'head' || q.bone === 'neck')); let x = 0; for (; x < 0.3; x += 0.002) { let d = 0.25; for (const q of P) d = smin(d, sdPrim(x * s, y, z, q), q.k); if (d > 0) break; } return [s * (x + off), y, z]; }
 function horseGeometry() { return _horseGeo || (_horseGeo = sdfSkinnedGeometry(horseParts(), HORSE_BONES, [-0.48, -0.02, -1.0], [0.96, 2.16, 2.6], 0.022)); }
 function horseMaterial(D) {
   const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.68, metalness: 0 });
@@ -693,7 +702,7 @@ function horseMaterial(D) {
       col *= 0.95 + 0.08 * vn(p * vec3(40.0, 120.0, 40.0)); // pelo curto
       if (uDapple > 0.5) { vec2 w = worley(p * 7.0); col *= 0.9 + 0.18 * smoothstep(0.15, 0.45, w.x); } // tordilho
       float sock = (1.0 - smoothstep(0.3, 0.55, p.y)) * uSocks; col = mix(col, uDark, sock * 0.85); // "meias" escuras nas canelas
-      float muz = smoothstep(1.38, 1.47, p.z) * smoothstep(1.75, 1.6, p.y); col = mix(col, uMuz, muz * 0.85); // focinho
+      float muz = smoothstep(1.44, 1.53, p.z) * smoothstep(1.68, 1.56, p.y); col = mix(col, uMuz, muz * 0.85); // focinho
       float hoof = 1.0 - smoothstep(0.07, 0.1, p.y); col = mix(col, vec3(0.09, 0.08, 0.07), hoof);
       diffuseColor.rgb *= col;`);
   };
@@ -731,17 +740,27 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   const rig = sdfRig(horseGeometry(), HORSE_BONES, horseMaterial(D)), { at, R, bones } = rig; body.add(rig.mesh);
   const DARK = new THREE.MeshStandardMaterial({ color: '#120e0c', roughness: 0.3 });
   const MANE = D.glow ? new THREE.MeshStandardMaterial({ color: D.mane, emissive: D.mane, emissiveIntensity: 0.45, roughness: 0.55 }) : new THREE.MeshStandardMaterial({ color: D.mane, roughness: 0.6 });
-  // olhos grandes e escuros com brilho úmido, pálpebra, narinas, cílios
-  const lids = [], COATP = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).multiplyScalar(0.95), roughness: 0.55 });
+  // olhos nas laterais (amendoados, escuros e úmidos, com pálpebra que pisca), narinas em vírgula, orelhas em concha que se mexem
+  const lids = [], ears = [], COATP = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).multiplyScalar(0.95), roughness: 0.6 });
+  const dir = (x, y, z) => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(x, y, z).normalize());
   for (const s of [-1, 1]) {
-    const eg = new THREE.Group(); eg.rotation.set(0, s * 1.25, 0); at('head', eg, s * 0.112, 1.84, 1.1);
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.04, 22, 16), new THREE.MeshStandardMaterial({ color: '#2a1a10', roughness: 0.04, metalness: 0.15 })); ball.scale.set(1.3, 1, 0.55); eg.add(ball);
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.03, 18, 12), new THREE.MeshStandardMaterial({ color: '#5a3418', roughness: 0.1 })); iris.scale.set(1.3, 0.9, 0.5); iris.position.z = 0.006; eg.add(iris);
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.016, 0.013, 0.02); eg.add(hl);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 8, 28), DARK); rim.scale.set(1.3, 1, 1); eg.add(rim);
-    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.044, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), COATP); lid.scale.set(1.3, 1, 0.62); lid.rotation.x = -1.35; eg.add(lid); lids.push(lid);
-    const brow = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 10), COATP); brow.scale.set(1.3, 0.5, 0.7); brow.position.set(0, 0.035, -0.012); eg.add(brow); // arcada sobre o olho
-    const nos = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.035, 4, 10), DARK); nos.rotation.set(0.5, s * 0.5, s * 0.5); at('head', nos, s * 0.042, 1.6, 1.515); // narina em vírgula
+    const eg = new THREE.Group(); eg.quaternion.copy(dir(s * 0.93, 0.12, 0.35)); at('head', eg, s * 0.098, 1.85, 1.135);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.026, 22, 16), new THREE.MeshStandardMaterial({ color: '#1e130c', roughness: 0.04, metalness: 0.1 })); ball.scale.set(1.35, 1, 0.55); eg.add(ball);
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.019, 18, 12), new THREE.MeshStandardMaterial({ color: '#4a2a14', roughness: 0.08 })); iris.scale.set(1.4, 0.85, 0.5); iris.position.z = 0.005; eg.add(iris);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.005, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.009, 0.008, 0.014); eg.add(hl);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.0045, 8, 28), DARK); rim.scale.set(1.35, 1, 1); eg.add(rim);
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.029, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), COATP); lid.scale.set(1.35, 1, 0.62); lid.rotation.x = -1.35; eg.add(lid); lids.push(lid);
+    // narina: fenda escura em vírgula rente à asa do focinho
+    const nos = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), DARK); nos.scale.set(0.009, 0.022, 0.007); nos.quaternion.copy(dir(s * 0.55, 0.15, 0.82)).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -s * 0.35)); at('head', nos, s * 0.056, 1.567, 1.548);
+    const mouth = new THREE.Mesh(taper([V(s * 0.036, 1.497, 1.53), V(s * 0.05, 1.5, 1.49), V(s * 0.052, 1.51, 1.45)], 0.004, 0.003, 8, 6), DARK); bones.head.add(mouth); mouth.position.set(0, -HORSE_BONES.head[1][1], -HORSE_BONES.head[1][2]); // canto da boca
+    // orelha em concha (aberta para a frente), pontuda, com o lado de dentro mais escuro e pelos claros
+    const ear = new THREE.Group(); ear.position.set(s * 0.06, 1.975, 1.05); at('head', ear, s * 0.06, 1.975, 1.05);
+    const prof = [[0.0, 0], [0.034, 0.012], [0.04, 0.05], [0.034, 0.1], [0.02, 0.145], [0.006, 0.172], [0, 0.18]].map(([r, y]) => new THREE.Vector2(r, y));
+    const outer = new THREE.Mesh(new THREE.LatheGeometry(prof, 18, Math.PI * 0.32, Math.PI * 1.36), new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool), roughness: 0.65, side: THREE.DoubleSide }));
+    const inner = new THREE.Mesh(new THREE.LatheGeometry(prof.map(v => new THREE.Vector2(v.x * 0.86, v.y * 0.95 + 0.006)), 18, Math.PI * 0.32, Math.PI * 1.36), new THREE.MeshStandardMaterial({ color: new THREE.Color(D.points || D.skin).lerp(new THREE.Color('#2a1c16'), 0.5), roughness: 0.9, side: THREE.DoubleSide }));
+    outer.scale.z = inner.scale.z = 0.7; ear.add(outer, inner);
+    const tuft = hairStrands([0, 1, 2, 3, 4].map(k => ({ pts: [V(-0.014 + k * 0.007, 0.015, -0.004), V(-0.011 + k * 0.006, 0.05, 0.012), V(-0.008 + k * 0.004, 0.085, 0.016)], r0: 0.0025, r1: 0.0008 })), new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).lerp(new THREE.Color('#efe4d4'), 0.5), roughness: 0.9 })); ear.add(tuft);
+    ear.userData.base = new THREE.Euler(-0.12, s * 0.38, s * 0.18); ear.rotation.copy(ear.userData.base); ear.userData.s = s; ears.push(ear);
   }
   // crina: fios descendo de um lado do pescoço + topete
   const manePaths = []; let sd = 9; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
@@ -750,7 +769,7 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   for (let i = 0; i < 80; i++) { const u = i / 79, [y, z, hw] = crest(u), L = 0.2 + rnd() * 0.14 - u * 0.06, sx = 1, j = (rnd() - 0.5) * 0.02;
     manePaths.push({ pts: [V(-0.01, y + 0.02, z + j), V(sx * hw * 0.6, y + 0.01, z - 0.03 + j), V(sx * (hw + 0.035), y - L * 0.45, z - 0.06 + j), V(sx * (hw + 0.045 + rnd() * 0.02), y - L, z - 0.05 + j)], r0: 0.028, r1: 0.005 }); }
   const mane = hairStrands(manePaths, MANE); mane.position.set(0, -HORSE_BONES.neck[1][1], -HORSE_BONES.neck[1][2]); bones.neck.add(mane);
-  const fl = []; for (let i = 0; i < 9; i++) fl.push({ pts: [V((rnd() - 0.5) * 0.04, 1.97, 1.04), V((rnd() - 0.5) * 0.05, 1.95, 1.13), V((rnd() - 0.5) * 0.06, 1.86, 1.2)], r0: 0.016, r1: 0.004 });
+  const fl = []; for (let i = 0; i < 30; i++) { const x0 = (rnd() - 0.5) * 0.08, sw = (rnd() - 0.5) * 0.05, L = rnd() * 0.07; fl.push({ pts: [V(x0, 2.005, 1.02), V(x0 * 1.05 + sw * 0.2, 2.0, 1.12), V(x0 * 1.1 + sw * 0.6, 1.94 - L * 0.4, 1.21), V(x0 * 1.1 + sw, 1.86 - L, 1.245 + L * 0.15)], r0: 0.012, r1: 0.003 }); } // topete caindo na testa
   const forelock = hairStrands(fl, MANE); forelock.position.set(0, -HORSE_BONES.head[1][1], -HORSE_BONES.head[1][2]); bones.head.add(forelock);
   // cauda: dezenas de fios longos que caem e balançam (um grupo por segmento)
   const tailSegs = []; let tp = new THREE.Group(); at('tail', tp, 0, 1.33, -0.9);
@@ -775,9 +794,17 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   }
   // cabeçada e rédeas
   const bridle = new THREE.Group(); at('head', bridle, 0, 0, 0);
-  bridle.add(new THREE.Mesh(new THREE.TorusGeometry(0.098, 0.009, 6, 28), LEATHER)).position.set(0, 1.6, 1.38); bridle.children[0].rotation.y = Math.PI / 2; bridle.children[0].scale.set(1, 0.85, 1.05);
-  for (const s of [-1, 1]) { const ch = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.3, 0.02), LEATHER); ch.position.set(s * 0.095, 1.73, 1.25); ch.rotation.x = -0.75; bridle.add(ch); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.005, 6, 14), METAL); ring.position.set(s * 0.09, 1.58, 1.43); ring.rotation.y = Math.PI / 2; bridle.add(ring); }
-  const reins = new THREE.Mesh(taper([V(-0.09, 1.58, 1.43), V(-0.12, 1.38, 1.15), V(0, 1.62, 0.78), V(0.12, 1.38, 1.15), V(0.09, 1.58, 1.43)], 0.007, 0.007, 30, 6), LEATHER); bridle.add(reins);
+  const strap = (pts, r = 0.007) => bridle.add(new THREE.Mesh(taper(pts.map(q => V(...q)), r, r, 16, 6), LEATHER));
+  const nb = new THREE.Mesh(new THREE.TorusGeometry(1, 0.1, 6, 32), LEATHER); nb.scale.set(0.075, 0.078, 0.075); nb.rotation.x = 0.8; nb.position.set(0, 1.64, 1.39); bridle.add(nb); // focinheira
+  for (const s of [-1, 1]) {
+    strap([horseSkin(s, 1.655, 1.355), horseSkin(s, 1.73, 1.24), horseSkin(s, 1.81, 1.14), horseSkin(s, 1.9, 1.07), horseSkin(s, 1.97, 1.03)]); // face (passa atrás do olho até a nuca)
+    strap([horseSkin(s, 1.95, 1.02), horseSkin(s, 1.84, 0.99), horseSkin(s, 1.74, 1.0), horseSkin(s, 1.68, 1.04)]); // afogador (garganta)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.0045, 6, 14), METAL); ring.position.set(s * 0.052, 1.5, 1.47); ring.rotation.y = Math.PI / 2; bridle.add(ring);
+    const stud = new THREE.Mesh(new THREE.SphereGeometry(0.011, 10, 8), METAL); stud.position.set(...horseSkin(s, 1.66, 1.35, 0.008)); bridle.add(stud);
+  }
+  strap([[-0.075, 1.985, 1.05], [-0.03, 1.975, 1.115], [0.03, 1.975, 1.115], [0.075, 1.985, 1.05]]); // testeira
+  strap([[-0.07, 1.98, 1.02], [0, 2.015, 1.0], [0.07, 1.98, 1.02]]); // cabeçada (atrás das orelhas)
+  const reins = new THREE.Mesh(taper([V(-0.052, 1.5, 1.47), V(-0.12, 1.38, 1.15), V(0, 1.62, 0.78), V(0.12, 1.38, 1.15), V(0.052, 1.5, 1.47)], 0.007, 0.007, 30, 6), LEATHER); bridle.add(reins);
   // âncora da sela para o cavaleiro (S-242)
   const seatA = new THREE.Object3D(); at('chest', seatA, 0, 1.6, 0.18);
   // asas de penas (Pégaso)
@@ -819,6 +846,8 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
       tailSegs.forEach((g, k) => { g.rotation.x = (k === 0 ? 0.35 : 0.12) + gait * (0.25 + run * 0.3) * (k === 0 ? 1 : 0.4) + air * 0.4; g.rotation.y = Math.sin(t * (1.4 + s * 3) - k * 0.5) * (0.06 + k * 0.05) - m.turn * 0.05 * k; });
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.16; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.5 + Math.random() * 4; }
       for (const l of lids) l.rotation.x = -1.75 + bl * 1.5;
+      for (const e of ears) { const b0 = e.userData.base, sd2 = e.userData.s, fl2 = Math.max(0, Math.sin(t * 1.7 + sd2 * 2.1) - 0.93) * 9, swv = Math.sin(t * 0.37 + sd2) * 0.35 * (1 - gait); // orelhas: viram para os lados, tremem de vez em quando e deitam um pouco no galope
+        e.rotation.set(b0.x + run * 0.45 - fl2 * 0.15, b0.y + sd2 * (swv + look * 0.6), b0.z + fl2 * sd2 * 0.12); }
       if (wings) { // asas dobradas junto ao corpo; abertas no ar / no salto e de vez em quando se esticam e batem
         const ft = t - flapT, open = Math.max(air, ft > 0 && ft < 3.2 ? Math.sin(Math.min(1, ft / 3.2) * Math.PI) : 0), beat = Math.sin(t * 7) * open;
         for (const w of wings) {
