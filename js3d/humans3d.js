@@ -118,10 +118,10 @@ function mergeOutfit(scene) {
 /* S-178: corpo de ANÃO (proporções no espírito dos anões de MMO): cabeça grande, tronco largo e atarracado, braços grossos,
    pernas curtas e fortes, mãos e pés grandes. Tudo por escala nos ossos (as animações de anão não têm trilha de escala),
    e o corpo inteiro é alargado. Depois de encurtar as pernas, desce o boneco para os pés ficarem no chão. */
-const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura] — S-246: proporções suavizadas (antes ficava achatado e disforme)
-  thigh_l: [0.84, 1.08], thigh_r: [0.84, 1.08], calf_l: [0.9, 1.04], calf_r: [0.9, 1.04], foot_l: [1.06, 1.05], foot_r: [1.06, 1.05],
-  spine_01: [0.93, 1.07], spine_02: [0.96, 1.05], neck_01: [0.82, 1.04], // tronco um pouco mais curto e forte
-  upperarm_l: [0.9, 1.06], upperarm_r: [0.9, 1.06], lowerarm_l: [0.94, 1.04], lowerarm_r: [0.94, 1.04], hand_l: [1.05, 1.05], hand_r: [1.05, 1.05],
+const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura]
+  /* S-288 (de novo): só as PERNAS encurtam. Escalar coluna/pescoço/braços fazia os filhos herdarem a escala
+     (braços e cabeça esmagados de cima para baixo, tronco "achatado") — era isso que deixava o anão desconfigurado. */
+  thigh_l: [0.84, 1], thigh_r: [0.84, 1], calf_l: [0.9, 1], calf_r: [0.9, 1],
 };
 function applyDwarfBody(obj, root, skel) {
   root.userData.dwarf = true;
@@ -133,8 +133,8 @@ function applyDwarfBody(obj, root, skel) {
     const a = Math.abs(ax.x) >= Math.abs(ax.y) && Math.abs(ax.x) >= Math.abs(ax.z) ? 'x' : Math.abs(ax.y) >= Math.abs(ax.z) ? 'y' : 'z'; // eixo do comprimento do osso
     b.scale.set(a === 'x' ? L : T, a === 'y' ? L : T, a === 'z' ? L : T);
   }
-  const head = by('Head'); if (head) head.scale.setScalar(1.13); // cabeça um pouco maior
-  obj.scale.set(1.07, 0.97, 1.07); // robusto, sem achatar
+  const head = by('Head'); if (head) head.scale.setScalar(1.07); // cabeça só um pouco maior
+  obj.scale.set(1.06, 0.97, 1.06); // corpo um pouco mais largo por igual (forte), sem esmagar
   root.updateMatrixWorld(true);
   if (foot) { foot.getWorldPosition(after); root.position.y += (before.y * 0.95 - after.y) / 0.95; } // pés no chão
   root.userData.dwarfDrop = root.position.y;
