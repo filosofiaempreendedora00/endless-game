@@ -22,7 +22,7 @@ import { riderPose } from './ride3d.js';
 import { makeLightPool, vlight } from './lights3d.js';
 import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
-import { loadHumans, makeHuman, shareSkeletons } from './humans3d.js';
+import { loadHumans, makeHuman, shareSkeletons, unsquashDwarf } from './humans3d.js';
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -513,7 +513,7 @@ function buildArena() {
   // muralha circular de pedra aparelhada (S-121: tijolos de pedra de verdade, com relevo) com ameias e arquibancada
   const brick = stoneBrickTex(), wallM = new THREE.MeshStandardMaterial({ map: brick.map, bumpMap: brick.bump, bumpScale: 2.2, roughness: 0.95 });
   const wallTex = { map: brick.map.clone(), bump: brick.bump.clone() }; for (const t of Object.values(wallTex)) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(30, 1); t.needsUpdate = true; }
-  const wall = new THREE.Mesh(new THREE.CylinderGeometry(21.6, 21.6, 3.2, 96, 1, true), new THREE.MeshStandardMaterial({ map: wallTex.map, bumpMap: wallTex.bump, bumpScale: 2.2, roughness: 0.95, side: THREE.DoubleSide })); wall.position.y = 1.6; wall.receiveShadow = true; g.add(wall);
+  const wall = new THREE.Mesh(new THREE.CylinderGeometry(21.6, 21.6, 3.2, 96, 1, true), new THREE.MeshStandardMaterial({ map: wallTex.map, bumpMap: wallTex.bump, bumpScale: 3.2, roughness: 0.93, side: THREE.DoubleSide })); wall.position.y = 1.6; wall.receiveShadow = true; g.add(wall);
   const capM = new THREE.MeshStandardMaterial({ map: brick.map, bumpMap: brick.bump, bumpScale: 1.5, roughness: 0.95 });
   for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; const b = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.6), capM); b.position.set(Math.cos(a) * 21.7, 3.55, Math.sin(a) * 21.7); b.rotation.y = -a + Math.PI / 2; b.castShadow = true; g.add(b); }
   for (let k = 0; k < 5; k++) { const st = new THREE.Mesh(new THREE.CylinderGeometry(23 + k * 1.3, 23 + k * 1.3, 0.6, 72, 1, true), new THREE.MeshStandardMaterial({ color: k % 2 ? '#7a5a3a' : '#6a4a2e', roughness: 1, side: THREE.DoubleSide })); st.position.y = 3.6 + k * 0.6; g.add(st); }
@@ -557,23 +557,30 @@ function refineBoardTex() {
 }
 /* Auditoria: praças com calçamento de pedra de verdade (no lugar do chão bege liso) — disco que acompanha o terreno, pedras irregulares com relevo e borda que se mistura ao chão */
 let _cobble = null;
-function cobbleTex() {
+function cobbleTex() { // S-247: pedras irregulares encaixadas (Voronoi que emenda nas bordas), juntas de terra, topo gasto e tons variados — nada de "moedinhas"
   if (_cobble) return _cobble;
-  const W = 1024, c = document.createElement('canvas'), b = document.createElement('canvas'); c.width = b.width = W; c.height = b.height = W;
-  const x = c.getContext('2d'), y = b.getContext('2d'); let sd = 5; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
-  x.fillStyle = '#5e5446'; x.fillRect(0, 0, W, W); y.fillStyle = '#202020'; y.fillRect(0, 0, W, W);
-  // pedras em "leque" (calçada portuguesa/medieval): linhas curvas de paralelepípedos
-  for (let row = 0; row < 40; row++) { const yy = row * 26 + (r() - 0.5) * 4; let xx = -r() * 30; while (xx < W) { const w = 22 + r() * 18, h = 20 + r() * 6; const cx = xx + w / 2, cy = yy + h / 2 + Math.sin(xx * 0.01 + row) * 3;
-    const tone = 118 + r() * 62, warm = 10 + r() * 22; x.fillStyle = `rgb(${tone + warm},${tone + warm * 0.55},${tone - 14})`; x.beginPath(); x.ellipse(cx, cy, w / 2 - 2, h / 2 - 2, (r() - 0.5) * 0.3, 0, 7); x.fill();
-    x.fillStyle = 'rgba(255,255,240,0.10)'; x.beginPath(); x.ellipse(cx - 2, cy - 3, w / 2 - 6, h / 2 - 7, 0, 0, 7); x.fill();
-    if (r() < 0.25) { x.fillStyle = 'rgba(70,95,45,0.35)'; x.beginPath(); x.ellipse(cx + w / 2, cy, 3, 6, 0, 0, 7); x.fill(); } // musgo entre as pedras
-    const gr = y.createRadialGradient(cx, cy - 2, 2, cx, cy, w / 2); gr.addColorStop(0, '#e0e0e0'); gr.addColorStop(0.8, '#a0a0a0'); gr.addColorStop(1, '#303030'); y.fillStyle = gr; y.beginPath(); y.ellipse(cx, cy, w / 2 - 2, h / 2 - 2, 0, 0, 7); y.fill();
-    xx += w; } }
-  const dirt = x.createRadialGradient(W / 2, W / 2, W * 0.1, W / 2, W / 2, W * 0.7); dirt.addColorStop(0, 'rgba(90,70,50,0)'); dirt.addColorStop(1, 'rgba(90,70,50,0.25)'); x.fillStyle = dirt; x.fillRect(0, 0, W, W);
+  const W = 1024, G = 22, cell = W / G, c = document.createElement('canvas'), b = document.createElement('canvas'); c.width = b.width = W; c.height = b.height = W;
+  let sd = 7; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  const seeds = [], tone = [];
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { seeds.push([(i + 0.1 + r() * 0.8) * cell, (j + 0.25 + r() * 0.5) * cell]); const v = 0.8 + r() * 0.26, hue = r(); tone.push([v * (hue < 0.3 ? 1.08 : 1), v * (hue < 0.3 ? 0.98 : hue > 0.8 ? 1.02 : 1), v * (hue < 0.3 ? 0.88 : hue > 0.8 ? 1.04 : 0.95), r()]); }
+  const ci = c.getContext('2d').createImageData(W, W), bi = b.getContext('2d').createImageData(W, W), C = ci.data, B = bi.data;
+  const n2 = (x, y) => { const s2 = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return s2 - Math.floor(s2); };
+  for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+    const gx = Math.floor(x / cell), gy = Math.floor(y / cell); let d1 = 1e9, d2 = 1e9, k1 = 0;
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) { const ix = (gx + ox + G) % G, iy = (gy + oy + G) % G, sdd = seeds[iy * G + ix], sx = sdd[0] + (gx + ox - ix) * cell, sy = sdd[1] + (gy + oy - iy) * cell, d = Math.hypot(x - sx, y - sy); if (d < d1) { d2 = d1; d1 = d; k1 = iy * G + ix; } else if (d < d2) d2 = d; }
+    const e = d2 - d1, edge = Math.min(1, Math.max(0, (e - 1.6) / 7)), t = tone[k1], gr = n2(x * 0.9, y * 0.9) * 0.16 + n2(Math.floor(x / 3), Math.floor(y / 3)) * 0.08, o = (y * W + x) * 4;
+    const dome = Math.sqrt(edge), st = (0.55 + 0.45 * dome) * (0.86 + gr), base = [122, 114, 102];
+    const jr = 58 + n2(x, y) * 16, jg = 50 + n2(y, x) * 12, jb = 40; // terra nas juntas
+    C[o] = jr + (base[0] * t[0] * st - jr) * edge; C[o + 1] = jg + (base[1] * t[1] * st - jg) * edge; C[o + 2] = jb + (base[2] * t[2] * st - jb) * edge; C[o + 3] = 255;
+    if (t[3] < 0.12 && edge < 0.6) { C[o] *= 0.8; C[o + 1] *= 0.95; C[o + 2] *= 0.7; } // musgo em algumas juntas
+    const h = dome * (0.88 + gr * 0.8) * 230; B[o] = B[o + 1] = B[o + 2] = h; B[o + 3] = 255;
+  }
+  c.getContext('2d').putImageData(ci, 0, 0); b.getContext('2d').putImageData(bi, 0, 0);
   const map = new THREE.CanvasTexture(c), bump = new THREE.CanvasTexture(b); map.colorSpace = THREE.SRGBColorSpace; for (const t of [map, bump]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; }
   return (_cobble = { map, bump });
 }
-function cobblePlaza(cx, cz, R, rep = 6) {
+function cobblePlaza(cx, cz, R) {
+  const rep = R / 5; // S-247: cada pedra tem uns 23 cm, irregular e abaulada (antes eram elipses de 12 cm, parecia um mar de moedas)
   const geo = new THREE.CircleGeometry(R, 72, 0, Math.PI * 2), P = geo.attributes.position, cols = new Float32Array(P.count * 4);
   // subdivide em anéis para acompanhar o relevo
   const rings = 14, segs = 72, pos = [], uv = [], col = [], idx = [];
@@ -581,7 +588,7 @@ function cobblePlaza(cx, cz, R, rep = 6) {
     pos.push(x - cx, heightAt(x, z) + 0.03, z - cz); uv.push((x - cx) / R * rep, (z - cz) / R * rep); const edge = Math.min(1, Math.max(0, (R - rr) / (R * 0.18))); col.push(1, 1, 1, edge); }
   for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) { const A = i * (segs + 1) + j, B = A + segs + 1; idx.push(A, A + 1, B, A + 1, B + 1, B); } // virado para cima
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4)); g.setIndex(idx); g.computeVertexNormals();
-  const t = cobbleTex(), m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 3, roughness: 0.92, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  const t = cobbleTex(), m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 3.2, roughness: 0.93, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
   m.position.set(cx, 0, cz); m.receiveShadow = true; m.renderOrder = 1; scene.add(m); m.userData.asset = 'calcamento'; placed.push(m); m.userData.big = true;
   return m;
 }
@@ -1659,6 +1666,7 @@ function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand }) : { style: '1h', update: () => { } };
   if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
   const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
+  unsquashDwarf(h.root); // S-246: peças da roupa sem esticar nos ossos de anão
   return { ch: h, d: hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d };
 }
 const NPC_FEMALE = new Set(['ivra', 'clara', 'flora', 'rosa', 'neli', 'samira', 'isis', 'mirela']);
@@ -1667,6 +1675,7 @@ function makeNpcHero(n) {
   const { ch } = makeHero(null, look, null, { outfit: /Knight|Barbarian|Rogue/.test(n.model) ? 'patrulheiro' : 'campones', hood: n.model === 'Rogue_Hooded' });
   for (const it of n.show || []) if (!/_Cape$/.test(it)) humanBorrow(ch.root, MODELS, n.model, it);
   const rfx = dressNpcRole(ch, n.id, MODELS); if (rfx) ch.roleFx = rfx; // S-193/S-197: freira, guarda...
+  unsquashDwarf(ch.root);
   return ch;
 }
 const offOf = p => (p && p.equip && p.equip.escudo && p.equip.escudo.id) || null; // S-202: escudo só aparece se estiver equipado

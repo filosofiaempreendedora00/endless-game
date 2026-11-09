@@ -118,10 +118,10 @@ function mergeOutfit(scene) {
 /* S-178: corpo de ANÃO (proporções no espírito dos anões de MMO): cabeça grande, tronco largo e atarracado, braços grossos,
    pernas curtas e fortes, mãos e pés grandes. Tudo por escala nos ossos (as animações de anão não têm trilha de escala),
    e o corpo inteiro é alargado. Depois de encurtar as pernas, desce o boneco para os pés ficarem no chão. */
-const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura]
-  thigh_l: [0.74, 1.22], thigh_r: [0.74, 1.22], calf_l: [0.86, 1.08], calf_r: [0.86, 1.08], foot_l: [1.12, 1.1], foot_r: [1.12, 1.1],
-  spine_01: [0.88, 1.2], spine_02: [0.92, 1.12], neck_01: [0.7, 1.1], // tronco curto e largo (os ombros alargam junto)
-  upperarm_l: [0.8, 1.2], upperarm_r: [0.8, 1.2], lowerarm_l: [0.9, 1.12], lowerarm_r: [0.9, 1.12], hand_l: [1.1, 1.12], hand_r: [1.1, 1.12],
+const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura] — S-246: proporções suavizadas (antes ficava achatado e disforme)
+  thigh_l: [0.84, 1.08], thigh_r: [0.84, 1.08], calf_l: [0.9, 1.04], calf_r: [0.9, 1.04], foot_l: [1.06, 1.05], foot_r: [1.06, 1.05],
+  spine_01: [0.93, 1.07], spine_02: [0.96, 1.05], neck_01: [0.82, 1.04], // tronco um pouco mais curto e forte
+  upperarm_l: [0.9, 1.06], upperarm_r: [0.9, 1.06], lowerarm_l: [0.94, 1.04], lowerarm_r: [0.94, 1.04], hand_l: [1.05, 1.05], hand_r: [1.05, 1.05],
 };
 function applyDwarfBody(obj, root, skel) {
   root.userData.dwarf = true;
@@ -133,11 +133,26 @@ function applyDwarfBody(obj, root, skel) {
     const a = Math.abs(ax.x) >= Math.abs(ax.y) && Math.abs(ax.x) >= Math.abs(ax.z) ? 'x' : Math.abs(ax.y) >= Math.abs(ax.z) ? 'y' : 'z'; // eixo do comprimento do osso
     b.scale.set(a === 'x' ? L : T, a === 'y' ? L : T, a === 'z' ? L : T);
   }
-  const head = by('Head'); if (head) head.scale.setScalar(1.24); // cabeçudo
-  obj.scale.set(1.16, 0.95, 1.16); // largo e robusto
+  const head = by('Head'); if (head) head.scale.setScalar(1.13); // cabeça um pouco maior
+  obj.scale.set(1.07, 0.97, 1.07); // robusto, sem achatar
   root.updateMatrixWorld(true);
   if (foot) { foot.getWorldPosition(after); root.position.y += (before.y * 0.95 - after.y) / 0.95; } // pés no chão
   root.userData.dwarfDrop = root.position.y;
+}
+/* S-246: peças presas nos ossos de anão (ombreiras, braçadeiras, armas, chapéu) herdavam a escala desigual do osso e
+   ficavam esticadas/achatadas. Aqui cada peça recebe a escala inversa (mantendo o volume), só nos anões. */
+export function unsquashDwarf(root) {
+  if (!root.userData.dwarf) return;
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+  root.traverse(b => {
+    if (!b.isBone) return;
+    for (const c of b.children) {
+      if (c.isBone || c.isSkinnedMesh || c.userData.unsq) continue;
+      m.multiplyMatrices(inv, b.matrixWorld).decompose(p, q, sc);
+      const v = Math.cbrt(Math.abs(sc.x * sc.y * sc.z)) || 1; c.scale.set(c.scale.x * v / sc.x, c.scale.y * v / sc.y, c.scale.z * v / sc.z); c.userData.unsq = true;
+    }
+  });
 }
 // todas as malhas de um personagem passam a usar UM esqueleto (antes cada peça tinha o seu: 30 atualizações por personagem a cada quadro)
 export function shareSkeletons(root) {

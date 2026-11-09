@@ -2,11 +2,39 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (5)
 
-_Nenhuma._
+### S-248 · Área do mapa: Área da tela (1640×618 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:12:12 · **Mapa:** Campos de Valcinza (tile [-190, 284])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Tá indo os lobos estarem esteticamente ainda longe dos ideais e em termos de pelos em termos de qualidade das patas etc ou seja em termos estéticos no sentido de estarem muito geométricos os movimentos deles estão muito ruins agora beleza ele já tá mordendo mas os movimentos estão extremamente artificiais e não aparecendo de um lobo de verdade Gostaria que você caprichasse em melhorar esse animal porque ele tá como se fosse um conjunto de várias bolas isso é horrível eu estou sendo tão exigente assim nesse Lobo para que fique bacana suficiente para depois eu simplesmente falar para você pegar os princípios que eu sugeri para ele e aplicar para outros Monstros mas não podemos fazer isso ainda porque você ainda está longe de acertar aparentemente
+- ![print](img/S-248.png)
 
-## Feitas (244)
+### S-249 · Área do mapa: Área da tela (732×227 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:13:15 · **Mapa:** Dunas de Sal-Rubro (tile [-125, 269])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Já falei para não ter essa infinidade de gramas na areia e você aparentemente não cumpriu com as minhas solicitações Entenda eu não quero que você suma com todas as gramas Mas você há de convir comigo que elas precisam ser muito mais pontuais em terrenos de grama
+- ![print](img/S-249.png)
+
+### S-250 · Área do mapa: Área da tela (376×277 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:14:44 · **Mapa:** Dunas de Sal-Rubro (tile [6, 342])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Repare que esse troço em volta do pescoço do Lagarto ainda ficou um pouco esquisito e também as pernas estão estranhas eu preferia que a cauda fosse mais alongada mais estreita e as patas realmente parecessem mais patas de lagarto em termos de posição tamanho e etc Eu também gostaria de que os dentes dessa criatura fosse mais evidentes
+- ![print](img/S-250.png)
+
+### S-251 · Área do mapa: Área da tela (368×221 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:15:35 · **Mapa:** Dunas de Sal-Rubro (tile [-4, 340])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse escorpião ficou muito achatado não sei se foi o mesmo bug do meu personagem principal mas vejo que ele está achatado e as pernas não estão bem distribuídas ao longo do corpo dele e também ele ficou muito cheio de bolotas ou seja ele está geométrico é aquele feedback que eu sempre peço para você mudar e você até agora não costuma cumprir com o que eu peço
+- ![print](img/S-251.png)
+
+### S-252 · Área do mapa: Área da tela (600×628 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:16:00 · **Mapa:** Dunas de Sal-Rubro (tile [-9, 311])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que os cactos tivessem um pouco mais de detalhes e não fossem tão monocromáticos assim seriam importante um pouco de textura de cactos de fato
+- ![print](img/S-252.png)
+
+## Feitas (247)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -1725,3 +1753,24 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** cade as pernas? precis melhorar muito com as pernas se encaixam no bicho aqui. E o bicho ta feio ainda, precisa de mais pena no rabo e nao esse lombo gigante. Precisa de pernas mais magras tbm e nao parecendo humanas
 - ![print](img/S-244.png)
 - **Resposta do Claude:** Trotavento com pernas de ave de verdade (coxa emplumada encaixada no corpo, "joelho" invertido, tarso fino escamoso), corpo mais baixo e liso sem o lombo gigante e cauda em leque com 17 penas. Vale para a montaria e o monstro.
+
+### S-245 · Interface: Área de 618×540 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-08T21:39:06 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** aqui ficou bugado, disforme
+- ![print](img/S-245.png)
+- **Resposta do Claude:** O corpo de anão estava exagerado (pernas 26% mais curtas, tudo 16% mais largo e achatado) e as peças da roupa presas nos ossos esticavam. Suavizei as proporções e desfiz a deformação das peças: o Vidro fica robusto e baixo, mas sem ficar disforme — também na vitrine.
+
+### S-246 · Área do mapa: Área da tela (503×336 px)
+- **Status:** feito · **Quando:** 2026-11-08T21:39:37 · **Mapa:** Vila de Alvorada (tile [-76, 21])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** o personagem principal ficou achatado, disforme
+- ![print](img/S-246.png)
+- **Resposta do Claude:** Corrigido junto com a vitrine: anão com proporções naturais (sem achatar) e ombreiras, braçadeiras, arma e chapéu sem esticar.
+
+### S-247 · Área do mapa: Área da tela (522×485 px)
+- **Status:** feito · **Quando:** 2026-11-08T21:39:49 · **Mapa:** Vila de Alvorada (tile [-70, 20])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** nao gostei desse chao precendo mil moedas
+- ![print](img/S-247.png)
+- **Resposta do Claude:** Troquei as "moedinhas" por um calçamento de verdade: pedras irregulares encaixadas de uns 23 cm, abauladas, com juntas de terra, musgo e tons variados (vila e Pedraclara).

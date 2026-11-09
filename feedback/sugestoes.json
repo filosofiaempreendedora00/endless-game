@@ -11781,5 +11781,391 @@
     "criadoEm": "2026-11-08T19:25:57",
     "imagem": "img/S-244.png",
     "resposta": "Trotavento com pernas de ave de verdade (coxa emplumada encaixada no corpo, \"joelho\" invertido, tarso fino escamoso), corpo mais baixo e liso sem o lombo gigante e cauda em leque com 17 penas. Vale para a montaria e o monstro."
+  },
+  {
+    "texto": "aqui ficou bugado, disforme",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Seleção de personagens",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Palco do personagem",
+      "nome": "Área de 618×540 px em Palco do personagem",
+      "codigo": "js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)",
+      "detalhes": {
+        "interface": [
+          "Palco do personagem"
+        ],
+        "textos": [],
+        "area": [
+          1268,
+          337,
+          1886,
+          877
+        ]
+      }
+    },
+    "mapa": null,
+    "jogador": null,
+    "id": "S-245",
+    "status": "feito",
+    "criadoEm": "2026-11-08T21:39:06",
+    "imagem": "img/S-245.png",
+    "resposta": "O corpo de anão estava exagerado (pernas 26% mais curtas, tudo 16% mais largo e achatado) e as peças da roupa presas nos ossos esticavam. Suavizei as proporções e desfiz a deformação das peças: o Vidro fica robusto e baixo, mas sem ficar disforme — também na vitrine."
+  },
+  {
+    "texto": "o personagem principal ficou achatado, disforme",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (503×336 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Executor)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -76,
+        21
+      ],
+      "pos": [
+        -76,
+        21
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-246",
+    "status": "feito",
+    "criadoEm": "2026-11-08T21:39:37",
+    "imagem": "img/S-246.png",
+    "resposta": "Corrigido junto com a vitrine: anão com proporções naturais (sem achatar) e ombreiras, braçadeiras, arma e chapéu sem esticar."
+  },
+  {
+    "texto": "nao gostei desse chao precendo mil moedas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (522×485 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Calçamento de pedra da praça",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -70,
+        20
+      ],
+      "pos": [
+        -70,
+        20
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-247",
+    "status": "feito",
+    "criadoEm": "2026-11-08T21:39:49",
+    "imagem": "img/S-247.png",
+    "resposta": "Troquei as \"moedinhas\" por um calçamento de verdade: pedras irregulares encaixadas de uns 23 cm, abauladas, com juntas de terra, musgo e tons variados (vila e Pedraclara)."
+  },
+  {
+    "texto": "Tá indo os lobos estarem esteticamente ainda longe dos ideais e em termos de pelos em termos de qualidade das patas etc ou seja em termos estéticos no sentido de estarem muito geométricos os movimentos deles estão muito ruins agora beleza ele já tá mordendo mas os movimentos estão extremamente artificiais e não aparecendo de um lobo de verdade Gostaria que você caprichasse em melhorar esse animal porque ele tá como se fosse um conjunto de várias bolas isso é horrível eu estou sendo tão exigente assim nesse Lobo para que fique bacana suficiente para depois eu simplesmente falar para você pegar os princípios que eu sugeri para ele e aplicar para outros Monstros mas não podemos fazer isso ainda porque você ainda está longe de acertar aparentemente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1640×618 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Alfa": 2
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Bolhinha (Nv. 1)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        -190,
+        284
+      ],
+      "pos": [
+        -190,
+        284
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-248",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:12:12",
+    "imagem": "img/S-248.png"
+  },
+  {
+    "texto": "Já falei para não ter essa infinidade de gramas na areia e você aparentemente não cumpriu com as minhas solicitações Entenda eu não quero que você suma com todas as gramas Mas você há de convir comigo que elas precisam ser muito mais pontuais em terrenos de grama",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (732×227 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Dunas de Sal-Rubro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -125,
+        269
+      ],
+      "pos": [
+        -125,
+        269
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-249",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:13:15",
+    "imagem": "img/S-249.png"
+  },
+  {
+    "texto": "Repare que esse troço em volta do pescoço do Lagarto ainda ficou um pouco esquisito e também as pernas estão estranhas eu preferia que a cauda fosse mais alongada mais estreita e as patas realmente parecessem mais patas de lagarto em termos de posição tamanho e etc Eu também gostaria de que os dentes dessa criatura fosse mais evidentes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (376×277 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lagarto-de-Sal": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lagarto-de-Sal",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        6,
+        342
+      ],
+      "pos": [
+        6,
+        342
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-250",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:14:44",
+    "imagem": "img/S-250.png"
+  },
+  {
+    "texto": "Esse escorpião ficou muito achatado não sei se foi o mesmo bug do meu personagem principal mas vejo que ele está achatado e as pernas não estão bem distribuídas ao longo do corpo dele e também ele ficou muito cheio de bolotas ou seja ele está geométrico é aquele feedback que eu sempre peço para você mudar e você até agora não costuma cumprir com o que eu peço",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (368×221 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Escorpião-Rubro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -4,
+        340
+      ],
+      "pos": [
+        -4,
+        340
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-251",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:15:35",
+    "imagem": "img/S-251.png"
+  },
+  {
+    "texto": "Gostaria que os cactos tivessem um pouco mais de detalhes e não fossem tão monocromáticos assim seriam importante um pouco de textura de cactos de fato",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (600×628 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 15,
+          "Orvalhinho Sombrio": 7,
+          "Espectro Pálido": 13,
+          "Cavaleiro Caído": 9,
+          "Sentinela Silente": 1,
+          "Morcego de Cripta": 5,
+          "Escorpião-Rubro": 1
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Lena",
+          "Tonho",
+          "Capitã Marinha",
+          "Iara",
+          "Joca",
+          "Nilo",
+          "Capitão Baltazar",
+          "Tico",
+          "Zaíra",
+          "Tadeu",
+          "Selene",
+          "Fenn",
+          "Dolf",
+          "Rei Aldemar",
+          "Rainha Isolda",
+          "Dama Clarisse",
+          "Dama Brienna",
+          "Sir Bertran",
+          "Sir Ulric",
+          "Gervásio",
+          "Elwen",
+          "Frei Lauro",
+          "Dagna",
+          "Berta"
+        ],
+        "cenario": {
+          "Cacto": 4,
+          "Tronco caído": 1,
+          "Pedra": 1
+        },
+        "centro": "Cacto",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -9,
+        311
+      ],
+      "pos": [
+        -9,
+        311
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-252",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:16:00",
+    "imagem": "img/S-252.png"
   }
 ]
