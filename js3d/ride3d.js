@@ -49,6 +49,32 @@ function twist(bone, axisW, ang) {
   const qd = _q[0].setFromAxisAngle(axisW, ang), wq = bone.getWorldQuaternion(_q[1]), nq = _q[2].multiplyQuaternions(qd, wq);
   const pq = bone.parent ? bone.parent.getWorldQuaternion(_q[3]) : _q[3].identity(); bone.quaternion.copy(pq.invert().multiply(nq)); bone.updateMatrixWorld(true);
 }
+/* S-299: tabardo/aba de pano RÍGIDA presa ao tronco (paladino, guarda...) ficava pendurada reta quando o
+   personagem senta e atravessava a montaria como um "retângulo". Enquanto monta, a parte abaixo da cintura dobra
+   por cima do colo (a da frente para a frente, a de trás para trás) — no shader, sem mexer na roupa; ao desmontar volta. */
+const FOLD_VS = `
+  vec3 fd = transformed - uFoldPiv; float fh = dot(fd, uFoldUp);
+  if (fh < 0.0 && uFold > 0.001) { float ff = dot(fd, uFoldFw), sg = ff >= 0.0 ? 1.0 : -1.0, a = uFold * 1.3 * sg; vec3 lat = fd - uFoldUp * fh - uFoldFw * ff;
+    transformed = uFoldPiv + lat + uFoldUp * (fh * cos(a) + ff * sin(a)) + uFoldFw * (ff * cos(a) - fh * sin(a)) + uFoldUp * uFold * 0.03; }`;
+function foldables(rider, B) {
+  if (rider._fold) return rider._fold;
+  const list = [], root = rider.root || rider.obj, pv = B.pelvis.getWorldPosition(new THREE.Vector3()), box = new THREE.Box3();
+  root.traverse(o => {
+    if (!o.isMesh || o.isSkinnedMesh || o.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender || !o.material || Array.isArray(o.material) || o.material.userData.noFold) return;
+    let p = o.parent, torso = false; while (p) { if (p.isBone) { torso = /^spine_0[123]$/.test(p.name); break; } p = p.parent; } if (!torso) return;
+    box.setFromObject(o); if (box.min.y > pv.y - 0.12 || box.max.y - box.min.y < 0.3) return; // só o que desce bem abaixo da cintura
+    const U = { uFold: { value: 0 }, uFoldPiv: { value: new THREE.Vector3() }, uFoldUp: { value: new THREE.Vector3(0, 1, 0) }, uFoldFw: { value: new THREE.Vector3(0, 0, 1) } };
+    const m = o.material.clone(); m.onBeforeCompile = sh => { Object.assign(sh.uniforms, U); sh.vertexShader = 'uniform float uFold; uniform vec3 uFoldPiv, uFoldUp, uFoldFw;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>' + FOLD_VS); };
+    m.customProgramCacheKey = () => 'ridefold'; o.material = m;
+    const inv = new THREE.Matrix4(), q = new THREE.Quaternion();
+    o.onBeforeRender = () => { // segue o cavaleiro: dobra enquanto riderPose estiver sendo chamado, desdobra ao desmontar
+      const on = performance.now() - (rider._rpT || -1e9) < 250; U.uFold.value += ((on ? 1 : 0) - U.uFold.value) * 0.25; if (U.uFold.value < 0.002) { U.uFold.value = 0; return; }
+      inv.copy(o.matrixWorld).invert(); const P = rider._foldPiv, F = rider._foldFw, Up = rider._foldUp; if (!P) return;
+      U.uFoldPiv.value.copy(P).applyMatrix4(inv); q.setFromRotationMatrix(inv); U.uFoldUp.value.copy(Up).applyQuaternion(q).normalize(); U.uFoldFw.value.copy(F).applyQuaternion(q).normalize();    };
+    list.push(o);
+  });
+  return (rider._fold = list);
+}
 /**
  * riderPose(rider, mount, opts?)
  * rider: { obj, root } do personagem (makeHero / makeHuman) — chame DEPOIS de rider.anim.update(dt) (com 'Sit_Chair_Idle' tocando).
@@ -71,7 +97,9 @@ export function riderPose(rider, mount, opts = {}) {
   o.position.set(0, 0, 0); o.updateMatrixWorld(true);
   const pel = B.pelvis.getWorldPosition(_v[9]).clone(), ow = o.getWorldPosition(_v[10]).clone();
   const upW = new THREE.Vector3(0, 1, 0).applyQuaternion(sq), fwW = new THREE.Vector3(0, 0, 1).applyQuaternion(sq), rtW = new THREE.Vector3(-1, 0, 0).applyQuaternion(sq); // personagem olha para +z; "direita" dele é -x
-  const want = sp.clone().addScaledVector(upW, opts.seatH ?? 0.1); // pelve um palmo acima do couro da sela
+  // pelve um palmo acima do couro da sela e RECUADA (S-298): a articulação do quadril fica à frente das nádegas,
+  // então sem recuo o cavaleiro sentava na cabeça da sela, quase em cima da cernelha
+  const want = sp.clone().addScaledVector(upW, opts.seatH ?? 0.1).addScaledVector(fwW, -(seat.back ?? 0.14));
   const worldPos = ow.clone().add(want.sub(pel));
   if (o.parent) o.parent.worldToLocal(worldPos); o.position.copy(worldPos); o.updateMatrixWorld(true);
   // 2) tronco: levemente para a frente (postura de quem cavalga)
@@ -107,6 +135,9 @@ export function riderPose(rider, mount, opts = {}) {
   }
   for (const [bone, r] of _log) r.post = bone.quaternion.clone();
   _log = null;
+  // S-299: aba de pano rígida dobra sobre o colo (pivô na cintura, um pouco acima da articulação do quadril)
+  foldables(rider, B);
+  rider._rpT = performance.now(); rider._foldPiv = B.pelvis.getWorldPosition(rider._foldPiv || new THREE.Vector3()).addScaledVector(upW, 0.06); rider._foldUp = (rider._foldUp || new THREE.Vector3()).copy(upW); rider._foldFw = (rider._foldFw || new THREE.Vector3()).copy(fwW);
 }
 // quanto o personagem deve ficar acima do chão quando montado (para câmera/plaquinha), aproximado
 export const RIDE_EYE = 2.3;

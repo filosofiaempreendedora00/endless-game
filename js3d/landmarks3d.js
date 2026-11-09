@@ -881,8 +881,93 @@ function debrisPile(rng, parts, x, y, z, R, n, heightAt, x0, z0) {
     parts.push(paint(g, rng() < 0.4 ? RUIN_DARK : RUIN_STONE, RUIN_MOSS, 0.5, k));
   }
 }
+/* ---------- S-301: ossadas — ossos de feras antigas e o grande esqueleto de presas (cemitério dos gigantes) ---------- */
+const BONE = '#d9cdb2', BONE_STAIN = '#8c7a5a';
+let _boneMat = null;
+const boneMat = () => _boneMat || (_boneMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 }));
+function bonePaint(g, seed = 1) { // marfim envelhecido: manchas de terra embaixo, rachaduras finas, mais claro em cima (sol)
+  const P = g.attributes.position, N = g.attributes.normal || (g.computeVertexNormals(), g.attributes.normal), col = new Float32Array(P.count * 3), c = new THREE.Color(), b = new THREE.Color(BONE), s = new THREE.Color(BONE_STAIN);
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), ny = N.getY(i), n = Math.sin(x * 3.1 + seed) * Math.cos(z * 2.7 + y * 1.3) * 0.5 + 0.5, crack = Math.abs(Math.sin(x * 9 + y * 7 + z * 11 + seed)) < 0.03 ? 1 : 0;
+    c.copy(b).offsetHSL(0, -0.02, (n - 0.5) * 0.1 + Math.max(0, ny) * 0.05).lerp(s, Math.max(0, -ny) * 0.55 + Math.max(0, 0.3 - y) * 0.4 + crack * 0.5); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
+}
+function longBone(len, r, seed = 1) { // osso longo: diáfise fina e epífises com dois côndilos
+  const pts = [], n = 16; for (let k = 0; k <= n; k++) { const t = k / n, e = Math.pow(Math.abs(t - 0.5) * 2, 6); pts.push(new THREE.Vector2(r * (0.62 + 1.25 * e + 0.08 * Math.sin(t * 9 + seed)), t * len)); }
+  pts.unshift(new THREE.Vector2(0.001, 0)); pts.push(new THREE.Vector2(0.001, len));
+  const parts = [new THREE.LatheGeometry(pts, 14)];
+  for (const yy of [r * 0.6, len - r * 0.6]) for (const s of [-1, 1]) { const k = new THREE.SphereGeometry(r * 0.85, 12, 8); k.translate(s * r * 0.75, yy, 0); parts.push(k); }
+  const g = mergeGeometries(parts.map(strip)); g.translate(0, -len / 2, 0); g.computeVertexNormals(); return g;
+}
+function ribGeo(R, arc, r, seed = 1) { // costela: arco que afina até a ponta, achatado
+  const pts = []; for (let k = 0; k <= 12; k++) { const a = k / 12 * arc; pts.push(new THREE.Vector3(Math.sin(a) * R, -Math.cos(a) * R * 0.9 + R * 0.9, Math.sin(a * 2 + seed) * R * 0.04)); }
+  const curve = new THREE.CatmullRomCurve3(pts), g = new THREE.TubeGeometry(curve, 20, r, 6), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { const t = Math.floor(i / 7) / 20, c = curve.getPoint(Math.min(1, t)), k = 1.15 - t * 0.75; P.setXYZ(i, c.x + (P.getX(i) - c.x) * k, c.y + (P.getY(i) - c.y) * k, c.z + (P.getZ(i) - c.z) * k * 0.55); }
+  g.computeVertexNormals(); return g;
+}
+function ribDown(R, h, r, seed = 1, broken = 1) { // costela que sai da coluna para o lado e desce em curva até o chão (gaiola em domo)
+  const pts = [], A = 1.95, n = 14; for (let k = 0; k <= n; k++) { const t = k / n * broken; pts.push(new THREE.Vector3(R * Math.sin(t * A) / Math.sin(A) * (1 + 0.04 * Math.sin(t * 7 + seed)), -h * (1 - Math.cos(t * A)) / (1 - Math.cos(A)), Math.sin(t * 3 + seed) * 0.12)); }
+  const curve = new THREE.CatmullRomCurve3(pts), g = new THREE.TubeGeometry(curve, 22, r, 7), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { const t = Math.floor(i / 8) / 22, c = curve.getPoint(Math.min(1, t)), k = 1.2 - t * 0.6; P.setXYZ(i, c.x + (P.getX(i) - c.x) * k, c.y + (P.getY(i) - c.y) * k, c.z + (P.getZ(i) - c.z) * k * 0.55); }
+  g.computeVertexNormals(); return g;
+}
+function vertebraGeo(s) { // corpo da vértebra, espinho para cima e asas laterais
+  const parts = [new THREE.CylinderGeometry(s * 0.42, s * 0.46, s * 0.55, 12).rotateX(Math.PI / 2)];
+  const sp = new THREE.CylinderGeometry(s * 0.06, s * 0.16, s * 1.25, 6); sp.translate(0, s * 0.8, -s * 0.12); sp.rotateX(-0.25); parts.push(sp);
+  for (const x of [-1, 1]) { const w = new THREE.CylinderGeometry(s * 0.07, s * 0.13, s * 0.7, 6); w.rotateZ(x * Math.PI / 2.4); w.translate(x * s * 0.42, s * 0.25, 0); parts.push(w); }
+  const g = mergeGeometries(parts.map(strip)); g.computeVertexNormals(); return g;
+}
+function tuskGeo(len, r, curl = 1) { // presa: arco que sobe e curva para dentro, afinando até a ponta
+  const pts = []; for (let k = 0; k <= 14; k++) { const t = k / 14; pts.push(new THREE.Vector3(Math.sin(t * 1.9) * len * 0.28 * curl, Math.sin(t * 2.2) * len * 0.42 - t * len * 0.08, t * len * 0.62)); }
+  const curve = new THREE.CatmullRomCurve3(pts), g = new THREE.TubeGeometry(curve, 24, r, 10), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { const t = Math.floor(i / 11) / 24, c = curve.getPoint(Math.min(1, t)), k = Math.max(0.05, 1 - Math.pow(t, 1.6) * 0.95); P.setXYZ(i, c.x + (P.getX(i) - c.x) * k, c.y + (P.getY(i) - c.y) * k, c.z + (P.getZ(i) - c.z) * k); }
+  g.computeVertexNormals(); return g;
+}
+function beastSkull(S, jaw = true) { // crânio de fera de presas (desenho próprio): domo alto, órbitas fundas, abertura nasal, alvéolos das presas e mandíbula
+  const parts = [], dark = [];
+  const dome = new THREE.SphereGeometry(S, 22, 16); { const P = dome.attributes.position; for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i), z = P.getZ(i); y *= y > 0 ? 1.05 : 0.7; z *= z > 0 ? 1.05 - Math.max(0, y / S) * 0.3 : 0.8; x *= 0.82 + Math.max(0, -y / S) * 0.1; P.setXYZ(i, x, y, z); } dome.computeVertexNormals(); } parts.push(dome);
+  const snout = new THREE.CylinderGeometry(S * 0.42, S * 0.62, S * 1.1, 16); snout.rotateX(Math.PI / 2 + 0.55); snout.translate(0, -S * 0.45, S * 0.75); parts.push(snout);
+  for (const s of [-1, 1]) { const ring = new THREE.TorusGeometry(S * 0.24, S * 0.08, 8, 18); ring.rotateY(s * 0.8); ring.translate(s * S * 0.6, S * 0.12, S * 0.66); parts.push(ring); const hole = new THREE.SphereGeometry(S * 0.25, 12, 8); hole.scale(1, 1, 0.6); hole.rotateY(s * 0.8); hole.translate(s * S * 0.58, S * 0.12, S * 0.64); dark.push(hole); // órbitas fundas e escuras, com aro de osso
+    const arch = new THREE.TorusGeometry(S * 0.55, S * 0.07, 6, 16, Math.PI * 0.7); arch.rotateY(Math.PI / 2); arch.rotateZ(s * 0.2); arch.translate(s * S * 0.78, -S * 0.12, S * 0.05); parts.push(arch); // arco da bochecha
+    const sock = new THREE.CylinderGeometry(S * 0.2, S * 0.24, S * 0.6, 12); sock.rotateX(Math.PI / 2 + 0.9); sock.translate(s * S * 0.32, -S * 0.75, S * 1.05); parts.push(sock); } // alvéolos das presas
+  const nas = new THREE.SphereGeometry(S * 0.2, 12, 8); nas.scale(1.4, 0.8, 0.6); nas.translate(0, S * 0.32, S * 0.88); dark.push(nas);
+  if (jaw) { const j = new THREE.CylinderGeometry(S * 0.32, S * 0.42, S * 1.3, 14, 1, false, 0, Math.PI); j.rotateZ(Math.PI); j.rotateX(Math.PI / 2 - 0.3); j.translate(0, -S * 0.95, S * 0.25); parts.push(j); }
+  return { parts, dark };
+}
+function bigBeastSkeleton(rng) { // ~16 m: coluna meio enterrada, costelas formando uma gaiola (dá para entrar), crânio com presas enormes, bacia e ossos das pernas espalhados
+  const parts = [], dark = [], cols = [], L = 12, H0 = 0.6;
+  const spineY = u => H0 + Math.sin((u / L + 0.5) * Math.PI) * 2.4; // a coluna em arco por cima da gaiola de costelas (dá para andar por baixo)
+  for (let k = 0; k <= 26; k++) { const u = -L / 2 + k / 26 * L, s = 0.55 + Math.sin((k / 26) * Math.PI) * 0.35; const v = vertebraGeo(s); v.rotateZ((rng() - 0.5) * 0.15); v.translate(0, spineY(u) + 0.1, u); parts.push(bonePaint(v, k)); }
+  for (let k = 0; k < 13; k++) { const u = -L / 2 + 2.2 + k * 0.62, R = 2.3 + Math.sin(k / 12 * Math.PI) * 1.3; // costelas dos dois lados, algumas quebradas
+    for (const s of [-1, 1]) { if (rng() < 0.1) continue; const broken = rng() < 0.2 ? 0.5 + rng() * 0.3 : 1, hy = spineY(u) - 0.05, rb = ribDown(R * 0.85, hy, 0.12 + R * 0.012, k * 3 + s, broken); if (s < 0) rb.rotateY(Math.PI); rb.translate(0, hy, u); parts.push(bonePaint(rb, k + s)); if (broken === 1) cols.push([s * R * 0.85, u, 0.3]); } } // as costelas descem da coluna até o chão: uma gaiola de ossos onde dá para entrar
+  const sk = beastSkull(1.25); const T = new THREE.Matrix4().makeRotationX(-0.12).setPosition(0, 1.45, L / 2 + 1.3); for (const g of sk.parts) parts.push(bonePaint(g.applyMatrix4(T), 7)); for (const g of sk.dark) dark.push(g.applyMatrix4(T));
+  for (const s of [-1, 1]) { const t = tuskGeo(5.2, 0.24, s); t.translate(s * 0.4, 0.55, L / 2 + 2.4); parts.push(bonePaint(t, 9 + s)); cols.push([s * 1.3, L / 2 + 3.8, 0.45]); }
+  cols.push([0, L / 2 + 1.3, 1.6]);
+  const pel = new THREE.TorusGeometry(1.25, 0.32, 10, 22, Math.PI * 1.3); pel.rotateX(Math.PI / 2 - 0.4); pel.rotateZ(Math.PI * 0.85); pel.translate(0, 0.9, -L / 2 - 0.2); parts.push(bonePaint(pel, 3)); cols.push([0, -L / 2 - 0.2, 1.5]);
+  for (const [x, z, ry, len, r] of [[3.4, -4.5, 0.4, 3.2, 0.24], [-3.8, -5.6, -0.7, 3.0, 0.23], [4.6, 2.6, 1.3, 2.8, 0.2], [-4.2, 3.4, 2.3, 2.6, 0.2], [2.6, -8.2, 2.0, 2.2, 0.18]]) { // ossos das pernas caídos
+    const b = longBone(len, r, x); b.rotateZ(Math.PI / 2 + (rng() - 0.5) * 0.2); b.rotateY(ry); b.translate(x, r * 0.9, z); parts.push(bonePaint(b, x * 3)); cols.push([x, z, 0.5]); }
+  return { parts, dark, cols };
+}
+function boneScatter(rng) { // montinho de ossos de fera menor: crânio, costelas soltas e um osso longo
+  const parts = [], dark = [];
+  const S = 0.32 + rng() * 0.2, sk = beastSkull(S, rng() < 0.5), T = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(-0.3 + rng() * 0.4, rng() * 6.28, (rng() - 0.5) * 0.8)).setPosition(0, S * 0.6, 0);
+  for (const g of sk.parts) parts.push(bonePaint(g.applyMatrix4(T), 2)); for (const g of sk.dark) dark.push(g.applyMatrix4(T));
+  for (let k = 0; k < 2 + Math.floor(rng() * 4); k++) { const rb = ribGeo(0.5 + rng() * 0.5, 1.6 + rng() * 0.8, 0.035, k); rb.rotateX(Math.PI / 2 * (rng() < 0.5 ? 1 : -1)); rb.rotateY(rng() * 6.28); rb.translate((rng() - 0.5) * 2.4, 0.04, (rng() - 0.5) * 2.4); parts.push(bonePaint(rb, k)); }
+  if (rng() < 0.8) { const lb = longBone(0.9 + rng() * 0.6, 0.07, 3); lb.rotateZ(Math.PI / 2); lb.rotateY(rng() * 6.28); lb.translate((rng() - 0.5) * 2, 0.08, (rng() - 0.5) * 2); parts.push(bonePaint(lb, 5)); }
+  for (let k = 0; k < 3; k++) { const v = vertebraGeo(0.18 + rng() * 0.08); v.rotateX(rng() * 3); v.rotateY(rng() * 6); v.translate((rng() - 0.5) * 2.6, 0.08, (rng() - 0.5) * 2.6); parts.push(bonePaint(v, k + 7)); }
+  return { parts, dark };
+}
+function placeBones(ctx, x, z, ry, B, asset, sink = 0) {
+  const { scene, placed, colliders, heightAt } = ctx, g = new THREE.Group();
+  const m = new THREE.Mesh(mergeGeometries(B.parts.map(strip)), boneMat()); m.castShadow = true; m.receiveShadow = true; g.add(m);
+  if (B.dark.length) g.add(new THREE.Mesh(mergeGeometries(B.dark.map(strip)), new THREE.MeshStandardMaterial({ color: '#1a140e', roughness: 1 })));
+  g.position.set(x, heightAt(x, z) - sink, z); g.rotation.y = ry; scene.add(g); g.userData.asset = asset; placed.push(g);
+  const cs = Math.cos(ry), sn = Math.sin(ry); for (const [lx, lz, r] of B.cols || []) colliders.push({ x: x + lx * cs + lz * sn, z: z - lx * sn + lz * cs, r, name: asset });
+  return g;
+}
 export function buildRuins(ctx) {
   const { scene, placed, colliders, occluders, heightAt, roadDist } = ctx, rng = rngOf(1717), groups = [];
+  { const r2 = rngOf(4242); groups.push(placeBones(ctx, -124, -378, 0.7, bigBeastSkeleton(r2), 'ossada_gigante', 0.35)); // S-301: o grande esqueleto de presas
+    for (const [x, z] of [[-112, -392], [-138, -366], [-100, -360], [-60, -398], [30, -360], [70, -300], [-150, -320], [110, -390], [-20, -290], [150, -280], [-70, -250], [90, -230]]) groups.push(placeBones(ctx, x, z, r2() * 6.28, boneScatter(r2), 'ossos', 0.05)); }
   // obstáculos (estátuas, monólitos, arcos, cabeça, acampamento, santuário)
   const avoid = [[-50, -310, 15], [78, -340, 17], [-78, -352, 18], [100, -275, 22], [-96, -246, 14], [46, -252, 9], [0, -262, 7], [0, -338, 7], [0, -212, 16], [0, -392, 34]];
   for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + 0.2; avoid.push([Math.cos(a) * 24, -300 + Math.sin(a) * 24, 3]); }
@@ -923,7 +1008,7 @@ export function buildRuins(ctx) {
     cluster(x, z, (parts, y0, cols) => { parts.push(carved(rng, 4.2, 1.4, 4.2, RUIN_DARK)); parts[parts.length - 1].translate(0, 0.4, 0); parts.push(carved(rng, 3.4, 1.2, 3.4)); parts[parts.length - 1].translate(0.1, 1.5, -0.1);
       for (const sx of [-1, 1]) { const f = chunk(rng, 0.7, 1.2, 0.8); f.translate(sx * 0.8, 2.6, 0); parts.push(paint(f, RUIN_STONE, RUIN_MOSS, 0.3, 5)); } // só os pés da estátua
       debrisPile(rng, parts, x, y0, z, 5.5, 26, heightAt, x, z); cols.push([x, z, 2.4]); }, 'pedestal_vazio'); }
-  for (let k = 0; k < 18; k++) { const a = rng() * Math.PI * 2, d = 30 + rng() * 85, x = Math.cos(a) * d * 1.3, z = -300 + Math.sin(a) * d; if (!free(x, z, 5) || (roadDist && roadDist(x, z) < 4)) continue;
+  for (let k = 0; k < 18; k++) { if (k % 2) { rng(); rng(); rng(); continue; } /* S-301: metade dos montes de escombros (ficou excessivo) */ const a = rng() * Math.PI * 2, d = 30 + rng() * 85, x = Math.cos(a) * d * 1.3, z = -300 + Math.sin(a) * d; if (!free(x, z, 5) || (roadDist && roadDist(x, z) < 4)) continue;
     cluster(x, z, (parts, y0) => debrisPile(rng, parts, x, y0, z, 3.5 + rng() * 3.5, 22 + Math.floor(rng() * 18), heightAt, x, z), 'escombros'); }
   return groups;
 }

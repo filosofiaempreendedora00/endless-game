@@ -7,9 +7,10 @@ import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, PORT, DWARF, ELF, CASTLE, treeAllowed } from './world3d.js';
-import { buildCities, deckAt, FROST } from './cities3d.js';
+import { buildCities, deckAt, FROST, Kit as CKit, M as CM, archBlocks as cArch } from './cities3d.js';
 import { buildPortCity, buildMerchants, villageHouse, villageTavern, villageStable, villageChurch } from './port3d.js';
 import { buildCastle, castleMap } from './castle3d.js';
+import { LEVELS, levelAt } from './levels3d.js'; // S-281: andares e escadas onde dá para subir
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
@@ -275,7 +276,7 @@ function buildFruitMarket(mk) {
 }
 
 /* ---------- chão: terreno lá fora, piso dentro das casas ---------- */
-function groundAt(x, z) { if (x > HALF + 100) return 0; const h = heightAt(x, z), d = deckAt(x, z); return d !== null && d > h ? d : h; } // salas longe do mundo com chão em y = 0; cais do porto contam como chão
+function groundAt(x, z, y) { const lv = y === undefined || !LEVELS.length ? null : levelAt(x, z, y); if (x > HALF + 100) return lv ?? 0; const h = heightAt(x, z), d = deckAt(x, z); const b = d !== null && d > h ? d : h; return lv !== null && lv > b ? lv : b; } // S-281: com y, conta também andares/escadas (levels3d) // salas longe do mundo com chão em y = 0; cais do porto contam como chão
 function roomAt(x, z) { for (const I of Object.values(INTERIORS)) if (Math.abs(x - I.x) < (I.round || I.w / 2) + 4 && Math.abs(z - I.z) < (I.round || I.d / 2) + 4) return I; return null; }
 
 /* ---------- portais nas portas e salas internas ---------- */
@@ -450,10 +451,11 @@ let lojaTab = 'skins';
 let lojaSel = null, lojaStop = null;
 const lojaThumbs = {};
 function lojaObj(kind, k) {
-  if (kind === 'skin') { const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: dt => ch.anim.update(dt) }; }
+  if (kind === 'skin') { const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: (dt, t) => { ch.anim.update(dt); d.update && d.update(t || 0); } }; } // S-299: capa/efeitos da roupa também andam na prévia
   const mt = makeMount(k), g = new THREE.Group(); g.add(mt.obj);
-  const { ch } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
-  return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); riderPose(ch, mt, { t }); } };
+  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
+  // S-299: a capa de pano (física) só se ajeita quando a roupa é atualizada — sem isso ficava um "retângulo" parado no quadril em todas as montarias
+  return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); riderPose(ch, mt, { t }); d.update && d.update(t); } };
 }
 function lojaThumb(kind, k) {
   const key = kind + ':' + k + ':' + S.p.cls; if (lojaThumbs[key]) return lojaThumbs[key];
@@ -886,7 +888,7 @@ function buildWorld() {
       const x = zn.x + (rng() * 2 - 1) * zn.r * 1.25, z = zn.z + (rng() * 2 - 1) * zn.r * 1.25;
       if (Math.abs(x) > PLAY_LIMIT - 4 || Math.abs(z) > PLAY_LIMIT - 4) continue;
       if (zoneWeight(zoneId, x, z) < minW) continue;
-      if (roadDist(x, z) < 5 || lakeDist(x, z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36 || Math.hypot(x - CITY2.x, z - CITY2.z) < 44 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 46 || Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r + 4 || Math.hypot(x - FROST.x, z - FROST.z) < 48 || x < -398 || Object.values(CAMPS).some(c => Math.hypot(x - c.x, z - c.z) < 16) || mountainMask(x, z) > 0.3) continue;
+      if (roadDist(x, z) < 5 || lakeDist(x, z) < LAKE.r + 3 || Math.hypot(x - V.x, z - V.z) < 36 || Math.hypot(x - CITY2.x, z - CITY2.z) < 44 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 46 || Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r + 4 || Math.hypot(x - FROST.x, z - FROST.z) < 64 || x < -398 || Object.values(CAMPS).some(c => Math.hypot(x - c.x, z - c.z) < 16) || mountainMask(x, z) > 0.3) continue;
       if (/^(oak|pine|cactus)/.test(list[0]) && !treeAllowed(x, z)) continue; // S-154: árvore só onde há terra
       if (!freeAt(x, z, gap)) continue;
       const name = list[Math.floor(rng() * list.length)];
@@ -968,6 +970,23 @@ function worldNpc(n, x, z, yaw) {
   ch.obj.add(hitbox(npc, 0.6, 2)); scene.add(ch.obj); colliders.push({ x, z, r: 0.6 }); S.npcs.push(npc);
   return npc;
 }
+/* S-302: pegada de colisão a partir da malha — tudo o que fica até ~2,4 m do chão marca células de 1,2 m (amostrando os triângulos),
+   e cada célula vira um círculo. Assim a colisão segue o contorno de verdade (braço, cauda, escombros) em vez de poucos círculos grandes. */
+function footprintCols(obj, cell = 1.2, maxY = 2.4) {
+  obj.updateMatrixWorld(true); const occ = new Set(), v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], p = new THREE.Vector3();
+  const mark = q => { if (q.y < -0.6 || q.y > maxY) return; occ.add(Math.floor(q.x / cell) + ',' + Math.floor(q.z / cell)); };
+  obj.traverse(o => {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.position || o.material?.transparent) return;
+    const P = o.geometry.attributes.position, I = o.geometry.index, n = I ? I.count : P.count;
+    for (let t = 0; t + 2 < n; t += 3) {
+      for (let k = 0; k < 3; k++) v[k].fromBufferAttribute(P, I ? I.getX(t + k) : t + k).applyMatrix4(o.matrixWorld);
+      const big = Math.max(v[0].distanceTo(v[1]), v[1].distanceTo(v[2]), v[0].distanceTo(v[2])), s = Math.min(8, Math.ceil(big / (cell * 0.6)));
+      for (let a = 0; a <= s; a++) for (let b = 0; a + b <= s; b++) { const u = a / s || 0, w = b / s || 0; p.set(0, 0, 0).addScaledVector(v[0], 1 - u - w).addScaledVector(v[1], u).addScaledVector(v[2], w); mark(p); }
+    }
+  });
+  if (!occ.size) return null;
+  return [...occ].map(k => { const [i, j] = k.split(',').map(Number); return [(i + 0.5) * cell, (j + 0.5) * cell, cell * 0.72]; });
+}
 function landmark(obj, asset, x, z, rot, cols, y) {
   obj.position.set(x, y ?? heightAt(x, z) - 0.4, z); obj.rotation.y = rot; scene.add(obj);
   obj.userData.asset = asset; obj.userData.big = true; placed.push(obj); occluders.push(obj);
@@ -992,8 +1011,17 @@ function buildFrontier() {
   // ---------- Cidadela de Pedraclara: muralha de pedra, torres, portão a oeste ----------
   const C = CITY2, wb = bbox('wall'), wlen = Math.max(4, (wb.max.x - wb.min.x) * WS * 0.96), R = 38;
   for (let a = 0; a < Math.PI * 2; a += wlen / R) {
-    if (Math.abs(Math.cos(a) + 1) < 0.06) continue; // portão a oeste, na estrada
+    if (Math.cos(a) < 0 && Math.abs(Math.sin(a) * R) < 5.6 + wlen / 2) continue; // portão a oeste, na estrada (S-287: o vão é só entre as duas torres do portão)
     place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.2 });
+  }
+  for (const s of [-1, 1]) { const zc = s * (5.6 + wlen / 2 - 0.2), a = Math.PI - Math.asin(zc / R); place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.2 }); } // S-287: muro emendado em cada torre do portão
+  { // S-287: arco de pedra do portão ligando as duas torres (a entrada fica clara)
+    const K = new CKit(), st = CM.greyStone(), gx = C.x - R - 0.5, gz = C.z, gy = heightAt(gx, gz);
+    cArch(K, 7.2, 0.9, 1.6, st, 0, 4.2, 0, Math.PI / 2, 15);
+    K.box(1.6, 1.6, 10.4, st, 0, 8.6, 0); for (let k = -4; k <= 4; k += 2) K.box(1.7, 0.9, 1.0, st, 0, 9.85, k); // passadiço com ameias em cima do arco
+    for (const s of [-1, 1]) K.box(1.6, 4.4, 0.9, st, 0, 2.2, s * 3.95); // pilares do arco encostados nas torres
+    const o = K.build(); o.position.set(gx, gy - 0.2, gz); scene.add(o); o.userData.asset = 'portao_pedraclara'; placed.push(o); occluders.push(o);
+    for (const s of [-1, 1]) colliders.push({ x: gx, z: gz + s * 3.95, r: 0.9, box: true, hx: 0.8, hz: 0.45, rot: 0, name: 'portao_pedraclara' });
   }
   for (const deg of [45, 135, 225, 315]) { const a = deg * Math.PI / 180; place('tower', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rf: 0.5 }); }
   for (const sz of [-4.5, 4.5]) { place('tower', C.x - R - 0.5, C.z + sz, { rf: 0.4, scale: 0.7 }); place('flag_red', C.x - R + 1.5, C.z + sz * 1.5, { solid: false }); }
@@ -1017,7 +1045,7 @@ function buildFrontier() {
   }
   // ---------- Planície dos Colossos ----------
   // S-102: cinco colossos diferentes, maiores e esculpidos (cada um traz sua colisão em userData.cols)
-  const colo = (o, id, x, z, rot) => landmark(o, id, x, z, rot, o.userData.cols, heightAt(x, z) - 0.3);
+  const colo = (o, id, x, z, rot) => landmark(o, id, x, z, rot, footprintCols(o) || o.userData.cols, heightAt(x, z) - 0.3); // S-302: colisão tirada da forma real (nada de atravessar braço, cabeça ou escombro)
   colo(makeSentinel(41), 'colosso_sentinela', -50, -310, Math.PI / 2 - 0.25);   // de pé, de frente para a calçada
   colo(makeSeatedKing(53), 'colosso_rei', 78, -340, -Math.PI / 2 + 0.2);        // rei no trono, olhando a calçada
   colo(makeStoneBeast(67), 'colosso_fera', -78, -352, 0.9);                     // fera agachada
@@ -1035,7 +1063,7 @@ function buildFrontier() {
   colliders.push({ x: TEMPLE.x, z: TEMPLE.z + 0.6, r: 15, box: true, hx: 15.2, hz: 10.4, rot: 0, name: 'santuario' });
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
   // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
-  S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera });
+  S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera, roomNpc, addDoorPortal, portals, INTERIORS, makePortal }); // S-274: salas com porta também nas cidades
   if (FROST.stable) { // S-260: cavalos presos nas baias do Estábulo da Vigília, com cabresto amarrado e feno espalhado
     const st = FROST.stable, g = placed.find(o => o.userData.asset === 'estabulo_da_vigilia'), cs = Math.cos(st.ry), sn = Math.sin(st.ry);
     if (g) { g.updateMatrixWorld(true); const W = (lx, lz) => ({ x: st.x + lx * cs + lz * sn, z: st.z - lx * sn + lz * cs }), y0 = g.position.y + 0.16;
@@ -1128,7 +1156,11 @@ const CLASS_ATTACK = {
 };
 function attackAnim(p, me) {
   const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
-  S.atkN = (S.atkN || 0) + 1; const clip = ca.clips[S.atkN % ca.clips.length]; S.lastAtk = S.time;
+  // S-292: com arma na mão, golpeia só com a mão da arma (Punch_Jab é a esquerda: sai); os dois punhos só sem arma equipada
+  const armed = !!(p.equip && p.equip.arma), melee = ca.sound !== 'magic' && ca.sound !== 'bow';
+  let clips = !melee ? ca.clips : armed ? ca.clips.filter(c => c !== 'Punch_Jab') : ['Punch_Jab', 'Punch_Cross'];
+  if (melee && armed && clips.length < 2 && ca.clips.some(c => /^Punch/.test(c))) clips = ['Punch_Cross', 'Sword_Attack']; // estocada + talho, os dois com a mão direita
+  S.atkN = (S.atkN || 0) + 1; const clip = clips[S.atkN % clips.length]; S.lastAtk = S.time;
   if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = true; } // S-236: andando, o golpe vai só no tronco e as pernas seguem andando
   else { me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = false; }
   if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
@@ -1226,7 +1258,7 @@ function actionFire() {
   // S-192: no vazio o golpe é idêntico ao golpe num alvo (mesma animação, tempo e som) — só não dá dano; projétil segue reto
   if (S.riding && !S.riding.war) dismount(true);
   const me = S.me, ca = attackAnim(p, me); S.lockAnim = S.overlayAtk ? t : t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
-  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : 0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bow'); }
+  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : 0.25, () => shoot(p.d.magicAuto ? me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)) : bowFrom(me), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bowDraw'); }
   else { Sound.play(ca.sound || 'swing'); later(0.25, () => { const q = aimPoint(3); floatAt(new THREE.Vector3(q.x, groundAt(q.x, q.z), q.z), 'Errou', '#cfd6e0', 1.2); Sound.play('miss'); }); } // S-233: golpe no vazio mostra "Errou" com som
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
@@ -1781,6 +1813,59 @@ function legTwist(me, ang) {
   pel.updateWorldMatrix(false, false); pel.getWorldQuaternion(_tq);
   _ty.setFromAxisAngle(_UP, -ang); _tq2.copy(_tq).invert().multiply(_ty).multiply(_tq); sp.quaternion.premultiply(_tq2); // e devolve o tronco para a mira
 }
+// S-294: guarda a orientação da cabeça (em relação ao corpo) da pose parada normal e, em combate, puxa a cabeça de volta para ela
+const _hq = new THREE.Quaternion(), _hq2 = new THREE.Quaternion(), _hq3 = new THREE.Quaternion();
+function levelHead(me, k, dt) {
+  const r = me.root, hd = me._head || (me._head = r.getObjectByName('Head')), nk = me._neck || (me._neck = r.getObjectByName('neck_01')); if (!hd || !nk) return;
+  r.updateWorldMatrix(true, false); r.getWorldQuaternion(_hq3).invert();
+  const rel = (b, out) => { b.updateWorldMatrix(true, false); return b.getWorldQuaternion(out).premultiply(_hq3); }; // orientação no espaço do corpo
+  if (!me._headRef && me.anim.name === 'Idle' && (!S.vel || Math.hypot(S.vel.x, S.vel.z) < 0.1)) me._headRef = [rel(nk, new THREE.Quaternion()), rel(hd, new THREE.Quaternion())];
+  me._headK = (me._headK || 0) + (k - (me._headK || 0)) * Math.min(1, dt * 6);
+  if (!me._headRef || me._headK < 0.01) return;
+  [nk, hd].forEach((b, i) => {
+    rel(b, _hq).slerp(me._headRef[i], me._headK * (i ? 1 : 0.6)); // pescoço só em parte, a cabeça toda
+    b.parent.updateWorldMatrix(true, false); rel(b.parent, _hq2).invert(); b.quaternion.copy(_hq2.multiply(_hq)); b.updateWorldMatrix(false, false);
+  });
+}
+// S-295: postura de arqueiro — braço esquerdo estendido segurando o arco na altura do ombro, mão direita puxando a corda até o rosto (IK de 2 ossos)
+const _ia = new THREE.Vector3(), _ib = new THREE.Vector3(), _ic = new THREE.Vector3(), _iq = new THREE.Quaternion(), _iq2 = new THREE.Quaternion(), _iv = new THREE.Vector3(), _iw = new THREE.Vector3();
+function rotBoneTo(b, from, to) { // gira o osso (no mundo) para que a direção `from` vire `to`
+  _iq.setFromUnitVectors(from.clone().normalize(), to.clone().normalize());
+  b.getWorldQuaternion(_iq2); _iq2.premultiply(_iq); b.parent.updateWorldMatrix(true, false); const pq = b.parent.getWorldQuaternion(new THREE.Quaternion()).invert(); b.quaternion.copy(pq.multiply(_iq2)); b.updateWorldMatrix(false, true);
+}
+function ik2(a, b, c, T, pole, w) {
+  a.getWorldPosition(_ia); b.getWorldPosition(_ib); c.getWorldPosition(_ic);
+  const tgt = _ic.clone().lerp(T, w), l1 = _ia.distanceTo(_ib), l2 = _ib.distanceTo(_ic), d = Math.min(l1 + l2 - 1e-3, Math.max(0.05, _ia.distanceTo(tgt)));
+  const u = tgt.clone().sub(_ia).normalize(), pw = pole.clone().sub(_ia); pw.sub(u.clone().multiplyScalar(pw.dot(u))).normalize();
+  const cosA = Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d))), B2 = _ia.clone().add(u.clone().multiplyScalar(l1 * cosA)).add(pw.multiplyScalar(l1 * Math.sqrt(1 - cosA * cosA)));
+  rotBoneTo(a, _ib.clone().sub(_ia), B2.clone().sub(_ia));
+  b.getWorldPosition(_ib); c.getWorldPosition(_ic); rotBoneTo(b, _ic.clone().sub(_ib), tgt.clone().sub(_ib));
+}
+function bowFrom(me) { const h = me._bowHand || (me._bowHand = me.root.getObjectByName('hand_l')); return h ? h.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.05, 0)) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)); }
+function archerPose(me, p, t, dt) {
+  const on = p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.bow && !S.riding && !S.casting && (S._fighting || t < S.lockAnim);
+  me._aimW = (me._aimW || 0) + ((on ? 1 : 0) - (me._aimW || 0)) * Math.min(1, dt * 8); if (me._aimW < 0.02) { if (S._nock) S._nock.visible = false; return; }
+  const r = me.root, g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'); if (!sl || !sr || !hd) return;
+  r.updateWorldMatrix(true, true);
+  const yaw = me.obj.rotation.y, fwd = _iv.set(Math.sin(yaw), 0, Math.cos(yaw)), right = _iw.set(-Math.cos(yaw), 0, Math.sin(yaw)), up = new THREE.Vector3(0, 1, 0);
+  const shL = sl.getWorldPosition(new THREE.Vector3()), shR = sr.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
+  // puxada: sobe até a soltura (0,25 s depois do golpe), solta de uma vez e volta a meia-puxada em guarda
+  const since = t - (S.lastAtk || -9), draw = since < 0.25 ? 0.35 + since / 0.25 * 0.65 : since < 0.4 ? 0.15 : 0.6;
+  me._draw = (me._draw || 0.6) + (draw - (me._draw || 0.6)) * Math.min(1, dt * (since < 0.4 ? 30 : 6));
+  const L = shL.distanceTo(hl.getWorldPosition(new THREE.Vector3())) > 0 ? 0.56 : 0.56;
+  const bowT = shL.clone().add(fwd.clone().multiplyScalar(L)).add(right.clone().multiplyScalar(-0.06)).add(up.clone().multiplyScalar(0.02));
+  ik2(sl, el, hl, bowT, shL.clone().add(up.clone().multiplyScalar(-0.4)).add(right.clone().multiplyScalar(-0.5)), me._aimW);
+  { const bow = r.userData.items.bow; bow.updateWorldMatrix(true, false); const bu = new THREE.Vector3(0, 1, 0).transformDirection(bow.matrixWorld), want = up.clone().add(right.clone().multiplyScalar(0.18)).normalize(); // arco em pé (levemente inclinado), corda para o corpo
+    rotBoneTo(hl, bu, bu.clone().lerp(want, me._aimW)); }
+  const anchor = head.clone().add(right.clone().multiplyScalar(0.07)).add(up.clone().multiplyScalar(-0.07)).add(fwd.clone().multiplyScalar(0.04)); // canto da boca
+  const strT = bowT.clone().lerp(anchor, me._draw).add(right.clone().multiplyScalar(0.02));
+  ik2(sr, er, hr, strT, shR.clone().add(fwd.clone().multiplyScalar(-0.6)).add(right.clone().multiplyScalar(0.35)).add(up.clone().multiplyScalar(0.15)), me._aimW);
+  // flecha encaixada na corda: da mão direita até o arco (some no instante da soltura)
+  if (!S._nock) { S._nock = makeArrow(); S._nock.scale.setScalar(1); scene.add(S._nock); } me._nock = S._nock;
+  const hR = hr.getWorldPosition(new THREE.Vector3()), hL = hl.getWorldPosition(new THREE.Vector3()), dir = hL.clone().sub(hR);
+  me._nock.visible = me._aimW > 0.6 && !(since >= 0.22 && since < 0.45) && dir.length() > 0.12;
+  if (me._nock.visible) { me._nock.position.copy(hR).add(dir.normalize().multiplyScalar(0.37)); me._nock.lookAt(me._nock.position.clone().add(dir)); }
+}
 function moveInput() {
   const k = keys;
   let fwd = 0, strafe = 0, turn = 0;
@@ -1798,10 +1883,12 @@ function colGrid() {
   for (const c of colliders) { const R = c.r + 2; for (let i = Math.floor((c.x - R) / CG); i <= Math.floor((c.x + R) / CG); i++) for (let j = Math.floor((c.z - R) / CG); j <= Math.floor((c.z + R) / CG); j++) { const k = i * 100003 + j; let a = cgrid.get(k); if (!a) cgrid.set(k, a = []); a.push(c); } }
 }
 const NOCOL = [];
+let RES_Y = 0; // altura dos pés de quem está se movendo (o jogador define antes; os outros andam no chão)
 function resolve(x, z, r) {
   colGrid();
   const near = cgrid.get(Math.floor(x / CG) * 100003 + Math.floor(z / CG)) || NOCOL;
-  for (let it = 0; it < 2; it++) for (const c of near) {
+  for (let it = 0; it < 3; it++) for (const c of near) {
+    if (c.y0 !== undefined && (RES_Y < c.y0 || RES_Y > c.y1)) continue; // S-281: colisão de andar (guarda-corpo, lateral da escada) só vale na altura dela
     const dx = x - c.x, dz = z - c.z;
     if (c.box) {
       if (Math.abs(dx) > c.r + r + 0.5 || Math.abs(dz) > c.r + r + 0.5) continue;
@@ -1820,6 +1907,15 @@ function resolve(x, z, r) {
   else if (x <= HALF + 100) { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); const sp = deckAt(x, z) === null ? seaPush(x, z) : null; if (sp) { x = sp.x; z = sp.z; } } // ninguém entra no mar fundo
   return { x, z };
 }
+// S-300: ponto livre mais perto (sem colisão e sem degrau alto), testando primeiro os lados próximos da direção desejada
+function freeSpot(x, z, dir = 0) {
+  const g0 = groundAt(x, z);
+  for (let rad = 0.5; rad <= 7; rad += 0.35) for (let k = 0; k < 24; k++) {
+    const a = dir + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 12, cx = x + Math.sin(a) * rad, cz = z + Math.cos(a) * rad, q = resolve(cx, cz, 0.5);
+    if (Math.hypot(q.x - cx, q.z - cz) < 0.01 && Math.abs(groundAt(cx, cz) - g0) < Math.max(0.6, rad * 0.8)) return { x: cx, z: cz };
+  }
+  return null;
+}
 function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
   me.anim.update(dt);
@@ -1828,6 +1924,7 @@ function updatePlayer(dt) {
     if (rel != null) { const back = Math.abs(rel) > 2.0, r2 = back ? rel - Math.sign(rel) * Math.PI : rel; want = Math.max(-1.45, Math.min(1.45, r2 * 0.9)); } // S-265: pernas para onde anda, tronco no alvo travado
     S.legTwist = angLerp(S.legTwist || 0, want, Math.min(1, dt * 10));
     if (Math.abs(S.legTwist) > 0.01) legTwist(me, S.legTwist);
+    levelHead(me, S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));
@@ -1865,10 +1962,12 @@ function updatePlayer(dt) {
   }
   // aceleração/desaceleração suave: ao soltar a tecla o personagem para em ~0,2 s, não de uma vez
   S.vel = S.vel || { x: 0, z: 0 };
-  const kv = 1 - Math.exp(-dt * (vx || vz ? 16 : 9));
+  const onIce = P.ground && !S.riding && !S.god && P.x < HALF && Math.hypot(P.x - FROZEN.x, P.z - FROZEN.z) < FROZEN.r * 0.97; S.onIce = onIce; // S-273: no lago congelado quase não há atrito: arranca devagar, desliza ao soltar e custa a frear/virar
+  const kv = 1 - Math.exp(-dt * (onIce ? (vx || vz ? 1.5 : 0.35) : (vx || vz ? 16 : 9)));
   if (!P.ground) { S.vel.x += (vx - S.vel.x) * kv * 0.25; S.vel.z += (vz - S.vel.z) * kv * 0.25; }
   else { S.vel.x += (vx - S.vel.x) * kv; S.vel.z += (vz - S.vel.z) * kv; }
   if (Math.hypot(S.vel.x, S.vel.z) < 0.05) { S.vel.x = 0; S.vel.z = 0; }
+  RES_Y = P.y - (P.x > HALF + 100 ? 0 : groundAt(P.x, P.z)); // S-281: nas salas, a altura dos pés decide quais guarda-corpos valem
   let r = resolve(P.x + S.vel.x * dt, P.z + S.vel.z * dt, 0.45);
   // S-098: encostas íngremes não dão para subir (nem pulando). Fora das salas e sem God Mode.
   if (!S.god && !S.interior && r.x <= HALF + 100) {
@@ -1885,9 +1984,14 @@ function updatePlayer(dt) {
     }
   }
   if (S.lunge && S.time - S.lunge.t < 0.2) { const k = S.lunge.d / 0.2 * dt, q = resolve(r.x + Math.sin(P.yaw) * k, r.z + Math.cos(P.yaw) * k, 0.45); r = q; } // avanço do golpe pesado
+  { // S-300: nunca ficar preso — tentando andar e sem sair do lugar por 0,7 s, procura o ponto livre mais perto (na direção desejada) e sai por ali
+    const want = Math.hypot(vx, vz) * dt, got = Math.hypot(r.x - P.x, r.z - P.z);
+    if (want > 0.005 && !S.riding && !S.casting) { S.stuckT = got < want * 0.1 ? (S.stuckT || 0) + dt : 0; if (S.stuckT > 0.7) { const f = freeSpot(P.x, P.z, Math.atan2(vx, vz)); if (f) r = f; S.stuckT = 0; } } else S.stuckT = 0;
+  }
   P.x = r.x; P.z = r.z;
   const coast = !mi.any ? Math.hypot(S.vel.x, S.vel.z) : 0;
-  let gy = groundAt(P.x, P.z); if (inLake) gy = Math.max(gy, LAKE.level - 0.6); // na água: afundado até a cintura
+  RES_Y = 0;
+  let gy = groundAt(P.x, P.z, P.y); if (inLake) gy = Math.max(gy, LAKE.level - 0.6); // na água: afundado até a cintura
   const pad = padUnder(P.x, P.z, P.y); S.onPad = pad && P.ground ? pad : null;
   if (pad) gy = Math.max(gy, pad.mesh.position.y + 0.1); // S-199: pés em cima da folha, não dentro da água
   if (P.ground && gy < P.y - 0.3) { P.ground = false; P.vy = 0; } // saiu da beirada (ex.: da folha): cai
@@ -1913,7 +2017,7 @@ function updatePlayer(dt) {
   me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
   if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
-  const fighting = !S.riding && inCombat(t);
+  const fighting = !S.riding && inCombat(t); S._fighting = fighting;
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (S.riding && t >= S.lockAnim) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
@@ -1923,6 +2027,7 @@ function updatePlayer(dt) {
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.9 : 1 });
   else if (mi.fwd < 0) me.anim.play('Walking_Backwards', { speed: -1.05 }); // a caminhada tocada ao contrário = passos para trás
   else if (mi.strafe) me.anim.play('Running_A'); // de lado: o corpo vira para a direção (bodyTwist) e corre
+  else if (coast > 0.8 && S.onIce) me.anim.play('Idle', { fade: 0.35 }); // S-273: deslizando no gelo sem andar: o corpo vai parado, só escorregando
   else if (coast > 0.8) me.anim.play('Running_A', { speed: Math.max(0.45, coast / base) });
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
   else me.anim.play(fighting ? stanceOf(p) : 'Idle', { fade: 0.25 }); // em combate: postura de luta parado, nada de voltar "à paisana" entre os golpes
@@ -1975,7 +2080,7 @@ function playerAttack(m) {
     Sound.play('magic');
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
-  else if (p.d.ranged) { Sound.play(ca.sound === 'magic' ? 'magic' : 'bow'); later(0.25, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
+  else if (p.d.ranged) { const isBow = ca.sound !== 'magic'; Sound.play(isBow ? 'bowDraw' : 'magic'); later(0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
   else { Sound.play(ca.sound || 'swing'); later(0.28, hit); }
 }
 function playerDie() {
@@ -2313,12 +2418,34 @@ function executeSkill(a) {
 }
 
 /* =========================== Efeitos =========================== */
+// S-295: flecha de verdade — haste de madeira, ponta de aço larga, três penas e entalhe (aponta para +z, o lookAt mira no alvo)
+let _arrowParts = null;
+function makeArrow() {
+  if (!_arrowParts) {
+    const shaft = new THREE.CylinderGeometry(0.0055, 0.0055, 0.74, 7).rotateX(Math.PI / 2);
+    const hs = new THREE.Shape(); hs.moveTo(0, 0.075); hs.lineTo(0.018, 0.012); hs.lineTo(0.009, 0); hs.lineTo(-0.009, 0); hs.lineTo(-0.018, 0.012); hs.closePath();
+    const head = new THREE.ExtrudeGeometry(hs, { depth: 0.002, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.002, bevelSegments: 1 }).rotateX(Math.PI / 2).translate(0, 0, 0.37);
+    const vs = new THREE.Shape(); vs.moveTo(0, 0); vs.lineTo(0.13, 0); vs.quadraticCurveTo(0.06, 0.012, 0.0, 0.024); vs.closePath();
+    const vane = new THREE.ShapeGeometry(vs, 4).rotateY(-Math.PI / 2).translate(0, 0, -0.355);
+    const vanes = [0, 1, 2].map(k => vane.clone().rotateZ(k * Math.PI * 2 / 3 + 0.3));
+    _arrowParts = { shaft, head, vanes, nock: new THREE.CylinderGeometry(0.008, 0.007, 0.02, 7).rotateX(Math.PI / 2).translate(0, 0, -0.375),
+      wood: new THREE.MeshStandardMaterial({ color: '#8a6238', roughness: 0.7 }), steel: new THREE.MeshStandardMaterial({ color: '#9aa2ab', metalness: 0.85, roughness: 0.32 }),
+      feather: new THREE.MeshStandardMaterial({ color: '#e9e2d2', roughness: 0.9, side: THREE.DoubleSide }), featherR: new THREE.MeshStandardMaterial({ color: '#a8382a', roughness: 0.9, side: THREE.DoubleSide }), nockM: new THREE.MeshStandardMaterial({ color: '#2a2420', roughness: 0.6 }) };
+  }
+  const A = _arrowParts, g = new THREE.Group();
+  g.add(new THREE.Mesh(A.shaft, A.wood), new THREE.Mesh(A.head, A.steel), new THREE.Mesh(A.nock, A.nockM));
+  A.vanes.forEach((v, k) => g.add(new THREE.Mesh(v, k ? A.feather : A.featherR)));
+  g.scale.setScalar(1.25); return g;
+}
 function shoot(from, toFn, color, onHit, arrow) {
-  const g = arrow ? new THREE.CylinderGeometry(0.03, 0.03, 0.7, 5).rotateX(Math.PI / 2) : new THREE.SphereGeometry(0.18, 10, 8);
-  const mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color }));
-  if (!arrow) mesh.add(new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false })));
-  mesh.position.copy(from); scene.add(mesh);
-  S.projectiles.push({ mesh, toFn, onHit, speed: arrow ? 28 : 18 });
+  let mesh;
+  if (arrow) { mesh = makeArrow(); Sound.play('arrowLoose'); const h0 = onHit; onHit = () => { Sound.play('arrowHit'); h0(); }; }
+  else {
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), new THREE.MeshBasicMaterial({ color }));
+    mesh.add(new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false })));
+  }
+  mesh.position.copy(from); scene.add(mesh); mesh.lookAt(toFn());
+  S.projectiles.push({ mesh, toFn, onHit, speed: arrow ? 34 : 18 });
 }
 // morte rara: o monstro vira faíscas de luz que sobem
 function soulBurst(m) {
@@ -2955,14 +3082,14 @@ function makeStage(cv) {
   // enquadramento: personagem e mascote inteiros, girando em qualquer ângulo (raio horizontal = invariante à rotação)
   const extent = obj => {
     obj.updateMatrixWorld(true); const box = new THREE.Box3(), v = new THREE.Vector3(); let rad = 0;
-    obj.traverse(o => { if (!(o.isMesh || o.isSkinnedMesh) || !o.visible || o.isPoints) return; let hid = false; for (let p = o.parent; p; p = p.parent) if (!p.visible) hid = true; if (hid) return;
+    obj.traverse(o => { if (!(o.isMesh || o.isSkinnedMesh) || !o.visible || o.isPoints) return; const om = Array.isArray(o.material) ? o.material[0] : o.material; if (om && (om.transparent || om.blending === THREE.AdditiveBlending)) return; /* S-288: brilhos/orbes da classe não contam no enquadramento (deixavam o boneco pequeno e com vazio em volta) */ let hid = false; for (let p = o.parent; p; p = p.parent) if (!p.visible) hid = true; if (hid) return;
       let b; if (o.isSkinnedMesh) { o.computeBoundingBox(); b = o.boundingBox.clone().applyMatrix4(o.matrixWorld); } else b = new THREE.Box3().expandByObject(o, true); box.union(b); // preciso: vértice a vértice (caixa girada inflava a espada)
       for (const x of [b.min.x, b.max.x]) for (const z of [b.min.z, b.max.z]) rad = Math.max(rad, Math.hypot(x - obj.position.x, z - obj.position.z)); });
     return { rad: Math.min(rad, 1.3), top: Math.min(box.max.y, 2.6) };
   };
   const refit = () => {
     let x0 = -0.5, x1 = 0.5, h = HERO_H, depth = 0.5;
-    if (cur) { const e = extent(cur.ch.obj); x0 = -e.rad; x1 = e.rad; h = Math.max(h, e.top); depth = e.rad; }
+    if (cur) { const e = extent(cur.ch.obj), rr0 = Math.min(e.rad, 0.85); x0 = -rr0; x1 = rr0; h = Math.max(1.1, e.top); depth = rr0; } // S-288: altura real do boneco (anão é mais baixo) e raio sem os efeitos soltos
     if (pet) { const e = extent(pet.obj); x0 = Math.min(x0, pet.obj.position.x - e.rad); x1 = Math.max(x1, pet.obj.position.x + e.rad); h = Math.max(h, e.top); depth = Math.max(depth, pet.obj.position.z + e.rad); }
     const th = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), wHalf = (x1 - x0) / 2 + 0.12, hHalf = h / 2 + 0.16;
     let face = HERO_H * 0.68; // altura do rosto: centro da cabeça de verdade (anão é mais baixo)
@@ -3025,7 +3152,7 @@ async function chooseCharacter() {
     <div class="cs-head"><h1>${GAME_TITLE}</h1><div class="sub">SEUS PERSONAGENS</div></div>
     <div class="cs-main">
       <button class="cs-arrow" id="cs-prev" title="Anterior (←)">‹</button>
-      <div class="cs-stage"><canvas id="cs-cv" width="640" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
+      <div class="cs-stage"><canvas id="cs-cv" width="500" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
       <button class="cs-arrow" id="cs-next" title="Próximo (→)">›</button>
       <div class="cs-info" id="cs-info"></div>
     </div>
@@ -3198,7 +3325,7 @@ function startWith(s) {
 
 
 /* =========================== Integração com as janelas do 2D =========================== */
-const ASSET_NAMES = { casa_da_vila: 'Casa da vila', taverna_da_vila: 'Taverna Caneca Alegre', estabulo_da_vila: 'Estábulo do Tomé', igreja_da_vila: 'Capela do Sol',  muralha_pedrafunda: 'Muralha de Pedrafunda', rua_pedrafunda: 'Rua principal de Pedrafunda', estoa_pedrafunda: 'Pórtico da ágora', acropole_pedrafunda: 'Acrópole de Pedrafunda', templo_da_forja: 'Templo da Forja', santuario_ancestrais: 'Santuário dos Ancestrais', taverna_anao: 'Taverna Bigorna Bêbada', mesas_da_taverna: 'Mesas da taverna', carroca_de_minerio: 'Carroça de minério', lago_congelado: 'Lago congelado', cais_de_pedra: 'Cais de pedra', cabeco: 'Cabeços de amarração', navio: 'Navio Gaivota Dourada', prancha: 'Prancha de embarque', quebra_mar: 'Quebra-mar do farol', estaleiro: 'Estaleiro (bote em conserto)', ancora_da_praca: 'Âncora da praça', mesa_da_capitania: 'Mesa da Capitania', toras: 'Pilha de toras', calcamento: 'Calçamento de pedra da praça', ruinas: 'Ruínas', calcada_antiga: 'Calçada antiga', coluna_quebrada: 'Coluna quebrada', muro_desabado: 'Muro desabado', coluna_tombada: 'Coluna gigante tombada', pedestal_vazio: 'Pedestal vazio', escombros: 'Escombros', muralha_gelida: 'A Muralha Gélida', escadaria_da_muralha: 'Escadaria da Muralha', sarilho: 'Sarilho do elevador', elevador_de_gaiola: 'Elevador de gaiola', torre_do_comandante: 'Torre do Comandante', salao_comunal: 'Salão comunal', alojamento: 'Alojamento da Vigília', corvaria: 'Corvaria', arsenal: 'Arsenal com forja', estabulo_da_vigilia: 'Estábulo da Vigília', patio_de_treino: 'Pátio de treino', portao_da_muralha: 'Portão selado da Muralha', lenha: 'Lenha empilhada', neve: 'Neve acumulada', guilda_dos_mercadores: 'Guilda dos Mercadores', armazem: 'Armazém de carga', banca_do_mercado: 'Banca do mercado', guindaste_do_cais: 'Guindaste do cais', galeao_mercante: 'Galeão mercante', noctivago: 'Noctívago (cavalo alado)', pinesnow_0: 'Pinheiro com neve', pinesnow_1: 'Pinheiro com neve', pinesnow_2: 'Pinheiro com neve', pinesnow_3: 'Pinheiro com neve', oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonesnow_0: 'Pedra com neve', stonesnow_1: 'Pedra com neve', stonesnow_2: 'Pedra com neve', stonesnow_3: 'Pedra com neve', stonedark_0: 'Rocha musgosa',stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
+const ASSET_NAMES = { portao_pedraclara: 'Portão de Pedraclara', ossada_gigante: 'Ossada do gigante de presas', ossos: 'Ossos de fera', casa_da_vila: 'Casa da vila', taverna_da_vila: 'Taverna Caneca Alegre', estabulo_da_vila: 'Estábulo do Tomé', igreja_da_vila: 'Capela do Sol',  muralha_pedrafunda: 'Muralha de Pedrafunda', rua_pedrafunda: 'Rua principal de Pedrafunda', estoa_pedrafunda: 'Pórtico da ágora', acropole_pedrafunda: 'Acrópole de Pedrafunda', templo_da_forja: 'Templo da Forja', santuario_ancestrais: 'Santuário dos Ancestrais', taverna_anao: 'Taverna Bigorna Bêbada', mesas_da_taverna: 'Mesas da taverna', carroca_de_minerio: 'Carroça de minério', lago_congelado: 'Lago congelado', cais_de_pedra: 'Cais de pedra', cabeco: 'Cabeços de amarração', navio: 'Navio Gaivota Dourada', prancha: 'Prancha de embarque', quebra_mar: 'Quebra-mar do farol', estaleiro: 'Estaleiro (bote em conserto)', ancora_da_praca: 'Âncora da praça', mesa_da_capitania: 'Mesa da Capitania', toras: 'Pilha de toras', calcamento: 'Calçamento de pedra da praça', ruinas: 'Ruínas', calcada_antiga: 'Calçada antiga', coluna_quebrada: 'Coluna quebrada', muro_desabado: 'Muro desabado', coluna_tombada: 'Coluna gigante tombada', pedestal_vazio: 'Pedestal vazio', escombros: 'Escombros', muralha_gelida: 'A Muralha Gélida', escadaria_da_muralha: 'Escadaria da Muralha', sarilho: 'Sarilho do elevador', elevador_de_gaiola: 'Elevador de gaiola', torre_do_comandante: 'Torre do Comandante', salao_comunal: 'Salão comunal', alojamento: 'Alojamento da Vigília', corvaria: 'Corvaria', arsenal: 'Arsenal com forja', estabulo_da_vigilia: 'Estábulo da Vigília', muralha_da_vigilia: 'Muralha da Vigília Negra', torre_da_vigilia: 'Torre da muralha', portao_da_vigilia: 'Portão da Vigília Negra', casa_da_vigilia: 'Casa da Vigília', torreao_da_vigilia: 'Torreão da Vigília (dá para entrar)',patio_de_treino: 'Pátio de treino', portao_da_muralha: 'Portão selado da Muralha', lenha: 'Lenha empilhada', neve: 'Neve acumulada', guilda_dos_mercadores: 'Guilda dos Mercadores', armazem: 'Armazém de carga', banca_do_mercado: 'Banca do mercado', guindaste_do_cais: 'Guindaste do cais', galeao_mercante: 'Galeão mercante', noctivago: 'Noctívago (cavalo alado)', pinesnow_0: 'Pinheiro com neve', pinesnow_1: 'Pinheiro com neve', pinesnow_2: 'Pinheiro com neve', pinesnow_3: 'Pinheiro com neve', oak_0: 'Carvalho', oak_1: 'Carvalho', oak_2: 'Carvalho', oak_3: 'Carvalho', oak_4: 'Carvalho', oakdark_0: 'Carvalho do bosque', oakdark_1: 'Carvalho do bosque', oakdark_2: 'Carvalho do bosque', pine_0: 'Pinheiro', pine_1: 'Pinheiro', pine_2: 'Pinheiro', pine_3: 'Pinheiro', pine_4: 'Pinheiro', pinedark_0: 'Pinheiro escuro', pinedark_1: 'Pinheiro escuro', pinedark_2: 'Pinheiro escuro', pinedark_3: 'Pinheiro escuro', stone_0: 'Pedra', stone_1: 'Pedra', stone_2: 'Pedra', stone_3: 'Rocha', stone_4: 'Rocha', stone_5: 'Rocha', stonesnow_0: 'Pedra com neve', stonesnow_1: 'Pedra com neve', stonesnow_2: 'Pedra com neve', stonesnow_3: 'Pedra com neve', stonedark_0: 'Rocha musgosa',stonedark_1: 'Rocha musgosa', stonedark_2: 'Rocha musgosa', stonedark_3: 'Rocha musgosa', stump_0: 'Toco', stump_1: 'Toco', stump_2: 'Toco', log_0: 'Tronco caído', log_1: 'Tronco caído', home_A: 'Casa', home_B: 'Casa', home_A_red: 'Casa', home_B_red: 'Casa', tavern: 'Taverna', blacksmith: 'Ferraria', market: 'Feira', church: 'Igreja', windmill: 'Moinho', well: 'Poço', tower: 'Torre', destroyed: 'Prédio em ruínas', wall: 'Muro', wall_corner: 'Muro (canto)', fence: 'Cerca', palisade: 'Paliçada de troncos', colosso: 'Colosso de pedra', colosso_sentinela: 'Colosso Sentinela (de pé, com espada e escudo)', colosso_rei: 'Rei de Pedra no trono', colosso_fera: 'Fera de pedra agachada', colosso_tita: 'Titã caído (braço erguido)', colosso_sem_cabeca: 'Guerreiro de pedra sem cabeça', ruin_wall: 'Muro em ruínas', cabeca_gigante: 'Cabeça de gigante caída', monolito: 'Monólito com runas', arco: 'Arco antigo', santuario: 'Santuário Silente', cactus_0: 'Cacto', cactus_1: 'Cacto', cactus_2: 'Cacto', scaffold: 'Andaime', tree_A: 'Pinheiro', tree_B: 'Pinheiro', trees_A_m: 'Grupo de árvores', trees_B_m: 'Grupo de árvores', trees_A_l: 'Bosque denso', trees_B_l: 'Bosque denso', stump: 'Tocos', rock_A: 'Pedra', rock_B: 'Pedra', rock_C: 'Pedra', rock_D: 'Pedra', rock_E: 'Pedra', mountain_A: 'Montanha', mountain_B: 'Montanha', mountain_C: 'Montanha', cloud: 'Nuvem', cloud_s: 'Nuvem', lily: 'Vitória-régia', lilypad: 'Vitória-régia (dá para pular em cima)', barrel: 'Barril', crate_A: 'Caixote', crate_B: 'Caixote', sack: 'Saco', wheelbarrow: 'Carrinho de mão', flag_blue: 'Bandeira', flag_red: 'Bandeira', tent: 'Tenda', weaponrack: 'Suporte de armas', lumber: 'Toras', bucket: 'Balde', target_prop: 'Alvo de treino', target_round: 'Alvo de treino', fruitstand: 'Barraca de frutas', cais: 'Cais do porto', barco: 'Barco de pesca', veleiro: 'Veleiro', farol: 'Farol', casa_do_porto: 'Casa do porto', banca_de_peixe: 'Banca de peixe', redes_de_pesca: 'Redes de pesca', palmeira: 'Palmeira', mastro: 'Mastro com estandarte', portao_pedrafunda: 'Portão de Pedrafunda', estatua_anao: 'Estátua de guerreiro anão', salao_anao: 'Salão do Rei-Sob-a-Pedra', casa_anao: 'Casa de anão', morada_anao: 'Morada escavada na rocha', ferraria_anao: 'Ferraria do Mestre Brakar', forja_da_praca: 'Forja da praça', banca_de_armas: 'Banca de machados', arvore_ancia: 'Árvore anciã', ponte_elfica: 'Ponte suspensa', casa_elfica: 'Casa élfica', pavilhao_elfico: 'Pavilhão élfico', fonte_da_lua: 'Fonte da Lua', portal_elfico: 'Portal de Aelindra', lanterna_elfica: 'Lanternas élficas', castelo_valcinza: 'Castelo de Valcinza', interior_castelo: 'Interior do Castelo de Valcinza', tabela_refino: 'Tabela de refino do Mestre Brakar' };
 const tileOf = (x, z) => [Math.round(x), Math.round(z)];
 function describeMonster(m) {
   const d = m.def;

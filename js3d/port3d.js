@@ -102,10 +102,19 @@ function coastHouse(seed, w, d, door = true) {
   // fachada (frente = +z): porta com batente e degrau, janelas com moldura, venezianas pintadas e floreira
   const dx = -w * 0.22;
   if (door) { K.box(1.15, 2.15, 0.12, M.wood(), dx, 1.4, d / 2 + 0.06); K.box(1.45, 0.16, 0.2, wd, dx, 2.55, d / 2 + 0.08); for (const s of [-1, 1]) K.box(0.14, 2.3, 0.18, wd, dx + s * 0.66, 1.45, d / 2 + 0.08); K.box(1.5, 0.18, 0.6, M.greyStone(), dx, 0.38, d / 2 + 0.35); K.add(new THREE.TorusGeometry(0.06, 0.012, 6, 12), M.iron(), dx + 0.38, 1.4, d / 2 + 0.14); }
-  const winX = [w * 0.22]; if (w > 7) winX.push(w * 0.22 + 1.6);
+  // S-272: janelas longe da quina (a veneziana aberta nunca passa do canto) e com detalhe de verdade: vão fundo, cortina, caixilho em cruz e vidro
+  const lo = (door ? -w * 0.22 + 0.73 : -w / 2 + 0.35) + 1.25, hi = w / 2 - 0.35 - 0.98, winX = hi - lo >= 2.05 ? [lo + (hi - lo - 2.05) / 2, lo + (hi - lo - 2.05) / 2 + 2.05] : [(lo + hi) / 2];
+  const curtain = plain('curtain' + seed % 4, ['#e8dcc0', '#b8483a', '#3e6a8a', '#d8c27a'][seed % 4], { rough: 0.95 }), room = plain('winRoom', '#2a1e14', { rough: 1, emissive: '#3a2410', ei: 0.6 }), pane = plain('winPane', '#b8d0dc', { rough: 0.05, metal: 0.4, transparent: true, opacity: 0.28 });
   for (const wx of winX) for (const wy of [1.9, h > 3.6 ? 3.0 : null].filter(Boolean)) {
-    K.box(0.95, 0.85, 0.06, M.glass(), wx, wy, d / 2 + 0.04); K.box(1.15, 0.12, 0.16, wd, wx, wy + 0.48, d / 2 + 0.07); K.box(1.2, 0.1, 0.3, wd, wx, wy - 0.48, d / 2 + 0.12);
-    for (const s of [-1, 1]) K.box(0.46, 0.9, 0.05, paint, wx + s * 0.72, wy, d / 2 + 0.1, 0, 0, 0);
+    const fz = d / 2;
+    K.box(0.9, 0.82, 0.11, room, wx, wy, fz + 0.055);                                                     // fundo: o cômodo escuro, com a luz quente lá dentro
+    for (const s of [-1, 1]) { K.box(0.26, 0.8, 0.03, curtain, wx + s * 0.31, wy, fz + 0.115); for (let k = 0; k < 3; k++) K.box(0.03, 0.8, 0.045, curtain, wx + s * (0.22 + k * 0.07), wy, fz + 0.12); } // cortinas com pregas, abertas nos lados
+    K.box(0.9, 0.06, 0.04, curtain, wx, wy + 0.38, fz + 0.12);                                           // bandô da cortina
+    for (const s of [-1, 1]) K.box(0.08, 0.98, 0.14, wd, wx + s * 0.49, wy, fz + 0.13); K.box(1.06, 0.08, 0.14, wd, wx, wy + 0.45, fz + 0.13); // batentes
+    K.box(0.045, 0.82, 0.05, wd, wx, wy, fz + 0.15); K.box(0.9, 0.045, 0.05, wd, wx, wy + 0.06, fz + 0.15); // caixilho em cruz
+    K.box(0.9, 0.82, 0.02, pane, wx, wy, fz + 0.14);                                                    // vidro com reflexo
+    K.box(1.15, 0.12, 0.16, wd, wx, wy + 0.53, fz + 0.07); K.box(1.2, 0.1, 0.3, wd, wx, wy - 0.48, fz + 0.12);
+    for (const s of [-1, 1]) { K.box(0.44, 0.9, 0.05, paint, wx + s * 0.74, wy, fz + 0.1); for (const yy of [-0.2, 0.2]) K.box(0.36, 0.03, 0.02, wd, wx + s * 0.74, wy + yy, fz + 0.135); } // venezianas abertas, com travessas
     if (wy < 2.5) { K.box(1.0, 0.22, 0.25, wd, wx, wy - 0.62, d / 2 + 0.22); for (let k = 0; k < 6; k++) K.add(new THREE.SphereGeometry(0.07, 8, 6), plain('flw' + (k % 3), ['#e05a7a', '#f2d24a', '#f2f2f2'][k % 3], { rough: 0.9 }), wx - 0.4 + k * 0.16, wy - 0.46, d / 2 + 0.24); }
   }
   // alpendre com corrimão (lado da porta)
@@ -116,7 +125,38 @@ function coastHouse(seed, w, d, door = true) {
   return { K, box };
 }
 // palmeira: tronco afinado em anéis, folhas de verdade (nervura + folíolos caídos), cocos em cacho
+/* S-286: coqueiro de verdade — tronco quase reto (só uma leve inclinação), base engrossada, anéis de cicatriz das folhas que caíram,
+   copa cheia com ~22 folhas em leque (folíolos finos e longos caindo dos dois lados), folhas secas penduradas por baixo e cachos de coco verde */
 function palmTree(seed) {
+  const K = new Kit(), r = rngOf(seed), H = 7.5 + r() * 4, lean = 0.25 + r() * 0.55, dir = r() * 6.28;
+  const trunkM = plain('coirTrunk', '#8a7a62', { rough: 0.95 }), ringM = plain('coirRing', '#5e5242', { rough: 1 });
+  const pts = []; for (let k = 0; k <= 8; k++) { const t = k / 8; pts.push(new THREE.Vector3(Math.cos(dir) * Math.pow(t, 2.2) * lean, t * H, Math.sin(dir) * Math.pow(t, 2.2) * lean)); }
+  const curve = new THREE.CatmullRomCurve3(pts), SEG = 48, RAD = 12, tube = new THREE.TubeGeometry(curve, SEG, 0.2, RAD), P = tube.attributes.position;
+  for (let i = 0; i < P.count; i++) { const v = Math.floor(i / (RAD + 1)) / SEG, c = curve.getPoint(Math.min(1, v)), ring = 1 + 0.045 * Math.pow(Math.abs(Math.sin(v * H * 2.6 * Math.PI)), 6), k = (1.0 - v * 0.28 + Math.pow(Math.max(0, 0.12 - v), 2) * 40) * ring; P.setXYZ(i, c.x + (P.getX(i) - c.x) * k, P.getY(i), c.z + (P.getZ(i) - c.z) * k); } // base mais grossa, afinando até a copa, anéis
+  tube.computeVertexNormals(); K.add(tube, trunkM);
+  for (let k = 1; k < Math.floor(H * 2.6); k += 2) { const t = k / (H * 2.6), c = curve.getPoint(t); K.add(new THREE.TorusGeometry(0.2 * (1 - t * 0.28) * 1.03, 0.012, 4, 14), ringM, c.x, c.y, c.z, 0, Math.PI / 2); } // cicatrizes das folhas
+  const top = curve.getPoint(1);
+  K.add(new THREE.CylinderGeometry(0.2, 0.15, 0.7, 12), plain('crownShaft', '#6e7a3a', { rough: 0.85 }), top.x, top.y - 0.15, top.z); // "palmito" no alto do tronco
+  const leafM = [plain('palmLeafA', '#3c7430', { rough: 0.7, side: THREE.DoubleSide }), plain('palmLeafB', '#4f8a36', { rough: 0.7, side: THREE.DoubleSide }), plain('palmLeafC', '#62983e', { rough: 0.7, side: THREE.DoubleSide })];
+  const dryM = plain('palmDry', '#9a7e4a', { rough: 0.95, side: THREE.DoubleSide }), ribM = plain('palmRib2', '#8a8a4a', { rough: 0.85 });
+  const frond = (az, up, len, mat, droop) => {
+    const ribPts = []; for (let k = 0; k <= 14; k++) { const t = k / 14, d = t * len; ribPts.push(new THREE.Vector3(top.x + Math.cos(az) * d, top.y + 0.2 + Math.sin(up) * d * (1 - t * 0.4) - Math.pow(t, 2.1) * len * droop, top.z + Math.sin(az) * d)); }
+    const rc = new THREE.CatmullRomCurve3(ribPts); K.add(new THREE.TubeGeometry(rc, 14, 0.03, 4), ribM);
+    const pos = [];
+    for (let k = 2; k < 34; k++) { const t = k / 34, p = rc.getPoint(t), tg = rc.getTangent(t), side = new THREE.Vector3(-tg.z, 0, tg.x).normalize(), ll = (0.35 + 0.65 * Math.sin(Math.min(1, t * 1.25) * Math.PI * 0.95)) * 0.95 * (len / 4.4), w = 0.045 * (1 - t * 0.4);
+      for (const s of [-1, 1]) { const dirv = side.clone().multiplyScalar(s).add(tg.clone().multiplyScalar(0.55)).normalize(), tip = p.clone().addScaledVector(dirv, ll).add(new THREE.Vector3(0, -ll * (0.45 + droop * 0.4), 0)), mid = p.clone().addScaledVector(dirv, ll * 0.5).add(new THREE.Vector3(0, -ll * 0.12, 0)), off = tg.clone().multiplyScalar(w);
+        const a0 = p.clone().sub(off), a1 = p.clone().add(off), m0 = mid.clone().sub(off.clone().multiplyScalar(0.8)), m1 = mid.clone().add(off.clone().multiplyScalar(0.8));
+        pos.push(a0.x, a0.y, a0.z, a1.x, a1.y, a1.z, m1.x, m1.y, m1.z, a0.x, a0.y, a0.z, m1.x, m1.y, m1.z, m0.x, m0.y, m0.z, m0.x, m0.y, m0.z, m1.x, m1.y, m1.z, tip.x, tip.y, tip.z); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); K.add(g, mat);
+  };
+  const nF = 20 + Math.floor(r() * 5);
+  for (let f = 0; f < nF; f++) { const tier = f % 3, az = f * 2.4 + r() * 0.3; frond(az, [0.75, 0.35, -0.05][tier] + (r() - 0.5) * 0.15, 3.6 + r() * 1.2 - tier * 0.2, leafM[(f + tier) % 3], [0.38, 0.55, 0.75][tier]); }
+  for (let f = 0; f < 3 + Math.floor(r() * 3); f++) frond(r() * 6.28, -0.9 - r() * 0.4, 2.4 + r() * 0.8, dryM, 0.2); // folhas secas penduradas
+  const nutM = [plain('coconutG', '#6f8a2e', { rough: 0.55 }), plain('coconutG2', '#87963a', { rough: 0.55 }), plain('coconutY', '#a89a3a', { rough: 0.55 })];
+  for (let k = 0; k < 9 + Math.floor(r() * 5); k++) { const a = k * 2.3 + r(), rr = 0.24 + (k % 3) * 0.06; K.add(new THREE.SphereGeometry(0.17, 12, 10), nutM[k % 3], top.x + Math.cos(a) * rr, top.y - 0.35 - (k % 3) * 0.13, top.z + Math.sin(a) * rr, 0, 0, 0, 1, 1.18, 1); } // cachos de coco verde
+  return K;
+}
+function palmTreeOld(seed) {
   const K = new Kit(), r = rngOf(seed), H = 6.5 + r() * 4, lean = 0.6 + r() * 1.8, dir = r() * 6.28, bark = M.bark();
   const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector3(Math.cos(dir) * Math.pow(t, 1.7) * lean * 2, t * H, Math.sin(dir) * Math.pow(t, 1.7) * lean * 2)); }
   const curve = new THREE.CatmullRomCurve3(pts), tube = new THREE.TubeGeometry(curve, 30, 0.2, 10), P = tube.attributes.position;
@@ -351,7 +391,19 @@ export function buildPortCity(ctx) {
     for (const [a, b] of gaps.sort((x, y) => x[0] - y[0])) { if (a > t0) wallT(ctx, q + 0.3, t0, a); t0 = b; } wallT(ctx, q + 0.3, t0, HARBOR.half - 2); }
   // 4) quebra-mar de pedras até o farol na boca do porto
   { const bt = 60, s0 = q - 0.5, s1 = q + 30, K = new Kit(), st = M.greyStone(), rock = plain('brkRock', '#7c776c', { rough: 0.95 }), yTop = LAND + 0.03, rr = rngOf(606);
-    for (let s = s0; s < s1 + 8; s += 1.6) for (const sx of [-1, 1]) { const g = new THREE.IcosahedronGeometry(1, 1); const P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setXYZ(i, P.getX(i) * (1 + (rr() - 0.5) * 0.3), P.getY(i) * (1 + (rr() - 0.5) * 0.3), P.getZ(i) * (1 + (rr() - 0.5) * 0.3)); g.computeVertexNormals(); K.add(g, rock, sx * (2.2 + rr() * 0.6), yTop - 1.2 - rr() * 0.8, s - s0, rr() * 6, rr() * 6, 0, 1.5 + rr() * 0.6, 1.3 + rr() * 0.5, 1.4 + rr() * 0.5); }
+    void rock; // S-285: enrocamento de verdade — blocos de pedra partidos (faces de corte), com textura, parte molhada escura e alga na linha d'água
+    const armM = PM.armour || (PM.armour = new THREE.MeshStandardMaterial({ roughness: 0.9, vertexColors: true, flatShading: true })); // rocha partida: faces lisas, cor variando por vértice (sem rejunte de tijolo)
+    const boulder = (sx, sy, sz) => { const g = new THREE.IcosahedronGeometry(1, 3), P = g.attributes.position, v = new THREE.Vector3(), planes = [];
+      for (let k = 0; k < 9; k++) { const a = rr() * 6.28, y = (rr() - 0.5) * 1.4; planes.push([new THREE.Vector3(Math.cos(a), y, Math.sin(a)).normalize(), 0.55 + rr() * 0.3]); }
+      for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); for (const [n, d] of planes) { const e = v.dot(n) - d; if (e > 0) v.addScaledVector(n, -e); } v.multiplyScalar(1 + Math.sin(v.x * 5 + v.z * 3) * 0.035 + Math.sin(v.x * 13 + v.y * 11) * Math.cos(v.z * 9) * 0.03); P.setXYZ(i, v.x * sx, v.y * sy, v.z * sz); }
+      const ng = g.toNonIndexed(); ng.computeVertexNormals(); return ng; };
+    const sy0 = 0.6; const paintRock = (g, y0) => { const P = g.attributes.position, c = new Float32Array(P.count * 3), col = new THREE.Color(), tone = 0.82 + rr() * 0.3;
+      for (let i = 0; i < P.count; i++) { const wy = y0 + P.getY(i), wet = 1 - Math.min(1, Math.max(0, (wy - (SEA.level + 0.2)) / 0.9)), nz = 0.88 + 0.24 * (Math.sin(P.getX(i) * 7.1 + P.getZ(i) * 5.3) * Math.cos(P.getY(i) * 6.7) * 0.5 + 0.5); col.setRGB(0.15 * tone * nz, 0.142 * tone * nz, 0.125 * tone * nz).lerp(new THREE.Color(0.035, 0.037, 0.034), wet * 0.8); if (wy < SEA.level + 0.35 && wy > SEA.level - 0.6) col.lerp(new THREE.Color(0.02, 0.04, 0.012), 0.55); if (P.getY(i) > 0.5 * sy0) col.lerp(new THREE.Color(0.24, 0.23, 0.2), 0.3); /* molhado embaixo, alga na linha d'água, topo seco e mais claro */ c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g; };
+    for (let s = s0 - 0.6; s < s1 + 2; s += 1.15) for (const sx of [-1, 1]) for (const row of [0, 1]) { if (row && rr() < 0.35) continue;
+      const w = 0.8 + rr() * 0.7, y = yTop - 0.75 - row * 1.15 - rr() * 0.35, g = paintRock(boulder(w * (1 + rr() * 0.4), w * (0.6 + rr() * 0.3), w * (0.9 + rr() * 0.4)), y);
+      K.add(g, armM, sx * (2.05 + row * 1.1 + rr() * 0.35), y, s - s0 + (row ? 0.55 : 0) + (rr() - 0.5) * 0.3, rr() * 6, (rr() - 0.5) * 0.4, sx * (0.25 + rr() * 0.3)); }
+    for (let k = 0; k < 26; k++) { const a = k / 26 * Math.PI * 2, R = 6.4 + rr() * 0.6, w = 0.9 + rr() * 0.7, y = yTop - 1.0 - rr() * 1.0, g = paintRock(boulder(w * 1.2, w * 0.7, w), y); K.add(g, armM, Math.cos(a) * R, y, s1 - s0 + 5.5 + Math.sin(a) * R, rr() * 6, 0, (rr() - 0.5) * 0.5); } // em volta da plataforma do farol
     K.box(3.4, 3.6, s1 - s0, st, 0, yTop - 1.8, (s1 - s0) / 2); K.box(3.6, 0.15, s1 - s0, plain('brkTop', '#a59d8c', { rough: 0.9 }), 0, yTop - 0.07, (s1 - s0) / 2);
     // plataforma redonda do farol
     K.add(new THREE.CylinderGeometry(5.6, 6.4, 4.2, 28), st, 0, yTop - 2.1, s1 - s0 + 5.5); K.add(new THREE.CylinderGeometry(5.7, 5.7, 0.16, 28), plain('brkTop', '#a59d8c'), 0, yTop - 0.06, s1 - s0 + 5.5);

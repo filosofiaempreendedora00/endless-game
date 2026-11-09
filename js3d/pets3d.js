@@ -66,7 +66,7 @@ function furMat(o) {
   if (FUR_MATS.has(key)) return FUR_MATS.get(key);
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96 });
   m.onBeforeCompile = sh => {
-    sh.uniforms.uLen = { value: o.len }; sh.uniforms.uDen = { value: o.den }; sh.uniforms.uComb = { value: comb }; sh.uniforms.uTip = { value: o.tip || 0 };
+    sh.uniforms.uLen = { value: o.len }; sh.uniforms.uDen = { value: o.den * 0.6 }; // fios um pouco mais grossos: macios de perto, sem chiado de longe sh.uniforms.uComb = { value: comb }; sh.uniforms.uTip = { value: o.tip || 0 };
     sh.vertexShader = 'attribute float aF; attribute float aL; uniform float uLen; uniform vec3 uComb; varying vec3 vFurP; varying vec3 vFurN; varying float vF;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vF = aF; vFurP = position; vFurN = normal; transformed += (normal * uLen * aF + uComb * uLen * aF * aF * 1.1) * aL;');
     sh.fragmentShader = 'uniform float uDen; uniform float uTip; varying vec3 vFurP; varying vec3 vFurN; varying float vF;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
       { // fios: pontos num plano 2D escolhido pela normal (sem anéis), com centro sorteado em cada célula
@@ -77,11 +77,11 @@ function furMat(o) {
         float h = fract(sin(dot(c, vec2(12.9898, 78.233)) + ax * 3.7) * 43758.5453);
         float h2 = fract(h * 91.7), h3 = fract(h * 57.3);
         vec2 fr = fract(q) - vec2(0.5 + (h2 - 0.5) * 0.4, 0.5 + (h3 - 0.5) * 0.4);
-        float th = (1.0 - vF * (0.78 + 0.3 * h2)) * (0.46 + 0.2 * h);
+        float th = (1.0 - vF * (0.7 + 0.25 * h2)) * (0.52 + 0.18 * h);
         if (length(fr) > th) discard;
-        diffuseColor.rgb *= mix(0.6, 1.0 + uTip, vF) * (0.88 + 0.24 * h); }`);
+        diffuseColor.rgb *= mix(0.84, 1.0 + uTip, vF) * (0.95 + 0.1 * h); } // S-266: sem o "Bombril" (fios menos escuros por dentro e sem pontilhado forte)`);
   };
-  m.customProgramCacheKey = () => 'furShellB';
+  m.customProgramCacheKey = () => 'furShellC';
   FUR_MATS.set(key, m); return m;
 }
 // todas as n cascas numa geometria só (1 chamada de desenho por peça): atributo aF = k/n
@@ -106,7 +106,7 @@ const FIRE_VS = `attribute float size; attribute vec4 pcol; varying vec4 vC; uni
 void main(){ vC = pcol; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = size * uScale / max(0.05, -mv.z); gl_Position = projectionMatrix * mv; }`;
 const FIRE_FS = `varying vec4 vC; void main(){ vec2 d = gl_PointCoord - 0.5; float r = length(d) * 2.0; float a = smoothstep(1.0, 0.0, r); a = a * sqrt(a) * vC.a; gl_FragColor = vec4(vC.rgb * (1.0 + 0.6 * a), clamp(a * 1.6, 0.0, 1.0)); }`;
 function makeFire(n, o = {}) {
-  const { r0 = 0.02, rise = 0.32, life = 0.5, size = 0.06, hot = false, ring = 0, core = false } = o;
+  const { r0 = 0.02, rise = 0.32, life = 0.5, size = 0.06, hot = false, ring = 0, core = false, pal = null } = o;
   const g = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), col = new Float32Array(n * 4), siz = new Float32Array(n);
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('pcol', new THREE.BufferAttribute(col, 4)); g.setAttribute('size', new THREE.BufferAttribute(siz, 1));
   const m = new THREE.ShaderMaterial({ uniforms: { uScale: { value: 600 } }, vertexShader: FIRE_VS, fragmentShader: FIRE_FS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -115,7 +115,7 @@ function makeFire(n, o = {}) {
   const spawn = p => { const a = rnd() * 6.283, rr = ring ? ring * (0.85 + rnd() * 0.3) : Math.sqrt(rnd()) * r0; p.x = Math.cos(a) * rr; p.z = Math.sin(a) * rr; p.y = (rnd() - 0.3) * r0 * 0.6; p.sx = (rnd() - 0.5) * 0.06; p.sz = (rnd() - 0.5) * 0.06; p.age = 0; p.life = life * (0.7 + rnd() * 0.6); p.ph = rnd() * 6; };
   P.forEach(spawn); P.forEach((p, i) => { p.age = i / n * p.life; });
   const ws = new THREE.Vector3(), c = new THREE.Color();
-  const cHot = new THREE.Color(hot ? '#fffbe8' : '#fff1b0'), cMid = new THREE.Color(hot ? '#ffc23a' : '#ff8a1e'), cOut = new THREE.Color(hot ? '#ff6a10' : '#c0300a');
+  const cHot = new THREE.Color(pal ? pal[0] : hot ? '#fffbe8' : '#fff1b0'), cMid = new THREE.Color(pal ? pal[1] : hot ? '#ffc23a' : '#ff8a1e'), cOut = new THREE.Color(pal ? pal[2] : hot ? '#ff6a10' : '#c0300a');
   return { obj: pts, update(t, dt, drift = 0, gain = 1) {
     pts.getWorldScale(ws); m.uniforms.uScale.value = 620 * ws.y;
     for (let i = 0; i < n; i++) {
@@ -292,7 +292,9 @@ function fireFox(stage, scale) {
     furShells(base, tg1, { len: 0.016, den: 560, comb: [0, -0.2, -1], n: 9, tip: 0.2, lenFn: (x, y, z) => ss(-0.02, -0.06, z) * 0.8 + 0.2 });
     furShells(mid, tg2, { len: 0.03, den: 560, comb: [0, 0.1, -1], n: 12, tip: 0.3, lenFn: (x, y, z) => 1 - ss(-0.15, -0.21, z) * 0.85 }); // fios encurtam na ponta (sem "dente-de-leão")
     const fl = new THREE.Group(); fl.position.set(0, 0.04, -0.2); mid.add(fl);
-    const fire = makeFire(stage === 2 ? 90 : 70, { r0: 0.026 * thin, rise: 0.17 + stage * 0.04, life: 0.55, size: 0.17 + stage * 0.02, hot: stage === 2, core: true });
+    // S-266: o fogo da cauda cresce com a evolução — Faísca chama pequena, Labareda média, Solaris grande
+    const FS = [{ n: 50, r0: 0.02, rise: 0.12, size: 0.12, life: 0.45 }, { n: 75, r0: 0.026, rise: 0.24, size: 0.15, life: 0.6 }, { n: 95, r0: 0.032, rise: 0.36, size: 0.17, life: 0.7 }][stage];
+    const fire = makeFire(FS.n, { r0: FS.r0 * thin, rise: FS.rise, life: FS.life, size: FS.size, hot: stage === 2, core: true });
     fl.add(fire.obj);
     tails.push({ base, mid, fl, fire, rest, yb: rest, vb: 0, ym: 0, vm: 0, pb: 0, vpb: 0, ph: i * 1.9 });
   }
@@ -379,6 +381,45 @@ function waterMat(uT, uW, op = 0.55) {
   m.customProgramCacheKey = () => 'petWater'; return m;
 }
 const dropGeo = (r = 1) => sculpt(20, 16, (v, x, y, z) => { const t = (y + 1) / 2, k = t > 0.5 ? Math.pow(1 - (t - 0.5) * 2, 0.9) * 0.9 + 0.1 * (1 - (t - 0.5) * 2) : 1; v.set(x * r * (t > 0.5 ? k : 1), (y + (t > 0.5 ? (t - 0.5) * 1.3 : 0)) * r, z * r * (t > 0.5 ? k : 1)); });
+/* ---- S-269: asas de fada (membrana translúcida com nervuras que brilham) e coroa de cura que muda a cada evolução ---- */
+const WING_TEX = {};
+function wingTex(kind) {
+  if (WING_TEX[kind]) return WING_TEX[kind];
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  const col = kind === 2 ? ['rgba(230,255,248,0.62)', 'rgba(150,240,255,0.32)', 'rgba(255,240,200,0.9)'] : ['rgba(220,252,255,0.55)', 'rgba(140,220,255,0.26)', 'rgba(230,255,255,0.85)'];
+  const g = x.createRadialGradient(0, S, 0, 0, S, S * 1.35); g.addColorStop(0, col[0]); g.addColorStop(1, col[1]); x.fillStyle = g; x.fillRect(0, 0, S, S);
+  x.strokeStyle = col[2]; x.lineCap = 'round';
+  for (let k = 0; k < 7; k++) { const a = -0.08 + k * 0.25; x.lineWidth = 3.2 - k * 0.25; x.beginPath(); x.moveTo(0, S); x.bezierCurveTo(S * 0.3 * Math.cos(a), S - S * 0.35 * Math.sin(a + 0.5), S * 0.7 * Math.cos(a), S - S * 0.75 * Math.sin(a + 0.15), S * 1.05 * Math.cos(a), S - S * 1.05 * Math.sin(a)); x.stroke(); }
+  x.lineWidth = 1; x.globalAlpha = 0.55; for (let k = 0; k < 40; k++) { const r = 40 + Math.random() * 200, a0 = Math.random() * 1.5; x.beginPath(); x.arc(0, S, r, -a0 - 0.12, -a0); x.stroke(); } // nervurinhas cruzadas
+  x.globalAlpha = 1; for (let k = 0; k < 26; k++) { x.fillStyle = 'rgba(255,255,255,' + (0.25 + Math.random() * 0.5) + ')'; x.beginPath(); x.arc(Math.random() * S, Math.random() * S, 1 + Math.random() * 2, 0, 7); x.fill(); } // brilho de pó de fada
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (WING_TEX[kind] = t);
+}
+function wingGeo(fore, len) { // asa como forma lisa (contorno curvo); UV normalizado no quadrado da textura (raiz no canto de baixo)
+  const s = new THREE.Shape();
+  if (fore) { s.moveTo(0, 0); s.bezierCurveTo(0.18, 0.32, 0.55, 0.95, 0.92, 1.0); s.bezierCurveTo(1.08, 1.0, 1.05, 0.8, 0.9, 0.62); s.bezierCurveTo(0.7, 0.34, 0.38, 0.1, 0, 0); }
+  else { s.moveTo(0, 0); s.bezierCurveTo(0.35, 0.02, 0.78, -0.12, 0.82, -0.38); s.bezierCurveTo(0.84, -0.6, 0.6, -0.62, 0.42, -0.45); s.bezierCurveTo(0.25, -0.3, 0.08, -0.12, 0, 0); }
+  const g = new THREE.ShapeGeometry(s, 18), P = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < P.count; i++) { const X = P.getX(i), Y = P.getY(i); uv.setXY(i, Math.min(1, Math.abs(X)), fore ? Math.min(1, Y) : Math.min(1, -Y)); P.setXYZ(i, X * len, Y * len, Math.sin(X * 2.4) * len * 0.06); } // leve curva na membrana
+  g.computeVertexNormals(); return g;
+}
+function healingCrown(stage, R) {
+  const g = new THREE.Group(), LEAF = mat('#5ad08a', { roughness: 0.45, emissive: '#1a7a4a', emissiveIntensity: 0.35, side: THREE.DoubleSide });
+  const leafS = new THREE.Shape(); leafS.moveTo(0, 0); leafS.quadraticCurveTo(0.02, 0.025, 0, 0.06); leafS.quadraticCurveTo(-0.02, 0.025, 0, 0);
+  const leafG = new THREE.ExtrudeGeometry(leafS, { depth: 0.002, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 2, curveSegments: 10 });
+  const stem = new THREE.Mesh(taper([V3(0, -0.01, 0), V3(0.004, 0.02, 0), V3(-0.002, 0.04, 0.002)], 0.0035, 0.0022, 10, 8), mat('#4aa86a', { roughness: 0.6 })); g.add(stem);
+  if (stage === 0) { // Bolhinha: brotinho de duas folhas
+    for (const sx of [-1, 1]) { const l = new THREE.Mesh(leafG, LEAF); l.position.set(0, 0.038, 0); l.rotation.set(0.2, sx > 0 ? 0 : Math.PI, -sx * 0.9); g.add(l); }
+    return { g, petals: [] };
+  }
+  // Maré: botão de flor de cura (5 pétalas meio abertas) · Aquária: lótus aberta com 8 + 5 pétalas e centro luminoso
+  const PET = new THREE.MeshPhysicalMaterial({ color: stage === 2 ? '#fff4fb' : '#ffe0ef', emissive: stage === 2 ? '#ff9ad0' : '#d86aa0', emissiveIntensity: stage === 2 ? 0.35 : 0.2, roughness: 0.35, sheen: 1, sheenColor: new THREE.Color('#ffffff'), side: THREE.DoubleSide });
+  const petG = sculpt(16, 12, (v, x, y, z) => { const u = (y + 1) / 2; v.set(x * 0.017 * Math.sin(Math.PI * Math.min(1, u * 1.1)), u * 0.05, z * 0.004 + x * x * 0.008 - u * u * 0.006); });
+  const petals = [], rings = stage === 2 ? [[8, 0.95, 0.02], [5, 0.45, 0.01]] : [[5, 0.25, 0.0]];
+  for (const [n, open, r0] of rings) for (let k = 0; k < n; k++) { const p = new THREE.Group(); p.position.set(0, 0.04, 0); p.rotation.y = k / n * Math.PI * 2 + (n === 5 && stage === 2 ? 0.3 : 0); const m = new THREE.Mesh(petG, PET); m.position.z = r0; m.rotation.x = open; p.add(m); g.add(p); petals.push({ m, open }); }
+  for (const sx of [-1, 1]) { const l = new THREE.Mesh(leafG, LEAF); l.position.set(0, 0.03, 0); l.rotation.set(0.3, sx > 0 ? 0.4 : Math.PI + 0.4, -sx * 1.2); l.scale.setScalar(1.1); g.add(l); }
+  const core = new THREE.Mesh(new THREE.SphereGeometry(stage === 2 ? 0.013 : 0.009, 14, 10), glow(stage === 2 ? '#fff6b0' : '#ffe08a', stage === 2 ? 1.6 : 0.9)); core.position.y = 0.046; g.add(core);
+  return { g, petals, core };
+}
 function waterSprite(stage, scale) {
   SEED = 777 + stage * 31;
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
@@ -407,10 +448,19 @@ function waterSprite(stage, scale) {
     const e = onFace(sx * 0.34, 0.14);
     const ball = new THREE.Group(); e.add(ball);
     ball.add(merged([at(new THREE.SphereGeometry(0.03, 24, 18), 0, 0, -0.008, 0, 0, 0, [0.8, 1.05, 0.4])], EYE));
+    // S-269: olho vivo — íris colorida com pupila (que se mexe olhando em volta), cílios de fada e sobrancelha que expressa
+    const iris = new THREE.Group(); iris.position.z = 0.0042; ball.add(iris);
+    const IR = new THREE.MeshBasicMaterial({ color: ['#2ab8c8', '#2aa8d8', '#7a6ae0'][stage] }), PU = new THREE.MeshBasicMaterial({ color: '#06121c' });
+    const irD = new THREE.Mesh(new THREE.CircleGeometry(0.0165, 28), IR); irD.scale.set(0.85, 1.05, 1); iris.add(irD);
+    const irIn = new THREE.Mesh(new THREE.RingGeometry(0.009, 0.0165, 28), new THREE.MeshBasicMaterial({ color: '#bff6ff', transparent: true, opacity: 0.35 })); irIn.scale.set(0.85, 1.05, 1); irIn.position.z = 0.0002; iris.add(irIn);
+    const pu = new THREE.Mesh(new THREE.CircleGeometry(0.0085, 20), PU); pu.position.z = 0.0004; pu.scale.set(0.85, 1.05, 1); iris.add(pu);
+    const lashes = merged([0, 1, 2].map(k => taper([V3(sx * (0.008 + k * 0.007), 0.028 - k * 0.003, 0), V3(sx * (0.013 + k * 0.009), 0.036 - k * 0.002, 0.003), V3(sx * (0.018 + k * 0.011), 0.04 - k * 0.003, 0.002)], 0.0016, 0.0003, 6, 5)), new THREE.MeshBasicMaterial({ color: '#0d2440' })); e.add(lashes);
+    const brow = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0024, 6, 16, Math.PI * 0.7), new THREE.MeshBasicMaterial({ color: '#2a6a8a' })); brow.position.set(0, 0.048, 0.002); brow.rotation.z = Math.PI * 0.15; e.add(brow);
+    e.userData = { iris, brow };
     const hi = merged([at(new THREE.SphereGeometry(0.0095, 10, 8), sx * -0.007, 0.012, 0.006), at(new THREE.SphereGeometry(0.0045, 8, 6), sx * 0.008, -0.011, 0.007)], GL); ball.add(hi);
     const lid = new THREE.Mesh(new THREE.SphereGeometry(0.034, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), LID); lid.scale.set(0.86, 1.05, 0.5); lid.position.z = -0.006; lid.userData.noShadow = true; e.add(lid);
     const arc = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.0035, 8, 20, Math.PI), HAPPY); arc.position.set(0, -0.004, 0.004); arc.visible = false; e.add(arc); // olhinho fechado de alegria (^)
-    return { e, ball, hi, lid, arc, sx };
+    return { e, ball, hi, lid, arc, sx, iris, brow, lashes };
   });
   const cheeks = [-1, 1].map(sx => { const c = onFace(sx * 0.55, -0.04, R * 0.995); const m = new THREE.Mesh(new THREE.CircleGeometry(0.02, 20), new THREE.MeshBasicMaterial({ color: '#ff9ac0', transparent: true, opacity: 0.35, depthWrite: false })); m.scale.set(1.3, 0.75, 1); c.add(m); return m; });
   const mouthG = onFace(0, -0.11, R * 1.002);
@@ -423,6 +473,17 @@ function waterSprite(stage, scale) {
   vcolor(finG, (c, x) => c.copy(top).lerp(new THREE.Color('#ffffff'), ss(0.06, 0.12, x) * 0.6));
   const FIN = waterMat(uT, { value: 0 }, 0.5); FIN.emissive = new THREE.Color('#5ac8f0'); FIN.emissiveIntensity = 0.45; // não fica cinza visto através do corpo
   const fins = [-1, 1].map(sx => { const f = new THREE.Group(); f.position.set(sx * R * 0.93, -0.02, 0.02); jelly.add(f); const m = new THREE.Mesh(finG, FIN); m.scale.set(sx * (1 + stage * 0.3), 1 + stage * 0.25, 1); m.rotation.z = sx * -0.25; m.renderOrder = 5; m.userData.noShadow = true; f.add(m); return { f, sx }; });
+  // ---- S-269: fada da cura — asas (crescem e se multiplicam a cada evolução), coroa de cura e pó de fada ----
+  const WING_M = new THREE.MeshStandardMaterial({ map: wingTex(stage === 2 ? 2 : 1), emissiveMap: wingTex(stage === 2 ? 2 : 1), emissive: new THREE.Color(stage === 2 ? '#bff0ff' : '#9ae8ff'), emissiveIntensity: 0.35 + stage * 0.25, transparent: true, side: THREE.DoubleSide, depthWrite: false, roughness: 0.2 });
+  const wingSet = [[true, [0.13, 0.19, 0.27][stage]], ...(stage >= 1 ? [[false, [0, 0.13, 0.19][stage]]] : [])];
+  const wings = [];
+  for (const [fore, len] of wingSet) for (const sx of [-1, 1]) {
+    const w = new THREE.Group(); w.position.set(sx * R * 0.42, R * (fore ? 0.42 : 0.2), -R * 0.72); jelly.add(w);
+    const m = new THREE.Mesh(wingGeo(fore, len), WING_M); m.scale.x = sx; m.renderOrder = 6; m.userData.noShadow = true; w.add(m);
+    wings.push({ w, sx, fore });
+  }
+  const crown = healingCrown(stage, R); crown.g.position.set(0, R * 0.97, 0.01); crown.g.scale.setScalar([0.9, 1.05, 1.25][stage]); jelly.add(crown.g);
+  const dust = makeFire([10, 20, 36][stage], { ring: R * 0.9, r0: 0.02, rise: 0.22, life: 1.4, size: 0.035 + stage * 0.006, pal: ['#ffffff', '#c8fff0', '#7ad8ff'] }); dust.obj.position.y = 0.04; body.add(dust.obj);
   // Maré: anel de água ondulado em volta; Aquária: auréola de água com uma pérola (nada pontudo)
   let wave = null, halo = null;
   if (stage >= 1) {
@@ -450,7 +511,7 @@ function waterSprite(stage, scale) {
   root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
   // estado da geleia
   const J = { sy: 0, vy: 0, sz: 0, vz: 0, lx: 0, vlx: 0, prevV: 0, hop: 0, air: 0, land: 0 };
-  let atk = -9, T = 0, blink = 2, expr = 'idle', exprT = 3, look = 0, lookY = 0;
+  let atk = -9, T = 0, blink = 2, expr = 'idle', exprT = 3, look = 0, lookY = 0, sacT = 1, sacX = 0, sacY = 0;
   return { root, attack() { atk = T; }, animate(t, m, dt) {
     T = t; uT.value = t; const v = m.speed * PET_VMAX / scale, k = (t - atk) / 0.7, P = k >= 0 && k < 1 ? Math.sin(k * Math.PI) : 0;
     // aceleração alimenta a mola de esticar/achatar (geleia)
@@ -483,14 +544,26 @@ function waterSprite(stage, scale) {
       E.ball.visible = !happy; E.lid.visible = !happy; E.arc.visible = happy;
       E.lid.rotation.x = -1.45 + bl * 1.45 + (e === 'focus' ? 0.45 : 0); // pálpebra sobe (aberto) / desce (pisca)
       E.ball.scale.set(1, e === 'oh' ? 1.12 : 1, 1); E.hi.position.x = look * -0.02;
+      E.iris.position.x = sacX * 0.006; E.iris.position.y = sacY * 0.005; // olhar passeia (sacadas)
+      E.brow.position.y = 0.048 + (e === 'curious' || e === 'oh' ? 0.007 : happy ? 0.004 : e === 'focus' ? -0.004 : 0) + Math.sin(t * 0.9) * 0.0012;
+      E.brow.rotation.z = Math.PI * 0.15 + (e === 'focus' ? -E.sx * 0.25 : e === 'curious' ? E.sx * 0.15 : 0);
     }
+    sacT -= dt; if (sacT < 0) { sacT = 0.6 + rnd() * 1.8; sacX = (rnd() - 0.5) * 2; sacY = (rnd() - 0.5) * 1.2; }
+    face.rotation.z = Math.sin(t * 0.7) * 0.07 + (e === 'curious' ? 0.18 : 0); // inclina a cabeça (nada de rosto parado)
     smile.visible = e !== 'oh' && !(happy && P > 0); smile.scale.set(happy ? 1.35 : e === 'focus' ? 0.8 : 1, happy ? 1.2 : 1, 1);
     const op = happy && P > 0 ? 1 : e === 'oh' ? 0.8 : 0; open.visible = op > 0; open.scale.set(op ? 1 : 0.01, op ? (e === 'oh' ? 1.1 : 0.8) : 0.01, 1);
     cheeks.forEach(c => { c.material.opacity = happy ? 0.55 : 0.32; });
     // nadadeiras remam (onda), mais forte ao andar
     fins.forEach(({ f, sx }) => { f.rotation.z = sx * (Math.sin(t * (3 + v * 2)) * (0.25 + Math.min(0.3, v * 0.08)) + 0.12 - P * 0.5); f.rotation.y = sx * (0.25 + Math.min(0.5, v * 0.12)); });
     if (wave) { wave.rotation.y = t * 0.8; wave.position.y = jelly.position.y - 0.06 * sY + Math.sin(t * 2.2) * 0.01; }
-    if (halo) { halo.position.y = jelly.position.y + R * 1.25 * sY + Math.sin(t * 1.8) * 0.01; halo.rotation.y = t * 0.6; halo.rotation.z = Math.sin(t * 1.1) * 0.08; }
+    // asas de fada: batem rápido (zumbido) ao andar, devagar e abertas parada; abrem no ataque/cura
+    const flapF = v > 0.15 ? 16 : 5, flapA = v > 0.15 ? 0.32 : 0.14;
+    wings.forEach(({ w, sx, fore }) => { const f = Math.sin(t * flapF + (fore ? 0 : 0.6)); w.rotation.set(fore ? -0.15 : 0.2, sx * (0.32 + f * flapA - P * 0.3), sx * (fore ? -0.1 : 0.15)); });
+    crown.petals.forEach(p => { p.m.rotation.x = p.open * (1 + Math.sin(t * 1.3) * 0.06) + P * 0.3; });
+    if (crown.core) crown.core.material.emissiveIntensity = (stage === 2 ? 1.6 : 0.9) + Math.sin(t * 3) * 0.25 + P * 1.5;
+    crown.g.rotation.z = Math.sin(t * 1.7) * 0.08 - J.lx * 0.5;
+    dust.update(t, dt, v * 0.03, 1);
+    if (halo) { halo.position.y = jelly.position.y + R * (stage === 2 ? 1.7 : 1.25) * sY + Math.sin(t * 1.8) * 0.01; halo.rotation.y = t * 0.6; halo.rotation.z = Math.sin(t * 1.1) * 0.08; }
     orbs.forEach((o, i) => { const a = o.off + t * o.sp, sc = o.r * (1 + Math.sin(t * 3 + o.off) * 0.1); OM.makeScale(sc, sc, sc).setPosition(Math.sin(a) * o.rad, cy + o.h + Math.sin(t * 1.7 + o.off * 3) * 0.04, Math.cos(a) * o.rad); orbM.setMatrixAt(i, OM); }); orbM.instanceMatrix.needsUpdate = true;
     drips.forEach(d => { const q = fract(t * 0.35 + d.off); d.d.visible = q < 0.6; d.d.position.set(d.x, jelly.position.y - R * 0.8 * sY - q * q * 0.5, d.z); d.d.scale.set(0.011 * (1 - q * 0.6), 0.016 * (1 - q * 0.5), 0.011 * (1 - q * 0.6)); });
     pulse.material.opacity = k >= 0 && k < 1 ? (1 - k) * 0.7 : 0; const pr = 0.15 + Math.max(0, k) * 0.6; pulse.scale.set(pr, pr, 0.6); pulse.position.y = 0.04 + Math.max(0, k) * 0.1;
@@ -521,8 +594,9 @@ function rockGeo(rx, ry, rz, seed) {
 function rockArmadillo(stage, scale) {
   SEED = 99 + stage * 7;
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const crystal = stage === 2;
-  const shellBase = new THREE.Color(['#b8a07a', '#8e8270', '#5fb8c8'][stage]), shellDark = new THREE.Color(['#5a4632', '#3e3830', '#123a52'][stage]), shellLight = new THREE.Color(['#e0cca0', '#b8ae98', '#d8fbff'][stage]);
+  // S-268: o Monolito continua o Rochedo (pedra esverdeada com cristais MAIORES), não vira um bicho azul de vidro
+  const crystal = false, gem = stage === 2;
+  const shellBase = new THREE.Color(['#b8a07a', '#8a8670', '#6f8064'][stage]), shellDark = new THREE.Color(['#5a4632', '#3e3a30', '#2c3a2a'][stage]), shellLight = new THREE.Color(['#e0cca0', '#b8b098', '#aec8a0'][stage]);
   const skinC = new THREE.Color(['#c9a48a', '#b39280', '#9a8478'][stage]), skinDark = new THREE.Color('#6a4e40'), moss = new THREE.Color('#5d8a3a'), mossL = new THREE.Color('#8ab04a');
   const SHELL = crystal ? new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05, emissive: '#1a7a9a', emissiveIntensity: 0.35, sheen: 0.4, sheenColor: new THREE.Color('#9affff') }) : VC(0.78);
   const SKIN = VC(0.9);
@@ -540,8 +614,9 @@ function rockArmadillo(stage, scale) {
       c.lerp(shellLight, ss(0.4, 1, p.edge) * (crystal ? 0.55 : 0.45) * ss(-0.3, 0.8, ny));
       if (crystal) c.lerp(new THREE.Color('#7af0ff'), (1 - ss(0, 0.35, p.edge)) * 0.85); // veios luminosos entre as placas
       else c.lerp(shellDark, (1 - ss(0, 0.5, p.edge)) * 0.8);
+      if (gem) c.lerp(new THREE.Color('#58d8a0'), (1 - ss(0, 0.22, p.edge)) * 0.45 * ss(-0.2, 0.6, ny)); // veios de cristal verde entre as placas
       if (ny < -0.1) c.lerp(shellDark, 0.2);
-      if (stage === 1 && ny > 0.3) { const mn = Math.sin(nx * 23 + 1) * Math.cos(z * 19) * 0.5 + 0.5; c.lerp(hv > 0.5 ? moss : mossL, ss(0.3, 0.75, ny) * (0.45 + mn * 0.45) * (0.55 + 0.45 * ss(0.2, 0.8, p.edge))); }
+      if (stage >= 1 && ny > 0.45) { /* S-267: menos limo (só manchas no alto do casco) */ const mn = Math.sin(nx * 23 + 1) * Math.cos(z * 19) * 0.5 + 0.5; c.lerp(hv > 0.5 ? moss : mossL, ss(0.5, 0.85, ny) * ss(0.45, 0.8, mn) * 0.7 * (0.55 + 0.45 * ss(0.2, 0.8, p.edge))); }
       col.push(c.r, c.g, c.b);
     }
     const flip = z1 < z0; // cintas vão de trás para a frente: mantém as faces viradas para fora
@@ -589,8 +664,10 @@ function rockArmadillo(stage, scale) {
   const head = new THREE.Group(); head.position.set(0, 0.015, 0.06); neck.add(head);
   const headG = sculpt(60, 44, (v, x, y, z) => {
     const t = ss(-0.3, 1, z);
-    let X = x * 0.066 * (1 - 0.66 * t), Y = y * 0.056 * (1 - 0.6 * t), Z = z * 0.06 + Math.max(0, z) * 0.13; // focinho mais longo e fino
-    Y -= 0.022 * t;
+    // S-267: crânio arredondado que "quebra" para um focinho em tubo (largura quase constante, ponta de porquinho) — não um cone
+    const s = 1 - 0.56 * ss(0.28, 0.6, t) - 0.07 * ss(0.6, 1, t) + 0.06 * Math.exp(-Math.pow((t - 0.12) / 0.14, 2));
+    let X = x * 0.068 * s, Y = y * 0.058 * (s * 0.92 + 0.08 * (1 - t)), Z = z * 0.06 + Math.max(0, z) * 0.13;
+    Y -= 0.02 * ss(0.3, 1, t) + 0.006 * t;
     if (y > 0.15 && z < 0.7) { const cu = Z * 34, ca = X * 34 + (Math.floor(cu) % 2) * 0.5, e = Math.min(fract(cu), 1 - fract(cu), fract(ca), 1 - fract(ca)); Y += 0.0028 * ss(0, 0.25, e); }
     else Y += Math.sin(Z * 170) * 0.0009 * (1 - t);
     v.set(X, Y, Z);
@@ -601,8 +678,8 @@ function rockArmadillo(stage, scale) {
     if (z > 0.17) c.lerp(new THREE.Color('#8a5a50'), ss(0.17, 0.19, z));
   });
   head.add(new THREE.Mesh(headG, SKIN));
-  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 18, 12), mat('#5a3a34', { roughness: 0.45 })); snout.scale.set(1.2, 0.9, 0.5); snout.position.set(0, -0.026, 0.19); head.add(snout);
-  head.add(merged([-1, 1].map(sx => at(new THREE.SphereGeometry(0.003, 8, 6), sx * 0.005, -0.026, 0.196)), mat('#1a0e0c')));
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.0145, 18, 12), mat('#5a3a34', { roughness: 0.45 })); snout.scale.set(1.15, 0.85, 0.45); snout.position.set(0, -0.027, 0.188); head.add(snout);
+  head.add(merged([-1, 1].map(sx => at(new THREE.SphereGeometry(0.0033, 8, 6), sx * 0.0055, -0.027, 0.194)), mat('#1a0e0c')));
   // olhos de conta com pálpebras que piscam e se espremem
   const EYE = mat('#0c0806', { roughness: 0.05 }), GL = new THREE.MeshBasicMaterial({ color: '#ffffff' }), eyes = [];
   for (const sx of [-1, 1]) {
@@ -623,22 +700,26 @@ function rockArmadillo(stage, scale) {
   const CLAW = mat('#2a221c', { roughness: 0.35 });
   const legs = [[-0.13, 0.17, true], [0.13, 0.17, true], [-0.14, -0.17, false], [0.14, -0.17, false]].map(([x, z, front]) => {
     const pv = new THREE.Group(); pv.position.set(x, cy - 0.02, z); body.add(pv); const sx = Math.sign(x);
-    const lg = sculpt(24, 20, (v, xx, y, zz) => { const u = (1 - y) / 2, rr = (front ? 0.04 : 0.047) * (1 - u * 0.3) * (1 + (fract(u * 7) > 0.75 ? 0.06 : 0)); v.set(xx * rr + sx * u * 0.01, y * 0.1 - 0.07, zz * rr * 1.05 + (front ? u * 0.008 : -u * 0.01)); });
-    vcolor(lg, (c, xx, y) => { const u = (0.03 - y) / 0.2; c.copy(skinC).lerp(shellBase, 0.4).lerp(shellDark, fract(u * 7) > 0.75 ? 0.35 : 0); });
+    // S-267: pata de tatu de verdade — braço musculoso que sai de baixo do casco, cotovelo/joelho dobrado, pele enrugada em dobras
+    // finas, punho grosso e pé largo e achatado (uma peça só, sem bolas encaixadas)
+    const R0 = front ? 0.04 : 0.05, lp = front ? [V3(0, 0.04, -0.004), V3(sx * 0.006, -0.03, -0.012), V3(sx * 0.01, -0.095, 0.006), V3(sx * 0.01, -0.152, 0.012)] : [V3(0, 0.04, 0.01), V3(sx * 0.006, -0.03, -0.02), V3(sx * 0.009, -0.1, -0.008), V3(sx * 0.01, -0.152, 0.008)];
+    const legT = taper(lp, 0, 0, 22, 18, u => R0 * (1 - 0.42 * ss(0, 0.75, u) + 0.12 * Math.exp(-Math.pow((u - 0.15) / 0.12, 2))) * (1 + 0.035 * Math.sin(u * 46)));
+    const topCap = vcolor(strip(capSphere(R0 * 0.98, 0, 0.04, front ? -0.004 : 0.01)), c => c.copy(skinC).lerp(shellDark, 0.3));
+    const footG = sculpt(22, 14, (v, xx, y, zz) => { const toe = Math.max(0, zz); v.set(xx * (0.03 + toe * 0.008), Math.max(y, -0.35) * 0.016 * (1 - toe * 0.35), zz * 0.036 + toe * 0.012); }); footG.translate(sx * 0.01, -0.162, 0.016);
+    const lg = weld(mergeGeometries([strip(vcolor(legT, (c, xx, y) => { const u = (0.04 - y) / 0.19; c.copy(skinC).lerp(shellBase, 0.25 * (1 - u)).lerp(skinDark, (Math.sin(u * 46) * 0.5 + 0.5) * 0.22); })), topCap, strip(vcolor(footG, c => c.copy(skinC).lerp(skinDark, 0.35)))]));
     pv.add(new THREE.Mesh(lg, SKIN));
-    const foot = sculpt(16, 12, (v, xx, y, zz) => v.set(xx * 0.034, Math.max(y, -0.4) * 0.017, zz * 0.038 + Math.max(0, zz) * 0.01)); vcolor(foot, c => c.copy(skinC).lerp(shellDark, 0.3));
-    const fm = new THREE.Mesh(foot, SKIN); fm.position.set(sx * 0.01, -0.163, 0.012); pv.add(fm);
     const nC = front ? 3 : 4, cl = [];
     for (let k = 0; k < nC; k++) { const xx = (k - (nC - 1) / 2) * (front ? 0.017 : 0.013); cl.push(taper([V3(xx, 0, 0), V3(xx, -0.004, front ? 0.022 : 0.012), V3(xx, -0.014, front ? 0.036 : 0.019)], front ? 0.0065 : 0.005, 0.0008, 8, 8)); }
-    const cm = merged(cl, CLAW); cm.position.set(sx * 0.01, -0.165, 0.042); pv.add(cm);
+    const cm = merged(cl, CLAW); cm.position.set(sx * 0.01, -0.165, 0.05); pv.add(cm);
     return { pv, front, x, idx: front ? (x < 0 ? 0 : 1) : (x < 0 ? 2 : 3) };
   });
   // ---- rabo: anéis que encaixam um no outro (2 segmentos que balançam) ----
-  const tailA = new THREE.Group(); tailA.position.set(0, cy + 0.0, -L * 0.92); body.add(tailA);
-  const tailB = new THREE.Group(); tailB.position.set(0, -0.06, -0.1); tailA.add(tailB);
+  const tailA = new THREE.Group(); tailA.position.set(0, cy - 0.04, -L * 0.9); body.add(tailA); // sai da base do casco, junto do chão
+  const tailB = new THREE.Group(); tailB.position.set(0, -0.085, -0.125); tailA.add(tailB);
   const ringed = (g, n) => { const P = g.attributes.position; for (let k = 0; k < P.count; k++) { const d = Math.hypot(P.getZ(k), P.getY(k)), s = 1 + (fract(d * n) > 0.72 ? 0.07 : 0); P.setX(k, P.getX(k) * s); } g.computeVertexNormals(); vcolor(g, (c, x, y, z) => { const f = fract(Math.hypot(z, y) * n); c.copy(shellBase).lerp(crystal ? shellLight : shellDark, f > 0.72 ? 0.45 : 0).offsetHSL(0, 0, (Math.floor(Math.hypot(z, y) * n) % 2) * 0.04); }); return g; };
-  tailA.add(new THREE.Mesh(ringed(taper([V3(0, 0.005, 0.02), V3(0, -0.03, -0.05), V3(0, -0.06, -0.11)], 0.046, 0.026, 16, 14), 55), SHELL));
-  tailB.add(new THREE.Mesh(ringed(taper([V3(0, 0, 0), V3(0, -0.03, -0.06), V3(0, -0.06, -0.11)], 0.027, 0.006, 16, 12), 70), SHELL));
+  // S-268: rabo de tatu de verdade — longo, fino, anelado, caindo até quase encostar no chão (nada de cone espetado)
+  tailA.add(new THREE.Mesh(ringed(taper([V3(0, 0.005, 0.03), V3(0, -0.045, -0.06), V3(0, -0.085, -0.125)], 0.036, 0.022, 18, 14), 60), SHELL));
+  tailB.add(new THREE.Mesh(ringed(taper([V3(0, 0, 0.005), V3(0, -0.03, -0.08), V3(0, -0.045, -0.17)], 0.0225, 0.005, 20, 12), 75), SHELL));
   // ---- evolução ----
   let spire = null, spireLight = null;
   const rngS = (() => { let s = 31 + stage; return () => (s = s * 16807 % 2147483647) / 2147483647; })();
@@ -646,32 +727,48 @@ function rockArmadillo(stage, scale) {
   if (stage === 1) { // Rochedo: musgo, pedrinhas, grama, florzinhas e cristais nascendo
     const CRY = new THREE.MeshPhysicalMaterial({ color: '#8affd8', emissive: '#2ad0a0', emissiveIntensity: 0.5, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.9 });
     const cg = [];
-    for (const [u, a, h] of [[0.25, -0.5, 0.07], [-0.4, 0.5, 0.06], [0.45, 0.6, 0.05], [-0.15, -0.65, 0.055]]) { const { p, n } = onShell(u, a); const g = crystalCluster(4, h, rngS); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x - n.x * 0.01, p.y - n.y * 0.01, p.z); cg.push(g); }
+    // S-267: mais cristais nascendo (um aglomerado maior no alto, vários médios em volta)
+    for (const [u, a, h] of [[0.05, 0.05, 0.1], [0.25, -0.5, 0.075], [-0.4, 0.5, 0.07], [0.45, 0.6, 0.06], [-0.15, -0.65, 0.065], [-0.55, -0.2, 0.06], [0.55, -0.15, 0.055], [-0.3, 0.05, 0.08], [0.3, 0.3, 0.06]]) { const { p, n } = onShell(u, a); const g = crystalCluster(4, h, rngS); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x - n.x * 0.01, p.y - n.y * 0.01, p.z); cg.push(g); }
     body.add(new THREE.Mesh(mergeGeometries(cg), CRY));
     const rk = [];
     for (let k = 0; k < 7; k++) { const u = (rngS() - 0.5) * 1.3, a = (rngS() - 0.5) * 1.6, { p, n } = onShell(u, a), g = rockGeo(0.02 + rngS() * 0.02, 0.014 + rngS() * 0.012, 0.02 + rngS() * 0.02, k * 3.1); vcolor(g, (c, x, y) => c.copy(shellBase).offsetHSL(0, 0, (rngS() - 0.5) * 0.1).lerp(moss, y > 0.005 ? 0.4 : 0)); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x, p.y - 0.005, p.z); rk.push(g); }
     body.add(merged(rk, SKIN));
     const bl = [], FL = [];
-    for (let k = 0; k < 22; k++) { const u = (rngS() - 0.5) * 1.5, a = (rngS() - 0.5) * 1.4, { p, n } = onShell(u, a), h = 0.025 + rngS() * 0.03, g = new THREE.ConeGeometry(0.003, h, 5); g.translate(0, h / 2, 0); g.rotateZ((rngS() - 0.5) * 0.6); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x, p.y - 0.003, p.z); bl.push(g); if (k % 5 === 0) FL.push(at(new THREE.SphereGeometry(0.006, 8, 6), p.x + n.x * h * 0.9, p.y + n.y * h * 0.9, p.z)); }
+    for (let k = 0; k < 10; k++) { const u = (rngS() - 0.5) * 1.5, a = (rngS() - 0.5) * 1.4, { p, n } = onShell(u, a), h = 0.025 + rngS() * 0.03, g = new THREE.ConeGeometry(0.003, h, 5); g.translate(0, h / 2, 0); g.rotateZ((rngS() - 0.5) * 0.6); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x, p.y - 0.003, p.z); bl.push(g); if (k % 5 === 0) FL.push(at(new THREE.SphereGeometry(0.006, 8, 6), p.x + n.x * h * 0.9, p.y + n.y * h * 0.9, p.z)); }
     body.add(merged(bl, mat('#6a9a3a', { roughness: 0.9 }))); body.add(merged(FL, mat('#f4e27a', { emissive: '#a08a20', emissiveIntensity: 0.2 })));
     // tapete de musgo só no alto do casco (triângulos virados para cima), com pelinho macio
     { const src = shellG, P = src.attributes.position, N = src.attributes.normal, I = src.index, keep = [];
-      for (let t2 = 0; t2 < I.count; t2 += 3) { const a = I.getX(t2), b = I.getX(t2 + 1), c = I.getX(t2 + 2); if (N.getY(a) > 0.55 && N.getY(b) > 0.55 && N.getY(c) > 0.55) keep.push(a, b, c); }
+      for (let t2 = 0; t2 < I.count; t2 += 3) { const a = I.getX(t2), b = I.getX(t2 + 1), c = I.getX(t2 + 2), px = P.getX(a), pz = P.getZ(a), patch = Math.sin(px * 31 + 2) * Math.cos(pz * 17) > 0.15; if (patch && N.getY(a) > 0.8 && N.getY(b) > 0.8 && N.getY(c) > 0.8) keep.push(a, b, c); } // S-267: só manchas de musgo no topo
       const mg = new THREE.BufferGeometry(); mg.setAttribute('position', P); mg.setAttribute('normal', N); mg.setIndex(keep);
       const mc = new Float32Array(P.count * 3), cc = new THREE.Color(); for (let i = 0; i < P.count; i++) { cc.copy(moss).lerp(mossL, hash(i, 3) * 0.6); mc[i * 3] = cc.r; mc[i * 3 + 1] = cc.g; mc[i * 3 + 2] = cc.b; }
       mg.setAttribute('color', new THREE.BufferAttribute(mc, 3));
       furShells(body, mg, { len: 0.01, den: 520, comb: [0, 1, 0], n: 6, tip: 0.15 }); }
   }
-  if (stage === 2) { // Monolito: crista de cristais simétrica ao longo da coluna + ombreiras de cristal
-    const CRY = new THREE.MeshPhysicalMaterial({ color: '#bff8ff', emissive: '#3ad8ff', emissiveIntensity: 0.6, roughness: 0.06, clearcoat: 1, transparent: true, opacity: 0.92 });
-    const crest = [];
-    for (let k = 0; k < 9; k++) { const u = 0.72 - k * 0.18, { p, n } = onShell(u, 0), h = 0.05 + Math.sin((k / 8) * Math.PI) * 0.055; const g = new THREE.CylinderGeometry(0.004, 0.022, h, 6, 1); g.translate(0, h / 2, 0); g.scale(1, 1, 1.6); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), V3(n.x, n.y, n.z - 0.35).normalize())); g.translate(p.x, p.y - 0.004, p.z); crest.push(g); }
-    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) { const { p, n } = onShell(0.55 - k * 0.12, sx * 0.95); const h = 0.03 - k * 0.006; const g = new THREE.CylinderGeometry(0.003, 0.016, h, 6, 1); g.translate(0, h / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), V3(n.x, n.y, n.z - 0.5).normalize())); g.translate(p.x, p.y, p.z); crest.push(g); }
-    body.add(new THREE.Mesh(mergeGeometries(crest), CRY));
-    spire = new THREE.Mesh(new THREE.OctahedronGeometry(0.03, 2), glow('#9affff', 1.4)); spire.scale.set(0.8, 1.5, 0.8); spire.position.set(0, cy + 0.04 + H + 0.1, -0.02); body.add(spire);
-    spireLight = vlight('#7af0ff', 0.9, 4); spireLight.position.set(0, cy + 0.35, 0); root.add(spireLight);
-    // clava de cristal na ponta do rabo
-    const club = new THREE.Mesh(new THREE.OctahedronGeometry(0.02, 1), CRY); club.scale.set(1, 1, 1.6); club.position.set(0, -0.065, -0.12); tailB.add(club);
+  if (stage === 2) { // S-268 Monolito: os cristais do Rochedo cresceram — uma "montanha" de cristais verdes nas costas (estilo carapaça-monte), pedras e musgo na base
+    const CRY = new THREE.MeshPhysicalMaterial({ color: '#9affc8', emissive: '#22b07a', emissiveIntensity: 0.55, roughness: 0.07, clearcoat: 1, transparent: true, opacity: 0.93 });
+    const CRYD = new THREE.MeshPhysicalMaterial({ color: '#5ad0a0', emissive: '#147a55', emissiveIntensity: 0.4, roughness: 0.1, clearcoat: 1, transparent: true, opacity: 0.95 });
+    const big = [], small = [];
+    const prism = (r, h, tilt, rot) => { const g = new THREE.CylinderGeometry(r * 0.92, r, h, 6, 1); g.translate(0, h / 2, 0); const tip = new THREE.ConeGeometry(r * 0.92, h * 0.32, 6); tip.translate(0, h + h * 0.16, 0); const c = mergeGeometries([strip(g), strip(tip)]); c.rotateY(rot); c.rotateZ(tilt[0]); c.rotateX(tilt[1]); return c; };
+    const place = (g, u, a, lift = 0) => { const { p, n } = onShell(u, a); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), V3(n.x * 0.5, 1, n.z * 0.5).normalize())); g.translate(p.x, p.y - 0.012 + lift, p.z); return g; };
+    // pico central: 7 prismas grandes abrindo em leque
+    const core = [[0.03, 0.3, [0, 0]], [0.022, 0.22, [0.32, 0.1]], [0.022, 0.21, [-0.3, -0.08]], [0.02, 0.18, [0.1, 0.36]], [0.02, 0.19, [-0.12, -0.38]], [0.016, 0.14, [0.5, -0.25]], [0.016, 0.13, [-0.48, 0.28]]];
+    core.forEach(([r, h, tl], i) => big.push(place(prism(r, h, tl, i * 0.7), 0.02, 0)));
+    // dois picos menores (frente e trás) e uma fileira de cristais pela coluna, decrescendo até o rabo
+    for (const [u, s] of [[0.48, 0.65], [-0.46, 0.75]]) [[0.022, 0.16, [0, 0]], [0.016, 0.12, [0.35, 0.1]], [0.016, 0.11, [-0.35, -0.1]], [0.012, 0.08, [0.1, -0.4]]].forEach(([r, h, tl], i) => big.push(place(prism(r * s / 0.7, h * s / 0.7, tl, i), u, 0)));
+    for (const sx of [-1, 1]) for (let k = 0; k < 5; k++) { const u = 0.6 - k * 0.28, h = 0.05 + 0.03 * Math.sin(k / 4 * Math.PI); small.push(place(prism(0.01, h, [sx * 0.45, 0], k), u, sx * 0.62)); }
+    body.add(new THREE.Mesh(mergeGeometries(big), CRY), new THREE.Mesh(mergeGeometries(small), CRYD));
+    // pedras na base dos cristais e manchas de musgo (continuação do Rochedo)
+    const rk = []; for (let k = 0; k < 9; k++) { const u = (rngS() - 0.5) * 1.1, a = (rngS() - 0.5) * 1.2, { p, n } = onShell(u, a), g = rockGeo(0.024 + rngS() * 0.02, 0.016 + rngS() * 0.012, 0.024 + rngS() * 0.02, k * 2.3); vcolor(g, (c, x, y) => c.copy(shellBase).offsetHSL(0, 0, (rngS() - 0.5) * 0.1).lerp(moss, y > 0.006 ? 0.45 : 0)); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), n)); g.translate(p.x, p.y - 0.006, p.z); rk.push(g); }
+    body.add(merged(rk, SKIN));
+    { const src = shellG, P = src.attributes.position, N = src.attributes.normal, I = src.index, keep = [];
+      for (let t2 = 0; t2 < I.count; t2 += 3) { const a = I.getX(t2), b = I.getX(t2 + 1), c = I.getX(t2 + 2), px = P.getX(a), pz = P.getZ(a), patch = Math.sin(px * 27 + 1) * Math.cos(pz * 15 + 0.5) > 0.25; if (patch && N.getY(a) > 0.72 && N.getY(b) > 0.72 && N.getY(c) > 0.72) keep.push(a, b, c); }
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', P); mg.setAttribute('normal', N); mg.setIndex(keep);
+      const mc = new Float32Array(P.count * 3), cc = new THREE.Color(); for (let i = 0; i < P.count; i++) { cc.copy(moss).lerp(mossL, hash(i, 5) * 0.6); mc[i * 3] = cc.r; mc[i * 3 + 1] = cc.g; mc[i * 3 + 2] = cc.b; }
+      mg.setAttribute('color', new THREE.BufferAttribute(mc, 3));
+      furShells(body, mg, { len: 0.009, den: 520, comb: [0, 1, 0], n: 6, tip: 0.15 }); }
+    // chifres e rabo com pontinhas de cristal (sem a "clava" esquisita)
+    const tc = []; for (let k = 0; k < 4; k++) { const g = prism(0.006, 0.025 - k * 0.004, [0, -0.5], k); g.translate(0, -0.012 - k * 0.012, -0.03 - k * 0.025); tc.push(g); } tailA.add(new THREE.Mesh(mergeGeometries(tc), CRYD));
+    spireLight = vlight('#7affc0', 0.8, 4); spireLight.position.set(0, cy + 0.45, 0); root.add(spireLight);
   }
   const dust = new THREE.Mesh(new THREE.TorusGeometry(1, 0.25, 8, 40), new THREE.MeshBasicMaterial({ color: '#b8a888', transparent: true, opacity: 0, depthWrite: false })); dust.rotation.x = Math.PI / 2; dust.userData.noShadow = true; root.add(dust);
   shadows(root);
@@ -701,14 +798,15 @@ function rockArmadillo(stage, scale) {
     tvA += ((wag - tA) * 40 - tvA * 7) * dt; tA += tvA * dt; tvB += ((tA * 0.8 - tB) * 30 - tvB * 6) * dt; tB += tvB * dt;
     tailA.rotation.set(Math.max(0, rear) * 0.4 + run * 0.15, tA, 0); tailB.rotation.set(run * 0.1, tB, 0);
     const dk = (k - 0.5) / 0.5; dust.material.opacity = dk > 0 && dk < 1 ? (1 - dk) * 0.5 : 0; const dr = 0.2 + Math.max(0, dk) * 0.7; dust.scale.set(dr, dr, 0.25 + Math.max(0, dk) * 0.2); dust.position.set(0, 0.02, 0.25);
-    if (spire) { spire.rotation.y = t * 0.8; spire.position.y = cy + 0.04 + H + 0.1 + Math.sin(t * 2) * 0.01 + body.position.y * 0; spireLight.intensity = 0.9 + Math.sin(t * 2) * 0.2 + (dk > 0 && dk < 1 ? (1 - dk) * 2 : 0); }
+    if (spireLight) spireLight.intensity = 0.8 + Math.sin(t * 2) * 0.2 + (dk > 0 && dk < 1 ? (1 - dk) * 2 : 0);
   } };
 }
 
 // tamanho de cada estágio (o mascote cresce ao evoluir)
 const STAGE_SCALE = [0.8, 1.05, 1.35];
+const STAGE_SCALE_SP = { terra: [0.62, 0.86, 1.55] }; // S-268: tatu — o menor menor, o do meio um pouco maior, o Monolito ainda maior
 export function makePet(species, stage) {
-  const sc = STAGE_SCALE[stage];
+  const sc = (STAGE_SCALE_SP[species] || STAGE_SCALE)[stage];
   const m = species === 'agua' ? waterSprite(stage, sc) : species === 'terra' ? rockArmadillo(stage, sc) : fireFox(stage, sc);
   m.root.scale.setScalar(sc);
   const obj = new THREE.Group(); obj.add(m.root);

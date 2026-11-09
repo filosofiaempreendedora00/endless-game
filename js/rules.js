@@ -100,7 +100,7 @@ function recalc(p) {
   d.flee = lv + d.agi + (b.flee || 0);
   d.crit = Math.round((1 + d.luk * 0.3 + (b.crit || 0)) * 10) / 10;
   const wm = WEAPON_TYPES[wt];
-  d.aspd = Math.max(260, (1500 - d.agi * 9 - d.dex * 2.5) * wm.delay * (1 - Math.min(60, b.aspdPct || 0) / 100));
+  d.aspd = Math.max(260, (1200 - d.agi * 8 - d.dex * 2.2) * wm.delay /* S-293: golpes um pouco mais seguidos mesmo com pouca agilidade (era 1500) */ * (1 - Math.min(60, b.aspdPct || 0) / 100));
   d.rangeTiles = wm.range + (ranged ? (b.range || 0) : 0);
   d.range = d.rangeTiles * CONFIG.TILE;
   d.magicAuto = !!wm.magic; // cajado: ataque básico é um projétil mágico (usa ATQM)

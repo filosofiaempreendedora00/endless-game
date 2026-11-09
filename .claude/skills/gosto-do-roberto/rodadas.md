@@ -193,3 +193,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Lobo como REFERÊNCIA de qualidade para todos os monstros: corpo contínuo com pele/esqueleto, pelagem, patas que não deslizam, movimento de animal real. Depois ele vai pedir para aplicar os mesmos princípios aos outros.
 - Reclamou de novo de grama na areia ("já falei") e de bolotas/achatamento: quando ele repete, a correção anterior foi tímida — vá até o fim.
 - Dragão "inspirado em Skyrim", fauno com som de criatura pesada, pégaso com estrutura óssea de asa, estábulos com baias/portinhas e cavalos amarrados, Muralha de gelo sem listras.
+
+### Rodada 18 (S-266 a S-302), 2026-11-09
+- Mascotes com evolução coerente (mesma linha de design crescendo), NPCs com roupas que caem bem, armadura "estilo WoW/Skyrim, em vez de inventar do zero", castelo vivo (NPCs andando, objetos, subir andares — pediu sistema reutilizável), Vigília com muro e casa para entrar, lago que escorrega, ossos e esqueleto gigante nas ruínas.
+- Repetiu bugs não resolvidos ("eu já falei", S-288/S-296): ele lembra de tudo — se algo ficou para depois, diga explicitamente ou resolva.
+- Física/colisão importa para "jogadores que não são master": nunca pode prender nem atravessar.
+- Lição operacional: com 6–7 ajudantes testando ao mesmo tempo, o Mac dele trava e o jogo dele não carrega — evitar tantos jogos abertos ao mesmo tempo e não deixar arquivo novo referenciado antes de existir.

@@ -735,6 +735,187 @@ function iceWall(len, H, D) {
   return grp;
 }
 // monta com coordenadas do mundo e coloca o grupo no centro dado (para a distância de desenho funcionar)
+/* ---------- S-274: Vigília Negra cercada e maior (espírito do Castelo Negro): muralha de pedra com ameias e passadiço,
+   torres nos cantos, portão com torres na estrada, casas novas (algumas maiores, em L e de dois andares) e o Torreão,
+   onde se entra e há salão, quarto do comandante, cozinha, dormitório e sala de mapas. ---------- */
+function frostWallRun(ctx, pts, gaps, st, dk, wd) {
+  const H = 6.2, T = 2.2, CH = 7;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / L, uz = (z1 - z0) / L, ry = Math.atan2(-uz, ux), n = Math.max(1, Math.round(L / CH));
+    for (let k = 0; k < n; k++) {
+      const a = k / n * L, b = (k + 1) / n * L, cx = x0 + ux * (a + b) / 2, cz = z0 + uz * (a + b) / 2;
+      if (gaps.some(([gx, gz, gr]) => Math.hypot(cx - gx, cz - gz) < gr)) continue; // vão do portão
+      const lc = b - a + 0.05; let lo = Infinity; for (const t of [a, (a + b) / 2, b]) lo = Math.min(lo, gY(x0 + ux * t, z0 + uz * t));
+      const K = new Kit();
+      K.box(lc, H + 3, T, st, 0, (H + 3) / 2 - 3, 0);                                   // corpo da muralha (fundação enterrada)
+      K.box(lc, 0.35, T + 0.5, st, 0, H + 0.05, 0);                                     // cornija
+      for (let m = 0; m < Math.floor(lc / 1.6); m++) { const mx = -lc / 2 + 0.55 + m * 1.6; K.box(0.95, 1.1, 0.5, st, mx, H + 0.75, -T / 2 - 0.05); K.box(0.95, 0.12, 0.6, FM.snow(), mx, H + 1.36, -T / 2 - 0.05); } // ameias (lado de fora)
+      K.box(lc, 0.9, 0.35, st, 0, H + 0.6, T / 2 + 0.05);                               // parapeito de dentro
+      K.box(lc, 0.12, T - 0.4, FM.snow(), 0, H + 0.28, 0);                              // neve no passadiço
+      for (let m = 0; m < Math.floor(lc / 2.4); m++) { const mx = -lc / 2 + 1.2 + m * 2.4; K.box(0.22, 2.2, 0.22, dk, mx, H + 1.4, T / 2 + 0.3); } // postes do toldo do passadiço
+      K.box(lc, 0.16, 1.6, wd, 0, H + 2.55, T / 2 - 0.2, 0, -0.18);                     // toldo de tábuas
+      K.box(lc, 0.08, 1.7, FM.snow(), 0, H + 2.66, T / 2 - 0.2, 0, -0.18);
+      for (let m = 0; m < 3; m++) K.add(new THREE.ConeGeometry(0.05 + m * 0.01, 0.35 + (m * 0.29) % 0.5, 6), FM.icicle(), -lc / 2 + 1 + m * lc / 3, H - 0.3, -T / 2 - 0.3, 0, Math.PI, 0);
+      put(ctx, K, 'muralha_da_vigilia', cx, cz, ry, { y: lo - 0.2, box: [[0, 0, lc / 2, T / 2]] });
+    }
+  }
+}
+function frostTower(ctx, x, z, st, dk, h = 11, asset = 'torre_da_vigilia') {
+  const K = new Kit(), s = 5.2; K.box(s, h + 3, s, st, 0, (h + 3) / 2 - 3, 0); K.box(s + 0.5, 0.4, s + 0.5, st, 0, h, 0);
+  for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (const k of [-1, 1]) K.box(ox ? 0.6 : 1.1, 1.1, oz ? 0.6 : 1.1, st, ox * (s / 2 + 0.05) + (oz ? k * 1.3 : 0), h + 0.75, oz * (s / 2 + 0.05) + (ox ? k * 1.3 : 0));
+  for (const [ox, oz, ry] of [[1, 0, Math.PI / 2], [-1, 0, Math.PI / 2], [0, 1, 0], [0, -1, 0]]) K.box(0.35, 1.2, 0.08, M.glass(), ox * (s / 2 + 0.02), h * 0.6, oz * (s / 2 + 0.02), ry);
+  K.add(new THREE.ConeGeometry(s * 0.82, 4.2, 4), M.slate(), 0, h + 2.4, 0, Math.PI / 4); K.add(new THREE.ConeGeometry(s * 0.84, 4.3, 4), FM.snow(), 0, h + 2.55, 0, Math.PI / 4, 0, 0, 0.98, 0.9, 0.98);
+  const lo = Math.min(gY(x - 2.5, z - 2.5), gY(x + 2.5, z + 2.5), gY(x - 2.5, z + 2.5), gY(x + 2.5, z - 2.5));
+  put(ctx, K, asset, x, z, 0, { y: lo - 0.2, box: [[0, 0, s / 2, s / 2]] });
+}
+function frostHouse(ctx, x, z, ry, w, d, h, st, dk, wd, r, opts = {}) { // casa da Vigília: base de pedra, paredes de toras escuras, telhado com neve; L e 2º andar nas maiores
+  const K = new Kit();
+  K.box(w + 0.6, 1.4, d + 0.6, st, 0, -0.2, 0); K.box(w, h, d, wd, 0, 0.5 + h / 2, 0);
+  for (let k = 0; k < Math.floor(h / 0.45); k++) for (const sx of [-1, 1]) K.add(new THREE.CylinderGeometry(0.21, 0.21, d + 0.5, 8), dk, sx * (w / 2 + 0.02), 0.72 + k * 0.45, 0, 0, Math.PI / 2, 0); // pontas de tora nos cantos
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.36, h, 0.36, dk, sx * w / 2, 0.5 + h / 2, sz * d / 2);
+  let top = 0.5 + h;
+  if (opts.floors === 2) { K.box(w + 0.4, 0.3, d + 0.4, dk, 0, top + 0.15, 0); K.box(w + 0.4, h * 0.85, d + 0.4, st, 0, top + 0.3 + h * 0.425, 0); for (const sx of [-1, 1]) for (const sz of [-0.25, 0.25]) K.box(0.08, 0.9, 0.7, M.glass(), sx * (w / 2 + 0.22), top + 1.6, sz * d, 0); top += 0.3 + h * 0.85; }
+  snowRoof(K, w + 0.5, d + 0.6, h * 0.8, M.slate(), 0, top, 0, 0);
+  K.box(1.5, 2.4, 0.15, dk, 0, 1.7, d / 2 + 0.05); K.box(1.9, 0.25, 0.3, st, 0, 3.0, d / 2 + 0.1); K.box(2.2, 0.25, 1.0, st, 0, 0.55, d / 2 + 0.6); // porta, verga de pedra e degrau
+  for (const y of [1.0, 2.2]) K.box(1.4, 0.07, 0.04, M.iron(), 0, y, d / 2 + 0.14);
+  for (const sx of [-1, 1]) { K.box(0.75, 0.7, 0.08, M.glass(), sx * w * 0.3, 2.2, d / 2 + 0.03); K.box(0.95, 0.12, 0.25, dk, sx * w * 0.3, 1.8, d / 2 + 0.1); K.box(0.95, 0.12, 0.2, dk, sx * w * 0.3, 2.6, d / 2 + 0.1); for (const s2 of [-1, 1]) K.box(0.45, 0.8, 0.06, dk, sx * w * 0.3 + s2 * 0.62, 2.2, d / 2 + 0.12); }
+  K.box(1.1, top + 2.2, 1.1, st, w / 2 - 0.9, (top + 2.2) / 2, -d / 4); K.box(1.3, 0.2, 1.3, st, w / 2 - 0.9, top + 2.25, -d / 4); // chaminé
+  icicles(K, r, -w / 2, w / 2, top - 0.05, d / 2 + 0.55, 0, 10); icicles(K, r, -w / 2, w / 2, top - 0.05, -d / 2 - 0.55, 0, 10);
+  const box = [[0, 0, w / 2 + 0.3, d / 2 + 0.3]];
+  if (opts.wing) { const aw = opts.wing, ax = -w / 2 - aw / 2 + 0.2, az = -d / 2 + aw / 2; K.box(aw + 0.6, 1.4, aw + 0.6, st, ax, -0.2, az); K.box(aw, h * 0.85, aw, wd, ax, 0.5 + h * 0.425, az); snowRoof(K, aw + 0.4, aw + 0.4, h * 0.7, M.slate(), ax, 0.5 + h * 0.85, az, Math.PI / 2); box.push([ax, az, aw / 2 + 0.3, aw / 2 + 0.3]); }
+  const lo = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => gY(x + a * w / 2, z + b * d / 2)));
+  put(ctx, K, opts.asset || 'casa_da_vigilia', x, z, ry, { y: lo, box });
+}
+function frostKeep(ctx, x, z, ry, st, dk, wd, r) { // o Torreão: dois andares de pedra escura, torre redonda no canto, escadaria e porta em arco
+  const K = new Kit(), W = 18, D = 13, h1 = 4.6, h2 = 3.8;
+  K.box(W + 1, 1.8, D + 1, st, 0, -0.5, 0); K.box(W, h1 + h2, D, st, 0, 0.4 + (h1 + h2) / 2, 0); K.box(W + 0.5, 0.35, D + 0.5, st, 0, 0.4 + h1, 0);
+  const top = 0.4 + h1 + h2; K.box(W + 0.6, 0.4, D + 0.6, st, 0, top, 0);
+  snowRoof(K, D + 0.6, W + 0.6, 4.6, M.slate(), 0, top + 0.2, 0, Math.PI / 2);
+  for (const sx of [-1, 1]) { K.box(1.4, 6.5, 1.4, st, sx * W * 0.32, top + 2.6, -D * 0.2); K.box(1.6, 0.25, 1.6, st, sx * W * 0.32, top + 5.9, -D * 0.2); } // chaminés
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.9, h1 + h2 + 0.6, 0.9, st, sx * (W / 2 + 0.1), 0.4 + (h1 + h2) / 2, sz * (D / 2 + 0.1)); // cunhais
+  // janelas: térreo em arco estreito, andar de cima com luz quente
+  for (const wx of [-6.5, -3.5, 3.5, 6.5]) { K.box(0.8, 1.6, 0.1, M.glass(), wx, 2.4, D / 2 + 0.03); archBlocks(K, 0.8, 0.25, 0.4, st, wx, 3.2, D / 2 + 0.05, 0, 7); K.box(1.1, 0.18, 0.45, st, wx, 1.55, D / 2 + 0.15); }
+  for (const wx of [-7, -4.5, -1.5, 1.5, 4.5, 7]) { K.box(0.75, 1.2, 0.1, M.glass(), wx, 0.4 + h1 + 1.8, D / 2 + 0.03); K.box(1.0, 0.2, 0.4, st, wx, 0.4 + h1 + 2.55, D / 2 + 0.12); for (const s of [-1, 1]) K.box(0.42, 1.3, 0.07, dk, wx + s * 0.6, 0.4 + h1 + 1.8, D / 2 + 0.1); }
+  for (const sx of [-1, 1]) for (const wz of [-3.5, 0, 3.5]) { K.box(0.1, 1.2, 0.75, M.glass(), sx * (W / 2 + 0.03), 0.4 + h1 + 1.8, wz); K.box(0.1, 1.5, 0.75, M.glass(), sx * (W / 2 + 0.03), 2.4, wz); }
+  // porta em arco no meio da fachada, com escadaria e braseiros
+  K.box(2.4, 3.2, 0.2, dk, 0, 2.0, D / 2 + 0.06); K.box(0.06, 3.2, 0.24, M.iron(), 0, 2.0, D / 2 + 0.08); for (const y of [1.0, 2.0, 3.0]) K.box(2.3, 0.08, 0.05, M.iron(), 0, y, D / 2 + 0.18);
+  archBlocks(K, 2.4, 0.55, 0.9, st, 0, 3.6, D / 2 + 0.2, 0, 11); for (const s of [-1, 1]) K.box(0.55, 3.2, 0.9, st, s * 1.48, 2.0, D / 2 + 0.2);
+  for (let k = 0; k < 3; k++) K.box(4.4 - k * 0.5, 0.3, 0.6, st, 0, 0.25 + k * 0.3, D / 2 + 0.4 + (2 - k) * 0.55);
+  // torre redonda no canto da frente, com telhado cônico e neve
+  const tx = W / 2 + 0.6, tz = D / 2 - 0.6, TR = 2.6, TH = top + 4;
+  K.add(new THREE.CylinderGeometry(TR, TR + 0.3, TH + 1.5, 24), st, tx, (TH + 1.5) / 2 - 1.5, tz); K.add(new THREE.CylinderGeometry(TR + 0.4, TR + 0.4, 0.5, 24), st, tx, TH, tz);
+  K.add(new THREE.ConeGeometry(TR + 0.6, 5, 24), M.slate(), tx, TH + 2.7, tz); K.add(new THREE.ConeGeometry(TR + 0.65, 4.2, 24), FM.snow(), tx, TH + 2.45, tz, 0, 0, 0, 1, 0.92, 1);
+  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + 0.3, yy = 3 + (k % 3) * 3.4; K.box(0.3, 1.1, 0.25, M.glass(), tx + Math.cos(a) * (TR + 0.12), yy, tz + Math.sin(a) * (TR + 0.12), -a + Math.PI / 2); }
+  icicles(K, r, -W / 2, W / 2, top + 0.05, D / 2 + 0.75, 0, 18);
+  const g = put(ctx, K, 'torreao_da_vigilia', x, z, ry, { y: Math.min(gY(x, z), gY(x + 8, z), gY(x - 8, z), gY(x, z + 8), gY(x, z - 8)), box: [[0, 0, W / 2 + 0.5, D / 2 + 0.5], [tx, tz, TR + 0.3, TR + 0.3], [-1.9, D / 2 + 1.2, 0.4, 0.9], [1.9, D / 2 + 1.2, 0.4, 0.9]] });
+  for (const sx of [-1, 1]) { const b = makeBanner('vigilia', 1.4, 3.6); b.position.set(sx * 4.8, 0.4 + h1 + h2 - 0.4, D / 2 + 0.25); g.add(b); }
+  const cs = Math.cos(ry), sn = Math.sin(ry), W2 = (lx, lz) => [x + lx * cs + lz * sn, z - lx * sn + lz * cs];
+  for (const s of [-1, 1]) { const [bx, bz] = W2(s * 3.0, D / 2 + 2.2); brazier(ctx, bx, gY(bx, bz), bz, s > 0, 7 + s); }
+  return W2(0, D / 2 + 2.8);
+}
+function frostKeepInterior(ctx, st, dk, wd, r) {
+  const I = { name: 'Torreão da Vigília', x: 2000, z: 0, w: 28, d: 22, h: 4.6, region: 'A Muralha Gélida', wall: '#3a3c42', floor: '#4a4a4e', beam: '#2a2420' };
+  ctx.INTERIORS.torreao_vigilia = I;
+  const K = new Kit(), hw = I.w / 2, hd = I.d / 2, H = I.h, T = 0.6, floorSt = FM.darkStone(), plank = M.wood(), fur = FM.fur(), wool = FM.blackWool();
+  const occ = [];
+  K.box(I.w, 0.2, I.d, floorSt, 0, -0.1, 0);
+  for (const [x0, x1, z0, z1] of [[-hw, -6, -hd, 0], [6, hw, -hd, 0]]) for (let x = x0 + 0.25; x < x1; x += 0.5) K.box(0.48, 0.04, z1 - z0 - 0.4, x % 1 > 0.5 ? plank : dk, x, 0.02, (z0 + z1) / 2); // tábuas nos quartos
+  // paredes de fora (a do sul tem o vão da porta)
+  const walls = new Kit(), wb = [];
+  const WALL = (w, d, x, z) => { walls.box(w, H, d, st, x, H / 2, z); wb.push([x, z, w / 2, d / 2]); };
+  WALL(I.w + T * 2, T, 0, -hd - T / 2); WALL(T, I.d, -hw - T / 2, 0); WALL(T, I.d, hw + T / 2, 0);
+  WALL(hw - 1.3, T, -hw / 2 - 0.65, hd + T / 2); WALL(hw - 1.3, T, hw / 2 + 0.65, hd + T / 2); walls.box(2.6, H - 3, T, st, 0, 3 + (H - 3) / 2, hd + T / 2);
+  // paredes de dentro: salão no meio (x −6..6), alas oeste e leste divididas em dois cômodos cada; vãos de porta nas paredes do salão
+  for (const sx of [-6, 6]) { WALL(0.5, 4.6, sx, -hd + 2.3); WALL(0.5, 9.2, sx, 0); WALL(0.5, 4.6, sx, hd - 2.3); for (const dz of [-5.5, 5.5]) walls.box(0.5, H - 2.8, 1.8, st, sx, 2.8 + (H - 2.8) / 2, dz); }
+  for (const s of [-1, 1]) WALL(8, 0.5, s * (hw - 4), 0);
+  // vigas e teto
+  const ceil = new Kit(); ceil.box(I.w + 1.2, 0.3, I.d + 1.2, dk, 0, H + 0.15, 0); for (let x = -hw + 1.4; x < hw; x += 2.8) K.box(0.35, 0.4, I.d, dk, x, H - 0.2, 0);
+  // ----- salão: lareira grande ao norte, mesa comprida, bancos, cadeira do comandante, estandartes, candelabro de ferro, peles no chão
+  K.box(4.2, 3.4, 1.2, st, 0, 1.7, -hd + 0.6); K.box(4.6, 0.35, 1.5, st, 0, 3.0, -hd + 0.75); K.box(2.4, 1.6, 0.4, plain('hearthDark', '#120c08'), 0, 0.8, -hd + 1.0); for (let k = 0; k < 5; k++) K.add(new THREE.CylinderGeometry(0.12, 0.12, 1.4, 8), dk, -0.6 + k * 0.3, 0.25, -hd + 1.4, 0.4 * (k % 2 - 0.5), 0, Math.PI / 2);
+  K.box(1.6, 5, 0.12, st, 0, 4.2, -hd + 0.6);
+  K.box(1.6, 0.1, 9.5, wd, 0, 0.92, 1.0); for (const sz of [-3.4, 1, 5.4]) for (const sx of [-0.6, 0.6]) K.box(0.14, 0.9, 0.14, dk, sx, 0.45, sz); // mesa comprida
+  for (const sx of [-1.35, 1.35]) { K.box(0.45, 0.08, 9.2, dk, sx, 0.5, 1.0); for (const sz of [-3, 1, 5]) K.box(0.4, 0.5, 0.1, dk, sx, 0.25, sz); }
+  K.box(0.9, 0.1, 0.8, dk, 0, 0.6, -4.4); K.box(0.9, 1.6, 0.12, dk, 0, 1.4, -4.8); K.box(0.95, 0.12, 0.85, fur, 0, 0.68, -4.4); // cadeira do comandante (com pele)
+  for (let k = 0; k < 6; k++) { const z = -2.5 + k * 1.6; K.add(new THREE.CylinderGeometry(0.06, 0.05, 0.14, 10), dk, (k % 2 ? -0.4 : 0.4), 1.04, z); K.add(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 14), M.iron(), (k % 2 ? 0.3 : -0.3), 0.985, z); } // canecas e pratos
+  for (let k = 0; k < 3; k++) K.add(new THREE.SphereGeometry(0.13, 10, 8), plain('bread', '#b07a3a', { rough: 0.9 }), 0.1 * k - 0.1, 1.04, 2.2 + k * 0.2, 0, 0, 0, 1.3, 0.7, 1);
+  K.add(new THREE.TorusGeometry(1.1, 0.05, 8, 32), M.iron(), 0, H - 1.0, 1.0, 0, Math.PI / 2); for (let k = 0; k < 4; k++) K.cyl(0.015, 0.015, 1.0, M.iron(), Math.cos(k * Math.PI / 2) * 0.8, H - 0.5, 1.0 + Math.sin(k * Math.PI / 2) * 0.8, 4, 0, Math.cos(k * 1.57) * 0.6, Math.sin(k * 1.57) * 0.6);
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.cyl(0.04, 0.04, 0.2, plain('candle', '#efe6cf', { rough: 0.6 }), Math.cos(a) * 1.1, H - 0.88, 1.0 + Math.sin(a) * 1.1, 8); }
+  K.add(new THREE.CircleGeometry(1.4, 24), fur, -3.2, 0.03, -6.5, 0, -Math.PI / 2, 0, 1.3, 1, 1); K.add(new THREE.CircleGeometry(1.2, 24), wool, 3.4, 0.03, 6.8, 0, -Math.PI / 2);
+  for (const sx of [-1, 1]) { K.box(0.9, 1.6, 0.4, dk, sx * 4.8, 0.8, -hd + 0.3); for (let k = 0; k < 4; k++) K.box(0.05, 1.3, 0.05, M.steel(), sx * 4.8 - 0.3 + k * 0.2, 1.1, -hd + 0.55, 0, 0, 0.05); } // suportes de lanças
+  // ----- quarto do comandante (noroeste): cama com pele, baú, escrivaninha com mapa e vela, armário
+  { const cx = -10, cz = -5.5; K.box(2.2, 0.5, 2.8, dk, cx - 1.6, 0.25, cz - 2.4); K.box(2.0, 0.25, 2.5, plain('linen', '#d9d0bc'), cx - 1.6, 0.6, cz - 2.3); K.box(2.1, 0.12, 1.7, fur, cx - 1.6, 0.76, cz - 1.8); K.box(2.2, 1.2, 0.15, dk, cx - 1.6, 0.9, cz - 3.75); K.add(new THREE.CylinderGeometry(0.28, 0.28, 0.9, 12), plain('pillow', '#e8e2d2'), cx - 1.6, 0.78, cz - 3.3, 0, 0, Math.PI / 2, 1, 1, 0.45);
+    K.box(1.2, 0.6, 0.6, dk, cx - 1.6, 0.3, cz - 0.5); K.box(1.25, 0.06, 0.65, M.iron(), cx - 1.6, 0.62, cz - 0.5);
+    K.box(1.6, 0.08, 0.8, wd, cx + 2.4, 0.85, cz - 3.9); for (const sx of [-0.7, 0.7]) K.box(0.08, 0.85, 0.7, dk, cx + 2.4 + sx, 0.42, cz - 3.9); K.box(0.9, 0.01, 0.6, plain('mapPaper', '#e6d6a8', { rough: 1 }), cx + 2.3, 0.9, cz - 3.9, 0.2); K.cyl(0.04, 0.04, 0.18, plain('candle', '#efe6cf'), cx + 2.9, 0.98, cz - 3.7, 8);
+    K.box(0.5, 0.06, 0.5, dk, cx + 2.4, 0.5, cz - 2.9); K.box(0.5, 0.7, 0.06, dk, cx + 2.4, 0.85, cz - 2.65);
+    K.box(1.4, 2.4, 0.7, dk, cx + 3.0, 1.2, cz + 4.7); K.box(0.04, 2.0, 0.02, M.iron(), cx + 3.0, 1.2, cz + 4.34);
+    K.add(new THREE.CircleGeometry(1.0, 20), plain('rugRed', '#5a1e1a', { rough: 1 }), cx, 0.05, cz + 1.0, 0, -Math.PI / 2, 0, 1.4, 1, 1); }
+  // ----- cozinha (sudoeste): fogão de pedra com caldeirão, mesa, prateleiras com potes, carnes penduradas, barris e sacos
+  { const cx = -10, cz = 5.5; K.box(2.6, 1.0, 1.4, st, cx - 2.2, 0.5, cz + 4.6); K.box(1.6, 0.4, 0.6, plain('hearthDark', '#120c08'), cx - 2.2, 0.9, cz + 4.0); K.add(new THREE.SphereGeometry(0.45, 16, 12, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.65), M.iron(), cx - 2.2, 1.55, cz + 4.4); K.box(0.05, 1.3, 0.05, M.iron(), cx - 2.2, 2.4, cz + 4.4); K.add(new THREE.CircleGeometry(0.36, 16), plain('stew', '#7a5228', { rough: 0.4 }), cx - 2.2, 1.66, cz + 4.4, 0, -Math.PI / 2);
+    K.box(2.4, 0.08, 1.1, wd, cx + 0.6, 0.9, cz); for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.08, 0.9, 0.08, dk, cx + 0.6 + sx * 1.1, 0.45, cz + sz * 0.45);
+    for (let k = 0; k < 4; k++) K.add(new THREE.SphereGeometry(0.14, 10, 8), plain(['veg1', 'veg2', 'bread', 'veg3'][k], ['#c8a040', '#8a3a2a', '#b07a3a', '#6a8a3a'][k], { rough: 0.8 }), cx + k * 0.35, 1.02, cz - 0.1, 0, 0, 0, 1.2, 0.8, 1);
+    for (const sx of [-0.6, 1.8]) K.box(0.08, 1.9, 0.4, dk, cx + sx, 1.5, 0.5); // prateleiras encostadas na parede da cozinha
+    for (let s = 0; s < 3; s++) { K.box(2.5, 0.06, 0.4, wd, cx + 0.6, 1.2 + s * 0.6, 0.5); for (let k = 0; k < 5; k++) K.add(new THREE.CylinderGeometry(0.1, 0.12, 0.26, 10), plain('jar' + (k % 3), ['#8a5a3a', '#5a6a7a', '#a8885a'][k % 3], { rough: 0.6 }), cx - 0.3 + k * 0.45, 1.36 + s * 0.6, 0.5); }
+    for (let k = 0; k < 3; k++) { K.cyl(0.01, 0.01, 0.5, M.rope(), cx + 2.5, H - 0.5, cz + 2 + k * 0.6, 4); K.add(new THREE.SphereGeometry(0.2, 10, 8), plain('ham', '#8a4a32', { rough: 0.7 }), cx + 2.5, H - 1.0, cz + 2 + k * 0.6, 0, 0, 0, 0.8, 1.4, 0.8); }
+    for (let k = 0; k < 3; k++) K.add(new THREE.CylinderGeometry(0.4, 0.4, 0.95, 14), wd, cx + 3.0, 0.47, cz + 4.4 - k * 0.9); for (let k = 0; k < 3; k++) K.add(new THREE.SphereGeometry(0.35, 10, 8), plain('sackV', '#a89068', { rough: 1 }), cx - 3.2, 0.3, cz - 1.5 + k * 0.6, 0, 0, 0, 1, 0.8, 1); }
+  // ----- dormitório (nordeste): beliches com mantos negros, baús ao pé, cabides com capas
+  { const cx = 10, cz = -5.5;
+    for (let b = 0; b < 3; b++) { const bx = cx - 2.9 + b * 2.2, bz = cz - 3.6; for (const lv of [0, 1]) { K.box(1.0, 0.12, 2.1, dk, bx, 0.45 + lv * 1.3, bz); K.box(0.95, 0.14, 2.0, wool, bx, 0.58 + lv * 1.3, bz + 0.05); K.box(0.9, 0.08, 0.5, plain('linen', '#d9d0bc'), bx, 0.68 + lv * 1.3, bz - 0.7); } for (const sx of [-0.5, 0.5]) for (const sz of [-1.0, 1.0]) K.box(0.08, 2.3, 0.08, dk, bx + sx, 1.15, bz + sz); K.box(0.8, 0.45, 0.45, dk, bx, 0.22, bz + 1.45); }
+    for (let k = 0; k < 4; k++) { K.box(0.06, 0.06, 0.3, dk, cx + 3.85, 1.9, cz + 0.5 + k * 0.8); const g = new THREE.PlaneGeometry(0.6, 1.3, 1, 4), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getY(i) * 3) * 0.04); K.add(g, wool, cx + 3.6, 1.2, cz + 0.5 + k * 0.8, -Math.PI / 2); } }
+  // ----- sala de mapas e armaria (sudeste): mesa de mapas com velas, armadura no suporte, espadas na parede, estante de pergaminhos
+  { const cx = 10, cz = 5.5; K.box(2.6, 0.1, 1.6, wd, cx, 0.95, cz); for (const sx of [-1, 1]) for (const sz of [-1, 1]) K.box(0.1, 0.95, 0.1, dk, cx + sx * 1.2, 0.47, cz + sz * 0.7); K.box(2.2, 0.01, 1.3, plain('mapPaper', '#e6d6a8', { rough: 1 }), cx, 1.01, cz); for (const [mx, mz] of [[-0.6, -0.3], [0.4, 0.2], [0.8, -0.4]]) K.cyl(0.05, 0.05, 0.03, M.iron(), cx + mx, 1.03, cz + mz, 8); K.cyl(0.04, 0.04, 0.2, plain('candle', '#efe6cf'), cx - 1.0, 1.1, cz + 0.5, 8);
+    K.cyl(0.05, 0.05, 1.7, dk, cx + 3.2, 0.85, cz - 3.5, 8); K.box(0.6, 0.7, 0.35, M.steel(), cx + 3.2, 1.45, cz - 3.5); K.add(new THREE.SphereGeometry(0.18, 12, 10), M.steel(), cx + 3.2, 2.0, cz - 3.5); for (const s of [-1, 1]) K.add(new THREE.SphereGeometry(0.16, 10, 8), M.steel(), cx + 3.2 + s * 0.38, 1.72, cz - 3.5, 0, 0, 0, 1, 0.7, 1); // armadura
+    for (let k = 0; k < 4; k++) { K.box(0.06, 1.1, 0.02, M.steel(), cx - 3.0 + k * 0.5, 2.25, hd - 0.34, 0, 0, 0.1); K.box(0.26, 0.05, 0.05, M.gold(), cx - 3.0 + k * 0.5, 1.68, hd - 0.36); }
+    K.box(2.0, 2.4, 0.5, dk, cx - 1.6, 1.2, cz - 4.7); for (let s = 0; s < 4; s++) { K.box(1.9, 0.05, 0.45, wd, cx - 1.6, 0.4 + s * 0.55, cz - 4.65); for (let k = 0; k < 6; k++) K.add(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 8), plain('scroll', '#e2d4b0', { rough: 0.9 }), cx - 2.3 + k * 0.28, 0.5 + s * 0.55, cz - 4.6, 0, 0, Math.PI / 2); } }
+  const g = K.build(); g.position.set(I.x, 0, I.z); ctx.scene.add(g);
+  const wg = walls.build(); wg.position.set(I.x, 0, I.z); ctx.scene.add(wg); ctx.occluders.push(wg);
+  const cg = ceil.build(); cg.position.set(I.x, 0, I.z); ctx.scene.add(cg); ctx.occluders.push(cg);
+  for (const [lx, lz, hx, hz] of wb) ctx.colliders.push({ x: I.x + lx, z: I.z + lz, r: Math.max(hx, hz), box: true, hx, hz, rot: 0, name: 'torreao' });
+  for (const [lx, lz, hx, hz] of [[0, 1.0, 1.0, 4.9], [0, -hd + 0.8, 2.3, 0.9], [-11.6, -7.9, 1.2, 1.5], [-7.6, -9.4, 0.9, 0.5], [-12.2, 10.1, 1.4, 0.8], [-9.4, 5.5, 1.3, 0.6], [-9.4, 0.4, 1.3, 0.3], [-7, 9.7, 0.5, 1.4], [7.1, -9.1, 0.6, 1.1], [9.3, -9.1, 0.6, 1.1], [11.5, -9.1, 0.6, 1.1], [10, 5.5, 1.4, 0.9], [8.4, 0.8, 1.1, 0.35], [13.2, 2.0, 0.35, 0.35]])
+    ctx.colliders.push({ x: I.x + lx, z: I.z + lz, r: Math.max(hx, hz), box: true, hx, hz, rot: 0, name: 'torreao' });
+  // fogo da lareira e do fogão, luz quente nos cômodos (o pool de luzes leva as 3 reais para as mais próximas)
+  for (const [lx, lz, s] of [[0, -hd + 1.3, 1.5], [-12.2, 9.9, 0.7]]) { const f = flame(s, lx); f.position.set(I.x + lx, lx ? 1.15 : 0.35, I.z + lz); ctx.scene.add(f); ctx.roomAnims.push(f); }
+  for (const [lx, lz, c, i] of [[0, -hd + 2.5, '#ff9a48', 7], [0, 4, '#ffcf8a', 6.5], [-10, -5.5, '#ffc070', 5.5], [-10, 5.5, '#ffa858', 5.5], [10, -5.5, '#ffc070', 5], [10, 5.5, '#ffc878', 5.5]]) { const L = vlight(c, i, 13, 1.3); L.position.set(I.x + lx, H - 1.2, I.z + lz); ctx.scene.add(L); }
+  // tochas de parede (suporte de ferro + chama) e estandartes negros no salão
+  for (const [lx, lz, ry] of [[-5.7, -8, Math.PI / 2], [5.7, -8, -Math.PI / 2], [-5.7, 8.5, Math.PI / 2], [5.7, 8.5, -Math.PI / 2], [-13.7, -5.5, Math.PI / 2], [-13.7, 5.5, Math.PI / 2], [13.7, -3, -Math.PI / 2], [13.7, 8, -Math.PI / 2]]) {
+    const T2 = new Kit(); T2.box(0.08, 0.08, 0.35, M.iron(), 0, 0, 0.17); T2.add(new THREE.CylinderGeometry(0.09, 0.05, 0.22, 10, 1, true), M.iron(), 0, 0.12, 0.36); T2.cyl(0.035, 0.035, 0.3, dk, 0, 0.18, 0.36, 6);
+    const tg = T2.build(false); tg.position.set(I.x + lx, 2.3, I.z + lz); tg.rotation.y = ry; ctx.scene.add(tg);
+    const f = flame(0.45, lx + lz); f.position.set(I.x + lx + Math.sin(ry) * 0.36, 2.62, I.z + lz + Math.cos(ry) * 0.36); ctx.scene.add(f); ctx.roomAnims.push(f);
+  }
+  for (const [lx, lz, ry] of [[-5.72, -1.5, Math.PI / 2], [5.72, -1.5, -Math.PI / 2], [-5.72, 3.5, Math.PI / 2], [5.72, 3.5, -Math.PI / 2]]) { const b = makeBanner('vigilia', 1.1, 2.6); b.position.set(I.x + lx, 3.9, I.z + lz); b.rotation.y = ry; ctx.scene.add(b); }
+  const ex = ctx.makePortal('#ffd27a'); ex.position.set(I.x, 0, I.z + hd - 0.9); ctx.scene.add(ex); ctx.portals.push({ kind: 'exit', from: 'torreao_vigilia', x: I.x, z: I.z + hd - 0.9, mesh: ex });
+  // gente da casa: cada um junto do seu lugar
+  const N = (n, x, z, yaw, anim) => { const npc = ctx.roomNpc(n, I.x + x, I.z + z, yaw, anim); furCloak(npc, { len: 1.05 }); return npc; };
+  N({ id: 'dunstan_v', name: 'Irmão Dunstan', title: 'Intendente do Torreão', model: 'Knight', look: { race: 'humano', face: 'sereno', hair: { style: 'curto', color: 'grisalho' }, beard: true },
+    lines: 'Bem-vindo ao Torreão. Salão no meio, cozinha e o quarto do Comandante a oeste, dormitório e sala de mapas a leste.\nNão mexa nos mapas do Comandante. Da última vez que um recruta mexeu, passamos uma semana procurando a Torre Leste.' }, -2.2, -6.6, Math.PI / 2);
+  N({ id: 'ulf_v', name: 'Ulf', title: 'Cozinheiro do Torreão', model: 'Barbarian', show: ['Mug'], heals: true, look: { race: 'anao', face: 'alegre', hair: { style: 'careca', color: 'ruivo' }, beard: true } }, -11.4, 8.4, Math.PI);
+  N({ id: 'sera_v', name: 'Sera', title: 'Cartógrafa da Vigília', model: 'Mage', look: { race: 'humano', sex: 'f', face: 'sabio', hair: { style: 'coque', color: 'preto' } },
+    lines: 'Cada patrulha volta com um rabisco novo para este mapa. Do outro lado do gelo, metade ainda é branco — e branco quer dizer "ninguém voltou para contar".' }, 11.9, 5.5, -Math.PI / 2);
+  N({ id: 'tam_v', name: 'Tam', title: 'Recruta de folga', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'castanho' } },
+    lines: 'Turno da noite na Muralha, folga de dia. Se eu dormir em pé aqui, por favor não conte pro Comandante.' }, 12.4, -2.4, -Math.PI / 2);
+  return I;
+}
+function frostExpansion(ctx, C, r, wd, dk, st) {
+  // muralha: do pé da Muralha de gelo, contornando a cidade; o lago congelado fica do lado de fora; portão a leste, na estrada
+  const N = C.z - 44, E = -322, S1 = 72, Sx = -356, S2 = 48, X0 = C.wallX + 2;
+  frostWallRun(ctx, [[X0, N], [E, N], [E, 20.8]], [], st, dk, wd); frostWallRun(ctx, [[E, 31.2], [E, S2], [Sx, S2], [Sx, S1], [X0, S1]], [], st, dk, wd);
+  for (const [tx, tz] of [[E, N], [E, S2], [Sx, S2], [Sx, S1], [X0 + 2, N], [X0 + 2, S1]]) frostTower(ctx, tx, tz, st, dk);
+  { // portão com duas torres, arco de pedra, folhas de madeira abertas e estandartes
+    for (const s of [-1, 1]) frostTower(ctx, E, 26 + s * 5.2, st, dk, 12, 'portao_da_vigilia');
+    const K = new Kit(); K.box(2.6, 2.4, 5.4, st, 0, 7.6, 0); archBlocks(K, 5.0, 0.6, 2.6, st, 0, 4.4, 0, Math.PI / 2, 13);
+    for (let m = 0; m < 3; m++) K.box(0.6, 1.0, 0.9, st, -1.25, 9.3, -1.8 + m * 1.8); K.box(2.8, 0.15, 5.6, FM.snow(), 0, 8.85, 0);
+    for (const s of [-1, 1]) { K.box(0.25, 4.4, 2.3, dk, -1.6, 2.2, s * 3.2, s * 1.2); for (const y of [0.8, 2.2, 3.6]) K.box(0.08, 0.14, 2.2, M.iron(), -1.75, y, s * 3.2, s * 1.2); }
+    K.box(0.14, 0.14, 4.8, M.iron(), 0.3, 6.4, 0); for (let k = -2; k <= 2; k++) K.box(0.1, 1.6, 0.1, M.iron(), 0.3, 5.6, k * 1.0); // grade levadiça erguida
+    const lo = Math.min(gY(E, 23), gY(E, 29)); const g = put(ctx, K, 'portao_da_vigilia', E, 26, 0, { y: lo - 0.2, occ: false });
+    for (const s of [-1, 1]) { const b = makeBanner('vigilia', 1.3, 3.4); b.position.set(1.4, 7.3, s * 1.6); b.rotation.y = Math.PI / 2; g.add(b); }
+    for (const s of [-1, 1]) brazier(ctx, E + 3.4, gY(E + 3.4, 26 + s * 3.2), 26 + s * 3.2, s > 0, 11 + s);
+  }
+  // casas novas: algumas maiores, em L ou de dois andares
+  for (const [x, z, ry, w, d, h, o] of [[-344, 32, 0.04, 6.5, 10, 3.4, {}], [-331, 34, Math.PI / 2, 7, 9, 3.2, { floors: 2 }], [-354, -9, Math.PI, 6.5, 8, 3.2, { wing: 4.2 }], [-333, -10, Math.PI, 7, 6.5, 3.2, {}], [-372, 66, 0, 7, 7.5, 3.0, { floors: 2 }], [-388, 40, Math.PI / 2, 6, 7.5, 3.2, { wing: 3.8 }]])
+    frostHouse(ctx, x, z, ry, w, d, h, st, dk, wd, r, o);
+  // o Torreão (dá para entrar) e o seu interior
+  const door = frostKeep(ctx, -332, 4, -Math.PI / 2, st, dk, wd, r);
+  if (ctx.addDoorPortal && ctx.INTERIORS) { frostKeepInterior(ctx, st, dk, wd, r); ctx.addDoorPortal('torreao_vigilia', door[0], door[1], -Math.PI / 2); }
+}
 function putAbs(ctx, K, asset, cx, cz, opts = {}) { for (const { geos } of K.parts.values()) for (const g of geos) g.translate(-cx, 0, -cz); return put(ctx, K, asset, cx, cz, 0, { y: 0, ...opts }); }
 function buildFrostHold(ctx) {
   const C = FROST, r = rngOf(4242), wd = FM.rawWood(), dk = M.darkWood(), st = FM.darkStone();
@@ -850,6 +1031,7 @@ function buildFrostHold(ctx) {
     put(ctx, K, 'neve', C.x, C.z, 0, { occ: false }); }
   for (let k = 0; k < 8; k++) ctx.place(['barrel', 'crate_A', 'crate_B', 'sack'][k % 4], C.x + 12 + (r() - 0.5) * 8, C.z - 12 + (r() - 0.5) * 6, { rf: 0.6 });
   for (const [dx, dz] of [[34, -6], [34, 10]]) { const K = new Kit(); K.cyl(0.12, 0.15, 8, dk, 0, 4, 0, 10); put(ctx, K, 'mastro', C.x + dx, C.z + dz, 0, { box: [[0, 0, 0.2, 0.2]], occ: false }); const b = makeBanner('vigilia', 1.3, 3.2); b.position.set(C.x + dx + 0.12, gY(C.x + dx, C.z + dz) + 7.6, C.z + dz); b.rotation.y = Math.PI / 2; ctx.scene.add(b); }
+  frostExpansion(ctx, C, r, wd, dk, st); // S-274: muralha em volta, portão, casas novas e o Torreão com interior
   // ---------- a irmandade de mantos negros (NPCs com roupa de frio) ----------
   const W = (n, dx, dz, yaw) => { const npc = ctx.worldNpc(n, C.x + dx, C.z + dz, yaw); furCloak(npc, { len: n.cloakLen || 1.12 }); return npc; };
   const npcs = [

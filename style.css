@@ -460,6 +460,7 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .cs-head .sub { letter-spacing: 0.35em; font-size: 11px; color: #b9a98a; }
 .cs-main { flex: 1; display: flex; align-items: center; justify-content: center; gap: 18px; min-height: 0; padding: 0 18px; }
 .cs-stage, .cc-stage { position: relative; height: min(62vh, 620px); aspect-ratio: 64 / 62; max-width: 100%; } /* S-235: menos vazio dos lados */
+.cs-stage { aspect-ratio: 50 / 62; } /* S-288: palco mais estreito, sem faixa vazia até a setinha */
 .cs-stage canvas, .cc-stage canvas { position: relative; width: 100%; height: 100%; display: block; touch-action: none; }
 .cs-podium { position: absolute; left: 12%; right: 12%; bottom: 7%; height: 14%; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 210, 120, 0.35), rgba(255, 210, 120, 0.08) 55%, transparent 70%); box-shadow: 0 0 60px rgba(255, 200, 90, 0.15); }
 .cs-hint { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 11px; color: #8d86a0; }

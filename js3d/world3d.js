@@ -35,6 +35,7 @@ export const PORT = { x: 262, z: 262 };        // Porto das Gaivotas (humanos do
 export const DWARF = { x: -288, z: -288 };     // Pedrafunda: bacia entre os picos mais altos
 export const ELF = { x: 286, z: -284 };        // Aelindra: vale de floresta antiga
 export const CASTLE = { x: -292, z: 296 };     // Castelo de Valcinza, no meio dos campos
+const CASTLE_RY = Math.atan2(-280 - CASTLE.x, 270 - CASTLE.z), CASTLE_CS = Math.cos(CASTLE_RY), CASTLE_SN = Math.sin(CASTLE_RY); // mesma rotação do castle3d (a frente olha para a estrada)
 export const SEA = { x: 500, z: 500, r: 300, level: -0.6 }; // o mar: tudo a menos de r deste ponto (com a costa irregular)
 // S-216: o porto tem um cais de pedra reto — a linha d'água é a mesma dos dois lados (nada de praia torta no meio da cidade)
 // s = metros do centro do porto em direção ao mar; t = metros para o lado (ao longo do cais)
@@ -51,7 +52,7 @@ export function seaDist(x, z) { // > 0 em terra, < 0 no mar (metros até a linha
   return sd * (1 - w) + (HARBOR.quay - harborST(x, z).s) * w;
 }
 // bacias planas das cidades novas (1 no centro, 0 fora) — tiram as montanhas e aplainam o chão
-const BASINS = [[PORT, 40, 62], [DWARF, 66, 84], [ELF, 50, 74], [CASTLE, 70, 104]];
+const BASINS = [[PORT, 72, 104], /* S-285: o porto ganhou uma planície maior — sem o morro (pé da serra do canto) na entrada da cidade e do quebra-mar */[DWARF, 66, 84], [ELF, 50, 74], [CASTLE, 70, 104]];
 export function basin(x, z) { let b = 0; for (const [c, r0, r1] of BASINS) { const d = Math.hypot(x - c.x, z - c.z); if (d < r1) b = Math.max(b, 1 - smooth(r0, r1, d)); } return b; }
 export const LAKE = { x: 18, z: 52, r: 14, level: -0.9 };
 export const ROADS = [
@@ -665,6 +666,7 @@ function grassChunk(ci, cj) {
     if (Math.abs(x) > PLAY_LIMIT || Math.abs(z) > PLAY_LIMIT) continue;
     if (lakeDist(x, z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12 || Math.hypot(x - CITY2.x, z - CITY2.z) < 27 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 31) continue;
     if (Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r * 1.05) continue;
+    { const dx = x - CASTLE.x, dz = z - CASTLE.z; if (Math.abs(dx) < 80 && Math.abs(dz) < 80 && Math.abs(dx * CASTLE_CS - dz * CASTLE_SN) < 56 && Math.abs(dx * CASTLE_SN + dz * CASTLE_CS) < 56) continue; } // S-275: nada de grama no pátio calçado, na muralha e no fosso do castelo
     { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150 && rng() > smooth(75, 150, dd)) continue; } // S-164: a grama vai sumindo antes de Pedrafunda
     if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 64 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || (harborW(x, z) > 0.3 && harborST(x, z).s > HARBOR.quay - 14) || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
     if (mountainMask(x, z) > 0.35) continue;
@@ -679,7 +681,7 @@ function grassChunk(ci, cj) {
     if (sandy > 0) { const patch = vnoise(x * 0.04 + 31.7, z * 0.04 - 12.3), inPatch = patch > 0.86 && rng() < 0.3; if (!inPatch && rng() < sandy * 0.995 + 0.005) { if (wD > 0.5 && rng() < 0.012) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } }
     const dens = 1 - wD * 0.45 - wG * 0.8 - wC * 0.72; // S-161: Ruínas dos Colossos = terra arrasada, pouca grama
     if (wG > 0.15) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); if (patch > 0.6 - cover * 0.45 - 0.04 || rng() < cover * 0.55) continue; } // S-227: na neve, só tufinhos onde o chão aparece (as manchas sem neve), nunca no meio da neve
-    if (rng() > dens) { if ((wD > 0.5 && rng() < 0.02) || (wC > 0.4 && rng() < 0.05)) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // escombros e lascas de pedra pelo chão
+    if (rng() > dens) { if ((wD > 0.5 && rng() < 0.02) || (wC > 0.4 && rng() < 0.012)) { /* S-301: bem menos lascas soltas na planície dos colossos */ sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // escombros e lascas de pedra pelo chão
     if (ruins > 0.55) {
       if (rng() < 0.5) { sc.set(0.6 + rng() * 1.4, 0.4 + rng() * 0.6, 0.6 + rng() * 1.4); m.compose(v.set(x, y + 0.03, z), q, sc); rub.push(m.clone()); continue; }
       if (rng() < 0.75) continue;

@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { vlight } from './lights3d.js';
 import { heightAt, CASTLE, ZONES, seaDist, mountainMask, groundColor, lakeDist, LAKE } from './world3d.js';
 import { Kit, M, rngOf, makeBanner, flame, brazier, axeGeo, archBlocks, gable, stoneTex, woodTex, CULL } from './cities3d.js';
+import { addLevel, levelWall } from './levels3d.js';
 
 const plainM = {};
 const P = (key, color, o = {}) => plainM[key] || (plainM[key] = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? 0.7, metalness: o.metal ?? 0, emissive: o.emissive || '#000000', emissiveIntensity: o.ei ?? 1, side: o.side || THREE.FrontSide, transparent: !!o.transparent, opacity: o.opacity ?? 1 }));
@@ -244,7 +245,15 @@ function wallWithDoors(K, cols, mats, x0, z0, x1, z1, doors, H, I) {
   const len = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / len, uz = (z1 - z0) / len, ry = Math.atan2(ux, uz), t = 0.9, dh = 4.4;
   const cuts = [0, ...doors.flatMap(([p, w]) => [p - w / 2, p + w / 2]), len];
   for (let k = 0; k < cuts.length; k += 2) { const a = cuts[k], b = cuts[k + 1]; if (b - a < 0.05) continue; const m = (a + b) / 2; K.box(t, H, b - a, mats.inner, x0 + ux * m, H / 2, z0 + uz * m, ry); cols.push({ x: I.x + x0 + ux * m, z: I.z + z0 + uz * m, hx: t / 2 + 0.05, hz: (b - a) / 2, ry }); }
-  for (const [p, w] of doors) { K.box(t, H - dh, w, mats.inner, x0 + ux * p, dh + (H - dh) / 2, z0 + uz * p, ry); archBlocks(K, w, 0.5, t + 0.3, mats.wall, x0 + ux * p, dh - w / 2 * 0.15, z0 + uz * p, ry + Math.PI / 2, 9); for (const s of [-1, 1]) K.box(t + 0.3, dh, 0.45, mats.wall, x0 + ux * (p + s * w / 2), dh / 2, z0 + uz * (p + s * w / 2), ry); }
+  // S-283: portas em arco de verdade — a parede acima do vão é recortada em meia-volta e as aduelas contornam o recorte
+  // (antes o arco de pedras ficava "desenhado" na parede por cima de um vão retangular: pareciam círculos soltos)
+  for (const [p, w] of doors) {
+    const sp = 3.3, cx = x0 + ux * p, cz = z0 + uz * p, rr = ry - Math.PI / 2;
+    const sh = new THREE.Shape(); sh.moveTo(-w / 2, 0); sh.lineTo(-w / 2, H - sp); sh.lineTo(w / 2, H - sp); sh.lineTo(w / 2, 0); sh.absarc(0, 0, w / 2, 0, Math.PI, false);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false, curveSegments: 20 }); g.translate(0, 0, -t / 2); K.add(g, mats.inner, cx, sp, cz, rr);
+    archBlocks(K, w, 0.42, t + 0.24, mats.wall, cx, sp, cz, rr, w > 4 ? 15 : 11);
+    for (const s of [-1, 1]) K.box(t + 0.24, sp, 0.42, mats.wall, x0 + ux * (p + s * (w / 2 + 0.21)), sp / 2, z0 + uz * (p + s * (w / 2 + 0.21)), ry);
+  }
 }
 // móveis
 function table(K, w, d, x, z, ry = 0, mat = M.darkWood()) { K.box(w, 0.12, d, mat, x, 0.82, z, ry); const cs = Math.cos(ry), sn = Math.sin(ry); for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const lx = sx * (w / 2 - 0.15), lz = sz * (d / 2 - 0.15); K.add(new THREE.CylinderGeometry(0.07, 0.05, 0.8, 10), mat, x + lx * cs + lz * sn, 0.4, z - lx * sn + lz * cs); } }
@@ -257,12 +266,18 @@ function chandelier(K, x, y, z, R = 1.4) {
   K.cyl(0.03, 0.03, 6, M.iron(), x, y + 3.3, z, 6);
   for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; candle(K, x + Math.cos(a) * R, y + 0.05, z + Math.sin(a) * R, 0.22); }
 }
+const BOOK_LEATHER = ['#4a2e1c', '#5a3a22', '#3a2416', '#6a4428', '#2a1c14', '#1c1612', '#141210', '#4a1a1a', '#5a2420', '#2e3424', '#7a5a3a', '#8a7050', '#3e2a20', '#c8b48a'];
+const bookMat = k => P('bookL' + k, BOOK_LEATHER[k], { rough: 0.85 });
 function bookshelf(K, w, x, z, ry, seed, y0 = 0) {
   const r = rngOf(seed), cs = Math.cos(ry), sn = Math.sin(ry), H = 3.6, wd = M.darkWood(), at = (lx, lz) => [x + lx * cs + lz * sn, z - lx * sn + lz * cs];
   const insertY = ([a, b], y) => [a, y + y0, b];
   K.box(w, H, 0.12, wd, ...insertY(at(0, -0.3), H / 2), ry); for (const sx of [-1, 1]) K.box(0.1, H, 0.65, wd, ...insertY(at(sx * w / 2, 0), H / 2), ry);
-  const cols = ['#7a2a22', '#2a4a7a', '#3a6a3a', '#7a5a2a', '#4a2a5a', '#2a2a2a', '#8a7a4a'];
-  for (let s = 0; s < 5; s++) { const y = 0.1 + s * 0.72; K.box(w, 0.06, 0.6, wd, ...insertY(at(0, 0), y), ry); let lx = -w / 2 + 0.12; while (lx < w / 2 - 0.15) { const bw = 0.06 + r() * 0.07, bh = 0.4 + r() * 0.22; if (r() < 0.08) { lx += 0.25; continue; } K.box(bw, bh, 0.42, P('book' + Math.floor(r() * 7), cols[Math.floor(r() * 7)], { rough: 0.8 }), ...insertY(at(lx + bw / 2, 0.02), y + 0.03 + bh / 2), ry, 0, (r() < 0.1 ? 0.25 : 0)); lx += bw + 0.01; } }
+  // S-279: lombadas de couro de verdade (marrons, preto, vinho, verde-musgo escuro, pergaminho), com nervuras douradas — nada de livro azul/amarelo vivo
+  for (let s = 0; s < 5; s++) { const y = 0.1 + s * 0.72; K.box(w, 0.06, 0.6, wd, ...insertY(at(0, 0), y), ry); let lx = -w / 2 + 0.12; while (lx < w / 2 - 0.15) { const bw = 0.05 + r() * 0.08, bh = 0.36 + r() * 0.26, bk = Math.floor(r() * BOOK_LEATHER.length); if (r() < 0.07) { lx += 0.25; continue; }
+    const lean = r() < 0.08 ? 0.22 : 0, [bx, bz] = at(lx + bw / 2, 0.02), by = y + 0.03 + bh / 2;
+    K.box(bw, bh, 0.42, bookMat(bk), bx, by + y0, bz, ry, 0, lean);
+    if (r() < 0.6 && !lean) for (const f of [0.28, -0.3]) K.box(bw + 0.004, 0.012, 0.03, M.gold(), ...insertY(at(lx + bw / 2, 0.235), by + bh * f), ry); // nervuras douradas na lombada
+    lx += bw + 0.008; } }
 }
 const insertY = ([x, z], y) => [x, y, z];
 function bed(K, x, z, ry, w = 2.0, royal = false) {
@@ -283,35 +298,83 @@ function fireplace(K, x, z, ry, mats) {
 // armadura completa num suporte (S-184): couraça com placas, gorjal, ombreiras em lâminas, braçais,
 // manoplas, saiote de placas sobre cota de malha, grevas, elmo fechado com viseira e penacho
 const lathe = (pts, seg = 28) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
-function armorStand(K, x, z, ry, plume = '#8a1a22') {
-  const cs = Math.cos(ry), sn = Math.sin(ry), at = (lx, lz, y) => [x + lx * cs + lz * sn, y, z - lx * sn + lz * cs];
-  const st = P('armSteel', '#c4c8ce', { metal: 0.55, rough: 0.3 }), dk = P('armDark', '#6a6e76', { metal: 0.5, rough: 0.4 }), mail = P('armMail', '#7e8188', { metal: 0.45, rough: 0.55 }), leather = P('armLeather', '#4a2e1a', { rough: 0.8 }), brass = M.gold();
-  // pedestal de pedra e haste de madeira (o "manequim")
-  K.add(lathe([[0.01, 0], [0.42, 0], [0.42, 0.08], [0.36, 0.12], [0.34, 0.2], [0.01, 0.2]], 24), P('standStone', '#6a6458', { rough: 0.85 }), ...at(0, 0, 0), ry);
-  K.cyl(0.035, 0.035, 1.0, M.darkWood(), ...at(0, 0, 0.7), 8);
-  // grevas e escarpes
-  for (const sx of [-1, 1]) { K.add(lathe([[0.06, 0], [0.075, 0.08], [0.07, 0.3], [0.08, 0.42], [0.072, 0.5]], 18), st, ...at(sx * 0.12, 0, 0.22), ry); K.add(new THREE.SphereGeometry(0.075, 14, 10), st, ...at(sx * 0.12, 0, 0.73), ry, 0, 0, 1, 0.8, 1.1); K.add(lathe([[0.07, 0], [0.085, 0.1], [0.08, 0.32]], 18), st, ...at(sx * 0.12, 0, 0.76), ry); K.box(0.11, 0.06, 0.24, dk, ...at(sx * 0.12, 0.05, 0.22), ry); }
-  // cota de malha e saiote de lâminas (tassetes)
-  K.add(lathe([[0.2, 0], [0.24, 0.15], [0.21, 0.32]], 24), mail, ...at(0, 0, 0.98), ry);
-  for (let k = 0; k < 3; k++) K.add(lathe([[0.25 - k * 0.012, 0], [0.235 - k * 0.012, 0.09]], 24), st, ...at(0, 0, 1.06 + k * 0.075), ry);
-  K.add(new THREE.TorusGeometry(0.22, 0.025, 8, 28), leather, ...at(0, 0, 1.32), ry, Math.PI / 2); K.box(0.07, 0.07, 0.03, brass, ...at(0, 0.22, 1.32), ry); // cinto e fivela
-  // couraça (peito com quilha) e placas da barriga
-  K.add(lathe([[0.2, 0], [0.23, 0.08], [0.25, 0.25], [0.27, 0.42], [0.25, 0.52], [0.16, 0.58], [0.07, 0.6]], 32), st, ...at(0, 0, 1.34), ry, 0, 0, 1, 1, 0.82);
-  K.box(0.025, 0.42, 0.04, st, ...at(0, 0.215, 1.6), ry); // quilha
-  for (let k = 0; k < 6; k++) { const a = -0.6 + k * 0.24; K.add(new THREE.SphereGeometry(0.012, 6, 4), brass, ...at(Math.sin(a) * 0.26, Math.cos(a) * 0.21, 1.4), ry); } // rebites
-  // gorjal
-  K.add(lathe([[0.15, 0], [0.11, 0.06], [0.09, 0.12]], 22), st, ...at(0, 0, 1.92), ry);
-  // ombreiras em lâminas sobrepostas
-  for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) K.add(new THREE.SphereGeometry(0.16 - k * 0.012, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), k % 2 ? dk : st, ...at(sx * (0.3 + k * 0.012), 0, 1.86 - k * 0.055), ry, 0, sx * (0.5 + k * 0.08), 1.0, 0.75, 1.1);
-  // braçais, cotoveleiras e manoplas (braços pendendo ao lado)
-  for (const sx of [-1, 1]) { K.add(lathe([[0.065, 0], [0.07, 0.25]], 16), st, ...at(sx * 0.33, 0, 1.52), ry, 0, sx * 0.08); K.add(new THREE.SphereGeometry(0.075, 14, 10), dk, ...at(sx * 0.34, 0.02, 1.48), ry);
-    K.add(lathe([[0.055, 0], [0.065, 0.24]], 16), st, ...at(sx * 0.35, 0.03, 1.22), ry); K.add(new THREE.BoxGeometry(0.09, 0.14, 0.11), dk, ...at(sx * 0.35, 0.04, 1.13), ry); for (let f = 0; f < 4; f++) K.box(0.02, 0.07, 0.025, dk, ...at(sx * 0.35 + (f - 1.5) * 0.022, 0.08, 1.04), ry); }
-  // elmo fechado (grande elmo) com viseira em fendas, respiros e penacho
-  K.add(lathe([[0.01, 0.34], [0.09, 0.33], [0.15, 0.27], [0.165, 0.15], [0.16, 0.0], [0.13, -0.06]], 28), st, ...at(0, 0, 1.98), ry);
-  K.box(0.2, 0.018, 0.02, P('visorSlit', '#0a0a0c'), ...at(0, 0.155, 2.17), ry); K.box(0.16, 0.012, 0.02, P('visorSlit', '#0a0a0c'), ...at(0, 0.157, 2.14), ry);
-  for (let k = 0; k < 6; k++) K.add(new THREE.CylinderGeometry(0.007, 0.007, 0.02, 6), P('visorSlit', '#0a0a0c'), ...at(0.05 + (k % 3) * 0.022, 0.15, 2.06 - Math.floor(k / 3) * 0.025), ry, Math.PI / 2);
-  K.box(0.018, 0.3, 0.02, st, ...at(0, 0.162, 2.12), ry); // nervura central
-  for (let k = 0; k < 9; k++) K.add(new THREE.ConeGeometry(0.03, 0.34, 8), cloth('plume' + plume, plume), ...at(0, -0.04 - k * 0.03, 2.44 - k * 0.012), ry, 0.9 + k * 0.06);
+/* S-276: seis armaduras DIFERENTES (antes eram todas iguais): cada uma com metal, elmo, acabamento e acessórios próprios
+   0 gótica (aço polido canelado, salada com babeira) · 1 negra (aço enegrecido com filetes de ouro, elmo de balde com coroa, capa)
+   2 de parada (aço com faixas douradas gravadas, elmo fechado de bico, penacho alto) · 3 cruzado (cota de malha, sobreveste com brasão,
+   elmo de topo chato, escudo encostado) · 4 de bronze antiga (couraça musculada, elmo de crista transversal, saiote de tiras)
+   5 do norte (aço azulado com manto de pele e elmo de chifres, machado de duas mãos) */
+const ARMOR_V = [
+  { metal: '#c9ced6', dark: '#8a9098', trim: null, helm: 'sallet', fluted: true, weapon: 'sword' },
+  { metal: '#2a2c30', dark: '#1a1b1e', trim: '#c9a24a', helm: 'bucket', cape: '#3a0a10', weapon: 'sword' },
+  { metal: '#d8dce2', dark: '#a8adb4', trim: '#d4a640', helm: 'close', plume: true, etched: true },
+  { metal: '#b4b8be', dark: '#7a7e86', trim: null, helm: 'flat', tabard: '#7a1a22', shield: true, mailHeavy: true },
+  { metal: '#b0783a', dark: '#7a4a22', trim: '#e0b860', helm: 'crested', bronze: true, weapon: 'spear' },
+  { metal: '#aab8c8', dark: '#6a7888', trim: null, helm: 'horned', fur: true, weapon: 'axe' },
+];
+function armorStand(K, x, z, ry, plume = '#8a1a22', vi = 0) {
+  const V = ARMOR_V[vi % ARMOR_V.length], cs = Math.cos(ry), sn = Math.sin(ry), at = (lx, lz, y) => [x + lx * cs + lz * sn, y, z - lx * sn + lz * cs];
+  const st = P('armM' + vi, V.metal, { metal: V.bronze ? 0.8 : 0.7, rough: vi === 1 ? 0.45 : 0.24 }), dk = P('armD' + vi, V.dark, { metal: 0.6, rough: 0.38 }), mail = P('armMail', '#7e8188', { metal: 0.55, rough: 0.5 }), leather = P('armLeather', '#4a2e1a', { rough: 0.8 });
+  const trim = V.trim ? P('armT' + vi, V.trim, { metal: 0.9, rough: 0.25 }) : dk;
+  const A = (geo, mat, lx, lz, y, rx = 0, rz = 0, sx = 1, sy = 1, sz = 1) => K.add(geo, mat, ...at(lx, lz, y), ry, rx, rz, sx, sy, sz);
+  // pedestal de pedra moldurado com plaqueta, e a haste do manequim
+  K.add(lathe([[0.01, 0], [0.46, 0], [0.46, 0.06], [0.42, 0.1], [0.38, 0.12], [0.36, 0.22], [0.4, 0.26], [0.01, 0.26]], 28), P('standStone', '#6a6458', { rough: 0.85 }), ...at(0, 0, 0), ry);
+  A(new THREE.BoxGeometry(0.22, 0.08, 0.01), M.gold(), 0, 0.37, 0.15, -0.3);
+  K.cyl(0.035, 0.035, 1.0, M.darkWood(), ...at(0, 0, 0.75), 8);
+  const Y0 = 0.26;
+  // pés (escarpes articulados), grevas, joelheiras com aba e coxotes
+  for (const sx of [-1, 1]) { const lx = sx * 0.12;
+    for (let k = 0; k < 4; k++) A(new THREE.BoxGeometry(0.1, 0.05, 0.09), st, lx, 0.05 + k * 0.06, Y0 + 0.03 + k * 0.004, -0.15);
+    if (vi === 0) A(new THREE.ConeGeometry(0.035, 0.16, 10), st, lx, 0.3, Y0 + 0.03, Math.PI / 2); // bico gótico
+    A(lathe([[0.058, 0], [0.072, 0.07], [0.068, 0.22], [0.078, 0.34], [0.07, 0.44]], 20), st, lx, 0, Y0 + 0.04);
+    if (V.fluted) for (let f = -2; f <= 2; f++) A(new THREE.BoxGeometry(0.006, 0.3, 0.008), dk, lx + f * 0.014, 0.072, Y0 + 0.24);
+    A(new THREE.SphereGeometry(0.078, 16, 12), st, lx, 0.01, Y0 + 0.52, 0, 0, 1, 0.8, 1.1);
+    A(new THREE.SphereGeometry(0.06, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), trim, lx + sx * 0.06, 0.02, Y0 + 0.52, 0, sx * -1.4, 0.7, 1, 1.1); // aba lateral da joelheira
+    A(lathe([[0.075, 0], [0.09, 0.12], [0.095, 0.3]], 20), st, lx, 0, Y0 + 0.56); }
+  // cintura: cota de malha (ou saiote de tiras de couro na de bronze) e escarcelas
+  if (V.bronze) { for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; A(new THREE.BoxGeometry(0.06, 0.26, 0.012), leather, Math.sin(a) * 0.2, Math.cos(a) * 0.17, Y0 + 0.8, Math.cos(a) * 0.12, -Math.sin(a) * 0.12); A(new THREE.BoxGeometry(0.06, 0.03, 0.014), trim, Math.sin(a) * 0.205, Math.cos(a) * 0.175, Y0 + 0.68); } }
+  else { A(lathe([[0.2, 0], [0.245, V.mailHeavy ? 0.3 : 0.16], [0.21, V.mailHeavy ? 0.5 : 0.33]], 28), mail, 0, 0, Y0 + (V.mailHeavy ? 0.55 : 0.72));
+    if (!V.tabard) for (let k = 0; k < 3; k++) A(lathe([[0.255 - k * 0.012, 0], [0.24 - k * 0.012, 0.09]], 28), k % 2 && V.trim ? trim : st, 0, 0, Y0 + 0.8 + k * 0.075); }
+  A(new THREE.TorusGeometry(0.22, 0.022, 8, 28), leather, 0, 0, Y0 + 1.06, Math.PI / 2); A(new THREE.BoxGeometry(0.07, 0.07, 0.03), V.trim ? trim : M.gold(), 0, 0.22, Y0 + 1.06);
+  // couraça: peito com quilha (ou musculada no bronze), placas da barriga; caneluras na gótica, faixas gravadas na de parada
+  if (V.bronze) { const g = lathe([[0.2, 0], [0.24, 0.1], [0.26, 0.3], [0.27, 0.44], [0.23, 0.54], [0.12, 0.6]], 32); A(g, st, 0, 0, Y0 + 1.08, 0, 0, 1, 1, 0.85);
+    for (const sx2 of [-1, 1]) { A(new THREE.SphereGeometry(0.1, 16, 10), st, sx2 * 0.1, 0.17, Y0 + 1.48, 0, 0, 1.1, 0.75, 0.5); } for (let k = 0; k < 3; k++) for (const sx2 of [-1, 1]) A(new THREE.SphereGeometry(0.05, 10, 8), st, sx2 * 0.055, 0.2, Y0 + 1.16 + k * 0.09, 0, 0, 1, 0.8, 0.45); } // peitorais e abdômen esculpidos
+  else { A(lathe([[0.2, 0], [0.23, 0.08], [0.25, 0.25], [0.27, 0.42], [0.25, 0.52], [0.16, 0.58], [0.07, 0.6]], 36), st, 0, 0, Y0 + 1.08, 0, 0, 1, 1, 0.82);
+    A(new THREE.BoxGeometry(0.025, 0.42, 0.04), st, 0, 0.215, Y0 + 1.34);
+    if (V.fluted) for (let f = -3; f <= 3; f++) { if (!f) continue; const a = f * 0.18; A(new THREE.BoxGeometry(0.008, 0.36, 0.012), dk, Math.sin(a) * 0.255, Math.cos(a) * 0.205, Y0 + 1.36, 0, -a * 0.2); }
+    if (V.etched || V.trim) for (const yy of [1.18, 1.5]) A(new THREE.TorusGeometry(0.255, 0.009, 6, 36, Math.PI * 0.9), trim, 0, 0, Y0 + yy, Math.PI / 2, 0, 1, 0.82, 1);
+    for (let k = 0; k < 6; k++) { const a = -0.6 + k * 0.24; A(new THREE.SphereGeometry(0.012, 6, 4), V.trim ? trim : M.gold(), Math.sin(a) * 0.26, Math.cos(a) * 0.21, Y0 + 1.14); } }
+  // sobreveste com brasão (cruzado)
+  if (V.tabard) { const tb = cloth('tabard' + vi, V.tabard); for (const fz of [1, -1]) { A(new THREE.BoxGeometry(0.42, 0.95, 0.02), tb, 0, fz * 0.215, Y0 + 1.0, fz * 0.06); }
+    A(new THREE.CircleGeometry(0.1, 20), P('tabEmb', '#e8d8a8', { rough: 0.8 }), 0, 0.232, Y0 + 1.3, -0.06); A(new THREE.BoxGeometry(0.03, 0.12, 0.01), cloth('tabard' + vi, V.tabard), 0, 0.236, Y0 + 1.3, -0.06); A(new THREE.BoxGeometry(0.12, 0.03, 0.01), cloth('tabard' + vi, V.tabard), 0, 0.236, Y0 + 1.31, -0.06); }
+  // gorjal e ombreiras (lâminas sobrepostas; a negra e a do norte são maiores)
+  A(lathe([[0.15, 0], [0.11, 0.06], [0.09, 0.12]], 22), st, 0, 0, Y0 + 1.66);
+  const pk = V.fur || vi === 1 ? 1.25 : 1;
+  for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) A(new THREE.SphereGeometry((0.16 - k * 0.012) * pk, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), k === 0 && V.trim ? trim : k % 2 ? dk : st, sx * (0.3 + k * 0.012) * (pk > 1 ? 1.06 : 1), 0, Y0 + 1.6 - k * 0.055, 0, sx * (0.5 + k * 0.08), 1.0, 0.75, 1.1);
+  if (vi === 0) for (const sx of [-1, 1]) A(new THREE.BoxGeometry(0.03, 0.14, 0.14), st, sx * 0.24, 0.02, Y0 + 1.7, 0, sx * 0.3); // guarda-pescoço
+  // braços: braçais, cotoveleiras com leque, manoplas com dedos
+  for (const sx of [-1, 1]) { A(lathe([[0.065, 0], [0.07, 0.25]], 16), st, sx * 0.33, 0, Y0 + 1.26, 0, sx * 0.08); A(new THREE.SphereGeometry(0.075, 14, 10), dk, sx * 0.34, 0.02, Y0 + 1.22);
+    A(new THREE.CircleGeometry(0.09, 16), trim, sx * 0.4, 0.02, Y0 + 1.22, 0, sx * Math.PI / 2); // leque da cotoveleira
+    A(lathe([[0.055, 0], [0.065, 0.24]], 16), st, sx * 0.35, 0.03, Y0 + 0.96); A(new THREE.BoxGeometry(0.09, 0.14, 0.11), dk, sx * 0.35, 0.04, Y0 + 0.87); for (let f = 0; f < 4; f++) A(new THREE.BoxGeometry(0.02, 0.07, 0.025), dk, sx * 0.35 + (f - 1.5) * 0.022, 0.08, Y0 + 0.78); }
+  // capa (negra) ou manto de pele (norte) nas costas
+  if (V.cape || V.fur) { const cm = V.fur ? P('furMantle', '#8a7458', { rough: 1 }) : cloth('armCape' + vi, V.cape); const cg = new THREE.CylinderGeometry(0.3, 0.46, 1.62, 24, 6, true, Math.PI / 2 + 0.3, Math.PI - 0.6); // só nas costas (θ em volta de −z) const Pp = cg.attributes.position; for (let i = 0; i < Pp.count; i++) Pp.setZ(i, Pp.getZ(i) + Math.sin(Pp.getX(i) * 22) * 0.015 * (0.7 - Pp.getY(i))); cg.computeVertexNormals(); const m2 = cm.clone(); m2.side = THREE.DoubleSide; A(cg, m2, 0, -0.05, Y0 + 0.9);
+    if (V.fur) A(new THREE.TorusGeometry(0.2, 0.08, 10, 24), P('furCollar', '#b8a488', { rough: 1 }), 0, -0.02, Y0 + 1.68, Math.PI / 2, 0, 1.2, 1, 0.8); }
+  // elmos
+  const hy = Y0 + 1.72;
+  if (V.helm === 'sallet') { A(new THREE.SphereGeometry(0.16, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), st, 0, -0.01, hy + 0.08, 0, 0, 1, 1.05, 1.1); A(new THREE.ConeGeometry(0.17, 0.3, 24, 1, true, 0, Math.PI), st, 0, -0.14, hy + 0.04, Math.PI / 2 + 0.35, 0); A(new THREE.BoxGeometry(0.2, 0.012, 0.03), P('visorSlit', '#0a0a0c'), 0, 0.15, hy + 0.12); A(new THREE.SphereGeometry(0.15, 20, 12, 0, Math.PI, Math.PI / 2, Math.PI / 2), st, 0, 0.0, hy + 0.06, 0, 0, 1, 1, 1.1); } // salada com cauda e babeira
+  else if (V.helm === 'bucket' || V.helm === 'flat') { A(lathe([[0.01, 0.32], [0.15, 0.32], [0.165, 0.27], [0.165, 0.0], [0.15, -0.08]], 28), st, 0, 0, hy - 0.04); A(new THREE.BoxGeometry(0.22, 0.02, 0.02), P('visorSlit', '#0a0a0c'), 0, 0.163, hy + 0.16); A(new THREE.BoxGeometry(0.03, 0.2, 0.02), V.trim ? trim : st, 0, 0.165, hy + 0.06);
+    for (let k = 0; k < 8; k++) A(new THREE.CylinderGeometry(0.006, 0.006, 0.02, 6), P('visorSlit', '#0a0a0c'), (k % 4 - 1.5) * 0.03, 0.162, hy + 0.0 - Math.floor(k / 4) * 0.03, Math.PI / 2);
+    if (V.helm === 'bucket') { A(new THREE.TorusGeometry(0.16, 0.018, 8, 28), trim, 0, 0, hy + 0.27, Math.PI / 2); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; A(new THREE.ConeGeometry(0.022, 0.09, 8), trim, Math.sin(a) * 0.16, Math.cos(a) * 0.16, hy + 0.33); } } } // balde com coroa / topo chato
+  else if (V.helm === 'close') { A(new THREE.SphereGeometry(0.155, 24, 16), st, 0, -0.005, hy + 0.12, 0, 0, 1, 1.12, 1.08); A(new THREE.ConeGeometry(0.1, 0.17, 20), st, 0, 0.17, hy + 0.09, Math.PI / 2); A(new THREE.BoxGeometry(0.16, 0.012, 0.05), P('visorSlit', '#0a0a0c'), 0, 0.13, hy + 0.15); A(new THREE.TorusGeometry(0.155, 0.012, 6, 32), trim, 0, 0, hy + 0.06, Math.PI / 2);
+    if (V.plume) { A(new THREE.CylinderGeometry(0.02, 0.03, 0.12, 10), trim, 0, -0.06, hy + 0.3); for (let k = 0; k < 26; k++) { const f = (k % 5 - 2) * 0.03, j = Math.floor(k / 5); A(new THREE.ConeGeometry(0.035, 0.5 - j * 0.04, 8), cloth('plume' + plume, plume), f, -0.1 - j * 0.07, hy + 0.5 - j * 0.05, -0.55 - j * 0.28, f * 2.5); } } } // penacho cheio, caindo para trás em leque // fechado de bico com penacho alto
+  else if (V.helm === 'crested') { A(new THREE.SphereGeometry(0.15, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.62), st, 0, 0, hy + 0.06); for (const sx of [-1, 1]) A(new THREE.BoxGeometry(0.02, 0.17, 0.11), st, sx * 0.12, 0.08, hy - 0.02, 0, sx * 0.15); A(new THREE.BoxGeometry(0.025, 0.12, 0.02), st, 0, 0.15, hy + 0.02);
+    for (let k = 0; k < 24; k++) { const a = -1.3 + k / 23 * 2.6; A(new THREE.BoxGeometry(0.02, 0.14, 0.035), cloth('crest', '#8a1a12'), Math.sin(a) * 0.17, 0, hy + 0.16 + Math.cos(a) * 0.17, 0, -a); } } // crista transversal de crina
+  else if (V.helm === 'horned') { A(new THREE.SphereGeometry(0.155, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6), st, 0, 0, hy + 0.06); A(new THREE.BoxGeometry(0.03, 0.14, 0.03), st, 0, 0.16, hy + 0.02); A(new THREE.TorusGeometry(0.16, 0.014, 6, 32), dk, 0, 0, hy + 0.06, Math.PI / 2);
+    for (const sx of [-1, 1]) { const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector3(sx * (0.13 + t * 0.22), 0.25 * Math.sin(t * 2.2) + t * 0.05, -t * 0.05)); } const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.03, 10); const Pp = tg.attributes.position; for (let i = 0; i < Pp.count; i++) { const k = Math.floor(i / 11) / 16; const c = new THREE.CatmullRomCurve3(pts).getPoint(k); Pp.setXYZ(i, c.x + (Pp.getX(i) - c.x) * (1 - k * 0.85), c.y + (Pp.getY(i) - c.y) * (1 - k * 0.85), c.z + (Pp.getZ(i) - c.z) * (1 - k * 0.85)); } tg.computeVertexNormals(); A(tg, P('horn', '#d8ccb0', { rough: 0.5 }), 0, 0, hy + 0.12); } } // chifres curvos que afinam
+  // arma ou escudo junto do suporte
+  if (V.weapon === 'sword') { const g = swordGeo(); g.scale(0.9, 0.9, 0.9); A(g, P('armSword', '#c8ccd2', { metal: 0.85, rough: 0.25 }), 0.32, 0.34, Y0 + 0.92, 0, Math.PI); } // espada fincada de ponta para baixo, apoiada ao lado
+  else if (V.weapon === 'spear') { K.cyl(0.018, 0.018, 2.3, M.darkWood(), ...at(0.36, 0.1, 1.15), 8); A(new THREE.ConeGeometry(0.04, 0.26, 4), st, 0.36, 0.1, 2.42); }
+  else if (V.weapon === 'axe') { for (const g of axeGeo(1.55, 0.34)) A(g, P('axeHead', '#8a96a4', { metal: 0.8, rough: 0.3 }), 0.36, 0.12, 0.02); }
+  if (V.shield) { const sg = new THREE.CylinderGeometry(0.34, 0.34, 0.05, 32); sg.scale(1, 1, 1.25); A(sg, P('shieldRed', '#7a1a22', { rough: 0.6 }), -0.36, 0.3, Y0 + 0.42, Math.PI / 2 - 0.25, 0); A(new THREE.TorusGeometry(0.34, 0.025, 8, 32), M.iron(), -0.36, 0.33, Y0 + 0.42, -0.25, 0, 1, 1.25, 1); A(new THREE.BoxGeometry(0.06, 0.5, 0.02), P('tabEmb', '#e8d8a8', { rough: 0.8 }), -0.36, 0.33, Y0 + 0.42, -0.25); A(new THREE.BoxGeometry(0.4, 0.06, 0.02), P('tabEmb', '#e8d8a8', { rough: 0.8 }), -0.36, 0.33, Y0 + 0.47, -0.25); }
 }
 // espada lendária (S-185): lâmina com fio e sulco, guarda trabalhada, punho envolto e pomo com gema
 function legendSword(K, x, y, z, ry, o) {
@@ -324,14 +387,108 @@ function legendSword(K, x, y, z, ry, o) {
   K.add(new THREE.CylinderGeometry(0.022, 0.022, 0.26, 10), P('grip' + o.grip, o.grip, { rough: 0.8 }), ...at(0, 0, y - 0.17), ry); for (let k = 0; k < 6; k++) K.add(new THREE.TorusGeometry(0.023, 0.005, 6, 12), gold, ...at(0, 0, y - 0.06 - k * 0.04), ry, Math.PI / 2);
   K.add(new THREE.SphereGeometry(0.045, 14, 10), gold, ...at(0, 0, y - 0.33), ry, 0, 0, 1, 1, 0.8); if (o.gem) K.add(new THREE.OctahedronGeometry(0.03, 0), P('gem' + o.gem, o.gem, { emissive: o.gem, ei: 1.2, metal: 0.3, rough: 0.1 }), ...at(0, 0.035, y - 0.33), ry);
 }
+// repolho de verdade: miolo e folhas externas em concha, abertas, com nervuras (no lugar da bola verde)
+function cabbage(K, x, y, z, seed = 1) {
+  const r = rngOf(Math.floor(seed * 100) + 7), leafM = P('cabLeaf', '#6e9a42', { rough: 0.7, side: THREE.DoubleSide }), coreM = P('cabCore', '#b8d27a', { rough: 0.6 }), vein = P('cabVein', '#d8e8b0', { rough: 0.7 });
+  K.add(new THREE.SphereGeometry(0.13, 18, 14), coreM, x, y + 0.13, z, 0, 0, 0, 1, 0.92, 1);
+  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + r() * 0.4, tilt = 0.55 + r() * 0.5, R = 0.17 + r() * 0.04;
+    const g = new THREE.SphereGeometry(R, 14, 10, 0, Math.PI * 0.9, 0, Math.PI * 0.55); g.rotateY(-Math.PI * 0.45); g.rotateX(-tilt); g.translate(0, 0.02, 0.03);
+    K.add(g, leafM, x, y + 0.08, z, a); K.add(new THREE.BoxGeometry(0.012, 0.005, R * 1.1), vein, x + Math.sin(a) * R * 0.45, y + 0.08 + R * 0.55, z + Math.cos(a) * R * 0.45, a, -0.5); }
+}
+// cozinha viva (S-277): prateleira com louça, ervas e réstias de alho penduradas, presuntos, sacos de farinha, lenha, tapete gasto
+function kitchenLife(K, cols, I, hw) {
+  const wd = M.darkWood(), clay = P('crock', '#9a5a3a', { rough: 0.75 }), glaze = P('glaze', '#3e5a4a', { rough: 0.25 }), plate = P('plate', '#e8e0cc', { rough: 0.4 }), herb = P('herb', '#5a7a3a', { rough: 0.9 }), dryHerb = P('dryHerb', '#8a8a4a', { rough: 0.9 }), garlic = P('garlic', '#efe8da', { rough: 0.6 }), rope = M.rope();
+  // prateleiras na parede leste (as panelas, antes soltas no ar, agora apoiadas) com potes, jarros e pratos em pé
+  for (const y of [1.83, 2.6]) { K.box(0.42, 0.06, 5.8, wd, hw - 0.45, y, 35.25); for (const z of [32.6, 35.2, 37.9]) K.box(0.36, 0.3, 0.05, wd, hw - 0.5, y - 0.18, z, 0, 0, 0.0); }
+  for (let k = 0; k < 7; k++) { const z = 32.7 + k * 0.78, kind = k % 3; if (kind === 0) K.add(lathe([[0, 0], [0.1, 0], [0.13, 0.12], [0.09, 0.24], [0.06, 0.27]], 14), glaze, hw - 0.45, 2.63, z); else if (kind === 1) { K.add(lathe([[0, 0], [0.08, 0], [0.1, 0.14], [0.05, 0.22], [0.06, 0.3]], 14), clay, hw - 0.45, 2.63, z); } else for (let p = 0; p < 4; p++) K.add(new THREE.CylinderGeometry(0.16, 0.13, 0.02, 20), plate, hw - 0.62 + p * 0.025, 2.8, z, 0, 0, Math.PI / 2 - 0.15); }
+  // varal de ervas e alho sobre a bancada (pendurado nas vigas por correntes)
+  K.box(4.2, 0.08, 0.08, wd, 30, 2.75, 36); for (const sx of [-1, 1]) K.cyl(0.01, 0.01, CASTLE_I.h - 2.75, M.iron(), 30 + sx * 1.9, 2.75 + (CASTLE_I.h - 2.75) / 2, 36, 4);
+  for (let k = 0; k < 11; k++) { const x = 28.2 + k * 0.36; K.cyl(0.006, 0.006, 0.3, rope, x, 2.58, 36, 4);
+    if (k % 3 === 2) { for (let b = 0; b < 6; b++) K.add(new THREE.SphereGeometry(0.045, 10, 8), garlic, x + (b % 2 ? 0.03 : -0.03), 2.4 - b * 0.07, 36, 0, 0, 0, 1, 0.85, 1); } // réstia de alho
+    else { const c = new THREE.ConeGeometry(0.09, 0.4, 8, 1, true); c.rotateX(Math.PI); K.add(c, k % 2 ? herb : dryHerb, x, 2.25, 36); K.cyl(0.03, 0.03, 0.05, rope, x, 2.44, 36, 6); } } // maço de ervas de cabeça para baixo
+  // presuntos e linguiças curando perto da lareira
+  for (let k = 0; k < 3; k++) { const z = 25.4 + k * 0.7; K.cyl(0.008, 0.008, 1.5, rope, 35.6, 3.6, z, 4); K.add(lathe([[0.02, 0], [0.12, 0.08], [0.17, 0.25], [0.13, 0.42], [0.04, 0.5], [0.03, 0.56]], 14), P('ham', '#8a3a24', { rough: 0.55 }), 35.6, 2.3, z, 0, Math.PI, 0); }
+  for (let k = 0; k < 8; k++) K.add(new THREE.CapsuleGeometry(0.03, 0.22, 4, 8), P('sausage', '#6a2a1a', { rough: 0.5 }), 35.6, 3.0 - (k % 2) * 0.05, 27.6 + k * 0.1, 0, 0, 0.1 * (k % 3));
+  // lenha empilhada ao lado da lareira
+  for (let row = 0; row < 4; row++) for (let k = 0; k < 5 - (row > 2 ? 1 : 0); k++) K.add(new THREE.CylinderGeometry(0.09, 0.1, 0.9, 9), P('logEnd' + (k % 2), k % 2 ? '#6a4a2a' : '#5a3e24', { rough: 0.95 }), 36.6, 0.1 + row * 0.17, 23.4 + k * 0.2 + (row % 2) * 0.1, 0, 0, Math.PI / 2);
+  cols.push({ x: I.x + 36.6, z: I.z + 23.8, r: 0.6 });
+  // sacos de farinha e grãos junto à despensa
+  for (const [x, z, s] of [[16.5, 40.5, 1], [17.2, 40.3, 0.9], [16.8, 39.7, 1.05], [16.9, 40.2, 0.8]]) K.add(lathe([[0, 0], [0.28, 0.02], [0.32, 0.25], [0.28, 0.5], [0.12, 0.62], [0.06, 0.7]], 14), P('sack', '#c8b48a', { rough: 1 }), x, z === 40.2 ? 0.55 : 0, z, x, 0, 0, s, s, s);
+  cols.push({ x: I.x + 16.8, z: I.z + 40.2, r: 0.8 });
+  // chão: tapete de junco gasto entre a mesa e a lareira, e fuligem na frente da lareira
+  rug(K, 2.6, 5.5, 31, 20, '#8a7448', '#5a4628', '#6a5434', Math.PI / 2);
+  K.add(new THREE.CircleGeometry(1.6, 24).rotateX(-Math.PI / 2), P('sootFloor', '#2a2622', { rough: 1, transparent: true, opacity: 0.55 }), 35.6, 0.012, 20);
+  // barril de água com concha e uma vassoura encostada
+  K.cyl(0.36, 0.38, 0.9, wd, 22, 0.45, 42.5, 16); K.cyl(0.33, 0.33, 0.02, P('waterTop', '#2e4a5a', { rough: 0.1, metal: 0.2 }), 22, 0.86, 42.5, 16); K.cyl(0.012, 0.012, 0.6, wd, 22.15, 1.0, 42.5, 6, 0, 0, 0.6); cols.push({ x: I.x + 22, z: I.z + 42.5, r: 0.45 });
+  K.cyl(0.02, 0.02, 1.4, wd, 19.4, 0.72, 47.4, 6, 0, 0.18); K.add(new THREE.ConeGeometry(0.16, 0.4, 10), P('broom', '#b89a5a', { rough: 1 }), 19.4, 0.17, 47.55, 0, 0.18);
+}
+// NPC que anda entre pontos (S-277): passeia com pausas; sem colisão fixa (anda livre pela sala)
+function walker(ctx, npc, pts, speed = 1.0) {
+  const cl = ctx.colliders, i = cl.findIndex(c => !c.box && c.r === 0.6 && Math.abs(c.x - npc.x) < 1e-6 && Math.abs(c.z - npc.z) < 1e-6); if (i >= 0) cl.splice(i, 1);
+  const I = CASTLE_I; let seg = 0, wait = 1 + Math.random() * 2, last = null; const P0 = pts.map(([x, z]) => [I.x + x, I.z + z]);
+  const o = new THREE.Object3D(); o.userData.update = t => {
+    const dt = last === null ? 0 : Math.min(0.1, t - last); last = t; if (!dt) return;
+    if (wait > 0) { wait -= dt; if (npc.anim.name !== 'Idle') npc.anim.play('Idle', { fade: 0.3 }); return; }
+    const [tx, tz] = P0[(seg + 1) % P0.length], dx = tx - npc.x, dz = tz - npc.z, d = Math.hypot(dx, dz);
+    if (d < 0.08) { seg = (seg + 1) % P0.length; wait = 1.5 + Math.random() * 3.5; return; }
+    const st = Math.min(d, speed * dt); npc.x += dx / d * st; npc.z += dz / d * st;
+    let a = Math.atan2(dx, dz) - npc.obj.rotation.y; while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; npc.obj.rotation.y += a * Math.min(1, dt * 6);
+    npc.obj.position.x = npc.x; npc.obj.position.z = npc.z; if (npc.anim.name !== 'Walking_A') npc.anim.play('Walking_A', { fade: 0.3, speed: speed / 1.1 });
+  };
+  npc.x = P0[0][0]; npc.z = P0[0][1]; npc.obj.position.x = npc.x; npc.obj.position.z = npc.z;
+  ctx.roomAnims.push(o); return o;
+}
+// monta peças num Kit separado e as deita (gira 90° para a lâmina ficar na horizontal), girando ry e levando para (x, y, z)
+function layFlat(K, build, x, y, z, ry = 0) {
+  const K2 = new Kit(); build(K2);
+  const m = new THREE.Matrix4().makeTranslation(x, y, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+  for (const [key, { mat, geos }] of K2.parts) { if (!K.parts.has(key)) K.parts.set(key, { mat, geos: [] }); for (const g of geos) { g.applyMatrix4(m); K.parts.get(key).geos.push(g); } }
+}
 function swordGeo() { const s = new THREE.Shape(); s.moveTo(0, 1.0); s.lineTo(0.04, 0.88); s.lineTo(0.04, 0); s.lineTo(0.16, 0); s.lineTo(0.16, -0.05); s.lineTo(0.03, -0.05); s.lineTo(0.03, -0.28); s.lineTo(0.05, -0.32); s.lineTo(-0.05, -0.32); s.lineTo(-0.03, -0.28); s.lineTo(-0.03, -0.05); s.lineTo(-0.16, -0.05); s.lineTo(-0.16, 0); s.lineTo(-0.04, 0); s.lineTo(-0.04, 0.88); s.closePath(); return new THREE.ExtrudeGeometry(s, { depth: 0.02, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 1 }); }
+/* S-278: trono de verdade — pedestal de mármore em dois degraus, assento de altura normal (o rei senta com os pés
+   no pedestal, sem as pernas "dentro" do móvel), pés de garra de leão, braços com voluta, espaldar alto em ogiva com
+   painel de veludo capitonê, colunas torcidas com pináculos e o sol de Valcinza dourado no alto. */
+const THRONE = { plinth: 0.2, seat: 0.47, depth: 0.62 };
+const SIT_DY = 0.02, SIT_DZ = 0.17; // pose "sentado" medida no esqueleto: pelve 0,54 m acima e 0,33 m atrás da origem → quadril no assento, joelho na borda, pés no pedestal
 function throne(K, x, z, y) {
-  const wd = M.darkWood(), gold = M.gold(), red = cloth('throneRed', '#7a1a22');
-  K.box(1.6, 0.6, 1.4, wd, x, y + 0.3, z); K.box(1.4, 0.18, 1.2, red, x, y + 0.66, z + 0.05);
-  K.box(1.6, 3.4, 0.25, wd, x, y + 2.0, z - 0.6); K.box(1.2, 2.6, 0.08, red, x, y + 2.0, z - 0.46);
-  K.add(new THREE.CylinderGeometry(0.8, 0.8, 0.25, 24, 1, false, -Math.PI / 2, Math.PI), wd, x, y + 3.7, z - 0.6, 0, Math.PI / 2, 0);
-  for (const sx of [-1, 1]) { K.box(0.22, 0.9, 1.4, wd, x + sx * 0.82, y + 1.0, z); K.add(new THREE.SphereGeometry(0.15, 12, 10), gold, x + sx * 0.82, y + 1.5, z + 0.62); K.cyl(0.1, 0.1, 4.2, gold, x + sx * 0.82, y + 2.1, z - 0.62, 12); K.add(new THREE.ConeGeometry(0.14, 0.4, 12), gold, x + sx * 0.82, y + 4.4, z - 0.62); }
-  for (let k = 0; k < 5; k++) K.add(new THREE.ConeGeometry(0.09, 0.4, 8), gold, x - 0.5 + k * 0.25, y + 4.6 + (k === 2 ? 0.15 : 0), z - 0.6); // coroa no espaldar
+  const wd = P('throneWood', '#3a2214', { rough: 0.55 }), gold = P('throneGold', '#d4a640', { metal: 0.85, rough: 0.28 }), red = cloth('throneVelvet', '#6a0e18'), redD = cloth('throneVelvetD', '#4a0810'), marble = P('throneMarble', '#d8d2c6', { rough: 0.35 });
+  const PL = THRONE.plinth, SY = y + PL + THRONE.seat, D = THRONE.depth, W = 1.36, zb = z - D / 2; // zb = trás do assento
+  // pedestal em dois degraus de mármore com friso dourado
+  K.box(2.6, PL * 0.5, 2.3, marble, x, y + PL * 0.25, z + 0.25); K.box(2.2, PL * 0.5, 1.9, marble, x, y + PL * 0.75, z + 0.1);
+  for (const [w, d, yy, zz] of [[2.62, 2.32, PL * 0.5, 0.25], [2.22, 1.92, PL, 0.1]]) K.box(w, 0.02, d, gold, x, y + yy, z + zz);
+  // caixa do assento (recuada embaixo, onde ficam as pernas) com almofada de veludo
+  K.box(W, 0.16, D, wd, x, SY - 0.13, z); K.box(W - 0.1, 0.24, 0.1, wd, x, SY - 0.33, zb + 0.08); K.box(W - 0.06, 0.05, 0.05, gold, x, SY - 0.2, z + D / 2 - 0.02);
+  { const c = new THREE.BoxGeometry(W - 0.1, 0.12, D - 0.04, 6, 2, 6), Pp = c.attributes.position; for (let i = 0; i < Pp.count; i++) { const ux = Pp.getX(i) / ((W - 0.1) / 2), uz = Pp.getZ(i) / ((D - 0.04) / 2); if (Pp.getY(i) > 0) Pp.setY(i, Pp.getY(i) + 0.035 * (1 - ux * ux) * (1 - uz * uz)); } c.computeVertexNormals(); K.add(c, red, x, SY + 0.0, z); } // almofada estufada
+  // pés de garra de leão nos quatro cantos (perna torneada + garra com dedos)
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const px = x + sx * (W / 2 - 0.07), pz = z + sz * (D / 2 - 0.06);
+    K.add(lathe([[0.05, 0], [0.065, 0.06], [0.045, 0.14], [0.06, 0.24], [0.04, SY - y - PL - 0.2]], 14), wd, px, y + PL + 0.06, pz);
+    K.add(new THREE.SphereGeometry(0.075, 14, 10), gold, px, y + PL + 0.045, pz, 0, 0, 0, 1, 0.6, 1); for (let f = -1; f <= 1; f++) K.add(new THREE.SphereGeometry(0.03, 8, 6), gold, px + f * 0.04, y + PL + 0.025, pz + sz * 0.07); }
+  // braços: apoio estofado sobre a lateral entalhada, terminando em voluta dourada
+  for (const sx of [-1, 1]) { const ax = x + sx * (W / 2 + 0.02);
+    K.box(0.12, 0.36, D - 0.02, wd, ax, SY + 0.06, z); K.box(0.16, 0.06, D + 0.06, wd, ax, SY + 0.27, z + 0.03); K.box(0.12, 0.05, D - 0.1, red, ax, SY + 0.32, z);
+    K.add(new THREE.TorusGeometry(0.075, 0.03, 10, 20, Math.PI * 1.5), gold, ax, SY + 0.22, z + D / 2 + 0.03, Math.PI / 2, 0, Math.PI * 0.25);
+    K.add(new THREE.SphereGeometry(0.045, 12, 8), gold, ax, SY + 0.22, z + D / 2 + 0.03); }
+  // espaldar em ogiva: moldura de madeira, veludo capitonê com botões e friso dourado
+  const BH = 2.7, by0 = SY + 0.05;
+  { const sh = new THREE.Shape(); sh.moveTo(-W / 2 - 0.08, 0); sh.lineTo(W / 2 + 0.08, 0); sh.lineTo(W / 2 + 0.08, BH * 0.62); sh.quadraticCurveTo(W / 2 + 0.08, BH * 0.9, 0, BH); sh.quadraticCurveTo(-W / 2 - 0.08, BH * 0.9, -W / 2 - 0.08, BH * 0.62); sh.closePath();
+    K.add(new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 }), wd, x, by0, zb - 0.2);
+    const inner = new THREE.Shape(); const iw = W / 2 - 0.1; inner.moveTo(-iw, 0.12); inner.lineTo(iw, 0.12); inner.lineTo(iw, BH * 0.6); inner.quadraticCurveTo(iw, BH * 0.84, 0, BH - 0.22); inner.quadraticCurveTo(-iw, BH * 0.84, -iw, BH * 0.6); inner.closePath();
+    K.add(new THREE.ExtrudeGeometry(inner, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 3 }), red, x, by0, zb - 0.02);
+    const pts = inner.getPoints(40).map(p => new THREE.Vector3(p.x, p.y, 0)); K.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 80, 0.018, 6, true), gold, x, by0, zb + 0.06);
+    for (let r = 0; r < 6; r++) for (let c = -2; c <= 2; c++) { const bx = c * 0.2 + (r % 2 ? 0.1 : 0), byy = 0.35 + r * 0.32; if (Math.abs(bx) > iw - 0.12 || byy > BH * 0.6 + (iw - Math.abs(bx)) * 0.6) continue; K.add(new THREE.SphereGeometry(0.022, 8, 6), gold, x + bx, by0 + byy, zb + 0.045); } // botões do capitonê
+  }
+  // colunas torcidas nas laterais do espaldar, com capitel e pináculo
+  for (const sx of [-1, 1]) { const cx = x + sx * (W / 2 + 0.1), cz = zb - 0.12;
+    K.add(lathe([[0.1, 0], [0.12, 0.06], [0.09, 0.14], [0.08, 0.2]], 16), gold, cx, SY - 0.2, cz);
+    for (let k = 0; k < 14; k++) K.add(new THREE.TorusGeometry(0.075, 0.022, 8, 16), k % 2 ? gold : wd, cx, SY + 0.05 + k * 0.16, cz, k * 0.4, Math.PI / 2 + 0.25, 0);
+    K.cyl(0.06, 0.06, 2.3, wd, cx, SY + 1.15, cz, 12);
+    K.add(lathe([[0.08, 0], [0.12, 0.08], [0.12, 0.14], [0.05, 0.18], [0.06, 0.32], [0.01, 0.62]], 16), gold, cx, SY + 2.3, cz);
+    K.add(new THREE.SphereGeometry(0.05, 12, 8), gold, cx, SY + 2.97, cz); }
+  // o sol de Valcinza no alto do espaldar
+  { const sy = by0 + BH + 0.18, sz = zb - 0.1; K.add(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 32), gold, x, sy, sz, 0, Math.PI / 2); K.add(new THREE.TorusGeometry(0.24, 0.025, 8, 32), gold, x, sy, sz);
+    for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, L = k % 2 ? 0.16 : 0.26; K.add(new THREE.ConeGeometry(0.03, L, 6), gold, x + Math.cos(a) * (0.26 + L / 2), sy + Math.sin(a) * (0.26 + L / 2), sz, 0, 0, a - Math.PI / 2); }
+    K.add(new THREE.OctahedronGeometry(0.07, 1), P('throneRuby', '#b0101e', { emissive: '#600008', ei: 0.6, metal: 0.3, rough: 0.12 }), x, sy, sz + 0.05); }
+  return { seatY: SY, seatZ: z, floorY: y + PL };
 }
 /* ---------------- mapa de Aethra (globo e mesa de mapas da biblioteca, S-188) ---------------- */
 let _aethraMap = null;
@@ -362,10 +519,24 @@ function globeTex() { // equirretangular: Aethra no meio, mar profundo e "terras
   const W = 1024, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
   const sea = g.createLinearGradient(0, 0, 0, H); sea.addColorStop(0, '#1a3448'); sea.addColorStop(0.5, '#24506a'); sea.addColorStop(1, '#1a3448'); g.fillStyle = sea; g.fillRect(0, 0, W, H);
   for (let k = 0; k < 2600; k++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`; g.fillRect(Math.random() * W, Math.random() * H, 3, 1); } // ondulação do mar pintado
+  // S-280: terras espalhadas pelo globo inteiro — outros continentes (não mapeados) em volta de Aethra, ilhas e calotas de gelo
+  { let sd = 4242; const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+    const land = (cx, cy, rx, ry, seed) => { g.beginPath(); const n = 48; for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, k = 1 + 0.28 * Math.sin(a * 3 + seed) + 0.16 * Math.sin(a * 7 + seed * 2.3) + 0.08 * Math.sin(a * 13 + seed * 5.1); const px = cx + Math.cos(a) * rx * k, py = cy + Math.sin(a) * ry * k; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.closePath(); };
+    const paint = (cx, cy, rx, ry, seed) => { // costa clara, interior com campos, florestas e serras
+      land(cx, cy, rx * 1.06, ry * 1.06, seed); g.fillStyle = '#c8b88a'; g.fill();
+      land(cx, cy, rx, ry, seed); const gr = g.createRadialGradient(cx, cy, 2, cx, cy, Math.max(rx, ry)); gr.addColorStop(0, '#6a7a44'); gr.addColorStop(0.6, '#7e8a52'); gr.addColorStop(1, '#a89a62'); g.fillStyle = gr; g.fill();
+      g.save(); land(cx, cy, rx, ry, seed); g.clip();
+      for (let k = 0; k < 40; k++) { g.fillStyle = rnd() < 0.5 ? 'rgba(52,72,40,0.35)' : 'rgba(150,130,90,0.3)'; g.beginPath(); g.ellipse(cx + (rnd() - 0.5) * rx * 1.8, cy + (rnd() - 0.5) * ry * 1.8, 4 + rnd() * rx * 0.25, 3 + rnd() * ry * 0.2, rnd() * 3, 0, 7); g.fill(); }
+      g.strokeStyle = 'rgba(90,76,60,0.7)'; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); let px = cx + (rnd() - 0.5) * rx, py = cy + (rnd() - 0.5) * ry; g.moveTo(px, py); for (let s = 0; s < 6; s++) { px += (rnd() - 0.5) * rx * 0.35; py += (rnd() - 0.3) * ry * 0.2; g.lineTo(px, py); } g.stroke(); } // serras
+      g.restore(); };
+    for (const [cx, cy, rx, ry] of [[W * 0.1, H * 0.34, 62, 70], [W * 0.2, H * 0.68, 70, 52], [W * 0.78, H * 0.3, 92, 56], [W * 0.86, H * 0.66, 58, 64], [W * 0.66, H * 0.74, 40, 30], [W * 0.33, H * 0.22, 34, 24], [W * 0.96, H * 0.46, 26, 40]]) paint(cx, cy, rx, ry, cx * 0.013);
+    for (let k = 0; k < 26; k++) { const px = rnd() * W, py = H * 0.15 + rnd() * H * 0.7; if (Math.abs(px - W / 2) < W * 0.17 && Math.abs(py - H / 2) < H * 0.27) continue; g.fillStyle = '#9a9a6a'; g.beginPath(); g.ellipse(px, py, 3 + rnd() * 7, 2 + rnd() * 5, rnd() * 3, 0, 7); g.fill(); } // ilhas
+    for (const [y0, y1] of [[0, H * 0.075], [H * 0.925, H]]) { g.fillStyle = '#e8eef0'; g.beginPath(); g.moveTo(0, y0 === 0 ? 0 : H); for (let x = 0; x <= W; x += 16) g.lineTo(x, y0 === 0 ? y1 + Math.sin(x * 0.05) * 8 + rnd() * 6 : y0 - Math.sin(x * 0.04) * 8 - rnd() * 6); g.lineTo(W, y0 === 0 ? 0 : H); g.fill(); } // calotas de gelo
+  }
   // Aethra ocupa 100° de longitude e 80° de latitude no centro
   const pw = W * 100 / 360, ph = H * 80 / 180; g.drawImage(aethraMapCanvas(), W / 2 - pw / 2, H / 2 - ph / 2, pw, ph);
   g.strokeStyle = 'rgba(232,200,120,0.45)'; g.lineWidth = 1.2; for (let i = 0; i <= 24; i++) { g.beginPath(); g.moveTo(i / 24 * W, 0); g.lineTo(i / 24 * W, H); g.stroke(); } for (let j = 0; j <= 12; j++) { g.beginPath(); g.moveTo(0, j / 12 * H); g.lineTo(W, j / 12 * H); g.stroke(); }
-  g.fillStyle = 'rgba(240,220,170,0.75)'; g.font = 'italic 20px Georgia'; g.textAlign = 'center'; g.fillText('Mar Sem Fim', W * 0.2, H * 0.6); g.fillText('Mar Sem Fim', W * 0.8, H * 0.4); g.font = 'bold 16px Georgia'; g.fillText('AETHRA', W / 2, H / 2 - ph / 2 - 8);
+  g.fillStyle = 'rgba(240,220,170,0.75)'; g.font = 'italic 20px Georgia'; g.textAlign = 'center'; g.fillText('Mar Sem Fim', W * 0.36, H * 0.86); g.fillText('Mar Sem Fim', W * 0.62, H * 0.12); g.font = 'italic 14px Georgia'; g.fillStyle = 'rgba(60,40,20,0.85)'; for (const [tx, ty] of [[0.1, 0.34], [0.78, 0.3], [0.2, 0.68], [0.86, 0.66]]) g.fillText('Terras não mapeadas', W * tx, H * ty); g.fillStyle = 'rgba(240,220,170,0.75)'; g.font = 'bold 16px Georgia'; g.fillText('AETHRA', W / 2, H / 2 - ph / 2 - 8);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
@@ -426,12 +597,12 @@ function buildCastleInside(ctx) {
   // estrado do trono: degraus largos com tapete descendo, colunas de fundo e rosácea
   const back = -hd + 2.6; // fundo do estrado (encostado na parede atrás do trono)
   for (let k = 0; k < 4; k++) { const zf = -36.6 - k * 0.75, w = 17 - k * 2.2; K.box(w, 0.32, zf - back, mats.inner, 0, 0.16 + k * 0.32, (zf + back) / 2); K.box(w + 0.1, 0.06, 0.12, mats.wall, 0, 0.3 + k * 0.32, zf); } // degraus largos (pisada de 75 cm)
-  for (let k = 0; k < 4; k++) K.box(3.2, 0.025, 0.74, rugMat2('#7a1a22', '#d8b04a', '#3a0e12'), 0, 0.335 + k * 0.32, -36.97 - k * 0.75); // tapete subindo os degraus
-  K.box(3.2, 0.025, 4.6, rugMat2('#7a1a22', '#d8b04a', '#3a0e12'), 0, 1.295, -41.6);
-  throne(K, 0, -44.2, 1.28);
+  // S-278: o tapete do salão termina ANTES da escada (sem pedaços de tapete em cada degrau); no alto do estrado, só um tapete sob o trono
+  K.box(3.0, 0.025, 3.6, rugMat2('#7a1a22', '#d8b04a', '#3a0e12'), 0, 1.295, -41.4);
+  const TH = throne(K, 0, -44.0, 1.28);
   { const sh = new THREE.Shape(); sh.absarc(0, 0, 2.6, 0, Math.PI * 2, false); const g = new THREE.ShapeGeometry(sh, 32); const uv = g.attributes.uv, Pp = g.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (Pp.getX(i) + 2.6) / 5.2, (Pp.getY(i) + 2.6) / 5.2 * 0.6); K.add(g, stainedGlass(), 0, 8.4, -hd + 0.5); K.add(new THREE.TorusGeometry(2.7, 0.22, 10, 48), mats.inner, 0, 8.4, -hd + 0.55); }
   for (const sx of [-1, 1]) { const b = makeBanner('castelo', 2.2, 7.5); b.position.set(I.x + sx * 5, 10.4, I.z - hd + 0.6); ctx.scene.add(b); }
-  rug(K, 4.4, 62, 0, -5.4, '#7a1a22', '#d8b04a', '#3a0e12');
+  rug(K, 4.4, 61.6, 0, -5.4, '#7a1a22', '#d8b04a', '#3a0e12'); // S-278: termina a 40 cm do primeiro degrau (z −36,6)
   for (const z of [-30, -10, 10]) chandelier(K, 0, 8.5, z, 2.2);
   for (const sx of [-1, 1]) { table(K, 1.6, 12, sx * 3.5, 4); for (const sd of [-1, 1]) bench(K, 12, sx * 3.5 + sd * 1.15, 4, Math.PI / 2); for (let k = 0; k < 6; k++) { K.add(new THREE.CylinderGeometry(0.2, 0.18, 0.06, 18), M.silver(), sx * 3.5, 0.9, -1 + k * 2); K.add(new THREE.CylinderGeometry(0.05, 0.04, 0.16, 10), M.silver(), sx * 3.5 + 0.3, 0.96, -1 + k * 2); } }
   // tochas de ferro nos pilares (do lado da nave)
@@ -440,7 +611,7 @@ function buildCastleInside(ctx) {
   for (const sx of [-1, 1]) { K.box(0.1, 6, 3.2, cloth('tapestry' + sx, sx > 0 ? '#3e1e5a' : '#5a1e2e'), sx * 11.5, 6, -40); K.box(0.12, 0.2, 3.4, M.gold(), sx * 11.45, 9.1, -40); }
 
   // ===== VESTÍBULO (z 30..48): armaduras completas ladeando a entrada =====
-  for (const sx of [-1, 1]) for (const z of [34, 39, 44]) armorStand(K, sx * 9.5, z, sx * -Math.PI / 2, sx > 0 ? '#8a1a22' : '#1e3a6a');
+  { let v = 0; for (const sx of [-1, 1]) for (const z of [34, 39, 44]) armorStand(K, sx * 9.5, z, sx * -Math.PI / 2, sx > 0 ? '#8a1a22' : '#1e3a6a', v++); } // S-276: seis armaduras diferentes
   rug(K, 3.6, 14, 0, 39, '#6a1e26', '#d8b04a', '#2a0e10');
   chandelier(K, 0, 7.5, 39, 1.6);
 
@@ -459,21 +630,35 @@ function buildCastleInside(ctx) {
   // escada de madeira até o mezanino e escadas de correr nas estantes
   for (let k = 0; k < 14; k++) { K.box(1.3, 0.08, 0.34, M.darkWood(), -13.4, 0.285 * (k + 1), -36.6 - k * 0.31); K.box(1.3, 0.25, 0.04, M.darkWood(), -13.4, 0.285 * (k + 1) - 0.14, -36.45 - k * 0.31); } // degraus e espelhos
   for (const sx of [-1, 1]) { K.box(0.08, 0.35, 5.8, M.darkWood(), -13.4 + sx * 0.66, 2.0, -38.6, 0, 0.74); K.box(0.06, 0.06, 5.8, M.darkWood(), -13.4 + sx * 0.66, 2.95, -38.6, 0, 0.74); for (let k = 0; k < 5; k++) K.box(0.04, 0.9, 0.04, M.darkWood(), -13.4 + sx * 0.66, 0.85 + k * 0.82 + 0.45, -36.8 - k * 0.9); }
-  K.box(3.6, 0.25, 3.5, mats.planks, -13.6, mz, -43.1); // patamar ligando a escada ao mezanino
-  cols.push({ x: I.x - 13.4, z: I.z - 38.6, r: 0.1, box: true, hx: 0.75, hz: 2.4, rot: 0 });
+  K.box(3.6, 0.25, 4.3, mats.planks, -13.6, mz, -42.72); // patamar ligando a escada ao mezanino
+  for (const [x0, z0, x1, z1] of [[-15.45, -44.6, -15.45, -40.65], [-15.45, -40.62, -14.12, -40.62]]) { const len = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(x1 - x0, z1 - z0); // guarda-corpo do patamar
+    for (let s = 0; s <= len; s += 0.5) K.add(lathe([[0.05, 0], [0.07, 0.15], [0.04, 0.4], [0.07, 0.75], [0.05, 0.9]], 10), M.darkWood(), x0 + (x1 - x0) * s / len, mz + 0.12, z0 + (z1 - z0) * s / len);
+    K.box(0.14, 0.1, len + 0.1, M.darkWood(), (x0 + x1) / 2, mz + 1.07, (z0 + z1) / 2, ry); }
+  // S-281: dá para SUBIR — escada, patamar e mezanino em L são andares de verdade (levels3d); guarda-corpos e laterais da escada seguram
+  const FT = mz + 0.125, A = (x, z) => [I.x + x, I.z + z];
+  addLevel({ x: I.x - 13.4, z: I.z - 36.45, yaw: Math.PI, w: 1.3, len: 4.2, y0: 0, y1: FT });                // degraus
+  addLevel({ x: I.x - 13.6, z: I.z - 40.6, yaw: Math.PI, w: 3.6, len: 4.3, y0: FT });                        // patamar
+  addLevel({ x: I.x - 25, z: I.z - 44.65, yaw: Math.PI, w: 26.6, len: 3.35, y0: FT });                       // mezanino norte
+  addLevel({ x: I.x - 35.9, z: I.z - 14.2, yaw: Math.PI, w: 2.5, len: 33.8, y0: FT });                       // mezanino oeste
+  levelWall(ctx.colliders, ...A(-34.72, -29.6), 0.08, 15.2, 0, 3.6);  // balaustrada oeste
+  levelWall(ctx.colliders, ...A(-25.1, -44.72), 9.7, 0.08, 0, 3.6);   // balaustrada norte
+  levelWall(ctx.colliders, ...A(-15.48, -42.6), 0.08, 2.1, 0, 3.6);   // patamar: lado oeste
+  levelWall(ctx.colliders, ...A(-14.78, -40.6), 0.66, 0.08, 0, 3.6);  // patamar: frente, ao lado da escada
+  for (const sx of [-1, 1]) levelWall(ctx.colliders, ...A(-13.4 + sx * 0.72, -38.55), 0.06, 2.12);  // corrimãos (laterais da escada, em qualquer altura)
+  levelWall(ctx.colliders, ...A(-13.4, -39.15), 0.66, 1.5, 0, -1, 0.6); // vão sob os degraus (só para quem está no térreo)
   for (const [lx, lz, ry] of [[-hw + 1.4, -38, Math.PI / 2], [-hw + 1.4, -24, Math.PI / 2], [-28, -hd + 1.4, 0]]) { const cs = Math.cos(ry), sn = Math.sin(ry); for (const sd of [-0.25, 0.25]) K.box(0.05, 4.0, 0.05, M.darkWood(), lx + sd * cs, 2.0, lz - sd * sn, ry, 0, 0.12); for (let k = 0; k < 11; k++) K.box(0.5, 0.04, 0.04, M.darkWood(), lx + 0.2 * Math.sin(ry) * 0, 0.3 + k * 0.35, lz, ry); }
   // mesas de leitura com livros abertos, pilhas, tinteiros e velas
   for (const [x, z] of [[-24, -36], [-24, -27], [-30, -31.5]]) { table(K, 3, 1.4, x, z, 0, M.darkWood()); chair(K, x - 0.8, z + 1.1, Math.PI); chair(K, x + 0.8, z - 1.1, 0);
     K.box(0.5, 0.05, 0.36, P('openBook', '#efe2c4', { rough: 0.8 }), x - 0.4, 0.92, z, 0.3); K.box(0.04, 0.06, 0.36, P('bookSpine', '#5a2a1a'), x - 0.4, 0.93, z, 0.3);
-    for (let k = 0; k < 4; k++) K.box(0.32, 0.07, 0.24, P('book' + k, ['#7a2a22', '#2a4a7a', '#3a6a3a', '#7a5a2a'][k], { rough: 0.8 }), x + 0.9, 0.92 + k * 0.07, z + 0.2, k * 0.2);
+    for (let k = 0; k < 4; k++) K.box(0.32, 0.07, 0.24, bookMat([0, 8, 4, 10][k]), x + 0.9, 0.92 + k * 0.07, z + 0.2, k * 0.2);
     K.cyl(0.05, 0.06, 0.07, P('ink', '#121218', { rough: 0.2 }), x + 0.3, 0.92, z - 0.4, 10); candle(K, x + 1.2, 0.88, z - 0.45); FL(x + 1.2, 1.17, z - 0.45, 0.09, x); cols.push({ x: I.x + x, z: I.z + z, r: 1.4 }); }
   // mesa de mapas com o mapa de Aethra
   table(K, 3.2, 2.2, -19, -40); { const mp = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 2.0).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: mapTableTex(), roughness: 0.9 })); mp.position.set(I.x - 19, 0.895, I.z - 40); ctx.scene.add(mp); } cols.push({ x: I.x - 19, z: I.z - 40, r: 1.8 });
   // o globo de Aethra num suporte de latão (anel meridiano e horizonte)
-  { const gx = -16, gz = -30, gy = 1.45, br = M.gold(); K.add(lathe([[0, 0], [0.45, 0], [0.45, 0.06], [0.1, 0.16], [0.07, 0.9], [0.12, 0.95], [0, 0.95]], 20), M.darkWood(), gx, 0, gz);
+  { const gx = -31, gz = -40.5, gy = 1.45, br = M.gold(); // S-280: no canto da biblioteca, longe da porta K.add(lathe([[0, 0], [0.45, 0], [0.45, 0.06], [0.1, 0.16], [0.07, 0.9], [0.12, 0.95], [0, 0.95]], 20), M.darkWood(), gx, 0, gz);
     for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; K.add(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), M.darkWood(), gx + Math.cos(a) * 0.3, 0.35, gz + Math.sin(a) * 0.3, -a, 0, 0.5); }
     K.add(new THREE.TorusGeometry(0.66, 0.03, 8, 48), br, gx, gy, gz, 0, Math.PI / 2); K.add(new THREE.TorusGeometry(0.7, 0.025, 8, 48), br, gx, gy, gz, 0.4, 0, 0);
-    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.62, 48, 32), new THREE.MeshStandardMaterial({ map: globeTex(), roughness: 0.45, metalness: 0.05 })); gl.position.set(I.x + gx, gy, I.z + gz); gl.rotation.set(0, Math.PI / 2 + 0.35, 0.41); gl.castShadow = true; ctx.scene.add(gl); gl.userData.update = t => { gl.rotation.y = t * 0.12; }; // gira devagar: Aethra passa na frente a cada volta ctx.roomAnims.push(gl);
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(0.62, 48, 32), new THREE.MeshStandardMaterial({ map: globeTex(), roughness: 0.45, metalness: 0.05 })); gl.position.set(I.x + gx, gy, I.z + gz); gl.rotation.set(0, Math.PI / 2 + 0.35, 0.41); gl.castShadow = true; ctx.scene.add(gl); gl.userData.update = t => { gl.rotation.y = t * 0.12; }; ctx.roomAnims.push(gl); // gira devagar: Aethra passa na frente a cada volta
     cols.push({ x: I.x + gx, z: I.z + gz, r: 0.75 }); }
   // púlpito com o grande livro e candelabros de pé
   K.box(0.7, 1.1, 0.5, M.darkWood(), -14.2, 0.55, -44, 0, 0.0); K.box(0.9, 0.06, 0.7, M.darkWood(), -14.2, 1.2, -44, 0, -0.35); K.box(0.8, 0.07, 0.55, P('bigBook', '#efe2c4', { rough: 0.8 }), -14.2, 1.26, -44, 0, -0.35);
@@ -510,10 +695,16 @@ function buildCastleInside(ctx) {
   });
   cols.push({ x: I.x - hw + 0.8, z: I.z + 32.25, r: 0.1, box: true, hx: 0.6, hz: 13, rot: 0 });
   // placa de entrada do salão e armaduras de honra
-  { const pl = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), plaqueTex('Salão das Lâminas', ['Aqui repousam as espadas dos grandes', 'guerreiros de Aethra. Que nenhuma volte', 'a ser erguida em vão.'])); pl.position.set(I.x - 12.6, 5.6, I.z + 33); pl.rotation.y = -Math.PI / 2; ctx.scene.add(pl); }
-  for (let k = 0; k < 4; k++) armorStand(K, -32 + k * 4.4, 46.4, Math.PI, k % 2 ? '#8a1a22' : '#1e3a6a');
+  { const pl = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), plaqueTex('Salão das Lâminas', ['Aqui repousam as espadas dos grandes', 'guerreiros de Aethra. Que nenhuma volte', 'a ser erguida em vão.'])); pl.position.set(I.x - 11.46, 6.15, I.z + 32); pl.rotation.y = Math.PI / 2; ctx.scene.add(pl); // S-283: acima do arco da porta, centrada, virada para o corredor (por onde se chega)
+    K.box(0.06, 1.5, 2.8, M.darkWood(), -11.53, 6.15, 32); for (const sz of [-1, 1]) K.box(0.08, 0.08, 0.3, M.iron(), -11.5, 6.75, 32 + sz * 1.1); }
+  for (let k = 0; k < 4; k++) armorStand(K, -32 + k * 4.4, 46.4, Math.PI, k % 2 ? '#8a1a22' : '#1e3a6a', [3, 4, 0, 2][k]);
   for (let k = 0; k < 4; k++) { K.add(new THREE.CylinderGeometry(0.6, 0.6, 0.08, 28), k % 2 ? P('shieldRed', '#7a1a22', { rough: 0.6 }) : P('shieldBlue', '#1e3e6e', { rough: 0.6 }), -12.5, 3.4, 22 + k * 6, 0, 0, Math.PI / 2); K.add(new THREE.TorusGeometry(0.6, 0.05, 8, 28), M.iron(), -12.54, 3.4, 22 + k * 6, Math.PI / 2); }
-  table(K, 3.2, 1.6, -24, 32); legendSword(K, -24.6, 0.95, 32, 0, { blade: '#c8ccd2', hilt: '#8a8a8a', grip: '#3a2a1a', len: 0.9 }); cols.push({ x: I.x - 24, z: I.z + 32, r: 1.5 });
+  // S-282: espada DEITADA sobre a mesa (num pano de veludo), com bainha ao lado, pedra de amolar e óleo — como numa bancada de restauro
+  table(K, 3.2, 1.6, -24, 32); cols.push({ x: I.x - 24, z: I.z + 32, r: 0.1, box: true, hx: 1.65, hz: 0.85, rot: 0 });
+  K.box(2.2, 0.012, 0.8, cloth('velvetRun', '#3a0a10'), -24, 0.888, 32);
+  layFlat(K, k2 => legendSword(k2, 0, 0, 0, 0, { blade: '#c8ccd2', hilt: '#b08a3a', grip: '#3a2a1a', len: 1.05, gem: '#9a2030' }), -23.45, 0.94, 31.95, Math.PI / 2);
+  { const sc = P('scabbard', '#2a1a10', { rough: 0.7 }); K.add(new THREE.BoxGeometry(1.1, 0.05, 0.1), sc, -24.2, 0.92, 32.35); K.box(0.12, 0.055, 0.11, M.gold(), -24.78, 0.92, 32.35); K.box(0.08, 0.055, 0.11, M.gold(), -23.66, 0.92, 32.35); }
+  K.box(0.22, 0.05, 0.07, P('whetstone', '#5a5a5e', { rough: 0.9 }), -25.2, 0.915, 31.7, 0.3); K.cyl(0.04, 0.05, 0.14, P('oilFlask', '#4a6a3a', { rough: 0.2 }), -25.5, 0.96, 32.1, 10);
   rug(K, 6, 22, -22, 33, '#3a1e14', '#c8a85a', '#1e0e08');
   chandelier(K, -25, 8, 34, 1.4);
 
@@ -540,7 +731,14 @@ function buildCastleInside(ctx) {
   for (let k = 0; k < 7; k++) { const x = 21 + k * 1.0; if (k % 3 === 0) K.add(new THREE.SphereGeometry(0.22, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), P('bread', '#c08a4a', { rough: 0.9 }), x, 0.88, 14, 0, 0, 0, 1.4, 0.8, 1); else if (k % 3 === 1) K.add(new THREE.CylinderGeometry(0.2, 0.2, 0.18, 6), P('cheese', '#e8c25a', { rough: 0.7 }), x, 0.97, 14.2); else for (let f = 0; f < 4; f++) K.add(new THREE.SphereGeometry(0.07, 10, 8), P('apple', '#b8322a', { rough: 0.5 }), x + (f % 2) * 0.12, 0.95, 13.8 + (f > 1 ? 0.12 : 0)); }
   for (let k = 0; k < 6; k++) K.add(new THREE.CylinderGeometry(0.16, 0.12, 0.3, 14), P('pot', '#8a5a3a', { rough: 0.8 }), hw - 0.5, 2.0, 33 + k * 0.9);
   for (let k = 0; k < 4; k++) { K.add(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 20), M.iron(), 18 + k * 1.2, 2.8, 47.6, 0, Math.PI / 2); K.box(0.05, 0.5, 0.05, M.iron(), 18 + k * 1.2, 3.25, 47.6); }
-  table(K, 3, 1.2, 30, 36); for (let k = 0; k < 3; k++) K.add(new THREE.SphereGeometry(0.25, 14, 10), P('cabbage', '#7aa04a', { rough: 0.8 }), 29 + k, 1.05, 36); K.add(new THREE.BoxGeometry(0.6, 0.06, 0.4), M.darkWood(), 31.4, 0.91, 36.2);
+  // S-277: bancada de preparo com colisão (não se atravessa mais), legumes de verdade e uma cozinha cheia de vida
+  table(K, 3, 1.2, 30, 36); cols.push({ x: I.x + 30, z: I.z + 36, r: 0.1, box: true, hx: 1.6, hz: 0.7, rot: 0 });
+  for (const [cx, cz] of [[29.1, 35.8], [29.75, 36.25]]) cabbage(K, cx, 0.88, cz, cx * 3.1);
+  K.box(0.6, 0.05, 0.4, P('cutBoard', '#a07a4a', { rough: 0.7 }), 30.9, 0.905, 36.0, 0.15); K.box(0.26, 0.012, 0.04, M.steel(), 30.95, 0.94, 35.95, 0.6); K.box(0.12, 0.022, 0.03, M.darkWood(), 30.77, 0.94, 36.07, 0.6); // tábua e faca
+  for (let k = 0; k < 7; k++) K.add(new THREE.SphereGeometry(0.045 + (k % 3) * 0.01, 10, 8), P('carrot' + (k % 2), k % 2 ? '#d86a1a' : '#c85a14', { rough: 0.6 }), 30.7 + (k % 4) * 0.09, 0.93, 36.3 + Math.floor(k / 4) * 0.08, 0, 0, Math.PI / 2, 1, 2.6, 1); // cenouras
+  for (let k = 0; k < 4; k++) K.add(new THREE.SphereGeometry(0.07, 12, 8), P('onion', '#c89a5a', { rough: 0.55 }), 31.25 + (k % 2) * 0.13, 0.95, 35.75 + Math.floor(k / 2) * 0.13, 0, 0, 0, 1, 0.9, 1);
+  K.add(lathe([[0, 0], [0.2, 0.0], [0.24, 0.12], [0.26, 0.2], [0.24, 0.22]], 18), P('bowl', '#8a5a34', { rough: 0.7 }), 31.3, 0.88, 36.35); // tigela
+  kitchenLife(K, cols, I, hw);
   // ===== arandelas com tocha nas paredes dos corredores e salas =====
   const sconce = (x, z, ry, y = 3.4) => { const cs = Math.cos(ry), sn = Math.sin(ry), at = (lz, yy) => [x + lz * sn, yy, z + lz * cs]; K.box(0.3, 0.45, 0.06, M.iron(), ...at(0, y), ry); K.add(new THREE.TorusGeometry(0.22, 0.03, 6, 12, Math.PI / 2), M.iron(), ...at(0.2, y - 0.1), ry + Math.PI / 2, 0, Math.PI); K.cyl(0.07, 0.05, 0.14, M.iron(), ...at(0.4, y + 0.1), 10); K.cyl(0.035, 0.03, 0.45, M.darkWood(), ...at(0.4, y + 0.3), 8); for (let k = 0; k < 3; k++) K.add(new THREE.TorusGeometry(0.04, 0.012, 6, 10), P('rag', '#3a2a1a', { rough: 1 }), ...at(0.4, y + 0.45 + k * 0.035), 0, Math.PI / 2); const [fx, fy, fz] = at(0.42, y + 0.56); FL(fx, fy, fz, 0.42, x + z); };
   for (const [x, z, a] of [[-37.5, -2, Math.PI / 2], [-37.5, 8, Math.PI / 2], [37.5, -30, -Math.PI / 2], [37.5, -10, -Math.PI / 2], [37.5, 40, -Math.PI / 2], [-6, 47.5, Math.PI], [6, 47.5, Math.PI], [-11.5, 40, Math.PI / 2], [11.5, 40, -Math.PI / 2]]) sconce(x, z, a);
@@ -566,7 +764,7 @@ function buildCastleInside(ctx) {
   const N = (n, x, z, yaw, anim) => ctx.roomNpc(n, I.x + x, I.z + z, yaw, anim);
   const king = N({ id: 'aldemar', name: 'Rei Aldemar', title: 'Senhor de Valcinza', model: 'Knight', show: ['Knight_Cape'], look: { race: 'humano', face: 'valente', hair: { style: 'longo', color: 'grisalho' }, beard: true },
     lines: 'Seja bem-vindo a Valcinza, aventureiro. Este castelo resistiu a três cercos e a um dragão — o salão ainda tem as marcas de fogo, se olhar com atenção.\nMeus guardas falam bem de você. Aethra precisa de gente corajosa: há algo despertando nas Catacumbas do Santuário.' }, 0, -43.9, 0, 'Sit_Chair_Idle');
-  king.obj.position.y = 1.55; royalRegalia(king, 'king'); // sentado no trono, com coroa, manto e cetro
+  king.obj.position.set(I.x, TH.floorY + SIT_DY, I.z + TH.seatZ + SIT_DZ); king.x = I.x; king.z = I.z + TH.seatZ + SIT_DZ; royalRegalia(king, 'king'); // S-278: sentado de verdade (quadril no assento, pés no pedestal), com coroa, manto e cetro
   // S-187: a rainha fica em pé no estrado, ao lado do trono (antes estava "dentro" do degrau)
   const queen = N({ id: 'isolda', name: 'Rainha Isolda', title: 'Senhora de Valcinza', model: 'Mage', look: { race: 'humano', sex: 'f', face: 'gentil', hair: { style: 'coque', color: 'loiro' } },
     lines: 'Os elfos de Aelindra mandaram o tapete do salão como presente de paz. Os anões mandaram... um machado. Cada povo com o seu jeito.' }, 2.6, -42.4, -0.25);
@@ -576,12 +774,23 @@ function buildCastleInside(ctx) {
   N({ id: 'porteiro', name: 'Gervásio', title: 'Mordomo do Castelo', model: 'Mage', look: { race: 'humano', face: 'gentil', hair: { style: 'careca', color: 'branco' }, beard: true },
     lines: 'Bem-vindo! À esquerda ficam a biblioteca, a capela e o Salão das Lâminas; à direita, os aposentos reais, o quarto de hóspedes e a cozinha. O salão do trono é logo em frente.\nNão corra nos corredores, por favor: o piso foi encerado hoje.' }, 3.2, 44.5, Math.PI);
   N({ id: 'elwen', name: 'Elwen', title: 'Bibliotecária (elfa)', model: 'Mage', show: ['Spellbook_open'], look: { race: 'elfo', sex: 'f', face: 'sereno', hair: { style: 'longo', color: 'platinado' } },
-    lines: 'Silêncio, por favor. Este globo mostra Aethra inteira — o mar do sudeste, as montanhas de Pedrafunda, os campos onde estamos agora. Além dele, só o Mar Sem Fim.' }, -17.4, -27.6, -2.2);
+    lines: 'Silêncio, por favor. Este globo mostra Aethra inteira — o mar do sudeste, as montanhas de Pedrafunda, os campos onde estamos agora. Além dele, só o Mar Sem Fim — e as terras que ninguém voltou para mapear.' }, -28.9, -41.9, 1.3);
   N({ id: 'padre_lauro', name: 'Frei Lauro', title: 'Capelão', model: 'Mage', heals: true, look: { race: 'humano', face: 'gentil', hair: { style: 'raspado', color: 'grisalho' } } }, -25, -8.4, Math.PI);
   N({ id: 'dagna', name: 'Dagna', title: 'Guardiã das Lâminas (anã)', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'valente', hair: { style: 'coque', color: 'ruivo' } },
     lines: 'Cada espada desta parede tem uma história — leia as placas. A Brasa Eterna ainda esquenta a minha mão quando eu limpo a vitrine.\nSe quer refino de verdade para a sua, procure o Mestre Brakar em Pedrafunda.' }, -33.2, 30.2, -Math.PI / 2);
   N({ id: 'berta', name: 'Berta', title: 'Cozinheira', model: 'Barbarian', look: { race: 'humano', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'castanho' } },
     lines: 'Ensopado de javali com pão quentinho! Se o rei não comer tudo, sobra para os guardas — e para você, se ajudar a descascar batatas.' }, 33.8, 20, -Math.PI / 2);
+  // S-277/S-279: gente andando pelo castelo (criados, pajem, estudioso) e um copista lendo na biblioteca
+  walker(ctx, N({ id: 'tilda', name: 'Tilda', title: 'Ajudante de cozinha', model: 'Rogue', look: { race: 'humano', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'loiro' } },
+    lines: 'Cuidado que o chão está molhado! A Berta me mata se eu deixar o ensopado queimar.' }, 29.5, 9, 0), [[29.5, 9], [30, 24], [33.5, 40.5], [19, 41.5], [17.5, 26], [17.5, 9]], 1.15);
+  walker(ctx, N({ id: 'pipo', name: 'Pipo', title: 'Ajudante de cozinha', model: 'Rogue', look: { race: 'humano', face: 'alegre', hair: { style: 'curto', color: 'ruivo' } },
+    lines: 'Eu só carrego a lenha. Um dia vou ser guarda real — o Sir Bertran disse que eu tenho jeito!' }, 33, 30, 0), [[33, 30], [34.5, 24.5], [27, 30], [24, 44], [26.5, 34]], 0.95);
+  walker(ctx, N({ id: 'edmundo', name: 'Edmundo', title: 'Pajem do Rei', model: 'Rogue', look: { race: 'humano', face: 'sereno', hair: { style: 'curto', color: 'castanho' } },
+    lines: 'Levo os recados do rei para todo canto do castelo. Hoje já subi e desci esta nave umas vinte vezes!' }, 0, 26, Math.PI), [[0, 26], [0, -32], [-9.5, -33], [-9.5, -3.5], [0, -3.5]], 1.2);
+  walker(ctx, N({ id: 'anselmo', name: 'Mestre Anselmo', title: 'Estudioso de Valcinza', model: 'Mage', look: { race: 'humano', face: 'sereno', hair: { style: 'careca', color: 'grisalho' }, beard: true },
+    lines: 'Estou catalogando os tomos do mezanino. A escada range, mas aguenta — suba com calma.' }, -16, -20, 0), [[-16, -20], [-33, -18.5], [-33.4, -25], [-27.5, -23], [-19.5, -23], [-19.5, -33], [-16.5, -34]], 0.8);
+  N({ id: 'caio', name: 'Irmão Caio', title: 'Copista', model: 'Mage', look: { race: 'humano', face: 'gentil', hair: { style: 'raspado', color: 'castanho' } },
+    lines: 'Psiu... estou copiando a Crônica dos Três Cercos. Uma letra torta e começo a página de novo.' }, -24.8, -25.9, Math.PI, 'Sit_Chair_Idle');
   // saída (portal dourado junto à porta)
   const ex = ctx.makePortal('#ffd27a'); ex.position.set(I.x, 0, I.z + hd - 0.9); ctx.scene.add(ex); ctx.portals.push({ kind: 'exit', from: 'castelo', x: I.x, z: I.z + hd - 0.9, mesh: ex });
 }
