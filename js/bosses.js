@@ -103,7 +103,7 @@ Object.assign(MONSTERS, {
   },
   trotavento_selvagem: {
     name: 'Trotavento Selvagem', lv: 34, hp: 2000, atk: [76, 98], def: 24, exp: 840, jexp: 630, element: 'vento', shape: 'runnerbird', color: '#c9a066',
-    size: 0.85, speed: 85, aggressive: false, race: 'Fera', icon: '🐦', flee: 70,
+    size: 1.02, speed: 85, aggressive: false, race: 'Fera', icon: '🐦', flee: 70, // S-257: um pouco maior
     drops: [['pena_dourada', 0.5], ['carne_assada', 0.35], ['faixa_de_penas', 0.02]],
     card: { equip: 'capa', bonuses: { agi: 3, aspdPct: 3 } },
   },

@@ -646,14 +646,16 @@ export function deckAt(x, z) {
 export const FROST = { x: -380, z: 28, wallX: -405 };
 function iceTex() {
   return canvasPair(512, 512, (g, gb, W, H) => {
-    const r = rngOf(61); const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#e8f4fb'); gr.addColorStop(1, '#a9cde2'); g.fillStyle = gr; g.fillRect(0, 0, W, H); gb.fillStyle = '#808080'; gb.fillRect(0, 0, W, H);
-    let y = 0; while (y < H) { const h = 6 + r() * 26, l = 78 + r() * 16; g.fillStyle = `hsla(${198 + r() * 12}, ${28 + r() * 25}%, ${l}%, 0.55)`; g.fillRect(0, y, W, h); gb.fillStyle = `rgb(${110 + r() * 60 | 0},${110 + r() * 60 | 0},${110 + r() * 60 | 0})`; gb.fillRect(0, y, W, h); g.fillStyle = 'rgba(70,110,140,0.25)'; g.fillRect(0, y + h - 1.5, W, 1.5); y += h; } // estratos (camadas de invernos)
-    for (let k = 0; k < 140; k++) { const x0 = r() * W, y0 = r() * H, L = 20 + r() * 120; g.strokeStyle = `rgba(${r() < 0.5 ? '255,255,255' : '60,100,130'},${0.15 + r() * 0.25})`; g.lineWidth = 0.6 + r() * 1.6; g.beginPath(); g.moveTo(x0, y0); g.bezierCurveTo(x0 + (r() - 0.5) * 30, y0 + L * 0.3, x0 + (r() - 0.5) * 30, y0 + L * 0.7, x0 + (r() - 0.5) * 20, y0 + L); g.stroke(); gb.strokeStyle = 'rgba(30,30,30,0.6)'; gb.lineWidth = 1.5; gb.stroke(); } // fendas e escorridos
-    for (let k = 0; k < 400; k++) { g.fillStyle = `rgba(255,255,255,${r() * 0.35})`; g.fillRect(r() * W, r() * H, 1 + r() * 3, 1 + r() * 2); }
+    // S-261: gelo maciço — nada de listras: manchas grandes e suaves (gelo leitoso x gelo azul fundo), veios difusos e geada
+    const r = rngOf(61); g.fillStyle = '#c4dcea'; g.fillRect(0, 0, W, H); gb.fillStyle = '#808080'; gb.fillRect(0, 0, W, H);
+    const blob = (ctx, x, y, rad, col) => { for (const ox of [-W, 0, W]) for (const oy of [-H, 0, H]) { const gg = ctx.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, rad); gg.addColorStop(0, col); gg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gg; ctx.fillRect(x + ox - rad, y + oy - rad, rad * 2, rad * 2); } }; // emenda nas bordas (sem costura)
+    for (let k = 0; k < 70; k++) { const x = r() * W, y = r() * H, rad = 40 + r() * 140, deep = r() < 0.45; blob(g, x, y, rad, deep ? `rgba(70,128,170,${0.18 + r() * 0.2})` : `rgba(240,248,252,${0.2 + r() * 0.25})`); blob(gb, x, y, rad, deep ? `rgba(60,60,60,${0.2 + r() * 0.2})` : `rgba(200,200,200,${0.2 + r() * 0.2})`); }
+    for (let k = 0; k < 900; k++) { const x = r() * W, y = r() * H, rad = 2 + r() * 10; blob(g, x, y, rad, `rgba(255,255,255,${r() * 0.18})`); blob(gb, x, y, rad, `rgba(${r() < 0.5 ? '230,230,230' : '40,40,40'},${r() * 0.25})`); } // bolhas presas e grão do gelo
+    for (let k = 0; k < 2400; k++) { g.fillStyle = `rgba(255,255,255,${r() * 0.12})`; g.fillRect(r() * W, r() * H, 1 + r() * 2, 1 + r() * 2); } // geada fina
   });
 }
 const FM = {
-  ice: () => MATS.ice || (MATS.ice = (() => { const t = TEX.ice || (TEX.ice = iceTex()); for (const x of [t.map, t.bump]) x.repeat.set(1, 1); const m = new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 4, roughness: 0.5, metalness: 0.02, color: '#ffffff', vertexColors: true, emissive: '#0c2438', emissiveIntensity: 0.25 }); m.userData.tile = 24; return m; })()),
+  ice: () => MATS.ice || (MATS.ice = (() => { const t = TEX.ice || (TEX.ice = iceTex()); for (const x of [t.map, t.bump]) x.repeat.set(1, 1); const m = new THREE.MeshStandardMaterial({ map: t.map, bumpMap: t.bump, bumpScale: 1.2, roughness: 0.5, metalness: 0.02, color: '#ffffff', vertexColors: true, emissive: '#16405f', emissiveIntensity: 0.28 }); m.userData.tile = 24; return m; })()),
   snow: () => plain('snow', '#f1f5f9', { rough: 0.9 }),
   icicle: () => plain('icicle', '#cfe6f4', { rough: 0.15, metal: 0.05, transparent: true, opacity: 0.85 }),
   blackWool: () => plain('blackWool', '#16151a', { rough: 1 }),
@@ -697,27 +699,39 @@ export function furCloak(ch, opts = {}) {
 function iceWall(len, H, D) {
   // face leste (virada para +x) bem subdividida: inclinação, camadas de inverno (beiradas), fendas verticais;
   // nas pontas a muralha baixa e entra nas montanhas. Topo com neve acompanhando a altura.
-  const SX = 150, SY = 40, pos = [], idx = [], uv = [], Hz = z => H * (0.6 + 0.4 * Math.min(1, Math.max(0, (len / 2 - Math.abs(z)) / 50)));
-  const faceX = (y, z, hz) => { const v = (y + 6) / hz, band = y / 7.3, ledge = Math.pow(Math.max(0, Math.sin((band - Math.floor(band)) * Math.PI)), 6) * 0.9;
-    const crev = -2.2 * Math.pow(Math.max(0, Math.sin(z * 0.19 + Math.sin(y * 0.05) * 0.6)), 28) - 1.4 * Math.pow(Math.max(0, Math.sin(z * 0.071 + 2)), 40);
-    return -v * H * 0.12 + Math.sin(z * 0.045 + y * 0.03) * 1.1 + Math.sin(y * 1.3 + z * 0.05) * 0.18 + ledge + crev + Math.sin(z * 0.9 + y * 0.7) * 0.08; };
+  // S-261/S-262: gelo maciço em BLOCOS (colunas de ~8 m partidas em lajes de alturas diferentes, como gelo que cedeu e se partiu),
+  // sem as beiradas/listras horizontais de antes; quinas suavizadas, superfície lisa com leve ondulação
+  const SX = 640, SY = 70, pos = [], idx = [], uv = [], blk = [], Hz = z => H * (0.6 + 0.4 * Math.min(1, Math.max(0, (len / 2 - Math.abs(z)) / 50)));
+  const hsh = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const sst = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // cada laje é um plano levemente inclinado (face de fratura), com quina viva e um vinco escuro na junta
+  const slab = (ci, ri, fy) => hsh(ci, ri) + (fy - 0.5) * (hsh(ci + 0.5, ri) - 0.5) * 0.8;
+  const colOff = (ci, y) => { const ry = (y + hsh(ci, 7) * 14 + Math.sin(y * 0.2 + ci) * 0.8) / (9 + hsh(ci, 3) * 8), ri = Math.floor(ry), fy = ry - ri, o0 = slab(ci, ri, fy), o1 = slab(ci, ri + 1, fy - 1); return o0 + (o1 - o0) * sst(0.9, 1, fy); };
+  const czOf = (y, z) => (z + 500 + Math.sin(z * 0.043) * 5 + Math.sin(y * 0.09 + z * 0.02) * 1.6 + Math.sin(y * 0.31 + z) * 0.35) / 7.5; // juntas verticais tortas e colunas de larguras diferentes (nada de grade)
+  const blocks = (y, z) => { const cz = czOf(y, z), ci = Math.floor(cz), fz = cz - ci, a = colOff(ci, y) + (fz - 0.5) * (hsh(ci, 99) - 0.5) * 0.5, b = colOff(ci + 1, y) + (fz - 1.5) * (hsh(ci + 1, 99) - 0.5) * 0.5; return a + (b - a) * sst(0.9, 1, fz); };
+  const seam = (y, z) => { const cz = czOf(y, z), ci = Math.floor(cz), fz = cz - ci, ry = (y + hsh(ci, 7) * 14) / (9 + hsh(ci, 3) * 8), fy = ry - Math.floor(ry); return Math.max(sst(0.86, 0.95, fz) * sst(1.0, 0.97, fz), sst(0.86, 0.95, fy) * sst(1.0, 0.97, fy) * 0.7); };
+  const faceX = (y, z, hz) => -((y + 6) / hz) * H * 0.12 + (blocks(y, z) - 0.45) * 3.0 + Math.sin(z * 0.035 + y * 0.02) * 1.4 + Math.sin(y * 0.6 + z * 0.21) * 0.12 + Math.sin(z * 1.7 + y * 1.1) * 0.05;
   for (let j = 0; j <= SY; j++) for (let i = 0; i <= SX; i++) {
     const u = i / SX, v = j / SY, z = (u - 0.5) * len, hz = Hz(z), y = v * hz - 6;
-    pos.push(faceX(y, z, hz), y + (v > 0.98 ? Math.sin(z * 0.43) * 0.8 : 0), z); uv.push(z / 30, y / 14);
+    pos.push(faceX(y, z, hz), y, z); uv.push(z / 55, y / 40); blk.push(blocks(y, z));
   }
   for (let j = 0; j < SY; j++) for (let i = 0; i < SX; i++) { const a = j * (SX + 1) + i, b = a + SX + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
-  // cor: gelo azul-acinzentado, fendas e reentrâncias azul profundo, beiradas e topo quase brancos
-  const col = [], cA = new THREE.Color('#9fbfd4'), cDeep = new THREE.Color('#3f6f94'), cHi = new THREE.Color('#eef6fb'), tc = new THREE.Color();
-  for (let k = 0; k < pos.length; k += 3) { const x = pos[k], y = pos[k + 1], z = pos[k + 2], hz = Hz(z), base = -((y + 6) / hz) * H * 0.12, d = x - base;
-    tc.copy(cA).lerp(cDeep, Math.min(1, Math.max(0, -d - 0.4) * 0.45)).lerp(cHi, Math.min(1, Math.max(0, d - 0.3) * 0.5) * 0.8);
-    tc.offsetHSL(0, 0, Math.sin(y * 2.1 + z * 0.13) * 0.025 + ((y + 6) / hz > 0.9 ? 0.08 : 0)); col.push(tc.r, tc.g, tc.b); }
+  // cor: lajes salientes claras (gelo leitoso), recuadas em azul profundo, juntas entre blocos mais escuras; topo quase branco, pé acinzentado
+  const col = [], cA = new THREE.Color('#9cc3dc'), cDeep = new THREE.Color('#2f6690'), cHi = new THREE.Color('#e6f2f9'), cFoot = new THREE.Color('#b9c6cf'), tc = new THREE.Color();
+  for (let k = 0, n = 0; k < pos.length; k += 3, n++) { const y = pos[k + 1], z = pos[k + 2], hz = Hz(z), b = blk[n], v = (y + 6) / hz;
+    tc.copy(cDeep).lerp(cA, sst(0.05, 0.55, b)).lerp(cHi, sst(0.6, 1, b) * 0.7);
+    tc.lerp(cHi, sst(0.85, 1, v) * 0.6).lerp(cFoot, sst(0.12, 0, v) * 0.5);
+    tc.lerp(cDeep, seam(y, z) * 0.55).offsetHSL(0, 0, (hsh(Math.floor((z + 500) / 7.5), 11) - 0.5) * 0.06); col.push(tc.r, tc.g, tc.b); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
   const grp = new THREE.Group(), face = new THREE.Mesh(g, FM.ice()); face.receiveShadow = true; grp.add(face);
   // topo: faixa de neve com borda irregular, da beirada até o fundo
   const tp = [], ti = [];
-  for (let i = 0; i <= SX; i++) { const z = (i / SX - 0.5) * len, hz = Hz(z), y = hz - 6, x0 = faceX(y, z, hz); tp.push(x0 + 0.6, y + 0.2 + Math.sin(z * 0.43) * 0.8, z, x0 - 3, y + 1.0 + Math.sin(z * 0.2) * 0.3, z, x0 - D, y + 0.6, z); }
-  for (let i = 0; i < SX; i++) for (let c = 0; c < 2; c++) { const a = i * 3 + c, b = a + 3; ti.push(a, a + 1, b, b, a + 1, b + 1); }
-  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3)); tg.setIndex(ti); tg.computeVertexNormals(); const top = new THREE.Mesh(tg, FM.snow()); top.material.side = THREE.DoubleSide; grp.add(top);
+  // S-262: a capa de neve nasce colada na face (sem aba sobrando por cima, cuja parte de baixo aparecia como uma linha verde-escura no contorno)
+  for (let i = 0; i <= SX; i++) { const z = (i / SX - 0.5) * len, hz = Hz(z), y = hz - 6, x0 = faceX(y, z, hz), drift = 0.5 + hsh(Math.floor(z / 3), 5) * 0.9;
+    tp.push(faceX(y - drift, z, hz) - 0.05, y - drift, z, x0 + 0.28, y - drift * 0.35, z, x0 + 0.12, y + 0.35, z, x0 - 3, y + 1.0 + Math.sin(z * 0.2) * 0.3, z, x0 - D, y + 0.6, z); }
+  for (let i = 0; i < SX; i++) for (let c = 0; c < 4; c++) { const a = i * 5 + c, b = a + 5; ti.push(a, a + 1, b, b, a + 1, b + 1); }
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3)); tg.setIndex(ti); tg.computeVertexNormals();
+  const top = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ color: '#f3f7fb', roughness: 0.85, emissive: '#a9bccd', emissiveIntensity: 0.2, side: THREE.DoubleSide })); top.receiveShadow = true; grp.add(top);
   return grp;
 }
 // monta com coordenadas do mundo e coloca o grupo no centro dado (para a distância de desenho funcionar)
@@ -786,9 +800,34 @@ function buildFrostHold(ctx) {
     K.box(2.4, 1.1, 1.6, st, -3, 0.55, -2.2); K.box(1.8, 0.1, 1.1, M.ember(), -3, 1.12, -2.1); K.box(0.8, 0.6, 0.5, M.iron(), 1, 0.9, -0.8); K.box(0.5, 0.6, 0.5, dk, 1, 0.3, -0.8);
     for (let k = 0; k < 5; k++) for (const gg of axeGeo(1.6, 0.3)) K.add(gg, M.steel(), 2.6 + k * 0.45, 0.6, -2.85, 0, 0, 0.05);
     const g = put(ctx, K, 'arsenal', C.x + 24, C.z - 18, -Math.PI / 2, { box: [[0, -3.2, 5, 0.5], [-3, -2.2, 1.2, 0.8]] }); const f = flame(1.6, 4); f.position.set(-3, 1.15, -2.1); g.add(f); ctx.roomAnims.push(f); }
-  { const K = new Kit(); K.box(12, 0.3, 6, wd, 0, 0, 0); for (const px of [-5.8, -2, 2, 5.8]) for (const pz of [-2.8, 2.8]) K.box(0.3, 3.2, 0.3, dk, px, 1.6, pz); snowRoof(K, 12.4, 6.6, 1.6, M.thatch(), 0, 3.2, 0, 0);
-    for (let k = 0; k < 3; k++) K.box(0.12, 1.2, 5.4, dk, -4 + k * 4, 0.7, 0); for (let k = 0; k < 4; k++) K.box(1.1, 0.5, 0.6, plain('hay', '#c9a85a', { rough: 1 }), -5 + k * 3.2, 0.4, 2.2);
-    put(ctx, K, 'estabulo_da_vigilia', C.x + 26, C.z + 12, Math.PI / 2, { box: [[0, 0, 6.2, 3.2]] }); }
+  { // S-260: Estábulo da Vigília de verdade — fundo e laterais de tábuas, três baias com divisórias, portinhas, manjedouras e argolas (os cavalos e o feno entram no main3d: FROST.stable)
+    const K = new Kit(), W = 12.6, D = 6.4, H = 3.2, bd = M.wood();
+    K.box(W, 0.3, D, wd, 0, 0, 0); for (let k = 0; k < 14; k++) K.box(0.05, 0.02, D - 0.1, dk, -W / 2 + 0.45 + k * 0.9, 0.16, 0); // tábuas do piso
+    for (let k = 0; k <= Math.floor(W / 0.36); k++) { const x = -W / 2 + 0.18 + k * 0.36; K.box(0.34, H, 0.1, k % 3 ? bd : wd, x, 0.15 + H / 2, -D / 2 + 0.06); } // fundo de tábuas verticais
+    for (const y of [0.9, 2.3]) K.box(W, 0.16, 0.1, dk, 0, y, -D / 2 + 0.14);
+    for (const sx of [-1, 1]) { for (let k = 0; k < Math.floor(D / 0.36); k++) K.box(0.1, H, 0.34, k % 2 ? bd : wd, sx * (W / 2 - 0.06), 0.15 + H / 2, -D / 2 + 0.18 + k * 0.36); K.box(0.1, 0.16, D, dk, sx * (W / 2 - 0.14), 1.6, 0); } // laterais
+    for (const px of [-W / 2 + 0.15, -2.1, 2.1, W / 2 - 0.15]) { K.cyl(0.16, 0.18, H, dk, px, 0.15 + H / 2, D / 2 - 0.2, 10); K.box(0.6, 0.22, 0.22, dk, px, H - 0.05, D / 2 - 0.3); } // esteios da frente com mãos-francesas
+    K.box(W, 0.3, 0.3, dk, 0, H + 0.05, D / 2 - 0.2); snowRoof(K, W + 0.4, D + 0.6, 1.7, M.thatch(), 0, H + 0.15, 0, 0);
+    const stable = { ry: Math.PI / 2, slots: [] };
+    for (let i = 0; i < 3; i++) {
+      const cx = (i - 1) * 4.2;
+      if (i > 0) { const px = cx - 2.1; for (let k = 0; k < 5; k++) K.box(0.07, 0.22, D - 1.0, k % 2 ? bd : wd, px, 0.3 + k * 0.27, -0.45); K.cyl(0.08, 0.09, 1.6, dk, px, 0.95, D / 2 - 1.0, 10); } // divisória de tábuas
+      // manjedoura no fundo com feno, e cocho
+      K.box(1.3, 0.07, 0.55, dk, cx - 0.6, 0.95, -D / 2 + 0.45); for (const sz of [-1, 1]) K.box(1.3, 0.3, 0.05, dk, cx - 0.6, 1.1, -D / 2 + 0.45 + sz * 0.25); K.add(new THREE.SphereGeometry(0.45, 12, 8), M.thatch(), cx - 0.6, 1.1, -D / 2 + 0.45, 0, 0, 0, 1.3, 0.3, 0.5);
+      K.box(0.9, 0.4, 0.45, dk, cx + 0.9, 0.35, -D / 2 + 0.4); K.box(0.8, 0.02, 0.36, plain('troughW', '#5a7a86', { rough: 0.05, metal: 0.3 }), cx + 0.9, 0.53, -D / 2 + 0.4);
+      // portinha de meia altura, entreaberta numa das baias
+      const gw = 3.5, ga = i === 1 ? -0.4 : 0, hx = cx - 1.95, hz = D / 2 - 0.9;
+      for (let k = 0; k < 4; k++) K.box(gw, 0.2, 0.05, bd, hx + Math.cos(ga) * gw / 2, 0.38 + k * 0.25, hz - Math.sin(ga) * gw / 2, ga);
+      K.box(0.08, Math.hypot(gw - 0.15, 0.9), 0.05, dk, hx + Math.cos(ga) * gw / 2, 0.75, hz - Math.sin(ga) * gw / 2 + 0.04, ga, 0, Math.atan2(gw - 0.15, 0.9));
+      for (const y of [0.45, 1.05]) K.box(0.22, 0.05, 0.03, M.iron(), hx + 0.11, y, hz + 0.05);
+      // argola na divisória, perto da frente
+      const rx = cx - 2.05, ry = 1.25, rz = D / 2 - 1.5; K.add(new THREE.TorusGeometry(0.06, 0.012, 8, 18), M.iron(), rx + 0.03, ry, rz, Math.PI / 2);
+      stable.slots.push({ lx: cx - 0.55, lz: -0.55, ring: [rx + 0.05, ry - 0.05, rz] });
+    }
+    // lampião no esteio e neve acumulada na borda do piso
+    K.box(0.05, 0.05, 0.4, M.iron(), -2.1, 2.5, D / 2 + 0.0); K.box(0.2, 0.3, 0.2, M.iron(), -2.1, 2.3, D / 2 + 0.2); K.box(0.13, 0.22, 0.13, M.glass(), -2.1, 2.3, D / 2 + 0.2);
+    const sx0 = C.x + 26, sz0 = C.z + 12; Object.assign(stable, { x: sx0, z: sz0 }); FROST.stable = stable;
+    put(ctx, K, 'estabulo_da_vigilia', sx0, sz0, Math.PI / 2, { box: [[0, -D / 2 + 0.1, W / 2, 0.2], [-W / 2 + 0.1, 0, 0.2, D / 2], [W / 2 - 0.1, 0, 0.2, D / 2], [-2.1, -0.45, 0.1, D / 2 - 0.5], [2.1, -0.45, 0.1, D / 2 - 0.5], [0, D / 2 - 0.9, W / 2, 0.08]] }); }
   { const K = new Kit(); // bonecos de palha e alvos de arco
     for (let k = 0; k < 4; k++) { const x = -6 + k * 4; K.cyl(0.1, 0.12, 2.0, dk, x, 1.0, 0, 8); K.box(1.2, 0.1, 0.1, dk, x, 1.5, 0); K.add(new THREE.SphereGeometry(0.28, 12, 10), plain('straw', '#c9a85a', { rough: 1 }), x, 1.95, 0); K.add(new THREE.CylinderGeometry(0.32, 0.36, 0.8, 12), plain('straw', '#c9a85a', { rough: 1 }), x, 1.3, 0); }
     for (let k = 0; k < 3; k++) { const x = -5 + k * 5; K.add(new THREE.CylinderGeometry(0.75, 0.75, 0.25, 24), plain('target', '#d8c8a0'), x, 1.2, -9, 0, Math.PI / 2, 0); K.add(new THREE.CylinderGeometry(0.45, 0.45, 0.27, 24), plain('targetR', '#8a2a1e'), x, 1.2, -9, 0, Math.PI / 2, 0); K.add(new THREE.CylinderGeometry(0.16, 0.16, 0.29, 16), plain('targetY', '#e0c050'), x, 1.2, -9, 0, Math.PI / 2, 0); for (const sx of [-0.5, 0.5]) K.box(0.1, 1.6, 0.1, dk, x + sx, 0.6, -9.2, 0, 0.3); }

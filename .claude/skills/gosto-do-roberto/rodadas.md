@@ -187,3 +187,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Fechou os "pontos a melhorar" que eu mesmo listei no relatório: taverna (enxaimel, trapeiras, placa "Caneca Alegre"), estábulo (celeiro de tábuas, portas abertas, palheiro com roldana, alpendre com feno e cocho) e igreja (Capela do Sol: torre com sino e agulha, rosácea, ogivas, contrafortes, abside) feitos em código — na vila e em Pedraclara; oitões fechados com parede (antes o telhado tapava a fachada); cabeça de cavalo realista com cabeçada de couro; saias da Ivra/freira que acompanham as pernas; efeitos de roupa dos NPCs passaram a animar.
 - Aprendizado: quando listo "pontos a melhorar" no relatório, ele pede para fazer — liste só o que estou disposto a fazer e já deixe pronto o plano.
 - S-245/S-246/S-247 (logo depois): o personagem dele é ANÃO — o corpo de anão exagerado das NPCs ficou "achatado, disforme" nele; calçamento de elipses pequenas = "mil moedas". Aprendizado: teste toda mudança de corpo/raça também no personagem DELE (raça/classe do save) e textura de chão tem que ser vista de perto, rente ao chão.
+
+### Rodada 17 (S-248 a S-265), 2026-11-08
+- S-265: kiting corpo a corpo — segurar o clique NO inimigo trava nele, corpo sempre de frente, WASD pela câmera; e "modo de combate" (postura de luta entre golpes, nada de voltar à paisana). Pediu "liso".
+- Lobo como REFERÊNCIA de qualidade para todos os monstros: corpo contínuo com pele/esqueleto, pelagem, patas que não deslizam, movimento de animal real. Depois ele vai pedir para aplicar os mesmos princípios aos outros.
+- Reclamou de novo de grama na areia ("já falei") e de bolotas/achatamento: quando ele repete, a correção anterior foi tímida — vá até o fim.
+- Dragão "inspirado em Skyrim", fauno com som de criatura pesada, pégaso com estrutura óssea de asa, estábulos com baias/portinhas e cavalos amarrados, Muralha de gelo sem listras.

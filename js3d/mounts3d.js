@@ -456,9 +456,9 @@ function birdParts() {
   E([0, 1.94, 0.6], [0.135, 0.135, 0.155], 'head', 0.05);
   E([0, 2.0, 0.55], [0.08, 0.055, 0.1], 'head', 0.04);
   for (const s of [-1, 1]) E([s * 0.058, 1.895, 0.63], [0.07, 0.068, 0.08], 'head', 0.04); // bochechas
-  C([0, 1.93, 0.69], [0, 1.905, 0.84], 0.062, 0.03, 'head', 0.025); // bico (de cima), curvo na ponta
-  C([0, 1.905, 0.84], [0, 1.865, 0.895], 0.03, 0.01, 'head', 0.015);
-  C([0, 1.885, 0.68], [0, 1.858, 0.83], 0.045, 0.012, 'head', 0.02);  // bico (de baixo)
+  C([0, 1.935, 0.69], [0, 1.905, 0.87], 0.07, 0.034, 'head', 0.025); // S-257: bico um pouco maior (de cima), curvo na ponta
+  C([0, 1.905, 0.87], [0, 1.858, 0.94], 0.034, 0.01, 'head', 0.015);
+  C([0, 1.882, 0.68], [0, 1.852, 0.86], 0.05, 0.013, 'head', 0.02);  // bico (de baixo)
   for (const s of [-1, 1]) {
     E([s * 0.29, 1.24, 0.02], [0.06, 0.17, 0.3], 'wi' + s, 0.06);
     E([s * 0.16, 0.95, 0.0], [0.12, 0.16, 0.15], 'th' + s, 0.08);                    // coxa emplumada, presa ao corpo
@@ -491,7 +491,7 @@ function birdMaterial(C) {
       col *= 0.92 + 0.12 * vn(p * vec3(90.0, 30.0, 90.0));
       // bico laranja (ponta mais escura) e pernas com escamas
       float beak = smoothstep(0.72, 0.75, p.z) * smoothstep(1.8, 1.83, p.y);
-      col = mix(col, mix(ubeak, ubeak * 0.55, smoothstep(0.78, 0.9, p.z)), beak);
+      col = mix(col, mix(ubeak, ubeak * 0.55, smoothstep(0.82, 0.95, p.z)), beak);
       float leg = (1.0 - smoothstep(0.62, 0.7, p.y)) * smoothstep(0.08, 0.12, abs(p.x));
       vec2 sc = worley(p * 60.0); col = mix(col, uleg * (0.75 + 0.35 * smoothstep(0.1, 0.5, sc.x)), leg);
       diffuseColor.rgb *= col;`);
@@ -557,16 +557,16 @@ export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
     ['neck1', 150, 0.075, 0.045, [0, -1, -0.25]], ['neck2', 120, 0.06, 0.038, [0, -1, -0.2]],
     ['th-1', 110, 0.09, 0.055, [0, -1, -0.15]], ['th1', 110, 0.09, 0.055, [0, -1, -0.15]], ['wi-1', 90, 0.11, 0.055, [0, -0.25, -1]], ['wi1', 90, 0.11, 0.055, [0, -0.25, -1]],
   ]);
-  // olhos grandes e expressivos (íris escura com brilho, pálpebra que pisca)
+  // S-257: olho de ave calmo — sem branco à mostra (íris âmbar ocupa o olho todo), pupila grande, anel de pele em volta,
+  // pálpebra de cima um pouco baixada (olhar tranquilo) e nada de sobrancelha brava
   const lids = [];
   for (const s of [-1, 1]) {
-    const eg = new THREE.Group(); eg.rotation.set(-0.05, s * 0.62, 0); at('head', eg, s * 0.108, 1.96, 0.68);
-    eg.add(new THREE.Mesh(new THREE.SphereGeometry(0.034, 22, 16), new THREE.MeshStandardMaterial({ color: '#f3ead6', roughness: 0.3 }))).scale.set(1, 1.08, 0.5);
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.027, 22, 16), new THREE.MeshStandardMaterial({ color: '#7a4a1a', roughness: 0.15 })); iris.scale.set(1, 1.08, 0.45); iris.position.z = 0.012; eg.add(iris);
-    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.016, 18, 12), new THREE.MeshStandardMaterial({ color: '#120804', roughness: 0.1 })); pu.scale.set(1, 1.1, 0.4); pu.position.z = 0.019; eg.add(pu);
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.009, 0.011, 0.026); eg.add(hl);
-    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.037, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: C.base, roughness: 0.8 })); lid.scale.set(1, 1.08, 0.58); lid.rotation.x = -1.25; eg.add(lid); lids.push(lid);
-    const brow = new THREE.Mesh(taper([V(-0.035, -0.006, 0), V(0, 0.008, 0.006), V(0.035, -0.006, 0)], 0.008, 0.006, 10, 8), new THREE.MeshStandardMaterial({ color: C.back, roughness: 0.8 })); brow.position.set(0, 0.05, 0.004); eg.add(brow);
+    const eg = new THREE.Group(); eg.rotation.set(-0.05, s * 0.72, 0); at('head', eg, s * 0.106, 1.955, 0.675);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.029, 0.008, 10, 28), new THREE.MeshStandardMaterial({ color: C.back, roughness: 0.85 })); ring.scale.set(1, 1.04, 0.6); ring.position.z = 0.006; eg.add(ring);
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.029, 22, 16), new THREE.MeshStandardMaterial({ color: '#b07a2a', roughness: 0.12 })); iris.scale.set(1, 1.04, 0.42); iris.position.z = 0.008; eg.add(iris);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.019, 18, 12), new THREE.MeshStandardMaterial({ color: '#0e0603', roughness: 0.08 })); pu.scale.set(1, 1.04, 0.4); pu.position.z = 0.016; eg.add(pu);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.008, 0.009, 0.022); eg.add(hl);
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.034, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: C.base, roughness: 0.8 })); lid.scale.set(1, 1.04, 0.6); lid.rotation.x = -1.25; eg.add(lid); lids.push(lid);
   }
   // topete de plumas (o "charme" do bicho) e leque da cauda
   const crest = [];
@@ -620,7 +620,7 @@ export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
       fan.forEach((g, k) => { g.rotation.y += ((k - 8) / 8 * (0.8 + Math.sin(t * 1.3) * 0.05) - g.rotation.y) * 0.2; });
       crest.forEach((g, k) => { g.rotation.x = -2.75 + Math.abs(k - 3) / 3 * 0.2 - gait * 0.2 + Math.sin(t * 3 + k) * 0.04; });
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.14; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2 + Math.random() * 3; }
-      for (const l of lids) l.rotation.x = -1.6 + bl * 1.55; // olhos bem abertos (curiosos), piscam
+      for (const l of lids) l.rotation.x = -1.32 + bl * 1.27; // S-257: pálpebra de cima um pouco baixada (olhar calmo), pisca
     },
     get bodyY() { return body.position.y; },
   };
@@ -642,8 +642,12 @@ for (const s of [-1, 1]) Object.assign(HORSE_BONES, {
 function horseParts() {
   const P = [], C = (a, b, r0, r1, bone, k = 0.07) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.07) => P.push({ c, r, bone, k });
   // tronco: garupa redonda, barril, peito fundo e cernelha
-  E([0, 1.2, -0.58], [0.3, 0.29, 0.33], 'hips', 0.12);
-  C([0, 1.18, -0.5], [0, 1.15, 0.0], 0.3, 0.33, 'hips', 0.12);
+  E([0, 1.2, -0.56], [0.28, 0.29, 0.3], 'hips', 0.12);
+  // S-253: garupa de cavalo de verdade — topo da garupa arredondado caindo para a inserção da cauda e, por trás,
+  // as duas massas dos posteriores (nádegas) com um leve sulco no meio (silhueta em "pera", não uma bola)
+  E([0, 1.36, -0.52], [0.2, 0.1, 0.3], 'hips', 0.1);
+  for (const s of [-1, 1]) { E([s * 0.13, 1.12, -0.76], [0.14, 0.25, 0.15], 'hips', 0.08); E([s * 0.2, 1.24, -0.42], [0.09, 0.08, 0.1], 'hips', 0.06); } // nádegas · ponta do quadril
+  C([0, 1.18, -0.5], [0, 1.15, 0.0], 0.29, 0.33, 'hips', 0.12);
   C([0, 1.15, 0.0], [0, 1.18, 0.48], 0.33, 0.3, 'chest', 0.12);
   E([0, 1.05, 0.52], [0.25, 0.32, 0.24], 'chest', 0.1);          // peito
   E([0, 1.4, 0.48], [0.11, 0.1, 0.22], 'chest', 0.1);            // cernelha
@@ -669,19 +673,23 @@ function horseParts() {
     // dianteira: escápula, braço, antebraço, joelho, canela, boleto, quartela e casco
     E([s * 0.16, 1.24, 0.52], [0.09, 0.22, 0.15], 'up' + s, 0.08);
     C([s * 0.17, 1.1, 0.56], [s * 0.17, 0.86, 0.5], 0.13, 0.1, 'up' + s, 0.07);
-    C([s * 0.17, 0.86, 0.5], [s * 0.165, 0.5, 0.52], 0.085, 0.058, 'fo' + s, 0.05);
-    E([s * 0.165, 0.49, 0.52], [0.06, 0.06, 0.06], 'ca' + s, 0.03);       // joelho
-    C([s * 0.165, 0.48, 0.52], [s * 0.165, 0.17, 0.53], 0.045, 0.04, 'ca' + s, 0.03); // canela fina
-    E([s * 0.165, 0.15, 0.54], [0.052, 0.05, 0.058], 'pa' + s, 0.03);     // boleto
-    C([s * 0.165, 0.14, 0.55], [s * 0.165, 0.05, 0.6], 0.042, 0.05, 'pa' + s, 0.02);
+    C([s * 0.17, 0.86, 0.5], [s * 0.165, 0.5, 0.52], 0.092, 0.05, 'fo' + s, 0.05);
+    E([s * 0.168, 0.78, 0.49], [0.075, 0.1, 0.078], 'fo' + s, 0.04);     // S-253: antebraço musculoso em cima, afinando
+    E([s * 0.165, 0.49, 0.525], [0.058, 0.065, 0.066], 'ca' + s, 0.03);  // joelho (achatado na frente)
+    for (let i = 0; i <= 4; i++) { const u = i / 4; E([s * 0.165, 0.45 - u * 0.27, 0.526], [0.038, 0.06, 0.048], 'ca' + s, 0.02); } // canela chata dos lados, com tendão atrás
+    E([s * 0.165, 0.15, 0.535], [0.055, 0.055, 0.064], 'pa' + s, 0.03);     // boleto
+    C([s * 0.165, 0.14, 0.545], [s * 0.165, 0.075, 0.585], 0.04, 0.042, 'pa' + s, 0.02); // quartela inclinada
+    C([s * 0.165, 0.09, 0.586], [s * 0.165, 0.056, 0.6], 0.046, 0.057, 'pa' + s, 0.015); // casco que abre embaixo
     // traseira: coxa grande, soldra, gaskin, jarrete (ângulo marcado), canela, boleto e casco
     E([s * 0.18, 1.1, -0.55], [0.13, 0.27, 0.24], 'th' + s, 0.1);
     C([s * 0.19, 1.05, -0.5], [s * 0.18, 0.86, -0.36], 0.15, 0.11, 'th' + s, 0.08);
-    C([s * 0.18, 0.86, -0.36], [s * 0.168, 0.56, -0.66], 0.1, 0.06, 'sh' + s, 0.06);
-    E([s * 0.168, 0.56, -0.68], [0.05, 0.07, 0.07], 'mt' + s, 0.03);      // ponta do jarrete
-    C([s * 0.165, 0.55, -0.66], [s * 0.165, 0.17, -0.6], 0.047, 0.041, 'mt' + s, 0.03);
-    E([s * 0.165, 0.15, -0.59], [0.052, 0.05, 0.058], 'pb' + s, 0.03);
-    C([s * 0.165, 0.14, -0.58], [s * 0.165, 0.05, -0.53], 0.042, 0.05, 'pb' + s, 0.02);
+    C([s * 0.18, 0.86, -0.36], [s * 0.168, 0.56, -0.66], 0.108, 0.055, 'sh' + s, 0.06);
+    E([s * 0.175, 0.76, -0.47], [0.07, 0.11, 0.08], 'sh' + s, 0.05);     // S-253: gaskin (músculo da perna) marcado
+    E([s * 0.168, 0.57, -0.69], [0.048, 0.075, 0.065], 'mt' + s, 0.03);  // ponta do jarrete (ângulo marcado)
+    for (let i = 0; i <= 4; i++) { const u = i / 4; E([s * 0.165, 0.52 - u * 0.34, -0.655 + u * 0.06], [0.04, 0.065, 0.05], 'mt' + s, 0.02); } // canela traseira
+    E([s * 0.165, 0.15, -0.59], [0.055, 0.055, 0.064], 'pb' + s, 0.03);
+    C([s * 0.165, 0.14, -0.585], [s * 0.165, 0.075, -0.55], 0.04, 0.042, 'pb' + s, 0.02);
+    C([s * 0.165, 0.09, -0.548], [s * 0.165, 0.056, -0.535], 0.046, 0.057, 'pb' + s, 0.015);
   }
   E([0, 1.33, -0.86], [0.07, 0.07, 0.08], 'tail', 0.06); // raiz da cauda
   return P;
@@ -715,25 +723,76 @@ function hairStrands(paths, mat) {
   for (const { pts, r0, r1 } of paths) gs.push(taper(pts, r0, r1, 10, 5));
   const m = new THREE.Mesh(mergeGeometries(gs), mat); m.castShadow = true; return m;
 }
-// asa de penas (Pégaso): penas primárias longas, secundárias e coberteiras em camadas
+// S-253: pena de voo de verdade — lâmina fina e arqueada com ráquis, vexilo estreito do lado de fora e largo do lado de dentro,
+// ponta arredondada, barbas levemente separadas na borda; aponta para trás (-z), largura em x, dorso em +y
+const _flightGeo = new Map();
+function flightFeather(len, wid, side, c0, c1, kind = 'f') {
+  const key = [len.toFixed(2), wid.toFixed(3), side, c0, c1, kind].join('|'); if (_flightGeo.has(key)) return _flightGeo.get(key);
+  const NX = 8, NZ = 18, pos = [], col = [], idx = [], a = new THREE.Color(c0), b = new THREE.Color(c1), c = new THREE.Color();
+  const outer = kind === 'c' ? 0.5 : 0.36; // vexilo de fora mais estreito (coberteiras quase simétricas)
+  for (let j = 0; j <= NZ; j++) {
+    const t = j / NZ, prof = Math.pow(Math.sin(Math.min(1, t * 1.08) * Math.PI * 0.5 + 0.12), 0.7) * (1 - Math.pow(t, 7) * 0.85) * (t < 0.06 ? t / 0.06 * 0.6 + 0.4 : 1);
+    for (let i = 0; i <= NX; i++) {
+      const s = i / NX * 2 - 1, half = s * side > 0 ? outer : 1 - outer; let x = s * wid * half * prof;
+      const notch = Math.abs(s) > 0.7 ? Math.sin(t * 37 + side * 2) * 0.05 * wid * Math.abs(s) : 0; x += Math.sign(s) * notch; // barbas separadas na borda
+      const y = Math.cos(s * Math.PI * 0.5) * wid * 0.13 * prof - t * t * len * 0.05 + Math.sin(t * Math.PI) * len * 0.015; // arqueada (dorso convexo) e levemente caída na ponta
+      pos.push(x, y, -t * len);
+      c.copy(a).lerp(b, Math.pow(t, 1.6)); const rach = Math.abs(s) < 0.09 ? 0.86 : 1, barb = 0.95 + 0.05 * Math.sin((t * 60 + s * 3) * 1.0); c.multiplyScalar(rach * barb * (0.93 + 0.07 * Math.abs(s)));
+      col.push(c.r, c.g, c.b);
+    }
+  }
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const p = j * (NX + 1) + i, q = p + NX + 1; idx.push(p, q, p + 1, q, q + 1, p + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  _flightGeo.set(key, g); return g;
+}
+/* S-253: asa de penas (Pégaso) com ESQUELETO de asa de ave: úmero (ombro→cotovelo), antebraço (cotovelo→pulso) e mão
+   (pulso→ponta), cobertos de coberteiras em fileiras. Fechada, dobra em Z como numa ave de verdade (úmero para trás,
+   antebraço para a frente, mão para trás) e as penas giram para ficarem todas paralelas, deitadas no flanco.
+   Aberta, as primárias abrem em leque. pose(open, beat) é chamada a cada quadro. */
 function featherWing(side, C) {
   const g = new THREE.Group(), arm = new THREE.Group(), fore = new THREE.Group(), hand = new THREE.Group(); g.add(arm); arm.add(fore); fore.add(hand);
-  fore.position.set(side * 0.55, 0, -0.05); hand.position.set(side * 0.55, 0, 0.05);
-  const FM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, side: THREE.DoubleSide });
-  const fg = (len, wid, c0, c1) => { const geo = featherGeo(len, wid, c0, c1); geo.rotateY(Math.PI); return geo; }; // pena apontando para trás (-z)
-  const lay = (parent, n, x0, x1, len0, len1, wid, c0, c1, y, fan, droop) => { for (let k = 0; k < n; k++) { const u = n > 1 ? k / (n - 1) : 0, f = new THREE.Mesh(fg(len0 + (len1 - len0) * u, wid, c0, c1), FM); f.position.set(side * (x0 + (x1 - x0) * u), y, 0); f.rotation.set(droop, side * (fan * u), 0); f.castShadow = true; parent.add(f); } };
-  // osso/couro da borda da asa
-  const boneM = new THREE.MeshStandardMaterial({ color: C.coat, roughness: 0.6 });
-  arm.add(new THREE.Mesh(taper([V(0, 0, 0), V(side * 0.3, 0.02, -0.02), V(side * 0.56, 0, -0.05)], 0.07, 0.05, 8, 10), boneM));
-  fore.add(new THREE.Mesh(taper([V(0, 0, 0), V(side * 0.3, 0.01, 0.03), V(side * 0.56, 0, 0.05)], 0.05, 0.035, 8, 10), boneM));
-  hand.add(new THREE.Mesh(taper([V(0, 0, 0), V(side * 0.25, 0, 0.0), V(side * 0.42, 0, -0.04)], 0.035, 0.015, 8, 8), boneM));
-  lay(arm, 7, 0.05, 0.55, 0.32, 0.5, 0.07, C.wing, C.tip, -0.01, 0.0, 0.05);   // terciárias
-  lay(fore, 9, 0.0, 0.55, 0.62, 0.72, 0.08, C.wing, C.tip, -0.01, -0.15, 0.02); // secundárias
-  lay(hand, 10, 0.0, 0.42, 0.95, 0.75, 0.085, C.wing, C.tip, -0.01, -0.9, 0.0); // primárias (abrem em leque)
-  lay(arm, 10, 0.05, 0.55, 0.18, 0.24, 0.06, C.coat, C.wing, 0.015, 0.0, 0.0);  // coberteiras (sobrepostas)
-  lay(fore, 12, 0.0, 0.55, 0.22, 0.26, 0.06, C.coat, C.wing, 0.015, -0.1, 0.0);
-  lay(hand, 8, 0.0, 0.4, 0.2, 0.16, 0.05, C.coat, C.wing, 0.015, -0.6, 0.0);
-  return { g, arm, fore, hand };
+  const LA = 0.34, LF = 0.46, LH = 0.36;
+  fore.position.set(side * LA, 0.022, 0); hand.position.set(side * LF, -0.034, 0);
+  const FM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, side: THREE.DoubleSide });
+  const boneM = new THREE.MeshStandardMaterial({ color: new THREE.Color(C.wing).lerp(new THREE.Color(C.coat), 0.35), roughness: 0.75 });
+  // ossos cobertos (borda de ataque arredondada), com o pulso marcado
+  arm.add(new THREE.Mesh(taper([V(0, 0, 0.0), V(side * LA * 0.5, 0.012, 0.02), V(side * LA, 0, 0.01)], 0.062, 0.042, 10, 12), boneM));
+  fore.add(new THREE.Mesh(taper([V(0, 0, 0.0), V(side * LF * 0.5, 0.008, 0.028), V(side * LF, 0, 0.012)], 0.04, 0.03, 10, 12), boneM));
+  hand.add(new THREE.Mesh(taper([V(0, 0, 0), V(side * LH * 0.55, 0, 0.012), V(side * LH, 0, -0.01)], 0.03, 0.012, 10, 10), boneM));
+  { const wr = new THREE.Mesh(new THREE.SphereGeometry(0.036, 14, 10), boneM); wr.scale.set(1.2, 0.8, 1.1); wr.position.set(side * LF, -0.01, 0.012); fore.add(wr); } // "joelho" do pulso
+  { const el = new THREE.Mesh(new THREE.SphereGeometry(0.048, 14, 10), boneM); el.scale.set(1.1, 0.8, 1.1); el.position.set(side * LA, 0.006, 0.0); arm.add(el); }
+  const feathers = []; // { piv, bone: 'arm'|'fore'|'hand', fold: Φ fechada, open: Φ aberta }
+  // Φ = ângulo da pena no plano da asa (0 = para trás; -side = para fora)
+  const add = (parent, bone, n, x0, x1, len0, len1, wid, c0, c1, y, z, openPhi, foldPhi, kind = 'f', droop = 0.02) => {
+    for (let k = 0; k < n; k++) { const u = n > 1 ? k / (n - 1) : 0, piv = new THREE.Group(); piv.position.set(side * (x0 + (x1 - x0) * u), y + (kind === 'c' ? 0 : -k * 0.0016), z);
+      const L = typeof len0 === 'function' ? len0(u) : len0 + (len1 - len0) * u, f = new THREE.Mesh(flightFeather(L, wid * (kind === 'c' ? 1 : 0.92 + 0.08 * Math.sin(u * 3)), side, c0, c1, kind), FM); f.rotation.x = droop; f.castShadow = true; piv.add(f); parent.add(piv);
+      feathers.push({ piv, bone, open: openPhi(u), fold: foldPhi(u) }); }
+  };
+  const S = side;
+  // primárias (mão): as mais longas perto da ponta; abertas, em leque para fora; fechadas, empilhadas e paralelas
+  add(hand, 'hand', 10, 0.02, LH * 0.96, u => 0.56 + Math.sin(Math.min(1, u * 1.12) * Math.PI * 0.5) * 0.36 - (u > 0.9 ? 0.06 : 0), 0, 0.105, C.wing, C.tip, -0.012, -0.01, u => -S * (0.12 + u * 0.95), u => -S * (0.015 + u * 0.03));
+  // secundárias (antebraço) e terciárias (úmero, mais curtas e largas, por cima)
+  add(fore, 'fore', 11, 0.02, LF - 0.01, 0.6, 0.6, 0.11, C.wing, C.tip, 0.004, -0.008, u => -S * (0.04 * u), u => S * 0.02 * (1 - u));
+  add(arm, 'arm', 6, 0.04, LA - 0.02, 0.46, 0.56, 0.12, C.wing, C.tip, 0.03, -0.004, u => S * (0.14 - u * 0.1), u => S * (0.06 - u * 0.04));
+  // coberteiras: maiores (sobre a base das secundárias/primárias), médias e pequenas (borda de ataque), em fileiras sobrepostas
+  const cov0 = new THREE.Color(C.wing).lerp(new THREE.Color(C.coat), 0.25).getStyle(), cov1 = C.wing;
+  add(hand, 'hand', 8, 0.02, LH * 0.8, 0.28, 0.2, 0.085, cov0, cov1, 0.02, 0.0, u => -S * (0.1 + u * 0.7), u => -S * 0.02, 'c');
+  add(fore, 'fore', 12, 0.0, LF, 0.3, 0.3, 0.085, cov0, cov1, 0.034, 0.004, u => -S * 0.03 * u, u => S * 0.02, 'c');
+  add(arm, 'arm', 7, 0.02, LA, 0.26, 0.3, 0.09, cov0, cov1, 0.05, 0.004, u => S * 0.08, u => S * 0.04, 'c');
+  add(fore, 'fore', 14, 0.0, LF, 0.16, 0.14, 0.06, cov0, cov1, 0.05, 0.02, u => -S * 0.05 * u, u => S * 0.02, 'c', 0.06);
+  add(arm, 'arm', 9, 0.0, LA, 0.15, 0.17, 0.065, cov0, cov1, 0.066, 0.022, u => S * 0.05, u => S * 0.03, 'c', 0.06);
+  add(hand, 'hand', 7, 0.0, LH * 0.7, 0.11, 0.08, 0.05, cov0, cov1, 0.038, 0.018, u => -S * (0.1 + u * 0.5), u => -S * 0.02, 'c', 0.06);
+  // ângulos dos ossos no plano da asa (fechada: Z dobrado; aberta: estendida com leve varredura para trás)
+  const BONES = { fold: { arm: 1.45, fore: -2.85, hand: 2.8 }, open: { arm: 0.22, fore: -0.3, hand: 0.26 } };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  function pose(o, beat = 0) {
+    const ea = o * o * (3 - 2 * o), sa = lerp(BONES.fold.arm, BONES.open.arm, ea), sf = lerp(BONES.fold.fore, BONES.open.fore, ea), sh = lerp(BONES.fold.hand, BONES.open.hand, Math.min(1, ea * 1.15)) + beat * 0.12 * o;
+    arm.rotation.y = S * sa; fore.rotation.y = S * sf; hand.rotation.y = S * sh;
+    const tot = { arm: S * sa, fore: S * (sa + sf), hand: S * (sa + sf + sh) };
+    for (const f of feathers) f.piv.rotation.y = lerp(f.fold, f.open, ea) - tot[f.bone];
+  }
+  pose(0);
+  return { g, arm, fore, hand, pose };
 }
 export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   const obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
@@ -774,8 +833,11 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   // cauda: dezenas de fios longos que caem e balançam (um grupo por segmento)
   const tailSegs = []; let tp = new THREE.Group(); at('tail', tp, 0, 1.33, -0.9);
   const tailRoot = tp;
-  for (let k = 0; k < 4; k++) { const g = new THREE.Group(); g.position.set(0, k ? -0.14 : 0, k ? -0.07 : 0); tp.add(g); tailSegs.push(g); tp = g;
-    const ps = []; for (let i = 0; i < 16; i++) { const ox = (rnd() - 0.5) * 0.09, oz = (rnd() - 0.5) * 0.05, L = 0.26 + rnd() * 0.12 + (k === 3 ? 0.25 : 0); ps.push({ pts: [V(ox * 0.5, 0, oz * 0.5), V(ox, -L * 0.5, -0.05 + oz), V(ox * 1.3, -L, -0.04 + oz)], r0: 0.02, r1: 0.004 }); }
+  // S-253: cauda longa e cheia, em 7 elos que ondulam com atraso (fios finos, que abrem um pouco embaixo e terminam em ponta)
+  const TL = opts.wings ? 1.06 : 1;
+  for (let k = 0; k < 7; k++) { const g = new THREE.Group(); g.position.set(0, k ? -0.11 * TL : 0, k ? -0.035 : 0); tp.add(g); tailSegs.push(g); tp = g;
+    const ps = [], n = k < 2 ? 20 : 14, spread = 0.05 + k * 0.012; for (let i = 0; i < n; i++) { const ox = (rnd() - 0.5) * spread * 2, oz = (rnd() - 0.5) * spread, L = (0.16 + rnd() * 0.08 + (k === 6 ? 0.22 + rnd() * 0.12 : 0)) * TL, cw = (rnd() - 0.5) * 0.03;
+      ps.push({ pts: [V(ox * 0.4, 0.02, oz * 0.4 + 0.01), V(ox * 0.8 + cw, -L * 0.45, -0.02 + oz), V(ox * 1.05 + cw * 1.5, -L * 0.8, -0.025 + oz * 1.1), V(ox * 1.1 + cw * 2, -L, -0.015 + oz * 1.1)], r0: k < 2 ? 0.017 : 0.013, r1: 0.0025 }); }
     g.add(hairStrands(ps, MANE)); }
   // sela de couro com arção, manta com borda, cilha, estribos e rédeas
   const LEATHER = new THREE.MeshStandardMaterial({ color: '#5a3820', roughness: 0.5 }), METAL = new THREE.MeshStandardMaterial({ color: '#c9b07a', roughness: 0.3, metalness: 0.7 });
@@ -811,7 +873,10 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   let wings = null;
   if (opts.wings) {
     const WC = { coat: D.coat || D.wool, wing: D.wing || '#f4f2ee', tip: D.tip || '#c9ccd6' };
-    wings = [-1, 1].map(s => { const w = featherWing(s, WC); w.g.scale.setScalar(1.3); w.g.position.set(s * 0.2, 1.42, 0.5); bones.chest.add(w.g); w.g.position.sub(new THREE.Vector3(...HORSE_BONES.chest[1])); return { ...w, s }; });
+    wings = [-1, 1].map(s => { const w = featherWing(s, WC); w.g.scale.setScalar(1.3); w.g.position.set(s * 0.21, 1.43, 0.5); bones.chest.add(w.g); w.g.position.sub(new THREE.Vector3(...HORSE_BONES.chest[1])); return { ...w, s }; });
+    // S-253: escapulares — penas do dorso que cobrem a raiz da asa (a asa "nasce" do corpo, sem emenda à mostra)
+    const SM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65, side: THREE.DoubleSide }), sc0 = new THREE.Color(WC.coat).getStyle();
+    for (const s of [-1, 1]) for (let k = 0; k < 9; k++) { const u = k / 8, f = new THREE.Mesh(flightFeather(0.2 + u * 0.12, 0.075, s, sc0, WC.wing, 'c'), SM); const piv = new THREE.Group(); piv.position.set(s * (0.1 + Math.sin(u * Math.PI) * 0.05), 1.5 - u * 0.03, 0.62 - u * 0.2); piv.rotation.set(-0.1, s * 0.12, -s * (0.55 + u * 0.15)); piv.add(f); at('chest', piv, piv.position.x, piv.position.y, piv.position.z); }
   }
   rig.mesh.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   saddle.visible = opts.saddle !== false; bridle.visible = opts.saddle !== false;
@@ -843,16 +908,19 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
       R('head').x = -Math.sin(ph * 2) * 0.05 * gait + (1 - gait) * Math.sin(t * 0.9 + 1) * 0.04;
       R('chest').x = Math.sin(ph * 2) * 0.03 * run * gait; R('hips').x = -Math.sin(ph * 2) * 0.025 * run * gait;
       mane.rotation.z = Math.sin(t * 3) * 0.04 * (0.3 + gait);
-      tailSegs.forEach((g, k) => { g.rotation.x = (k === 0 ? 0.35 : 0.12) + gait * (0.25 + run * 0.3) * (k === 0 ? 1 : 0.4) + air * 0.4; g.rotation.y = Math.sin(t * (1.4 + s * 3) - k * 0.5) * (0.06 + k * 0.05) - m.turn * 0.05 * k; });
+      tailSegs.forEach((g, k) => { // S-253: onda que desce pela cauda (cada elo atrasa um pouco), mais solta no galope e no voo
+        const wv = t * (1.3 + s * 2.6) - k * 0.62; g.rotation.x = (k === 0 ? 0.42 : 0.06) + gait * (0.2 + run * 0.28) * (k === 0 ? 1 : 0.22) + air * (k === 0 ? 0.5 : 0.08) + Math.sin(wv * 0.7) * 0.03 * k / 6;
+        g.rotation.y = Math.sin(wv) * (0.03 + k * 0.035) * (1 + gait * 0.5) - m.turn * 0.04 * k; g.rotation.z = Math.sin(wv * 0.5 + 1) * 0.02 * k / 6; });
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.16; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.5 + Math.random() * 4; }
       for (const l of lids) l.rotation.x = -1.75 + bl * 1.5;
       for (const e of ears) { const b0 = e.userData.base, sd2 = e.userData.s, fl2 = Math.max(0, Math.sin(t * 1.7 + sd2 * 2.1) - 0.93) * 9, swv = Math.sin(t * 0.37 + sd2) * 0.35 * (1 - gait); // orelhas: viram para os lados, tremem de vez em quando e deitam um pouco no galope
         e.rotation.set(b0.x + run * 0.45 - fl2 * 0.15, b0.y + sd2 * (swv + look * 0.6), b0.z + fl2 * sd2 * 0.12); }
       if (wings) { // asas dobradas junto ao corpo; abertas no ar / no salto e de vez em quando se esticam e batem
         const ft = t - flapT, open = Math.max(air, ft > 0 && ft < 3.2 ? Math.sin(Math.min(1, ft / 3.2) * Math.PI) : 0), beat = Math.sin(t * 7) * open;
-        for (const w of wings) {
-          const s2 = w.s; w.g.rotation.set(0.15 - open * 0.25, s2 * (1.25 - open * 1.1), s2 * (-0.25 + open * (0.75 + beat * 0.45)));
-          w.fore.rotation.y = s2 * (-2.3 + open * 2.1); w.hand.rotation.y = s2 * (2.6 - open * 2.4); w.fore.rotation.z = s2 * beat * 0.25;
+        for (const w of wings) { // S-253: fechada, deitada no flanco (plano inclinado ~45°, dorso para fora); aberta, sobe e bate
+          const s2 = w.s, rest = Math.sin(t * 0.8 + s2) * 0.015 * (1 - open); w.g.rotation.order = 'YXZ';
+          w.g.rotation.set(-0.06 + open * 0.12 - gait * 0.03 * (1 - open), s2 * open * 0.08, s2 * (-0.78 + rest + open * (0.95 + beat * 0.55)));
+          w.pose(open, beat); w.hand.rotation.z = -s2 * beat * 0.22 * open; w.fore.rotation.z = -s2 * beat * 0.1 * open;
         }
       }
       if (light) light.intensity = 0.7 + Math.sin(t * 3) * 0.12;

@@ -674,7 +674,10 @@ function grassChunk(ci, cj) {
     const bw = biome(x, z), wD = bw.dunas * coastBelt(x, z), wG = bw.geada, wC = bw.colossos;
     q.setFromAxisAngle(up, rng() * 6.28);
     // densidade de planta pela mistura de regiões: deserto quase nada, neve pouco, planície dos colossos capim alto (transição gradual)
-    const dens = 1 - wD * 0.985 - wG * 0.8 - wC * 0.72; // S-161: Ruínas dos Colossos = terra arrasada, pouca grama
+    // S-249: na areia, nada de tufos espalhados por todo canto — só em poucas manchas (baixadas onde a água empoça), em touceiras
+    const sandy = smooth(0.08, 0.45, wD);
+    if (sandy > 0) { const patch = vnoise(x * 0.04 + 31.7, z * 0.04 - 12.3), inPatch = patch > 0.86 && rng() < 0.3; if (!inPatch && rng() < sandy * 0.995 + 0.005) { if (wD > 0.5 && rng() < 0.012) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } }
+    const dens = 1 - wD * 0.45 - wG * 0.8 - wC * 0.72; // S-161: Ruínas dos Colossos = terra arrasada, pouca grama
     if (wG > 0.15) { const patch = vnoise(x * 0.07, z * 0.07), cover = smooth(0.12, 0.55, wG); if (patch > 0.6 - cover * 0.45 - 0.04 || rng() < cover * 0.55) continue; } // S-227: na neve, só tufinhos onde o chão aparece (as manchas sem neve), nunca no meio da neve
     if (rng() > dens) { if ((wD > 0.5 && rng() < 0.02) || (wC > 0.4 && rng() < 0.05)) { sc.set(0.4 + rng() * 1.6, 0.3 + rng() * 0.7, 0.4 + rng() * 1.4); m.compose(v.set(x, y + 0.02, z), q, sc); rub.push(m.clone()); } continue; } // escombros e lascas de pedra pelo chão
     if (ruins > 0.55) {

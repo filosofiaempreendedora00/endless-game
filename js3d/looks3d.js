@@ -255,10 +255,10 @@ const EXTRAS = {
 // tamanho real de cada peça emprestada no corpo realista (maior medida, em metros)
 // S-128/S-130: encaixe das peças KayKit (feitas para o boneco cabeçudo) no corpo realista.
 // y = altura da base da peça acima do osso da cabeça; k = tamanho extra.
-const HEAD_FIT = { Knight_Helmet: { y: -0.075, z: 0.018 }, Mage_Hat: { y: 0.13, z: -0.01 }, Barbarian_Hat: { y: 0.08, z: -0.015 } };
+const HEAD_FIT = { Knight_Helmet: { y: -0.075, z: 0.018 }, Mage_Hat: { y: 0.13, z: -0.01 }, Barbarian_Hat: { y: 0.025, z: -0.027 } }; // S-263: o gorro de urso desce e abraça a cabeça (antes ficava empoleirado no topo)
 // tamanho real (maior medida, em metros) e "afinamento" das armas: as do KayKit são largas e grossas demais para mãos de verdade
 const ITEM_LEN = { '1H_Sword': 0.88, '2H_Sword': 1.3, '1H_Axe': 0.68, '2H_Axe': 1.15, '1H_Axe_Offhand': 0.68, Knife: 0.34, Knife_Offhand: 0.34, '2H_Staff': 1.48, '1H_Wand': 0.42, '1H_Crossbow': 0.6, '2H_Crossbow': 0.85, Spellbook: 0.26, Spellbook_open: 0.36, Mug: 0.16, Throwable: 0.2,
-  Round_Shield: 0.56, Rectangle_Shield: 0.62, Badge_Shield: 0.6, Spike_Shield: 0.58, Barbarian_Round_Shield: 0.58, '1H_Sword_Offhand': 0.88, Knight_Helmet: 0.315, Mage_Hat: 0.38, Barbarian_Hat: 0.31 };
+  Round_Shield: 0.56, Rectangle_Shield: 0.62, Badge_Shield: 0.6, Spike_Shield: 0.58, Barbarian_Round_Shield: 0.58, '1H_Sword_Offhand': 0.88, Knight_Helmet: 0.315, Mage_Hat: 0.38, Barbarian_Hat: 0.378 };
 const ITEM_THIN = { '1H_Sword': 0.5, '2H_Sword': 0.55, '1H_Sword_Offhand': 0.5, Knife: 0.65, Knife_Offhand: 0.65, '1H_Axe': 0.72, '2H_Axe': 0.72, '1H_Axe_Offhand': 0.72, '1H_Wand': 0.7 };
 const _v = () => new THREE.Vector3();
 const CROSSBOW_FLIP = 1; // (testado) qual ponta da besta vai para a frente
@@ -306,13 +306,14 @@ export function humanBorrow(root, MODELS, model, itemName, extraScale = 1) {
   const k = (ITEM_LEN[itemName] || 0.6) / len * extraScale;
   holder.add(c);
   const ws = new THREE.Vector3(); b.getWorldScale(ws);
-  holder.scale.setScalar(k / ws.x);
+  const headK = isHead ? (b.scale.x || 1) : 1; // S-263: cabeça maior (anão) = chapéu/elmo maior junto
+  holder.scale.setScalar(k * headK / ws.x);
   const thin = ITEM_THIN[itemName]; if (thin) { const ax = size.x === len ? 'x' : size.y === len ? 'y' : 'z'; for (const a of ['x', 'y', 'z']) if (a !== ax) c.scale[a] *= thin; } // lâmina mais fina e estreita
   if (isHead) { // chapéu/elmo: em pé sobre a cabeça
     // (o eixo "y" do osso da cabeça não é o "para cima" do corpo: a altura é medida no espaço do personagem)
     humanIdlePose(root);
     const fit = HEAD_FIT[itemName] || { y: 0.16 }, hp = rootPos(root, b);
-    fitToBone(root, b, holder, new THREE.Quaternion(), hp.add(new THREE.Vector3(0, fit.y, fit.z ?? 0)));
+    fitToBone(root, b, holder, new THREE.Quaternion(), hp.add(new THREE.Vector3(0, fit.y * headK, (fit.z ?? 0) * headK)));
     const ctr = box.getCenter(new THREE.Vector3()); c.position.set(-ctr.x, -box.min.y, -ctr.z);
     hairUnderHat(root);
   } else if (isShield) { // escudo preso no antebraço, de face para fora e um pouco para a frente (como se segura de verdade)

@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 import { makePegasus } from './mounts3d.js';
+import { realFlame } from './castle3d.js';
 const vlightAt = (c, i, d, x, y, z) => { const L = vlight(c, i, d); L.position.set(x, y, z); return L; }; // luz virtual já posicionada
 
 const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
@@ -208,40 +209,126 @@ function brazier() {
 }
 /* ---------- Cacto (saguaro) com gomos ---------- */
 export function cactusGeometry(seed) {
-  const rng = rngOf(seed), parts = [];
-  const trunk = (pts, r) => { const curve = new THREE.CatmullRomCurve3(pts), tg = new THREE.TubeGeometry(curve, 16, 1, 16, false), P = tg.attributes.position, N = tg.attributes.normal;
-    for (let i = 0; i <= 16; i++) { const u = i / 16, c = curve.getPointAt(u), rr = r * (1 - u * 0.15) * (u > 0.92 ? Math.sqrt(Math.max(0.05, (1 - u) / 0.08)) : 1); for (let j = 0; j <= 16; j++) { const k = i * 17 + j, rib = 1 + Math.cos(j / 16 * Math.PI * 2 * 8) * 0.06; P.setXYZ(k, c.x + N.getX(k) * rr * rib, c.y + N.getY(k) * rr * rib, c.z + N.getZ(k) * rr * rib); } }
-    tg.computeVertexNormals(); return tg; };
+  // S-252: gomos fundos de verdade (12 costelas com sulco vincado), cor que varia (sulco escuro, crista clara, pé lenhoso amarelado,
+  // cicatrizes) e espinhos claros em tufos ao longo das cristas
+  const rng = rngOf(seed), parts = [], RIBS = 12, RS = 48, tint = (rng() - 0.5) * 0.05;
+  const cG = new THREE.Color('#3b6a30'), cR = new THREE.Color('#6d9a4c'), cDeep = new THREE.Color('#22401d'), cWood = new THREE.Color('#9a8a5a'), cScar = new THREE.Color('#7d6a46'), cSpine = new THREE.Color('#efe6c8'), tc = new THREE.Color();
+  const trunk = (pts, r, base) => { const curve = new THREE.CatmullRomCurve3(pts), L = curve.getLength(), SEG = Math.max(16, Math.round(L * 7)), tg = new THREE.TubeGeometry(curve, SEG, 1, RS, false), P = tg.attributes.position, N = tg.attributes.normal, col = new Float32Array(P.count * 3);
+    for (let i = 0; i <= SEG; i++) { const u = i / SEG, c = curve.getPointAt(u), rr = r * (1 - u * 0.12) * (u > 0.9 ? Math.sqrt(Math.max(0.04, (1 - u) / 0.1)) : 1);
+      for (let j = 0; j <= RS; j++) { const k = i * (RS + 1) + j, th = j / RS * Math.PI * 2, cr = Math.abs(Math.cos(th * RIBS / 2)), rib = 0.86 + 0.14 * Math.pow(cr, 0.6);
+        P.setXYZ(k, c.x + N.getX(k) * rr * rib, c.y + N.getY(k) * rr * rib, c.z + N.getZ(k) * rr * rib);
+        const y = c.y, nz = Math.sin(y * 7.3 + th * 3.1 + seed) * 0.5 + Math.sin(y * 23 + th * 11) * 0.25;
+        tc.copy(cDeep).lerp(cG, Math.pow(cr, 0.8)).lerp(cR, Math.pow(cr, 6) * 0.55).offsetHSL(tint, 0, nz * 0.03 + (u > 0.85 ? 0.04 : 0));
+        if (base) tc.lerp(cWood, Math.max(0, 1 - (y + 0.4) / 0.9) * 0.75); // pé lenhoso, desbotado pelo sol
+        if (Math.sin(y * 3.7 + th * 2 + seed) * Math.sin(y * 1.3 - th + seed * 2) > 0.82) tc.lerp(cScar, 0.55); // cicatrizes secas
+        col[k * 3] = tc.r; col[k * 3 + 1] = tc.g; col[k * 3 + 2] = tc.b; }
+      if (i > 0 && i < SEG - 1 && i % 2 === 0) for (let rb = 0; rb < RIBS; rb++) { // tufo de espinhos na crista (3 agulhas finas)
+        const th = rb / RIBS * Math.PI * 2 + (i % 4 ? Math.PI / RIBS * 0 : 0), j = Math.round(th / (Math.PI * 2) * RS) % RS, k = i * (RS + 1) + j, o = new THREE.Vector3(P.getX(k), P.getY(k), P.getZ(k)), n = new THREE.Vector3(N.getX(k), N.getY(k), N.getZ(k)).normalize();
+        const tgt = curve.getTangentAt(u), sd = new THREE.Vector3().crossVectors(n, tgt).normalize(), sl = 0.05 + rng() * 0.04;
+        for (let s = 0; s < 3; s++) { const dir = n.clone().multiplyScalar(1).addScaledVector(sd, (s - 1) * 0.7).addScaledVector(tgt, (rng() - 0.3) * 0.6).normalize(), tip = o.clone().addScaledVector(dir, sl), w = sd.clone().multiplyScalar(0.006);
+          const A = [o.x - w.x, o.y - w.y, o.z - w.z], B = [o.x + w.x, o.y + w.y, o.z + w.z], T = [tip.x, tip.y, tip.z], cs = [cSpine.r, cSpine.g, cSpine.b], ct = [0.9, 0.85, 0.7];
+          const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute([...A, ...B, ...T, ...B, ...A, ...T], 3)); sg.setAttribute('color', new THREE.Float32BufferAttribute([...cs, ...cs, ...ct, ...cs, ...cs, ...ct], 3)); sg.computeVertexNormals(); spines.push(sg); } } // agulha vista dos dois lados
+    }
+    tg.setAttribute('color', new THREE.BufferAttribute(col, 3)); tg.computeVertexNormals(); return tg; };
+  const spines = [];
   const H = 2.6 + rng() * 1.8;
-  parts.push(trunk([V3(0, -0.4, 0), V3(0, H * 0.5, 0), V3(0.05, H, 0)], 0.28));
+  parts.push(trunk([V3(0, -0.4, 0), V3(0, H * 0.5, 0), V3(0.05, H, 0)], 0.28, true));
   const arms = 1 + Math.floor(rng() * 2);
   for (let k = 0; k < arms; k++) { const s = k ? -1 : 1, y0 = H * (0.35 + rng() * 0.2), a = rng() * 0.6; parts.push(trunk([V3(0, y0, 0), V3(s * 0.55 * Math.cos(a), y0 + 0.1, 0.55 * Math.sin(a)), V3(s * 0.7 * Math.cos(a), y0 + 0.6, 0.7 * Math.sin(a)), V3(s * 0.72 * Math.cos(a), y0 + 1.2 + rng() * 0.5, 0.72 * Math.sin(a))], 0.17)); }
-  const g = mergeGeometries(parts.map(p => { const x = p.toNonIndexed(); x.deleteAttribute('uv'); return x; }));
-  const P = g.attributes.position, col = new Float32Array(P.count * 3), c = new THREE.Color(), a = new THREE.Color('#3f6b32'), b = new THREE.Color('#5f8a44');
-  for (let i = 0; i < P.count; i++) { c.copy(a).lerp(b, Math.sin(P.getY(i) * 3 + P.getX(i) * 7) * 0.5 + 0.5); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const g = mergeGeometries([...parts.map(p => { const x = p.toNonIndexed(); x.deleteAttribute('uv'); return x; }), ...spines]);
   return { geo: g, radius: 0.35, height: H };
 }
 /* ---------- Fogueira de acampamento ---------- */
+const _fireTex = {};
 export function makeCampfire() {
+  // S-254: fogueira de verdade — anel de pedras talhadas e chamuscadas, leito de cinzas com brasas, lenha com casca e pontas
+  // carbonizadas em brasa, armada em pirâmide, fogo vivo em camadas com fagulhas, fumaça subindo e luz tremulando
   const g = new THREE.Group(), rng = rngOf(21);
-  const logM = new THREE.MeshStandardMaterial({ color: '#5a3d24', roughness: 0.9 });
-  for (let k = 0; k < 4; k++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.1, 12), logM); l.rotation.set(Math.PI / 2 - 0.35, k * Math.PI / 2, 0); l.position.set(Math.cos(k * Math.PI / 2) * 0.25, 0.2, Math.sin(k * Math.PI / 2) * 0.25); g.add(l); }
-  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, s = new THREE.Mesh(rock(rng, 0.16, 0.12, 0.14, 0.15), new THREE.MeshStandardMaterial({ color: '#8a857c', roughness: 1 })); s.position.set(Math.cos(a) * 0.62, 0.08, Math.sin(a) * 0.62); g.add(s); }
-  const fl = [0, 1, 2].map(k => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.22 - k * 0.05, 0.8 - k * 0.15, 14), new THREE.MeshBasicMaterial({ color: ['#ff8a2a', '#ffb347', '#ffe08a'][k], transparent: true, opacity: 0.85 })); f.position.y = 0.45; g.add(f); return f; });
-  g.add(vlightAt('#ff9a40', 2.4, 12, 0, 0.8, 0));
-  g.userData.update = t => fl.forEach((f, k) => { f.scale.set(1 + Math.sin(t * 10 + k) * 0.1, 1 + Math.sin(t * 13 + k * 2) * 0.2, 1); f.rotation.y = t * (k + 1); });
+  const cv = (W, H, draw) => { const c = document.createElement('canvas'); c.width = W; c.height = H; draw(c.getContext('2d'), W, H); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  const barkT = _fireTex.bark || (_fireTex.bark = cv(128, 256, (x, W, H) => { x.fillStyle = '#4a3422'; x.fillRect(0, 0, W, H); for (let k = 0; k < 70; k++) { const px = Math.random() * W; x.strokeStyle = `rgba(${Math.random() < 0.5 ? '20,12,6' : '110,86,60'},${0.3 + Math.random() * 0.4})`; x.lineWidth = 1 + Math.random() * 3; x.beginPath(); x.moveTo(px, 0); for (let y = 0; y <= H; y += 16) x.lineTo(px + Math.sin(y * 0.05 + k) * 3, y); x.stroke(); } for (let k = 0; k < 40; k++) { x.fillStyle = 'rgba(15,10,5,0.5)'; x.fillRect(Math.random() * W, Math.random() * H, 2 + Math.random() * 8, 1 + Math.random() * 2); } }));
+  const ashT = _fireTex.ash || (_fireTex.ash = cv(256, 256, (x, W, H) => { const gr = x.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, W / 2); gr.addColorStop(0, '#1c1a18'); gr.addColorStop(0.55, '#3a3632'); gr.addColorStop(0.85, '#6a645c'); gr.addColorStop(1, 'rgba(110,104,94,0)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); for (let k = 0; k < 2500; k++) { const a = Math.random() * 6.28, d = Math.random() * W * 0.45; x.fillStyle = `rgba(${Math.random() < 0.5 ? '200,196,186' : '20,18,16'},${Math.random() * 0.35})`; x.fillRect(W / 2 + Math.cos(a) * d, H / 2 + Math.sin(a) * d, 1 + Math.random() * 2, 1 + Math.random() * 2); } }));
+  const barkM = new THREE.MeshStandardMaterial({ map: barkT, bumpMap: barkT, bumpScale: 2, roughness: 0.95 }), charM = new THREE.MeshStandardMaterial({ color: '#141210', roughness: 1, emissive: '#ff4a0a', emissiveIntensity: 0.0 }); // carvão: preto fosco, só uma brasa fraca
+  const coalM = new THREE.MeshStandardMaterial({ color: '#2a1208', roughness: 0.9, emissive: '#ff5a12', emissiveIntensity: 1.2 }), endM = new THREE.MeshStandardMaterial({ color: '#c8a27a', roughness: 0.9 });
+  // leito de cinzas
+  const ash = new THREE.Mesh(new THREE.CircleGeometry(0.72, 32), new THREE.MeshStandardMaterial({ map: ashT, transparent: true, roughness: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })); ash.rotation.x = -Math.PI / 2; ash.position.y = 0.015; g.add(ash);
+  // anel de pedras talhadas, irregulares, com fuligem por dentro
+  for (let k = 0; k < 11; k++) { const a = k / 11 * Math.PI * 2 + (rng() - 0.5) * 0.15, sz = 0.13 + rng() * 0.07, geo = chunk(rng, sz * (1.1 + rng() * 0.4), sz * (0.7 + rng() * 0.3), sz * (0.9 + rng() * 0.3), 9);
+    const P = geo.attributes.position, col = new Float32Array(P.count * 3), base = new THREE.Color().setHSL(0.08 + rng() * 0.04, 0.04 + rng() * 0.05, 0.2 + rng() * 0.08), soot = new THREE.Color('#1e1b18'), c = new THREE.Color();
+    for (let i = 0; i < P.count; i++) { const lx = P.getX(i) * Math.cos(-a) - P.getZ(i) * Math.sin(-a); c.copy(base).lerp(soot, Math.max(0, Math.min(1, (-lx / sz) * 0.8 + 0.1)) * 0.75); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; } // lado de dentro (virado para o fogo) enegrecido
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const s = new THREE.Mesh(geo, stoneMat); s.position.set(Math.cos(a) * (0.7 + rng() * 0.05), sz * 0.45, Math.sin(a) * (0.7 + rng() * 0.05)); s.rotation.y = -a + (rng() - 0.5) * 0.4; s.castShadow = s.receiveShadow = true; g.add(s); }
+  // lenha em pirâmide: tronco com casca, ponta de cima carbonizada (e em brasa), topo serrado claro na ponta de baixo
+  const logs = [];
+  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + 0.3, L = 0.68 + rng() * 0.12, r = 0.05 + rng() * 0.025, lg = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.92, r, L * 0.68, 10), barkM); body.position.y = L * 0.34; lg.add(body);
+    const ch = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.55, r * 0.92, L * 0.32, 10), charM.clone()); ch.position.y = L * 0.84; lg.add(ch); logs.push(ch);
+    const cap = new THREE.Mesh(new THREE.CircleGeometry(r, 10), endM); cap.rotation.x = Math.PI / 2; cap.position.y = 0.002; lg.add(cap);
+    lg.position.set(Math.cos(a) * 0.5, 0.02, Math.sin(a) * 0.5); const top = new THREE.Vector3(Math.cos(a) * 0.1, 0.5 + rng() * 0.1, Math.sin(a) * 0.1); lg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), top.sub(lg.position).normalize()); g.add(lg); lg.traverse(o => { if (o.isMesh) o.castShadow = true; }); }
+  for (let k = 0; k < 2; k++) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.065, 0.9, 10), barkM); l.rotation.set(0, k * 1.9 + 0.4, Math.PI / 2); l.position.set(0, 0.07, 0); l.castShadow = true; g.add(l); } // duas toras deitadas no fundo
+  // brasas no meio
+  for (let k = 0; k < 16; k++) { const c = new THREE.Mesh(new THREE.DodecahedronGeometry(0.03 + rng() * 0.035, 0), coalM); c.position.set((rng() - 0.5) * 0.5, 0.03 + rng() * 0.04, (rng() - 0.5) * 0.5); c.rotation.set(rng() * 3, rng() * 3, 0); g.add(c); }
+  // fogo vivo (camadas + fagulhas) e chamas menores lambendo a lenha
+  const f1 = realFlame(1.7, 3, true); f1.position.y = 0.08; g.add(f1);
+  const f2 = realFlame(0.6, 7, false); f2.position.set(0.16, 0.12, -0.08); g.add(f2);
+  const f3 = realFlame(0.5, 11, false); f3.position.set(-0.14, 0.1, 0.12); g.add(f3);
+  // fumaça cinza que sobe e se desfaz
+  const smokeT = _fireTex.smoke || (_fireTex.smoke = cv(64, 64, (x, W) => { const gr = x.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(120,116,110,0.55)'); gr.addColorStop(1, 'rgba(120,116,110,0)'); x.fillStyle = gr; x.fillRect(0, 0, W, W); }));
+  const smoke = []; for (let k = 0; k < 7; k++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeT, transparent: true, depthWrite: false, opacity: 0.4 })); g.add(sp); smoke.push({ sp, off: k / 7 }); }
+  const L = vlightAt('#ff9a40', 2.6, 13, 0, 0.9, 0); g.add(L);
+  g.userData.update = t => {
+    f1.userData.update(t); f2.userData.update(t + 1.3); f3.userData.update(t + 2.1);
+    for (const s of smoke) { const k = (t * 0.18 + s.off) % 1; s.sp.position.set(Math.sin(t * 0.7 + s.off * 9) * 0.25 * k, 1.1 + k * 3.2, Math.cos(t * 0.5 + s.off * 7) * 0.2 * k); s.sp.scale.setScalar(0.4 + k * 1.6); s.sp.material.opacity = 0.32 * Math.sin(k * Math.PI); }
+    const fl = 0.85 + Math.sin(t * 17) * 0.06 + Math.sin(t * 7.3) * 0.08; if (L.intensity !== undefined) L.intensity = 2.6 * fl;
+    coalM.emissiveIntensity = 1.0 + Math.sin(t * 2.3) * 0.25 + Math.sin(t * 5.1) * 0.12;
+    logs.forEach((m, i) => { m.material.emissiveIntensity = 0.05 + Math.sin(t * 3 + i * 1.7) * 0.03; });
+  };
   return g;
 }
 /* ---------- Pouso do Noctívago (S-177): poste de madeira lavrada com braço e mão-francesa,
    estandarte de pano bordado (cavalo alado em prata sobre vinho) balançando ao vento,
    cocho d'água, fardos de feno e o próprio Noctívago esperando ao lado ---------- */
+// desenha o Pégaso 3D de perfil (empinado, asas no alto da batida) num canvas 2D: prata em relevo + contorno dourado.
+// Usa um renderizador temporário (uma vez só; a textura fica em cache). Devolve false se não der (cai no desenho antigo).
+function drawPegasusEmblem(x, cx, cy, bw, bh) {
+  let r = null;
+  try {
+    const S = 512, peg = makePegasus(), sc = new THREE.Scene();
+    for (let k = 0, t = 0; k < 90; k++) { t = k / 30; peg.animate(t, { speed: 0, turn: 0, air: true, vy: 1 }, 1 / 30); }
+    const tBeat = Math.PI / 14 + Math.PI * 2 / 7 * 14; peg.animate(tBeat, { speed: 0, turn: 0, air: true, vy: 1 }, 1 / 30); // asas no alto
+    const silver = new THREE.MeshStandardMaterial({ color: '#eef1f6', roughness: 0.5, metalness: 0.12, emissive: '#262a34', side: THREE.DoubleSide });
+    peg.obj.traverse(o => { if (o.isMesh) { o.material = silver; o.frustumCulled = false; } });
+    peg.obj.rotation.x = -0.72; sc.add(peg.obj); peg.obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(peg.obj), ctr = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+    const half = Math.max(sz.y, sz.z) / 2 * 1.06, cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, 50);
+    cam.position.set(ctr.x + 10, ctr.y, ctr.z); cam.lookAt(ctr);
+    sc.add(new THREE.HemisphereLight('#ffffff', '#6a6a7a', 1.4)); const dl = new THREE.DirectionalLight('#ffffff', 2.2); dl.position.set(ctr.x + 6, ctr.y + 6, ctr.z + 4); sc.add(dl); const fl2 = new THREE.DirectionalLight('#dfe6ff', 1.1); fl2.position.set(ctr.x + 8, ctr.y - 2, ctr.z - 3); sc.add(fl2); // luz de preenchimento (asa de baixo sem ficar preta)
+    r = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true }); r.setSize(S, S, false); r.setClearColor(0x000000, 0); r.outputColorSpace = THREE.SRGBColorSpace;
+    r.render(sc, cam);
+    const src = r.domElement, gold = document.createElement('canvas'); gold.width = gold.height = S; const gx = gold.getContext('2d');
+    gx.drawImage(src, 0, 0); gx.globalCompositeOperation = 'source-in'; gx.fillStyle = '#d9b25a'; gx.fillRect(0, 0, S, S);
+    const k = Math.min(bw, bh) / S, dx = cx - S * k / 2, dy = cy - S * k / 2;
+    x.save(); x.shadowColor = 'rgba(0,0,0,0.55)'; x.shadowBlur = 6; x.shadowOffsetY = 3; x.drawImage(gold, dx, dy, S * k, S * k); x.restore(); // sombra do bordado
+    for (let a = 0; a < 12; a++) { const ang = a / 12 * Math.PI * 2; x.drawImage(gold, dx + Math.cos(ang) * 2.2, dy + Math.sin(ang) * 2.2, S * k, S * k); } // contorno de fio de ouro
+    x.drawImage(src, dx, dy, S * k, S * k);
+    const thr = document.createElement('canvas'); thr.width = thr.height = S; const tx = thr.getContext('2d'); tx.drawImage(src, 0, 0); tx.globalCompositeOperation = 'source-atop';
+    for (let i = 0; i < 2600; i++) { tx.strokeStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '40,40,60'},0.10)`; tx.lineWidth = 1; const px = Math.random() * S, py = Math.random() * S; tx.beginPath(); tx.moveTo(px, py); tx.lineTo(px + 5, py + 3); tx.stroke(); } // pontos de linha (textura de bordado)
+    x.drawImage(thr, dx, dy, S * k, S * k);
+    peg.obj.traverse(o => { if (o.isMesh && o.geometry && !o.geometry.userData.keep) { /* geometrias compartilhadas ficam (cache) */ } });
+    return true;
+  } catch (e) { return false; }
+  finally { if (r) r.dispose(); } // (sem forceContextLoss: o Chrome bloqueia novos contextos da página depois de uma perda forçada)
+}
 function roostBannerTex() {
   const W = 256, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
   const gr = x.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, '#3a0c14'); gr.addColorStop(0.5, '#6a1a24'); gr.addColorStop(1, '#3a0c14'); x.fillStyle = gr; x.fillRect(0, 0, W, H);
   for (let k = 0; k < 3000; k++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '0,0,0' : '255,220,200'},${Math.random() * 0.05})`; x.fillRect(Math.random() * W, Math.random() * H, 1, 2 + Math.random() * 3); } // trama do tecido
   x.strokeStyle = '#c9a24a'; x.lineWidth = 8; x.strokeRect(14, 14, W - 28, H - 70); x.strokeStyle = 'rgba(201,162,74,0.5)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 94);
-  // cavalo alado empinado, em prata (silhueta bordada)
+  // S-255: o brasão é o próprio Pégaso do jogo, empinado e de asas erguidas, "bordado" em prata com contorno de fio de ouro
+  if (drawPegasusEmblem(x, W / 2 - 10, 226, 222, 250)) {
+    x.fillStyle = '#e8d49a'; for (const [sx, sy, r] of [[52, 92, 3], [206, 104, 2.5], [44, 330, 2], [214, 300, 3], [190, 70, 2]]) { x.beginPath(); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, rr = k % 2 ? r * 0.4 : r * 1.6; x.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr); } x.fill(); } // estrelinhas (voo noturno)
+    x.fillStyle = '#e8d49a'; x.font = 'bold 22px serif'; x.textAlign = 'center'; x.fillText('POUSO', W / 2, 400); x.font = 'italic 16px serif'; x.fillText('dos Noctívagos', W / 2, 424);
+    const t2 = new THREE.CanvasTexture(c); t2.colorSpace = THREE.SRGBColorSpace; t2.anisotropy = 8; return t2;
+  }
   x.save(); x.translate(W / 2, 240); x.fillStyle = '#dfe4ea'; x.strokeStyle = 'rgba(0,0,0,0.35)'; x.lineWidth = 2;
   x.beginPath(); x.moveTo(-30, 70); x.lineTo(-22, 20); x.bezierCurveTo(-30, 0, -24, -30, 0, -38); x.bezierCurveTo(10, -60, 18, -84, 36, -96); x.lineTo(54, -90); x.lineTo(40, -76); x.bezierCurveTo(30, -60, 34, -40, 26, -20); x.bezierCurveTo(30, 0, 30, 20, 18, 30); x.lineTo(30, 78); x.lineTo(20, 80); x.lineTo(6, 36); x.lineTo(-6, 40); x.lineTo(-14, 80); x.lineTo(-24, 80); x.closePath(); x.fill(); x.stroke();
   for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(0, -30); x.bezierCurveTo(sd * 40, -80, sd * 90, -90, sd * 104, -60); x.lineTo(sd * 84, -52); x.lineTo(sd * 96, -36); x.lineTo(sd * 72, -32); x.lineTo(sd * 80, -14); x.lineTo(sd * 54, -14); x.bezierCurveTo(sd * 30, -10, sd * 12, -14, 0, -10); x.closePath(); x.fill(); x.stroke(); }
@@ -257,17 +344,23 @@ export function makeRoost() {
   const beam = (w, h, d) => { const b = new THREE.BoxGeometry(w, h, d, 2, Math.max(2, Math.round(h * 4)), 2), P = b.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setX(i, P.getX(i) * (1 + Math.sin(y * 7 + P.getZ(i) * 30) * 0.03)); P.setZ(i, P.getZ(i) * (1 + Math.sin(y * 5 + P.getX(i) * 30) * 0.03)); } b.computeVertexNormals(); return b; };
   const post = new THREE.Mesh(beam(0.24, 4.4, 0.24), wood); post.position.y = 2.2; g.add(post);
   const arm = new THREE.Mesh(beam(0.18, 1.7, 0.18), wood); arm.rotation.z = Math.PI / 2; arm.position.set(0.7, 4.05, 0); g.add(arm);
-  const brace = new THREE.Mesh(beam(0.12, 0.95, 0.12), dark); brace.rotation.z = Math.PI / 4; brace.position.set(0.35, 3.62, 0); g.add(brace);
+  const brace = new THREE.Mesh(beam(0.12, 0.62, 0.12), dark); brace.rotation.z = Math.PI / 4; brace.position.set(0.24, 3.75, 0); // S-255: mão-francesa curta (não atravessa o estandarte) g.add(brace);
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.25, 4), dark); cap.rotation.y = Math.PI / 4; cap.position.y = 4.52; g.add(cap);
   for (const y of [0.9, 3.3]) { const band = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.06, 0.27), iron); band.position.y = y; g.add(band); }
   const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.018, 8, 18), iron); ring.position.set(0, 1.2, 0.15); g.add(ring); // argola de amarrar
   for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2, st = new THREE.Mesh(rock(rng, 0.16, 0.11, 0.14, 0.15), new THREE.MeshStandardMaterial({ color: '#7e7a70', roughness: 1 })); st.position.set(Math.cos(a) * 0.3, 0.06, Math.sin(a) * 0.3); g.add(st); }
   // estandarte pendurado no braço por argolas, com bico embaixo; balança ao vento
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.1, 8), iron); rod.rotation.z = Math.PI / 2; rod.position.set(0.85, 3.86, 0); g.add(rod);
-  const BW = 0.95, BH = 1.9, pl = new THREE.PlaneGeometry(BW, BH, 10, 18); pl.translate(0, -BH / 2, 0);
+  // S-255: o varão fica PRESO no braço por duas argolas de ferro que abraçam a madeira; o pano tem bainha enrolada no varão
+  const RY = 3.915, BX = 0.98, rod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.08, 10), iron); rod.rotation.z = Math.PI / 2; rod.position.set(BX, RY, 0); g.add(rod);
+  for (const ex of [BX - 0.54, BX + 0.54]) { const k = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 8), iron); k.position.set(ex, RY, 0); g.add(k); } // pontas do varão
+  for (const hx of [BX - 0.42, BX + 0.42]) { const hug = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.014, 8, 22), iron); hug.rotation.y = Math.PI / 2; hug.position.set(hx, 4.05, 0); g.add(hug); // argola em volta do braço
+    const strapM = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.022), iron); strapM.position.set(hx, RY + 0.03, 0); g.add(strapM); }
+  const BW = 0.95, BH = 1.9, pl = new THREE.PlaneGeometry(BW, BH, 14, 26); pl.translate(0, -BH / 2, 0);
   { const P = pl.attributes.position; for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i); if (py < -BH + 0.3) P.setY(i, -BH + Math.abs(px) / (BW / 2) * 0.3); } }
-  const flag = new THREE.Mesh(pl, new THREE.MeshStandardMaterial({ map: _roostTex || (_roostTex = roostBannerTex()), side: THREE.DoubleSide, roughness: 0.8 })); flag.position.set(0.85, 3.84, 0); flag.castShadow = true; g.add(flag);
-  for (let k = 0; k < 4; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.008, 6, 12), iron); r.position.set(0.85 - BW / 2 + 0.1 + k * (BW - 0.2) / 3, 3.86, 0); g.add(r); }
+  const bannerM = new THREE.MeshStandardMaterial({ map: _roostTex || (_roostTex = roostBannerTex()), side: THREE.DoubleSide, roughness: 0.82 });
+  const flag = new THREE.Mesh(pl, bannerM); flag.position.set(BX, RY - 0.03, 0); flag.castShadow = true; g.add(flag);
+  const hem = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, BW, 14, 1, true), new THREE.MeshStandardMaterial({ color: '#4e121c', roughness: 0.85, side: THREE.DoubleSide })); hem.rotation.z = Math.PI / 2; hem.position.set(BX, RY, 0); g.add(hem); // bainha enrolada no varão
+  for (const s of [-1, 1]) { const tas = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 8), new THREE.MeshStandardMaterial({ color: '#c9a24a', roughness: 0.5, metalness: 0.4 })); tas.rotation.x = Math.PI; tas.position.set(BX + s * (BW / 2 - 0.02), RY - 0.09, 0.0); g.add(tas); } // borlas douradas nas pontas
   const P = flag.geometry.attributes.position, base = P.array.slice();
   // cocho d'água e fardos de feno
   const trough = new THREE.Group(); trough.position.set(-0.9, 0, 1.3); trough.rotation.y = 0.3; g.add(trough);
@@ -279,8 +372,12 @@ export function makeRoost() {
   // o Noctívago, esperando o próximo voo
   const noc = makeNoctivago(7); noc.obj.position.set(1.0, 0, -2.6); noc.obj.rotation.y = -0.5; g.add(noc.obj);
   g.userData.update = t => {
-    for (let i = 0; i < P.count; i++) { const hang = Math.min(1, -base[i * 3 + 1] / BH); P.setZ(i, base[i * 3 + 2] + Math.sin(t * 2.4 + base[i * 3 + 1] * 2.5 + base[i * 3] * 1.5) * 0.09 * hang + Math.sin(t * 3.9 + base[i * 3] * 6) * 0.02 * hang); }
-    P.needsUpdate = true; flag.geometry.computeVertexNormals(); noc.update(t);
+    // S-255: pano ao vento — ondas que descem pelo tecido, a ponta solta balança mais, presa em cima (hang = 0 no varão)
+    const gust = 0.75 + 0.25 * Math.sin(t * 0.37) + 0.12 * Math.sin(t * 1.13);
+    for (let i = 0; i < P.count; i++) { const by = base[i * 3 + 1], bx = base[i * 3], hang = Math.min(1, -by / BH), h2 = hang * hang;
+      P.setZ(i, base[i * 3 + 2] + (Math.sin(t * 2.2 + by * 3.2 + bx * 1.4) * 0.11 + Math.sin(t * 3.7 - by * 5 + bx * 5) * 0.03) * hang * gust + h2 * 0.1 * gust);
+      P.setX(i, bx + Math.sin(t * 1.6 + by * 2.2) * 0.025 * h2 * gust); }
+    P.needsUpdate = true; flag.geometry.computeVertexNormals(); flag.rotation.x = -0.05 * gust + Math.sin(t * 0.9) * 0.025; noc.update(t);
   };
   g.userData.cols = [[0, 0, 0.35], [1.0, -2.6, 1.1], [1.3, -1.9, 0.8], [0.6, -3.4, 0.8], [-0.9, 1.3, 0.8]];
   return g;

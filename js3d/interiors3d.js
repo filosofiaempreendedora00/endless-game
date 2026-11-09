@@ -236,12 +236,61 @@ export function hayBale() { // S-194: fardo de feno de verdade — fios de palha
   const b = new THREE.Mesh(geo, strawMat([1.2, 0.6])); b.position.y = 0.275; b.castShadow = b.receiveShadow = true; g.add(b);
   const twine = mat('#6a4a22', { roughness: 1 });
   for (const x of [-0.32, 0.32]) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.012, 6, 32), twine); t.scale.set(1, 0.92, 1.05); t.rotation.y = Math.PI / 2; t.position.set(x, 0.275, 0); g.add(t); }
-  const loose = strawMat([0.3, 0.3]); loose.transparent = true; loose.alphaTest = 0.3;
-  for (let k = 0; k < 7; k++) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.03 + rr() * 0.03, 0.12 + rr() * 0.12, 5), loose); f.position.set((rr() - 0.5) * 1.1, 0.55 + rr() * 0.02, (rr() - 0.5) * 0.5); f.rotation.set((rr() - 0.5) * 1.6, rr() * 6, (rr() - 0.5) * 1.6); g.add(f); }
+  // S-264: fiapos de palha saindo de todas as faces (centenas de fios finos, não cones)
+  const fib = []; for (let k = 0; k < 170; k++) { const face = k % 5, s = rr() < 0.5 ? -1 : 1; let p, d;
+    if (face === 0) { p = [(rr() - 0.5) * 1.15, 0.55, (rr() - 0.5) * 0.6]; d = [(rr() - 0.5) * 0.8, 0.5 + rr() * 0.4, (rr() - 0.5) * 0.8]; }
+    else if (face < 3) { p = [s * 0.6, 0.06 + rr() * 0.46, (rr() - 0.5) * 0.58]; d = [s * (0.6 + rr()), (rr() - 0.4) * 0.8, (rr() - 0.5) * 0.9]; }
+    else { p = [(rr() - 0.5) * 1.15, 0.06 + rr() * 0.46, s * 0.31]; d = [(rr() - 0.5) * 0.9, (rr() - 0.4) * 0.8, s * (0.6 + rr())]; }
+    fib.push({ p, d, l: 0.05 + rr() * 0.13 }); }
+  g.add(strawFibers(fib));
   return g;
 }
-export function stall(w = 3.2, d = 3) { // S-194: baia de tábuas com textura, postes arredondados, manjedoura, cocho e cama de palha irregular
+// fios de palha soltos: cada um é um "fio" fino de duas faces (todos numa malha só)
+let _fibMat = null;
+export function strawFibers(list) {
+  const pos = [], col = [];
+  for (const { p, d, l } of list) { const n = Math.hypot(...d) || 1, dx = d[0] / n * l, dy = d[1] / n * l, dz = d[2] / n * l, w = 0.004 + rr() * 0.004, sx = -dz, sz = dx, sn = Math.hypot(sx, sz) || 1, ox = sx / sn * w, oz = sz / sn * w;
+    const a = [p[0] - ox, p[1], p[2] - oz], b = [p[0] + ox, p[1], p[2] + oz], c = [p[0] + dx, p[1] + dy, p[2] + dz]; pos.push(...a, ...b, ...c); const v = 0.7 + rr() * 0.35, tone = rr() < 0.25 ? [0.62, 0.5, 0.26] : [0.9, 0.76, 0.42]; for (let i = 0; i < 3; i++) col.push(tone[0] * v, tone[1] * v, tone[2] * v); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, _fibMat || (_fibMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }))); m.castShadow = false; return m;
+}
+/* S-264: monte de feno solto no chão — borda irregular, montinho no meio e fios espalhados (nada de tapete igual em toda baia) */
+export function looseHay(w = 1.6, d = 1.2, h = 0.12, seed = 1) {
+  const g = new THREE.Group(); let s0 = seed * 9301 + 49297; const r = () => (s0 = (s0 * 16807) % 2147483647) / 2147483647;
+  const geo = new THREE.CircleGeometry(1, 48, 0, Math.PI * 2), P = geo.attributes.position, wob = [r() * 6, r() * 6, r() * 6];
+  // subdivide em anéis para fazer o montinho
+  const rings = 6, seg = 40, pos = [], uv = [], idx = [];
+  for (let i = 0; i <= rings; i++) for (let j = 0; j <= seg; j++) { const a = j / seg * Math.PI * 2, rk = i / rings, edge = 0.78 + 0.22 * Math.sin(a * 3 + wob[0]) * Math.sin(a * 5 + wob[1]) + (i === rings ? (r() - 0.5) * 0.25 : 0);
+    const x = Math.cos(a) * rk * edge * w / 2, z = Math.sin(a) * rk * edge * d / 2, y = h * Math.pow(Math.max(0, 1 - rk * rk), 1.3) * (0.7 + 0.5 * Math.sin(a * 2 + wob[2]) * (1 - rk)) + 0.012;
+    pos.push(x, y, z); uv.push(x * 1.4, z * 1.4); }
+  for (let i = 0; i < rings; i++) for (let j = 0; j < seg; j++) { const A = i * (seg + 1) + j, B = A + seg + 1; idx.push(A, A + 1, B, A + 1, B + 1, B); }
+  const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); gg.setIndex(idx); gg.computeVertexNormals(); void P; void geo;
+  const m = new THREE.Mesh(gg, strawMat([1, 1])); m.receiveShadow = true; g.add(m);
+  const fib = []; for (let k = 0; k < Math.round(w * d * 140); k++) { const a = r() * 6.28, rk = Math.sqrt(r()) * 1.08, x = Math.cos(a) * rk * w / 2, z = Math.sin(a) * rk * d / 2; fib.push({ p: [x, 0.015 + h * Math.max(0, 1 - rk * rk) * 0.8, z], d: [Math.cos(r() * 6.28), 0.05 + r() * 0.35, Math.sin(r() * 6.28)], l: 0.08 + r() * 0.16 }); }
+  g.add(strawFibers(fib));
+  return g;
+}
+/* S-264: pilha de fardos irregular (uns tortos, um aberto e espalhado), em vez de fardos alinhados */
+export function hayStack(n = 4, seed = 1) {
+  const g = new THREE.Group(); let s0 = seed * 7919 + 13; const r = () => (s0 = (s0 * 16807) % 2147483647) / 2147483647;
+  const spots = [[0, 0, 0], [0.05, 0, 0.66], [1.24, 0, 0.2], [0.1, 0.55, 0.3], [0.7, 0.55, 0.15], [0.35, 1.1, 0.35]];
+  for (let k = 0; k < Math.min(n, spots.length); k++) { const [x, y, z] = spots[k], b = hayBale(); b.position.set(x + (r() - 0.5) * 0.12, y, z + (r() - 0.5) * 0.12); b.rotation.y = (r() - 0.5) * 0.35 + (k === 2 ? Math.PI / 2 : 0); b.rotation.z = (r() - 0.5) * (y ? 0.06 : 0.02); g.add(b); }
+  const sp = looseHay(1.6, 1.1, 0.18, seed + 3); sp.position.set(-0.9 + r() * 0.2, 0, 0.9); g.add(sp); // fardo aberto, feno espalhado
+  return g;
+}
+export function stall(w = 3.2, d = 3, opt = {}) { // S-194: baia de tábuas com textura, postes arredondados, manjedoura, cocho e cama de palha irregular · S-264: portinha na frente e argola de amarrar
   const g = new THREE.Group(), W = woodMat('#6e4e30', [1, 2]), WD = woodMat('#4e3420', [1, 2]);
+  if (opt.gate) { // portinha de meia altura na frente da baia (presa por dobradiças, com travessa em Z e tranca)
+    const gw = w - 0.2, gate = new THREE.Group(); gate.position.set(-w / 2 + 0.08, 0, d / 2); gate.rotation.y = opt.ajar || 0; g.add(gate);
+    for (let k = 0; k < 4; k++) gate.add(box(gw, 0.22, 0.05, W, gw / 2, 0.2 + k * 0.26, 0));
+    for (const x of [0.06, gw - 0.06]) gate.add(box(0.1, 1.1, 0.07, WD, x, 0.6, 0.03));
+    const br = box(0.09, Math.hypot(gw - 0.12, 0.95), 0.05, WD, gw / 2, 0.58, 0.06); br.rotation.z = Math.atan2(gw - 0.12, 0.95); gate.add(br);
+    const iron = mat('#2b2622', { metalness: 0.7, roughness: 0.45 }); for (const y of [0.3, 0.95]) gate.add(box(0.22, 0.05, 0.02, iron, 0.12, y, 0.08)); gate.add(box(0.18, 0.05, 0.05, iron, gw - 0.02, 0.85, 0.08));
+  }
+  if (opt.ring) { // argola de ferro na parede lateral, perto da frente (onde a corda do cabresto é amarrada)
+    const iron = mat('#2b2622', { metalness: 0.7, roughness: 0.45 }), rg = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 8, 20), iron); rg.position.set(-w / 2 + 0.05, 1.18, d / 2 - 0.55); rg.rotation.y = Math.PI / 2; g.add(rg);
+    g.add(box(0.03, 0.06, 0.06, iron, -w / 2 + 0.035, 1.24, d / 2 - 0.55)); g.userData.ring = new THREE.Vector3(-w / 2 + 0.06, 1.12, d / 2 - 0.55);
+  }
   const post = (x, z) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 1.4, 12), WD); p.position.set(x, 0.7, z); p.castShadow = true; g.add(p); const cap = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), WD); cap.position.set(x, 1.4, z); g.add(cap); };
   for (const z of [-d / 2, d / 2]) { post(-w / 2, z); post(w / 2, z); }
   for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) { const pl = box(0.06, 0.2, d, W, sx * w / 2, 0.22 + k * 0.27, 0); pl.rotation.x = (rr() - 0.5) * 0.01; g.add(pl); } // tábuas de lado
@@ -252,8 +301,8 @@ export function stall(w = 3.2, d = 3) { // S-194: baia de tábuas com textura, p
   const tr = new THREE.Group(); tr.position.set(w / 4, 0.25, -d / 2 + 0.35); g.add(tr); tr.add(box(0.9, 0.05, 0.42, WD, 0, -0.18, 0)); for (const sz of [-1, 1]) tr.add(box(0.9, 0.4, 0.05, WD, 0, 0, sz * 0.19)); for (const sx of [-1, 1]) tr.add(box(0.05, 0.4, 0.42, WD, sx * 0.43, 0, 0));
   const wat = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.34), new THREE.MeshStandardMaterial({ color: '#3a5a60', roughness: 0.05, metalness: 0.3 })); wat.rotation.x = -Math.PI / 2; wat.position.y = 0.12; tr.add(wat);
   // cama de palha irregular (borda solta), não um tapete retangular
-  const sg = new THREE.CircleGeometry(1, 40); { const P = sg.attributes.position; for (let i = 1; i < P.count; i++) { const k = 0.82 + rr() * 0.3; P.setXY(i, P.getX(i) * k, P.getY(i) * k); } }
-  const straw = new THREE.Mesh(sg, strawMat([2, 2])); straw.rotation.x = -Math.PI / 2; straw.scale.set(w * 0.5, d * 0.5, 1); straw.position.y = 0.02; straw.receiveShadow = true; g.add(straw);
+  if (opt.bed !== false) { const sg = new THREE.CircleGeometry(1, 40); { const P = sg.attributes.position; for (let i = 1; i < P.count; i++) { const k = 0.82 + rr() * 0.3; P.setXY(i, P.getX(i) * k, P.getY(i) * k); } }
+    const straw = new THREE.Mesh(sg, strawMat([2, 2])); straw.rotation.x = -Math.PI / 2; straw.scale.set(w * 0.5, d * 0.5, 1); straw.position.y = 0.02; straw.receiveShadow = true; g.add(straw); }
   return g;
 }
 export function lantern() { // S-194: lampião de ferro com vidros, vela acesa e corrente (no lugar do cubo amarelo)

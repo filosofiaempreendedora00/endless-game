@@ -258,12 +258,20 @@ export function rockGeometry(seed, opts = {}) {
   }
   g.computeVertexNormals();
   const N = g.attributes.normal;
-  const stone = new THREE.Color(opts.dark ? '#6f6d66' : '#8f8b82'), stone2 = new THREE.Color(opts.dark ? '#5a5852' : '#7a766d'), moss = new THREE.Color(opts.dark ? '#4a6a34' : '#6a8f45');
+  // S-259: pedra cinzenta (granito: manchas e pintas por ruído, sem as faixas listradas de antes); limo só leve, nos topos, e
+  // nas pedras da neve nada de limo — neve assentada em cima
+  const stone = new THREE.Color(opts.dark ? '#706e6a' : '#8e8c88'), stone2 = new THREE.Color(opts.dark ? '#57565a' : '#6f6e6c'), moss = new THREE.Color(opts.dark ? '#5d6650' : '#7a8566'), snow = new THREE.Color('#f2f6fa');
+  const hn = (x, y, z) => { const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + seed) * 43758.5453; return s - Math.floor(s); };
+  const vn = (x, y, z) => { const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z), fx = x - ix, fy = y - iy, fz = z - iz, L = (a, b, t) => a + (b - a) * t * t * (3 - 2 * t);
+    return L(L(L(hn(ix, iy, iz), hn(ix + 1, iy, iz), fx), L(hn(ix, iy + 1, iz), hn(ix + 1, iy + 1, iz), fx), fy), L(L(hn(ix, iy, iz + 1), hn(ix + 1, iy, iz + 1), fx), L(hn(ix, iy + 1, iz + 1), hn(ix + 1, iy + 1, iz + 1), fx), fy), fz); };
   colorize(g, (c, x, y, z) => {
-    c.copy(stone).lerp(stone2, Math.sin(x * 3.1 + z * 2.3 + y * 5) * 0.5 + 0.5);
+    const n = vn(x * 2.2, y * 2.2, z * 2.2) * 0.65 + vn(x * 7, y * 7, z * 7) * 0.35;
+    c.copy(stone).lerp(stone2, n).offsetHSL(0, 0, (hn(x, y, z) - 0.5) * 0.05);
   });
   const col = g.attributes.color;
-  for (let i = 0; i < p.count; i++) { const up = N.getY(i); if (up > 0.55 && opts.moss !== false) { const k = Math.min(1, (up - 0.55) * 2.5) * 0.85; col.setXYZ(i, col.getX(i) + (moss.r - col.getX(i)) * k, col.getY(i) + (moss.g - col.getY(i)) * k, col.getZ(i) + (moss.b - col.getZ(i)) * k); } }
+  for (let i = 0; i < p.count; i++) { const up = N.getY(i), x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    if (opts.snow) { if (up > 0.62 && y > R * sy * 0.35) { /* só no alto da pedra: os lados ficam de pedra cinza */ const k = Math.min(1, (up - 0.62) * 3.5 + (vn(x * 3, y * 3, z * 3) - 0.5) * 0.8); if (k > 0) col.setXYZ(i, col.getX(i) + (snow.r - col.getX(i)) * k, col.getY(i) + (snow.g - col.getY(i)) * k, col.getZ(i) + (snow.b - col.getZ(i)) * k); } }
+    else if (up > 0.6 && opts.moss !== false) { const k = Math.min(1, (up - 0.6) * 2) * 0.4 * Math.max(0, vn(x * 2.5, y * 2.5, z * 2.5) * 1.6 - 0.5); col.setXYZ(i, col.getX(i) + (moss.r - col.getX(i)) * k, col.getY(i) + (moss.g - col.getY(i)) * k, col.getZ(i) + (moss.b - col.getZ(i)) * k); } }
   return { geo: g, radius: R * Math.max(sx, sz) * 0.85, height: R * sy * 1.6 };
 }
 
@@ -301,8 +309,23 @@ float bn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); 
     const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map, alphaTest: 0.45 });
     return { m, dm };
   })());
+  // S-259: as pedras usavam o material da CASCA (sulcos verticais + musgo verde do shader) — daí as listras e o limo. Agora têm o seu:
+  // granito em espaço do mundo (manchas, pintas claras/escuras e grão fino), sem musgo
+  const rockMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
+  rockMat.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vRW;
+float rh(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float rn(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(rh(i), rh(i + vec3(1,0,0)), f.x), mix(rh(i + vec3(0,1,0)), rh(i + vec3(1,1,0)), f.x), f.y), mix(mix(rh(i + vec3(0,0,1)), rh(i + vec3(1,0,1)), f.x), mix(rh(i + vec3(0,1,1)), rh(i + vec3(1,1,1)), f.x), f.y), f.z); }`).replace('#include <color_fragment>', `#include <color_fragment>
+{ float big = rn(vRW * 1.3) * 0.6 + rn(vRW * 3.7) * 0.4, grain = rn(vRW * 22.0);
+  diffuseColor.rgb *= 0.82 + big * 0.3 + (grain - 0.5) * 0.08;
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25, smoothstep(0.75, 0.95, rn(vRW * 14.0)) * 0.5); }`);
+  };
+  rockMat.customProgramCacheKey = () => 'aethraRock';
   const add = (name, { geo, radius, height, leaf, leafKind }) => {
-    const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true;
+    const m = new THREE.Mesh(geo, /^stone/.test(name) ? rockMat : mat); m.castShadow = true; m.receiveShadow = true;
     const scene = new THREE.Group(); scene.add(m);
     if (leaf) { const lm = leafMat(leafKind), l = new THREE.Mesh(leaf, lm.m); l.customDepthMaterial = lm.dm; l.castShadow = true; l.receiveShadow = true; scene.add(l); }
     out[name] = { scene, radius, height };
@@ -315,6 +338,7 @@ float bn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); 
   for (let i = 0; i < 3; i++) add('stump_' + i, stumpGeometry(900 + i * 13));
   for (let i = 0; i < 6; i++) add('stone_' + i, rockGeometry(1200 + i * 11, { size: i < 3 ? 0.8 : 1.3 }));
   for (let i = 0; i < 4; i++) add('stonedark_' + i, rockGeometry(1300 + i * 17, { size: 1.1, dark: true }));
+  for (let i = 0; i < 4; i++) add('stonesnow_' + i, rockGeometry(1400 + i * 13, { size: i < 2 ? 0.9 : 1.3, snow: true, dark: true })); // S-259: pedras da neve, cobertas de neve, sem limo
   for (let i = 0; i < 2; i++) add('log_' + i, logGeometry(950 + i * 7));
   return out;
 }

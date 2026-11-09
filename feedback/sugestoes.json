@@ -11946,9 +11946,10 @@
       "sp": "25/25"
     },
     "id": "S-248",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:12:12",
-    "imagem": "img/S-248.png"
+    "imagem": "img/S-248.png",
+    "resposta": "Refiz o lobo do zero: um corpo só com esqueleto e pelagem de verdade (dorso escuro mesclado, barriga e máscara claras, colar de pelo, cauda grossa), focinho longo, olhos âmbar e patas na ponta dos dedos com garras. Passo, trote e galope mudam pela velocidade com as patas plantadas no chão (sem deslizar) e acompanhando o terreno; a mordida virou um bote que agacha, avança e sacode a cabeça."
   },
   {
     "texto": "Já falei para não ter essa infinidade de gramas na areia e você aparentemente não cumpriu com as minhas solicitações Entenda eu não quero que você suma com todas as gramas Mas você há de convir comigo que elas precisam ser muito mais pontuais em terrenos de grama",
@@ -11990,9 +11991,10 @@
       "sp": "25/25"
     },
     "id": "S-249",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:13:15",
-    "imagem": "img/S-249.png"
+    "imagem": "img/S-249.png",
+    "resposta": "Agora a grama só aparece em poucas touceiras na areia, e o resto das dunas fica limpo."
   },
   {
     "texto": "Repare que esse troço em volta do pescoço do Lagarto ainda ficou um pouco esquisito e também as pernas estão estranhas eu preferia que a cauda fosse mais alongada mais estreita e as patas realmente parecessem mais patas de lagarto em termos de posição tamanho e etc Eu também gostaria de que os dentes dessa criatura fosse mais evidentes",
@@ -12036,9 +12038,10 @@
       "sp": "25/25"
     },
     "id": "S-250",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:14:44",
-    "imagem": "img/S-250.png"
+    "imagem": "img/S-250.png",
+    "resposta": "Tirei o babado do pescoço, baixei o corpo e abri as patas para os lados como as de um lagarto de verdade, alonguei e afinei a cauda e deixei uma fileira de dentes curvos à mostra (a boca abre mais quando ele fica bravo)."
   },
   {
     "texto": "Esse escorpião ficou muito achatado não sei se foi o mesmo bug do meu personagem principal mas vejo que ele está achatado e as pernas não estão bem distribuídas ao longo do corpo dele e também ele ficou muito cheio de bolotas ou seja ele está geométrico é aquele feedback que eu sempre peço para você mudar e você até agora não costuma cumprir com o que eu peço",
@@ -12080,9 +12083,10 @@
       "sp": "25/25"
     },
     "id": "S-251",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:15:35",
-    "imagem": "img/S-251.png"
+    "imagem": "img/S-251.png",
+    "resposta": "Refiz o escorpião numa peça só, sem bolotas: carapaça e abdômen de placas emendados, corpo mais alto apoiado nas pernas, 8 pernas contínuas espalhadas da frente até o meio (antes estavam viradas ao contrário e amontoadas), cauda segmentada com quilhas e pinças grandes."
   },
   {
     "texto": "Gostaria que os cactos tivessem um pouco mais de detalhes e não fossem tão monocromáticos assim seriam importante um pouco de textura de cactos de fato",
@@ -12164,9 +12168,10 @@
       "sp": "25/25"
     },
     "id": "S-252",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:16:00",
-    "imagem": "img/S-252.png"
+    "imagem": "img/S-252.png",
+    "resposta": "Os cactos ganharam gomos fundos, espinhos claros em tufos e cor que varia, com o pé lenhoso e cicatrizes."
   },
   {
     "texto": "Essas asas fechadas ficaram esquisitos a parte digamos da cartilagem ou seja essa parte das asas que abrem junto com as penas ficou um pouco artificial essas penas também poderiam ser melhoradas tal como as pernas desse Pegasus e também o formato da bunda e também a própria cauda poderia ser muito mais elegante e mais fluido em termos de movimento Mas de todos os pontos de melhoria é dessa criatura o que eu mais senti falta são as asas bem feitas tanto em termos de plumas ou seja apenas mas principalmente da estrutura que segura as asas",
@@ -12210,9 +12215,10 @@
       "sp": "25/25"
     },
     "id": "S-253",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:17:14",
-    "imagem": "img/S-253.png"
+    "imagem": "img/S-253.png",
+    "resposta": "Refiz as asas do Pégaso com esqueleto de ave de verdade (úmero, antebraço e mão): fechadas dobram em Z e deitam no flanco; abertas abrem em leque com penas em camadas. A garupa ganhou formato de cavalo de verdade, as pernas ficaram mais anatômicas e a cauda ficou longa, cheia e ondulando com fluidez."
   },
   {
     "texto": "Melhorar a estética deste fogo ou melhor desta fogueira para que pareça um fogo de verdade ardente e tornar as Pedrinhas mais reais e também As madeiras ou seja melhore a fogueira como um todo",
@@ -12254,9 +12260,10 @@
       "sp": "25/25"
     },
     "id": "S-254",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:17:41",
-    "imagem": "img/S-254.png"
+    "imagem": "img/S-254.png",
+    "resposta": "A fogueira foi refeita: pedras chamuscadas, lenha com casca e pontas carbonizadas, brasas, fogo vivo com fagulhas e fumaça."
   },
   {
     "texto": "Desenhe melhor esse Pegasus para que não fique assim tão esquisito e também pode dar um leve movimento desta Bandeira para que ela não fique estática e é importante que ela esteja conectada a parte da madeira e não flutuando",
@@ -12298,9 +12305,10 @@
       "sp": "25/25"
     },
     "id": "S-255",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:18:06",
-    "imagem": "img/S-255.png"
+    "imagem": "img/S-255.png",
+    "resposta": "O estandarte agora traz o próprio Pégaso empinado, bordado em prata com contorno de ouro; o pano fica preso no varão por argolas de ferro em volta da madeira e balança ao vento."
   },
   {
     "texto": "Gostaria que fosse mais Evidente o contato dos pés dessa criatura com o solo e também desce algum efeito de barulho quando ela estivesse andando e ela também pudesse emitir alguns grunhidos malignos e talvez uma voz aterrorizante e um barulho meio que indicando que é uma criatura pesada e também gostaria que a espada dela fosse melhor trabalhada em termos de acabamento e também as pernas fossem mais parecidas com de um Fauno não necessariamente com pelos mas eu digo em termos de formato pois ele está meio parecido com um Mewtwo com essa cinturinha",
@@ -12347,9 +12355,10 @@
       "sp": "25/25"
     },
     "id": "S-256",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:19:54",
-    "imagem": "img/S-256.png"
+    "imagem": "img/S-256.png",
+    "resposta": "O Kharzûl ganhou pernas de fauno (coxa forte, joelho à frente, jarrete alto e casco fendido) e quadril largo, sem a cinturinha. Os cascos assentam no chão a cada passo levantando poeira, com som de passo pesado, grunhidos e uma voz grave de vez em quando; a espada ganhou fio chanfrado, runas em brasa, guarda de chifres e cabo de couro."
   },
   {
     "texto": "Gostaria que essa criatura fosse um pouco maior e o rosto tivesse menos cara de psicopata e também tivesse um bico levemente maior",
@@ -12393,9 +12402,10 @@
       "sp": "25/25"
     },
     "id": "S-257",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:20:18",
-    "imagem": "img/S-257.png"
+    "imagem": "img/S-257.png",
+    "resposta": "O Trotavento ficou maior, com olhar calmo (íris âmbar, pálpebra relaxada, sem sobrancelha brava) e um bico um pouco maior."
   },
   {
     "texto": "Preciso que esse dragão seja muito melhorado esteticamente e reforço que você deve se inspirar muito nos dragões de Skyrim",
@@ -12477,9 +12487,10 @@
       "sp": "25/25"
     },
     "id": "S-258",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:21:51",
-    "imagem": "img/S-258.png"
+    "imagem": "img/S-258.png",
+    "resposta": "Refiz o Vharnyr do zero: réptil pesado numa pele só com escamas, barriga em placas e geada no dorso, cabeça maior com coroa de chifres e dentes, pescoço em S e cauda longa com espinhos. As asas são os braços, com dedos e membrana de couro: ele anda de quatro apoiado nelas e, no rugido, empina e abre as asas antes de soprar gelo."
   },
   {
     "texto": "Estou sentindo um exagero dessas pedras com limo esverdeado na verdade prefiro pedras mais cinzentas e que sim Enquanto estamos na Neve elas podem ser encobertas com neve mas não necessariamente com o limo pois não combina com o ambiente",
@@ -12523,9 +12534,10 @@
       "sp": "25/25"
     },
     "id": "S-259",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:22:23",
-    "imagem": "img/S-259.png"
+    "imagem": "img/S-259.png",
+    "resposta": "As pedras ficaram cinzentas, sem as listras e o limo verde; na neve elas têm neve por cima."
   },
   {
     "texto": "Aqui poderia ser um estábulo aos mods do estábulo que você já criou em outra situação e inclusive incluir alguns cavalos aqui dentro claro que os cavalos precisam ser esteticamente compatíveis com o que há de melhor em termos de cavalos há na atualidade",
@@ -12583,9 +12595,10 @@
       "sp": "25/25"
     },
     "id": "S-260",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:23:01",
-    "imagem": "img/S-260.png"
+    "imagem": "img/S-260.png",
+    "resposta": "O Estábulo da Vigília virou estábulo de verdade: tábuas, três baias com portinhas, manjedouras com feno, cocho e três cavalos presos por cabresto em argolas, com feno espalhado e uma pilha de fardos ao lado."
   },
   {
     "texto": "Eu não gostei da ideia desses riscos aleatórios eu entendi que você se inspirou na The Wall de Game of Thrones mas eu preferia que fosse melhorado isso esteticamente para que ficasse ainda mais compatível e não com essas listras aleatórias",
@@ -12627,9 +12640,10 @@
       "sp": "25/25"
     },
     "id": "S-261",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:23:51",
-    "imagem": "img/S-261.png"
+    "imagem": "img/S-261.png",
+    "resposta": "A Muralha virou gelo maciço em grandes blocos partidos, sem as listras e riscos."
   },
   {
     "texto": "Eu não gosto dessa linha verde no perímetro poderia de fato se inspirar no que você já viu no Game of Thrones com a The Wall",
@@ -12671,9 +12685,10 @@
       "sp": "25/25"
     },
     "id": "S-262",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:24:17",
-    "imagem": "img/S-262.png"
+    "imagem": "img/S-262.png",
+    "resposta": "A linha verde do contorno sumiu: a neve do topo agora nasce colada no gelo."
   },
   {
     "texto": "Esse chapéu de urso ainda não está encaixando na cabeça desse nosso colega",
@@ -12717,9 +12732,10 @@
       "sp": "25/25"
     },
     "id": "S-263",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:25:04",
-    "imagem": "img/S-263.png"
+    "imagem": "img/S-263.png",
+    "resposta": "O gorro de urso do Tomé desceu e ficou maior, abraçando a cabeça até a testa; chapéus e elmos agora também acompanham cabeças maiores, como a dos anões."
   },
   {
     "texto": "Eu gosto da ideia de feno mas essa disposição do feno embaixo de todos os cavalos ficou um pouco artificial demais eu gosto da ideia dessa sala ter um aspecto mais rústico e não tão simétrico e perfeitinho e outra coisa é que em sendo isso um estábulo eu preciso que os cavalos fiquem presos com uma portinha na frente deles e não soltos da forma como estão e inclusive pode ter algo amarrando os cavalos em um dos muros outra coisa que eu gostaria de falar é para deixar os fenos das laterais dessa sala ainda mais realistas",
@@ -12763,9 +12779,10 @@
       "sp": "25/25"
     },
     "id": "S-264",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-08T22:26:15",
-    "imagem": "img/S-264.png"
+    "imagem": "img/S-264.png",
+    "resposta": "No estábulo do Tomé cada cavalo fica atrás de uma portinha de baia e amarrado por corda até uma argola na parede; o feno virou montes soltos e irregulares, diferentes em cada baia, e os fardos das laterais ficaram em pilhas tortas, com fiapos e um fardo aberto espalhado."
   },
   {
     "texto": "Eu vou tentar traduzir melhor o meu incômodo da Batalha Mili e depois vou tentar relatar o meu incômodo da Batalha ranged Mas o que eu gosto gostaria de dizer é que se eu tiver com o botão esquerdo do meu mouse selecionado em um inimigo e eu for andando em volta desse meu inimigo é de suma importância que o meu boneco girando mesmo que eu vá andando para frente com W com a e com D mas se eu tiver nessa posição da foto e com o meu mouse selecionado nesse boneco como inimigo e eu selecionando nele e clicando nele com o alvo vermelho eu preciso Obrigatoriamente que o meu boneco fique na direção oposta atacando ele mesmo ou seja ele não fica atacando de costas que sim de frente na prática Ele ficaria praticamente de frente para mim que sou o controlador dele nesse cenário eu gostaria de entender você tem claro isso que eu estou te pedindo Ou seja eu quero poder fazer um kiting melee facilitado, de forma que o fato de eu clocar no monstro e andar em volta dele, fizesse o meu personagem focar no monstro que eu selecionei e fosse girando o corpo em volta dele, dando porrada no bicho",
@@ -12945,5 +12962,1731 @@
     "status": "pendente",
     "criadoEm": "2026-11-08T22:36:00",
     "imagem": "img/S-268.png"
+  },
+  {
+    "texto": "Curandeira eu preciso que ela seja melhorada visualmente de modo que seja mais fada digamos assim E também não tivesse um rosto tão engessado como está e eu também quero uma evolução mais clara entre a criatura um e a criatura 2 e entre a criatura 2 e a criatura 3 quero mais elementos de diferenciação e que remetam também a cura",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (276×246 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Vila de Alvorada",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -50,
+        25
+      ],
+      "pos": [
+        -50,
+        25
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-269",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:37:03",
+    "imagem": "img/S-269.png"
+  },
+  {
+    "texto": "Essa curandeira está num bom caminho exceto pelo fato de que a roupa está bugada O Livro Está Sendo segurado de uma forma irreal e a cabeça dela tem algo que pai mas parece um jarro de Barro do que qualquer coisa então preciso que Veja essa roupa e proponha algo melhor para se encaixar em uma sacerdotisa",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (266×558 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Irmã Clara"
+        ],
+        "cenario": {
+          "Cerca": 2
+        },
+        "centro": "Irmã Clara",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -77,
+        27
+      ],
+      "pos": [
+        -77,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-270",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:38:02",
+    "imagem": "img/S-270.png"
+  },
+  {
+    "texto": "Até que eu gostei dessa roupa mas esse livro virado de cabeça para baixo não está muito legal até que eu gostei da ideia do livro flutuante porém ele está meio que ao contrário e também não está intuitivo que é um livro e essas palavras estão um pouco aleatórias saindo poderia estar saindo mais letrinhas para que ficasse mais óbvio que se trata de um livro mágico do que está atualmente pois atualmente está mais parecido com um bug",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (202×283 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Mestra Ivra"
+        ],
+        "cenario": {
+          "Cerca": 2
+        },
+        "centro": "Mestra Ivra",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -78,
+        14
+      ],
+      "pos": [
+        -78,
+        14
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-271",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:39:02",
+    "imagem": "img/S-271.png"
+  },
+  {
+    "texto": "Não podem ter janelas sem detalhes na parte aberta da janela e principalmente a janela não pode estar colada com a extremidade da casa pois fica muito esquisito",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (678×296 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 3,
+          "Lobo Cinzento": 4
+        },
+        "npcs": [],
+        "cenario": {
+          "Casa da vila": 1,
+          "Moinho": 1,
+          "Cerca": 5
+        },
+        "centro": "Casa da vila",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -91,
+        12
+      ],
+      "pos": [
+        -91,
+        12
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-272",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:39:27",
+    "imagem": "img/S-272.png"
+  },
+  {
+    "texto": "Nesse Lago gelado seria interessante que o personagem pudesse dar uma escorregada deslizando onde passa de forma com que o atrito seja praticamente não presente e haja um efeito de escorregar de fato",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1300×230 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lago congelado",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -330,
+        75
+      ],
+      "pos": [
+        -330,
+        75
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-273",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:40:31",
+    "imagem": "img/S-273.png"
+  },
+  {
+    "texto": "Senti falta desta cidade estar coberta por muros Lembrando que eu pedi para você usar como benchmark o nightwork do Game of Thrones e você fez até que muito bem porém eu preciso de tornar os detalhes melhores e mais incríveis e inclusive pode aumentar essa cidade um pouco pois achei que tem menos casas do que deveriam e poderia ter umas casas um pouco maiores com mais cômodos e etc e inclusive uma maior que eu pudesse entrar e ter acesso aos quartos e outros aposentos",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1395×471 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 2,
+          "Lobo Cinzento": 1
+        },
+        "npcs": [
+          "Comandante Varek",
+          "Hask",
+          "Intendente Mornas",
+          "Edran",
+          "Bram",
+          "Pip",
+          "Ylva"
+        ],
+        "cenario": {
+          "A Muralha Gélida": 1,
+          "Escadaria da Muralha": 1,
+          "Sarilho do elevador": 1,
+          "Torre do Comandante": 1,
+          "Salão comunal": 1,
+          "Alojamento da Vigília": 2,
+          "Corvaria": 1,
+          "Arsenal com forja": 1,
+          "Estábulo da Vigília": 1,
+          "Pátio de treino": 1,
+          "Lenha empilhada": 3,
+          "Neve acumulada": 1,
+          "Barril": 2,
+          "Caixote": 4,
+          "Saco": 2,
+          "Mastro com estandarte": 2
+        },
+        "centro": "Arsenal com forja",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -356,
+        10
+      ],
+      "pos": [
+        -356,
+        10
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-274",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:41:52",
+    "imagem": "img/S-274.png"
+  },
+  {
+    "texto": "Não faz sentido ter gramas em cima do concreto Você pode tirar todas essas gramas daqui sem nenhum problema",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (480×289 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        -292,
+        296
+      ],
+      "pos": [
+        -292,
+        296
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-275",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:42:13",
+    "imagem": "img/S-275.png"
+  },
+  {
+    "texto": "Todas essas armaduras podem e devem ser melhoradas esteticamente e inclusive elas precisam ser mais diferentes uma das outras do que atualmente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (224×298 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-276",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:42:55",
+    "imagem": "img/S-276.png"
+  },
+  {
+    "texto": "Eu mais posso ser capaz de andar e atravessar com o meu personagem essa mesa e também achei esse ambiente Ou melhor essa sala muito pouco convidativa pois não tem detalhes o suficiente no chão nos objetos e objetos suficientes e inclusive alguns npcs andando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (537×271 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-277",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:43:47",
+    "imagem": "img/S-277.png"
+  },
+  {
+    "texto": "Estar esse tapete que está bugado em cima da escada o tapete poderia acabar antes do início da escada e também aproveito para dizer que esse trono está feio e também o rei não está sentado de forma adequada pois os pés e pernas dele estão dentro do Trono e também reforço que o trono pode e deve ser mais bonito",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1217×237 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Dama Clarisse",
+          "Sir Bertran"
+        ],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-278",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:44:58",
+    "imagem": "img/S-278.png"
+  },
+  {
+    "texto": "Colorido quando na verdade poderiam ter mais livros com cores mais comuns como marrom preto e etc e não esse monte de cor azul e amarelo por exemplo preciso que você melhore esteticamente essa biblioteca e também inclua alguns npcs aqui neste ambiente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1331×404 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Orvalhinho": 7,
+          "Fungolino": 6,
+          "Coelho-Chifre": 9,
+          "Abelha Rubra": 11,
+          "Lobo Cinzento": 15,
+          "Lobo Alfa": 1,
+          "Esqueleto Vigia": 22,
+          "Cavaleiro Caído": 10,
+          "Espectro Pálido": 15,
+          "Musguinho": 11,
+          "Brasinha": 7,
+          "Orvalhinho Sombrio": 14,
+          "Maldoran, o Chifre Negro": 1,
+          "Selvara, a Rainha Sem Túmulo": 1,
+          "Espantalho Errante": 5,
+          "Golem de Musgo": 2,
+          "Morcego de Cripta": 10,
+          "Escorpião-Rubro": 2,
+          "Formiga Ceifadora": 2,
+          "Trotavento Selvagem": 1
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Aldo",
+          "Oto",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela",
+          "Aerin",
+          "Lyssandra",
+          "Thalion",
+          "Faëlar",
+          "Nimriel",
+          "Eldin",
+          "Borin",
+          "Lena",
+          "Tonho",
+          "Capitã Marinha",
+          "Iara",
+          "Joca",
+          "Nilo",
+          "Capitão Baltazar",
+          "Tico",
+          "Aurélio Vasconde",
+          "Fábio",
+          "Zaíra",
+          "Tadeu",
+          "Cora",
+          "Selene",
+          "Fenn",
+          "Dolf"
+        ],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-279",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:45:53",
+    "imagem": "img/S-279.png"
+  },
+  {
+    "texto": "Esse mundo poderia ter as terras melhor distribuídas ao redor do Globo e também ele poderia ficar mais no canto deste aposento e não tão próximo à entrada dele",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (366×476 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Gaspar",
+          "Lia",
+          "Rufino",
+          "Dama Brienna"
+        ],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-280",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:47:05",
+    "imagem": "img/S-280.png"
+  },
+  {
+    "texto": "Andar ali para ver mais de perto o que tem lá em cima isso é sim muito importante que você construa pois eu preciso ter a capacidade de subir em locais e esse aqui pode ser uma primeira estrutura para você criar pois certamente precisarei disso outras vezes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (436×672 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-281",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:47:51",
+    "imagem": "img/S-281.png"
+  },
+  {
+    "texto": "Poderia ter alguma espada em cima da mesa mas deitada e não assim em pé",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (363×265 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-282",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:49:21",
+    "imagem": "img/S-282.png"
+  },
+  {
+    "texto": "Gostei da ideia de ter essa placa Mas ela está claramente mal posicionada e também está bugada assim como todos esses círculos aleatórios que estão nas paredes também precisam ser ajustados",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (530×194 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Interior do Castelo de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:valcinza",
+      "nome": "Campos de Valcinza",
+      "tile": [
+        1750,
+        0
+      ],
+      "pos": [
+        1750,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-283",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:49:59",
+    "imagem": "img/S-283.png"
+  },
+  {
+    "texto": "Já melhorou bastante mas repara como parecem a ver espinhos nas asas dessa criatura sendo que as asas deveriam ser mais trabalhadas de forma mais interessante e a calda também parece que tem partes com poucas penas Então essa criatura precisa ser melhorada",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (450×467 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 8,
+          "Vharnyr, o Inverno que Anda": 1,
+          "Trotavento Selvagem": 1,
+          "Lobo Cinzento": 4
+        },
+        "npcs": [
+          "Ruan"
+        ],
+        "cenario": {},
+        "centro": "Trotavento Selvagem",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -44,
+        257
+      ],
+      "pos": [
+        -44,
+        257
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-284",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:51:15",
+    "imagem": "img/S-284.png"
+  },
+  {
+    "texto": "nao quero esse morro aqui. Precisa ser planicie ra entrar aqui. E tbm essas pedras aqui do lado do local que leva pro faro lestao muito ruins",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (2223×222 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Orvalhinho": 13,
+          "Fungolino": 11,
+          "Coelho-Chifre": 11,
+          "Abelha Rubra": 10,
+          "Gosmão": 1,
+          "Lobo Cinzento": 20,
+          "Lobo Alfa": 2,
+          "Esqueleto Vigia": 7,
+          "Cavaleiro Caído": 8,
+          "Espectro Pálido": 8,
+          "Musguinho": 9,
+          "Brasinha": 4,
+          "Geadinha": 15,
+          "Orvalhinho Sombrio": 7,
+          "Maldoran, o Chifre Negro": 1,
+          "Vharnyr, o Inverno que Anda": 1,
+          "Selvara, a Rainha Sem Túmulo": 1,
+          "Golem de Musgo": 4,
+          "Espantalho Errante": 8,
+          "Guardião Ancestral": 2,
+          "Morcego de Cripta": 5,
+          "Mandacaru Andarilho": 2,
+          "Formiga Ceifadora": 3,
+          "Trotavento Selvagem": 1,
+          "Boneco de Treino": 3
+        },
+        "npcs": [
+          "Dona Flora",
+          "Neli",
+          "Aldo",
+          "Ruan",
+          "Samira",
+          "Oto",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela",
+          "Mestre Brakar",
+          "Nim",
+          "Thorga",
+          "Torvald",
+          "Grum",
+          "Bárdin",
+          "Korvin",
+          "Brunna",
+          "Helga",
+          "Oldra",
+          "Rei Dúrgan",
+          "Guarda Real",
+          "Guarda Real",
+          "Gudrun",
+          "Irmão Hulda",
+          "Lian",
+          "Aerin",
+          "Lyssandra",
+          "Thalion",
+          "Faëlar",
+          "Nimriel",
+          "Eldin",
+          "Borin",
+          "Comandante Varek",
+          "Hask",
+          "Intendente Mornas",
+          "Edran",
+          "Bram",
+          "Pip",
+          "Ylva",
+          "Aurélio Vasconde",
+          "Fábio",
+          "Zaíra",
+          "Tadeu",
+          "Cora",
+          "Selene",
+          "Fenn",
+          "Ancião Teodoro",
+          "Mestra Ivra",
+          "Bento",
+          "Irmã Clara",
+          "Guarda Tobias",
+          "Capitão Bravo"
+        ],
+        "cenario": {
+          "Cais do porto": 1,
+          "Quebra-mar do farol": 1,
+          "Casa do porto": 6,
+          "Barril": 1,
+          "Caixote": 1,
+          "Palmeira": 10,
+          "Armazém de carga": 2,
+          "Pinheiro escuro": 1,
+          "Pinheiro": 3
+        },
+        "centro": "Chão — Porto das Gaivotas",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:porto",
+      "nome": "Porto das Gaivotas",
+      "tile": [
+        326,
+        239
+      ],
+      "pos": [
+        326,
+        239
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-285",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:54:41",
+    "imagem": "img/S-285.png"
+  },
+  {
+    "texto": "Essa parte dos Coqueiros ficou feia com o tronco muito curvado sendo que Coqueiros são mais retos e tem um tronco característico de coqueiro e também achei pouca folha no sentido de ter mais estruturas ou melhor precisaria ter mais estruturas e também até pode ter coco desde que ele seja mais esverdeado do que marrom assim pois ficou muito feio o coqueiro como um todo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (969×293 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Aldo",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela",
+          "Aerin",
+          "Lyssandra",
+          "Thalion",
+          "Faëlar",
+          "Nimriel",
+          "Eldin",
+          "Borin"
+        ],
+        "cenario": {
+          "Palmeira": 6
+        },
+        "centro": "Encosta / montanha — Aelindra",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:porto",
+      "nome": "Porto das Gaivotas",
+      "tile": [
+        313,
+        -345
+      ],
+      "pos": [
+        313,
+        -345
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-286",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:56:10",
+    "imagem": "img/S-286.png"
+  },
+  {
+    "texto": "É duas estruturas elas deveriam ser uma entrada assim mas elas não estão necessariamente conectadas a muros então fica um pouco estranho entender de fato o que seria a entrada desse Castelo ou melhor entendo que não é um castelo mas achei o posicionamento das estruturas muito infeliz elas deveriam estar conectadas ao muro e não assim soltas aleatoriamente a meu ver",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1660×453 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 15,
+          "Orvalhinho Sombrio": 7,
+          "Espectro Pálido": 13,
+          "Cavaleiro Caído": 9,
+          "Sentinela Silente": 1,
+          "Morcego de Cripta": 5
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Aldo",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela",
+          "Odete",
+          "Bóris",
+          "Ilka",
+          "Gaspar",
+          "Lia",
+          "Rufino",
+          "Rei Aldemar",
+          "Rainha Isolda",
+          "Dama Clarisse",
+          "Dama Brienna",
+          "Sir Bertran",
+          "Sir Ulric",
+          "Gervásio",
+          "Elwen",
+          "Frei Lauro",
+          "Dagna",
+          "Berta"
+        ],
+        "cenario": {
+          "Muro": 8,
+          "Torre": 4,
+          "Bandeira": 4,
+          "Capela do Sol": 1,
+          "Taverna Caneca Alegre": 1,
+          "Casa da vila": 4,
+          "Ferraria": 1,
+          "Feira": 1,
+          "Poço": 1,
+          "Barril": 2,
+          "Caixote": 2,
+          "Saco": 1,
+          "Suporte de armas": 1,
+          "Carrinho de mão": 1,
+          "Calçamento de pedra da praça": 1
+        },
+        "centro": "Calçamento de pedra da praça",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colinas",
+      "nome": "Colinas de Âmbar",
+      "tile": [
+        305,
+        -14
+      ],
+      "pos": [
+        305,
+        -14
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-287",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:57:21",
+    "imagem": "img/S-287.png"
+  },
+  {
+    "texto": "eu ja falei desse humano estar achatado e tambem sobre o espaço desnecessario em branco entre essa parte princial e a setinha direita. Nao sei se vc ainda vai resolver ou ignorou quando falei sobre esse bug. Vc precisa resolver. Veja que os outros personagens nao tao distoricods, apesarde tbm tarem com esse espaco branco inutil",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Seleção de personagens",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Palco do personagem",
+      "nome": "Área de 910×605 px em Palco do personagem — \"‹ · ›\"",
+      "codigo": "js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)",
+      "detalhes": {
+        "interface": [
+          "Palco do personagem"
+        ],
+        "textos": [
+          "‹",
+          "›"
+        ],
+        "area": [
+          1032,
+          225,
+          1942,
+          830
+        ]
+      }
+    },
+    "mapa": null,
+    "jogador": null,
+    "id": "S-288",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:04:12",
+    "imagem": "img/S-288.png"
+  },
+  {
+    "texto": "essa armadura ficou ridicula, ficou tudo parecendo um homem de lata. Bem feia mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (320×312 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Bastião"
+        ],
+        "cenario": {},
+        "centro": "Bastião",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:pedraclara",
+      "nome": "Cidadela de Pedraclara",
+      "tile": [
+        271,
+        -11
+      ],
+      "pos": [
+        271,
+        -11
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-289",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:05:18",
+    "imagem": "img/S-289.png"
+  },
+  {
+    "texto": "asasas abertas ficaram lindas demais, mas as encolhidas ficaram horriveis. E o pescoço e ohos desse animal ainda estão bem ruins... precisa ser mais realista. O rabo tambem",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (704×413 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Saco": 1
+        },
+        "centro": "Calçamento de pedra da praça",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:pedraclara",
+      "nome": "Cidadela de Pedraclara",
+      "tile": [
+        305,
+        -14
+      ],
+      "pos": [
+        305,
+        -14
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-290",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:06:12",
+    "imagem": "img/S-290.png"
+  },
+  {
+    "texto": "armadura extremamente mal aplicada no personagem, cheio de bugs .V precisa olhar com calme e resolver. E tbm essa mai nao parece estar segurando essa espada...",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (427×663 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Guarda Tobias"
+        ],
+        "cenario": {},
+        "centro": "Guarda Tobias",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -55,
+        22
+      ],
+      "pos": [
+        -55,
+        22
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-291",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:07:41",
+    "imagem": "img/S-291.png"
+  },
+  {
+    "texto": "quem tiver so com uma arma nao pode dar soco com outra mao. Tem que atacar so com a arma que está na mao e nao soco. So vai na porrada com os dois pubnhos se nao tiver nenhuma arma equipada. E tambempreciso garantir que a arma sempre esteja sendo segurada de verdade e nao so colad no punho cerrado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (494×305 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Executor)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -75,
+        34
+      ],
+      "pos": [
+        -75,
+        34
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-292",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:10:01",
+    "imagem": "img/S-292.png"
+  },
+  {
+    "texto": "sei que estou sem agilidade e tals, mas gostaria que o intervalo entre golpes fosse um pouco menor mesmo assim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (571×394 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Boneco de Treino",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -75,
+        33
+      ],
+      "pos": [
+        -75,
+        33
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "138/138",
+      "sp": "23/23"
+    },
+    "id": "S-293",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:11:17",
+    "imagem": "img/S-293.png"
+  },
+  {
+    "texto": "na posicao de ataque senti que meu boneco ficou muito olhando pra baixo e isso nao é legal. Precisa manter olhando pra mesma estatura sem olhar pra baixo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (383×310 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Guerreiro)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -74,
+        34
+      ],
+      "pos": [
+        -74,
+        34
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Guerreiro",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "138/138",
+      "sp": "23/23"
+    },
+    "id": "S-294",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:11:49",
+    "imagem": "img/S-294.png"
+  },
+  {
+    "texto": "E também eu gostaria de ouvir o barulhos quando as flechas fossem disparadas barulho de flecha mesmo e também gostaria que a estética dessas Flechas fossem muito mais realista em resumo há muito o que melhorar em termos de tiros com o arco e flecha tanto de posicionamento das mãos quanto efeitos sonoros e assim por diante",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (323×382 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Arqueiro)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -71,
+        29
+      ],
+      "pos": [
+        -71,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Arqueiro",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "104/104",
+      "sp": "27/27"
+    },
+    "id": "S-295",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:13:52",
+    "imagem": "img/S-295.png"
+  },
+  {
+    "texto": "isso deve ser bug do ladino. Nao tem logica, ta muito ruim. Lembrando que nao quero hat pra nenhuma classe. So se eu euquipar algo poderia ter visual na cabeça. Sem isso, esquece",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (229×265 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Ladino)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -70,
+        28
+      ],
+      "pos": [
+        -70,
+        28
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Ladino",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "112/112",
+      "sp": "24/24"
+    },
+    "id": "S-296",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:14:41",
+    "imagem": "img/S-296.png"
+  },
+  {
+    "texto": "a cap do paladino ficou hiper mega ultra bugda. Alem da armadura nao encaixar nada. Tem um infinidade do que vc melhorar em caso de armadura. use como benchmark do wow e do skyrim po, em vez de ficar inventando do zero",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (315×324 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Vidro (Paladino)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -72,
+        29
+      ],
+      "pos": [
+        -72,
+        29
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Paladino",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "166/166",
+      "sp": "27/27"
+    },
+    "id": "S-297",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:17:00",
+    "imagem": "img/S-297.png"
+  },
+  {
+    "texto": "ficou sentado muito pra frente, tem que melhorar isso em todas montarias",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 262×245 px em Janela \"✦ Loja de Auroras\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [],
+        "area": [
+          1844,
+          233,
+          2106,
+          478
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Paladino",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "166/166",
+      "sp": "27/27"
+    },
+    "id": "S-298",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:18:44",
+    "imagem": "img/S-298.png"
+  },
+  {
+    "texto": "esse retangulo qou uadrado onbugado em todas montaria precisa ser investigao e melhorado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "interface",
+      "rotulo": "Interface",
+      "id": "Janela \"✦ Loja de Auroras\"",
+      "nome": "Área de 233×193 px em Janela \"✦ Loja de Auroras\"",
+      "codigo": "js/ui.js (janelas/HUD), style.css (aparência), index.html (estrutura)",
+      "detalhes": {
+        "interface": [
+          "Janela \"✦ Loja de Auroras\""
+        ],
+        "textos": [],
+        "area": [
+          1867,
+          280,
+          2100,
+          473
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": null,
+      "pos": [
+        0,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Paladino",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "166/166",
+      "sp": "27/27"
+    },
+    "id": "S-299",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:19:47",
+    "imagem": "img/S-299.png"
+  },
+  {
+    "texto": "buguei aqui, fiquei preso, isso nao pode acotnecer , ainda mais pra alguem que nao é master como eu",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (920×532 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Cavaleiro Caído": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Rocha musgosa": 1
+        },
+        "centro": "Vidro (Paladino)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colossos",
+      "nome": "Ruínas dos Colossos",
+      "tile": [
+        -67,
+        -346
+      ],
+      "pos": [
+        -67,
+        -346
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Paladino",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "166/166",
+      "sp": "27/27"
+    },
+    "id": "S-300",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:23:16",
+    "imagem": "img/S-300.png"
+  },
+  {
+    "texto": "achei meio excessivos esses negocios no chao. E poderia tbm uns ossos pra dar uma variada. Esse lugar pode lembrar tbm a parte la do rei leao que dizia \"eu rio na cara do perigo\", pra dar uma complementada. Meio que com um osso grande de elefante bem trabalhado em algum lugar aqui. Seria interessante",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1003×383 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Ruínas dos Colossos",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colossos",
+      "nome": "Ruínas dos Colossos",
+      "tile": [
+        -130,
+        -389
+      ],
+      "pos": [
+        -130,
+        -389
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Mago",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "86/86",
+      "sp": "38/38"
+    },
+    "id": "S-301",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T23:24:37",
+    "imagem": "img/S-301.png"
   }
 ]

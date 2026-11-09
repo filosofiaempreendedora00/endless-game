@@ -321,6 +321,19 @@ const Sound = {
         this.noise(t, dur, 0.05, 900, 'bandpass'); // respiração rouca
         break; }
       case 'bossStep': this.sweep(70, 30, t, 0.35, 'sine', 0.5); this.noise(t, 0.25, 0.15, 180, 'lowpass'); break; // passo pesado de chefe
+      case 'hoofStomp': { // S-256: casco pesado batendo no chão — baque grave, estalo do casco e areia/pedrinhas espalhando
+        const k = 0.9 + Math.random() * 0.2; this.sweep(62 * k, 26, t, 0.5, 'sine', 0.75); this.sweep(140 * k, 50, t, 0.12, 'triangle', 0.25);
+        this.noise(t, 0.05, 0.35, 1800, 'bandpass'); this.noise(t + 0.02, 0.35, 0.18, 260, 'lowpass');
+        for (let q = 0; q < 4; q++) this.noise(t + 0.06 + Math.random() * 0.2, 0.03, 0.05, 3000 + Math.random() * 2000, 'highpass'); break; }
+      case 'demonGrowl': case 'demonVoice': { // S-256: grunhido maligno (curto, rouco) / voz aterrorizante (longa, com "palavras" e eco)
+        const c = this.ctx, vo = name === 'demonVoice', dur = vo ? 2.4 : 1.1, g = c.createGain(), f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(), dl = c.createDelay(), fb = c.createGain();
+        f1.type = 'bandpass'; f1.Q.value = 3; f2.type = 'bandpass'; f2.Q.value = 4; dl.delayTime.value = 0.23; fb.gain.value = vo ? 0.35 : 0.15;
+        const sylls = vo ? 5 : 2; for (let q = 0; q < sylls; q++) { const s0 = t + q * dur / sylls, f = [420, 300, 520, 360, 260][q % 5]; f1.frequency.setValueAtTime(f, s0); f2.frequency.setValueAtTime(f * 2.6, s0); } // formantes mudando = sílabas
+        for (const [fr, ty] of [[46, 'sawtooth'], [46.7, 'sawtooth'], [92, 'square'], [23, 'sine']]) { const o = c.createOscillator(); o.type = ty; o.frequency.setValueAtTime(fr * (vo ? 1 : 1.2), t); o.frequency.linearRampToValueAtTime(fr * (vo ? 0.82 : 0.9), t + dur); o.connect(f1); o.connect(f2); if (ty === 'sine') o.connect(g); o.start(t); o.stop(t + dur + 0.1); }
+        const am = c.createOscillator(), ag = c.createGain(); am.frequency.value = vo ? 31 : 38; ag.gain.value = 0.12; am.connect(ag); ag.connect(g.gain); am.start(t); am.stop(t + dur + 0.1); // aspereza (garganta)
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vo ? 0.42 : 0.36, t + 0.12); g.gain.setTargetAtTime(0.0001, t + dur * 0.8, 0.15);
+        f1.connect(g); f2.connect(g); g.connect(this.sfx); g.connect(dl); dl.connect(fb); fb.connect(dl); fb.connect(this.sfx);
+        this.noise(t, dur * 0.9, vo ? 0.07 : 0.1, 700, 'bandpass'); setTimeout(() => { try { dl.disconnect(); fb.disconnect(); } catch (e) { } }, (dur + 2) * 1000); break; }
       case 'demonRoar': case 'dragonRoar': { // S-138: rugido grave (demônio) / longo e rouco (dragão)
         const c = this.ctx, dr = name === 'dragonRoar', dur = dr ? 1.8 : 1.3, g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
         f.type = 'lowpass'; f.frequency.setValueAtTime(dr ? 900 : 600, t); f.frequency.linearRampToValueAtTime(300, t + dur); lfo.frequency.value = dr ? 18 : 26; lg.gain.value = dr ? 14 : 10; lfo.connect(lg);
