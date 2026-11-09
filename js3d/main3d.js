@@ -1109,6 +1109,15 @@ function attackAnim(p, me) {
   if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
   return ca;
 }
+// modo de combate: postura de luta da classe (parado) e guarda no tronco (andando) enquanto houver luta por perto
+function stanceOf(p) { const ca = CLASS_ATTACK[p.cls]; if (p.d.magicAuto || (ca && ca.sound === 'magic')) return 'Spell_Simple_Idle_Loop'; if (p.d.ranged) return 'Pistol_Idle_Loop'; return 'Sword_Idle'; }
+function inCombat(t) {
+  if (S.fire || S.autoAttack || t - (S.lastAtk || -99) < 5 || t - (S.lastHurt || -99) < 5) return true;
+  if ((S._cbT = (S._cbT || 0) + 1) % 10 === 0) S._cbNear = S.monsters.some(m => m.aggro && !m.dead && Math.abs(m.x - S.pos.x) + Math.abs(m.z - S.pos.z) < 14);
+  return !!S._cbNear;
+}
+// S-265: segurando o esquerdo em cima de um inimigo, ele fica travado: o corpo gira de frente para ele e WASD anda em volta (relativo à câmera)
+function fireLock() { const m = S.fireLock; if (!m || m.dead || !S.fire || isAction() || S.riding && !S.riding.war) return null; if (Math.hypot(m.x - S.pos.x, m.z - S.pos.z) > 40) { S.fireLock = null; return null; } return m; }
 const ATTACK_ANIM = { '1h': ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'], '2h': ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Chop'], dual: ['Dualwield_Melee_Attack_Slice', 'Dualwield_Melee_Attack_Stab'], ranged: ['2H_Ranged_Shoot'], cast: ['2H_Melee_Attack_Chop'] };
 
 /* =========================== Estado =========================== */
@@ -1182,8 +1191,10 @@ function aimPoint(dist = 30) {
 function actionFire() {
   const p = S.p, t = S.time; if (!S.fire || p.dead || t < S.nextAttack || t < S.lockAnim || S.casting) return;
   const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : p.d.rangeTiles * TM + 1.8;
-  if (!isAction()) { const q = aimPoint(30); S.pos.yaw = Math.atan2(q.x - S.pos.x, q.z - S.pos.z); } // vira para onde o cursor aponta
-  const m = aimTarget(reach);
+  const lk = fireLock();
+  if (lk) { const d = Math.hypot(lk.x - S.pos.x, lk.z - S.pos.z); if (d > reach + (lk.radius || 0.5)) return; } // travado e longe: só se aproxima (sem golpear o vento)
+  else if (!isAction()) { const q = aimPoint(30); S.pos.yaw = Math.atan2(q.x - S.pos.x, q.z - S.pos.z); } // vira para onde o cursor aponta
+  const m = lk || aimTarget(reach);
   S.nextAttack = t + p.d.aspd / 1000;
   vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
   if (m) { setTarget(m); playerAttack(m); return; }
@@ -1545,7 +1556,7 @@ function hurtPlayer(m, raw) {
   if (p.pet && PETS[p.pet.species].role === 'guardiao' && petNear()) dmg *= 1 - petPower(p.pet).guard / 100;
   dmg = Math.max(1, Math.round(dmg));
   if (S.god) { floatAt(S.me.obj.position, `-${dmg} (imune)`, '#ffd76a', 2); return; } // God Mode: os monstros atacam, mas o HP não desce
-  p.hp -= dmg; S.sitting = false;
+  p.hp -= dmg; S.sitting = false; S.lastHurt = S.time;
   floatAt(S.me.obj.position, '-' + dmg, '#ff5a5a', 2.1);
   Sound.play('hurt');
   if (!S.casting && S.time >= S.lockAnim && !moveInput().any) { S.me.anim.play('Hit_A', { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.35; }
@@ -1558,7 +1569,7 @@ function fallDamage(drop, water) {
   const p = S.p; if (!p || p.dead || drop < 5 || water || S.interior || S.pos.x > HALF + 100 || S.time - (S.tpT || -9) < 1.5) return; // salas e logo após teleporte não contam
   const k = Math.pow((drop - 5) / 14, 1.35) * (S.riding ? 0.6 : 1), dmg = Math.max(1, Math.round(p.d.maxHp * k));
   if (S.god) { floatAt(S.me.obj.position, `-${dmg} queda (imune)`, '#ffd76a', 2); return; }
-  p.hp -= dmg; S.sitting = false; hudDirty = true;
+  p.hp -= dmg; S.sitting = false; S.lastHurt = S.time; hudDirty = true;
   floatAt(S.me.obj.position, '-' + dmg + ' queda', '#ff5a5a', 2.1); Sound.play('hurt');
   if (p.hp <= 0) { p.hp = 0; log(`Você caiu de ${Math.round(drop)} m de altura.`, 'warn'); playerDie(); }
   else if (k > 0.3) log(`Que queda! (${Math.round(drop)} m)`, 'warn');
@@ -1786,7 +1797,8 @@ function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
   me.anim.update(dt);
   { // S-236: mirando (botão esquerdo) e andando de lado, as pernas viram para onde você anda e o tronco continua na mira
-    const mi0 = moveInput(), want = S.fire && !isAction() && !S.riding && mi0.any ? (mi0.fwd > 0 ? mi0.strafe * -0.6 : mi0.fwd < 0 ? mi0.strafe * 0.5 : mi0.strafe * -Math.PI / 2 * 0.9) : 0;
+    const mi0 = moveInput(), rel = S.moveRel; let want = S.fire && !isAction() && !S.riding && mi0.any ? (mi0.fwd > 0 ? mi0.strafe * -0.6 : mi0.fwd < 0 ? mi0.strafe * 0.5 : mi0.strafe * -Math.PI / 2 * 0.9) : 0;
+    if (rel != null) { const back = Math.abs(rel) > 2.0, r2 = back ? rel - Math.sign(rel) * Math.PI : rel; want = Math.max(-1.45, Math.min(1.45, r2 * 0.9)); } // S-265: pernas para onde anda, tronco no alvo travado
     S.legTwist = angLerp(S.legTwist || 0, want, Math.min(1, dt * 10));
     if (Math.abs(S.legTwist) > 0.01) legTwist(me, S.legTwist);
   }
@@ -1804,7 +1816,7 @@ function updatePlayer(dt) {
   const mi = moveInput();
   if (!isAction()) updateAimCursor();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
-  else if (S.fire) { const q = aimPoint(30); P.yaw = angLerp(P.yaw, Math.atan2(q.x - P.x, q.z - P.z), Math.min(1, dt * 14)); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
+  else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, Math.atan2(q.x - P.x, q.z - P.z), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
   else {
     P.yaw += mi.turn * 2.6 * dt;
     if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
@@ -1814,11 +1826,14 @@ function updatePlayer(dt) {
   if (mi.any && S.casting) { S.casting = null; log('Conjuração cancelada.', 'warn'); $('castbar3d').classList.add('hidden'); }
   const base = p.d.speed / 32 * TM * 1.1 * (S.god ? 3.2 : 1) * (S.riding ? (S.riding.war ? 1.25 : MOUNT_SPEED) : 1) * ((S.fire || S.time - (S.lastAtk || -9) < 0.6) && !S.riding ? 0.55 : 1); // S-236: atacando você anda mais devagar (estilo WoW)
   const inLake = !S.interior && lakeDist(P.x, P.z) < LAKE.r + 1;
-  let vx = 0, vz = 0;
+  let vx = 0, vz = 0; S.moveRel = null;
   if (mi.any && !S.casting) {
-    const fx = Math.sin(P.yaw), fz = Math.cos(P.yaw), rx = -Math.cos(P.yaw), rz = Math.sin(P.yaw);
+    const lk = fireLock(), ry = lk ? S.cam.yaw : P.yaw; // S-265: travado no alvo, WASD anda pela câmera (W = para longe da câmera) e o corpo continua de frente para o alvo
+    const fx = Math.sin(ry), fz = Math.cos(ry), rx = -Math.cos(ry), rz = Math.sin(ry);
     let dx = fx * mi.fwd + rx * mi.strafe, dz = fz * mi.fwd + rz * mi.strafe; const l = Math.hypot(dx, dz) || 1;
-    const sp = base * (mi.fwd < 0 ? 0.55 : mi.fwd === 0 ? 0.85 : 1) * (inLake ? 0.6 : 1);
+    let rel = null; if (lk) { rel = Math.atan2(dx, dz) - P.yaw; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2; }
+    S.moveRel = rel;
+    const sp = base * (rel != null ? (Math.abs(rel) < 0.8 ? 1 : Math.abs(rel) < 2.0 ? 0.85 : 0.6) : (mi.fwd < 0 ? 0.55 : mi.fwd === 0 ? 0.85 : 1)) * (inLake ? 0.6 : 1);
     vx = dx / l * sp; vz = dz / l * sp;
   }
   // aceleração/desaceleração suave: ao soltar a tecla o personagem para em ~0,2 s, não de uma vez
@@ -1871,17 +1886,20 @@ function updatePlayer(dt) {
   me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
   if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
+  const fighting = !S.riding && inCombat(t);
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (S.riding && t >= S.lockAnim) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
   else if (!P.ground) { if (me.anim.name !== 'Jump_Start') me.anim.play('Jump_Idle'); }
   else if (S.sitting) { if (me.anim.name !== 'Sit_Floor_Idle' && me.anim.name !== 'Sit_Floor_Down') { me.anim.play('Sit_Floor_Down', { once: true }); later(0.9, () => { if (S.sitting) me.anim.play('Sit_Floor_Idle'); }); } }
+  else if (S.moveRel != null) { if (Math.abs(S.moveRel) > 2.0) me.anim.play('Walking_Backwards', { speed: -1.05 }); else me.anim.play('Running_A'); } // S-265: rodeando o alvo travado
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.9 : 1 });
   else if (mi.fwd < 0) me.anim.play('Walking_Backwards', { speed: -1.05 }); // a caminhada tocada ao contrário = passos para trás
   else if (mi.strafe) me.anim.play('Running_A'); // de lado: o corpo vira para a direção (bodyTwist) e corre
   else if (coast > 0.8) me.anim.play('Running_A', { speed: Math.max(0.45, coast / base) });
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
-  else me.anim.play(S.autoAttack && S.target ? (S.me.look.style === '2h' || S.me.look.style === 'cast' ? '2H_Melee_Idle' : 'Idle') : 'Idle');
+  else me.anim.play(fighting ? stanceOf(p) : 'Idle', { fade: 0.25 }); // em combate: postura de luta parado, nada de voltar "à paisana" entre os golpes
+  { const moving = Math.hypot(S.vel.x, S.vel.z) > 0.3, fullAtk = t < S.lockAnim && !S.overlayAtk; me.anim.layer && me.anim.layer(fighting && moving && P.ground && !S.riding && !S.casting && !S.sitting && !fullAtk ? stanceOf(p) : null, 2.2, dt); }
   // conjuração
   if (S.casting && t >= S.casting.end) { const c = S.casting; S.casting = null; $('castbar3d').classList.add('hidden'); executeSkill(c); }
   // ataque automático
@@ -2644,7 +2662,7 @@ canvas.addEventListener('mousedown', e => {
   if (e.button === 0) { // S-141: botão esquerdo = atacar (segurar = continuar atacando); em NPC = conversar
     const hit = pick(e.clientX, e.clientY);
     if (hit && hit.isNpc) { mouse.left = true; mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = 0; return; }
-    S.fire = true; S.autoAttack = false; return;
+    S.fire = true; S.autoAttack = false; S.fireLock = hit && !hit.isNpc && !hit.dead && (S.monsters.includes(hit) || (typeof isRival === 'function' && isRival(hit))) ? hit : null; if (S.fireLock) setTarget(S.fireLock); return; // S-265: clicou num inimigo = trava nele enquanto segurar
   }
   if (e.button === 2) mouse.right = true; else return;
   mouse.moved = 0; mouse.x = e.clientX; mouse.y = e.clientY; mouse.btn = e.button;
@@ -2652,7 +2670,7 @@ canvas.addEventListener('mousedown', e => {
 // S-233: enquanto o botão esquerdo está apertado, o cursor vira uma mira (branca; vermelha quando há um inimigo debaixo dela)
 const AIM_CUR = c => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><g fill='none' stroke='${c}' stroke-width='2'><circle cx='16' cy='16' r='9'/><path d='M16 2v7M16 23v7M2 16h7M23 16h7'/></g><circle cx='16' cy='16' r='1.6' fill='${c}'/><g fill='none' stroke='rgba(0,0,0,0.6)' stroke-width='1'><circle cx='16' cy='16' r='10.5'/></g></svg>`)}") 16 16, crosshair`;
 const AIM_W = AIM_CUR('#ffffff'), AIM_R = AIM_CUR('#ff4a3a');
-function updateAimCursor() { if (isAction()) return; const want = S.fire ? (aimTarget(S.p && (S.p.d.ranged || S.p.d.magicAuto) ? 32 : 3.5) ? AIM_R : AIM_W) : ''; if (canvas.style.cursor !== want) canvas.style.cursor = want; }
+function updateAimCursor() { if (isAction()) return; const want = S.fire ? (fireLock() || aimTarget(S.p && (S.p.d.ranged || S.p.d.magicAuto) ? 32 : 3.5) ? AIM_R : AIM_W) : ''; if (canvas.style.cursor !== want) canvas.style.cursor = want; }
 addEventListener('mousemove', e => {
   mouseNdc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
@@ -2669,7 +2687,7 @@ addEventListener('mousemove', e => {
   }
 });
 addEventListener('mouseup', e => {
-  if (e.button === 0) S.fire = false;
+  if (e.button === 0) { S.fire = false; S.fireLock = null; }
   if (isAction()) return;
   const wasClick = mouse.moved <= 4 && (e.button === 0 ? mouse.left : mouse.right);
   if (e.button === 1) { mouse.mid = false; if (!mouse.left && !mouse.right && document.pointerLockElement) document.exitPointerLock(); }

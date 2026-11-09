@@ -12167,5 +12167,783 @@
     "status": "pendente",
     "criadoEm": "2026-11-08T22:16:00",
     "imagem": "img/S-252.png"
+  },
+  {
+    "texto": "Essas asas fechadas ficaram esquisitos a parte digamos da cartilagem ou seja essa parte das asas que abrem junto com as penas ficou um pouco artificial essas penas também poderiam ser melhoradas tal como as pernas desse Pegasus e também o formato da bunda e também a própria cauda poderia ser muito mais elegante e mais fluido em termos de movimento Mas de todos os pontos de melhoria é dessa criatura o que eu mais senti falta são as asas bem feitas tanto em termos de plumas ou seja apenas mas principalmente da estrutura que segura as asas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (700×396 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Samira"
+        ],
+        "cenario": {},
+        "centro": "Chão — Dunas de Sal-Rubro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        2,
+        228
+      ],
+      "pos": [
+        2,
+        228
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-253",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:17:14",
+    "imagem": "img/S-253.png"
+  },
+  {
+    "texto": "Melhorar a estética deste fogo ou melhor desta fogueira para que pareça um fogo de verdade ardente e tornar as Pedrinhas mais reais e também As madeiras ou seja melhore a fogueira como um todo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (211×127 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Estrada de terra — Dunas de Sal-Rubro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -4,
+        228
+      ],
+      "pos": [
+        -4,
+        228
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-254",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:17:41",
+    "imagem": "img/S-254.png"
+  },
+  {
+    "texto": "Desenhe melhor esse Pegasus para que não fique assim tão esquisito e também pode dar um leve movimento desta Bandeira para que ela não fique estática e é importante que ela esteja conectada a parte da madeira e não flutuando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (265×189 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Dunas de Sal-Rubro",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        9,
+        235
+      ],
+      "pos": [
+        9,
+        235
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-255",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:18:06",
+    "imagem": "img/S-255.png"
+  },
+  {
+    "texto": "Gostaria que fosse mais Evidente o contato dos pés dessa criatura com o solo e também desce algum efeito de barulho quando ela estivesse andando e ela também pudesse emitir alguns grunhidos malignos e talvez uma voz aterrorizante e um barulho meio que indicando que é uma criatura pesada e também gostaria que a espada dela fosse melhor trabalhada em termos de acabamento e também as pernas fossem mais parecidas com de um Fauno não necessariamente com pelos mas eu digo em termos de formato pois ele está meio parecido com um Mewtwo com essa cinturinha",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (213×201 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Kharzûl, Soberano das Areias Rubras": 1,
+          "Formiga Ceifadora": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Pedra": 3
+        },
+        "centro": "Kharzûl, Soberano das Areias Rubras",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -60,
+        300
+      ],
+      "pos": [
+        -60,
+        300
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-256",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:19:54",
+    "imagem": "img/S-256.png"
+  },
+  {
+    "texto": "Gostaria que essa criatura fosse um pouco maior e o rosto tivesse menos cara de psicopata e também tivesse um bico levemente maior",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (153×167 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Trotavento Selvagem": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Trotavento Selvagem",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:dunas",
+      "nome": "Dunas de Sal-Rubro",
+      "tile": [
+        -34,
+        331
+      ],
+      "pos": [
+        -34,
+        331
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-257",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:20:18",
+    "imagem": "img/S-257.png"
+  },
+  {
+    "texto": "Preciso que esse dragão seja muito melhorado esteticamente e reforço que você deve se inspirar muito nos dragões de Skyrim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (452×472 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Orvalhinho": 13,
+          "Fungolino": 11,
+          "Coelho-Chifre": 11,
+          "Abelha Rubra": 11,
+          "Gosmão": 1,
+          "Lobo Cinzento": 15,
+          "Lobo Alfa": 1,
+          "Musguinho": 11,
+          "Geadinha": 1,
+          "Esqueleto Vigia": 9,
+          "Orvalhinho Sombrio": 2,
+          "Espectro Pálido": 11,
+          "Cavaleiro Caído": 7,
+          "Sentinela Silente": 1,
+          "Vharnyr, o Inverno que Anda": 1,
+          "Espantalho Errante": 5,
+          "Golem de Musgo": 2,
+          "Morcego de Cripta": 3,
+          "Boneco de Treino": 3
+        },
+        "npcs": [
+          "Dona Flora",
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Neli",
+          "Aldo",
+          "Ísis",
+          "Bastião",
+          "Irmã Mirela",
+          "Ancião Teodoro",
+          "Mestra Ivra",
+          "Bento",
+          "Irmã Clara",
+          "Guarda Tobias",
+          "Capitão Bravo"
+        ],
+        "cenario": {
+          "Pinheiro com neve": 1,
+          "Rocha": 1,
+          "Pinheiro escuro": 1
+        },
+        "centro": "Vharnyr, o Inverno que Anda",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -230,
+        12
+      ],
+      "pos": [
+        -230,
+        12
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-258",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:21:51",
+    "imagem": "img/S-258.png"
+  },
+  {
+    "texto": "Estou sentindo um exagero dessas pedras com limo esverdeado na verdade prefiro pedras mais cinzentas e que sim Enquanto estamos na Neve elas podem ser encobertas com neve mas não necessariamente com o limo pois não combina com o ambiente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (239×192 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Rocha": 1
+        },
+        "centro": "Rocha",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -322,
+        -34
+      ],
+      "pos": [
+        -322,
+        -34
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-259",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:22:23",
+    "imagem": "img/S-259.png"
+  },
+  {
+    "texto": "Aqui poderia ser um estábulo aos mods do estábulo que você já criou em outra situação e inclusive incluir alguns cavalos aqui dentro claro que os cavalos precisam ser esteticamente compatíveis com o que há de melhor em termos de cavalos há na atualidade",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (696×299 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 3
+        },
+        "npcs": [
+          "Comandante Varek",
+          "Intendente Mornas",
+          "Ylva"
+        ],
+        "cenario": {
+          "Torre do Comandante": 1,
+          "Salão comunal": 1,
+          "Arsenal com forja": 1,
+          "Estábulo da Vigília": 1,
+          "Portão selado da Muralha": 1,
+          "Lenha empilhada": 1,
+          "Barril": 2,
+          "Caixote": 4,
+          "Saco": 2
+        },
+        "centro": "Salão comunal",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -372,
+        26
+      ],
+      "pos": [
+        -372,
+        26
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-260",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:23:01",
+    "imagem": "img/S-260.png"
+  },
+  {
+    "texto": "Eu não gostei da ideia desses riscos aleatórios eu entendi que você se inspirou na The Wall de Game of Thrones mas eu preferia que fosse melhorado isso esteticamente para que ficasse ainda mais compatível e não com essas listras aleatórias",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (700×302 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "A Muralha Gélida",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -405,
+        2
+      ],
+      "pos": [
+        -405,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-261",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:23:51",
+    "imagem": "img/S-261.png"
+  },
+  {
+    "texto": "Eu não gosto dessa linha verde no perímetro poderia de fato se inspirar no que você já viu no Game of Thrones com a The Wall",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (572×265 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Encosta / montanha — Campos de Valcinza",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:geada",
+      "nome": "Vale da Geada",
+      "tile": [
+        -434,
+        229
+      ],
+      "pos": [
+        -434,
+        229
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-262",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:24:17",
+    "imagem": "img/S-262.png"
+  },
+  {
+    "texto": "Esse chapéu de urso ainda não está encaixando na cabeça desse nosso colega",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (281×243 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Tomé"
+        ],
+        "cenario": {},
+        "centro": "Tomé",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        1298,
+        1
+      ],
+      "pos": [
+        1298,
+        1
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-263",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:25:04",
+    "imagem": "img/S-263.png"
+  },
+  {
+    "texto": "Eu gosto da ideia de feno mas essa disposição do feno embaixo de todos os cavalos ficou um pouco artificial demais eu gosto da ideia dessa sala ter um aspecto mais rústico e não tão simétrico e perfeitinho e outra coisa é que em sendo isso um estábulo eu preciso que os cavalos fiquem presos com uma portinha na frente deles e não soltos da forma como estão e inclusive pode ter algo amarrando os cavalos em um dos muros outra coisa que eu gostaria de falar é para deixar os fenos das laterais dessa sala ainda mais realistas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1183×230 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Carrinho de mão": 1
+        },
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        1305,
+        2
+      ],
+      "pos": [
+        1305,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-264",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:26:15",
+    "imagem": "img/S-264.png"
+  },
+  {
+    "texto": "Eu vou tentar traduzir melhor o meu incômodo da Batalha Mili e depois vou tentar relatar o meu incômodo da Batalha ranged Mas o que eu gosto gostaria de dizer é que se eu tiver com o botão esquerdo do meu mouse selecionado em um inimigo e eu for andando em volta desse meu inimigo é de suma importância que o meu boneco girando mesmo que eu vá andando para frente com W com a e com D mas se eu tiver nessa posição da foto e com o meu mouse selecionado nesse boneco como inimigo e eu selecionando nele e clicando nele com o alvo vermelho eu preciso Obrigatoriamente que o meu boneco fique na direção oposta atacando ele mesmo ou seja ele não fica atacando de costas que sim de frente na prática Ele ficaria praticamente de frente para mim que sou o controlador dele nesse cenário eu gostaria de entender você tem claro isso que eu estou te pedindo Ou seja eu quero poder fazer um kiting melee facilitado, de forma que o fato de eu clocar no monstro e andar em volta dele, fizesse o meu personagem focar no monstro que eu selecionei e fosse girando o corpo em volta dele, dando porrada no bicho",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (478×409 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Boneco de Treino",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -68,
+        33
+      ],
+      "pos": [
+        -68,
+        33
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-265",
+    "status": "feito",
+    "criadoEm": "2026-11-08T22:30:24",
+    "imagem": "img/S-265.png",
+    "resposta": "Clicou e segurou o esquerdo num inimigo = ele fica travado: o corpo gira sempre de frente para ele e o WASD anda pela câmera (W para longe dela, A/D para os lados, S para perto), então dá para rodear o monstro batendo nele (kiting corpo a corpo). Também entrou o modo de combate: durante a luta (e 5 s depois) ele fica na postura de luta parado e com a guarda erguida no tronco correndo, sem voltar \"à paisana\" entre os golpes."
+  },
+  {
+    "texto": "Esse gráfico de pelos Queimados ficou um pouco destoante do restante do gráfico do jogo Então gostaria que você repensasse isso e gostaria de ver o fogo no rabo desse personagem maior tal quanto à evolução Então a primeira evolução é o fogo pequeno uma outra é um fogo médio e a terceira um fogo maior e também gostaria de que esses pelos fossem melhor feitos e não assim parecendo um Bombril",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (473×330 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Faísca (Nv. 1)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -55,
+        27
+      ],
+      "pos": [
+        -55,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-266",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:33:12",
+    "imagem": "img/S-266.png"
+  },
+  {
+    "texto": "Eu falei que eu gostaria que essa segunda evolução tivesse um pouco mais de cristais do que há hoje nela e talvez um pouco menos de limo e também gostaria que o rosto fosse menos cônico ou seja o animal tivesse mais parecido com um tatu real e inclusive essas pernas tem muito a melhorar pois parecem demais ainda com figuras geométricas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (235×200 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Rochedo (Nv. 10)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -53,
+        27
+      ],
+      "pos": [
+        -53,
+        27
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-267",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:34:15",
+    "imagem": "img/S-267.png"
+  },
+  {
+    "texto": "Não gostei de várias coisas eu queria que essa terceira evolução fosse de fato a continuidade da segunda evolução ou seja tivessem cristais nas costas maiores e ainda houvesse a predominância de algo esverdeado porém não assim totalmente azul e com essa cauda esquisita novamente o que você pode se inspirar Talvez seja no torterra do Pokémon Apesar de que o do Terra é uma tartaruga e aqui estamos falando de tatu porém ele precisa ter uma estrutura nas costas realmente mais interessante em termos de cristais maiores e mais imponentes e novamente manter a predominância e a lógica das evoluções e claro que os tamanhos também precisam ser refeitos o menor de todos precisa ser menor ou do Meio um pouco maior do que o menor e essa terceira evolução ainda pode ser um pouquinho maior do que é agora",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (317×254 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Monolito (Nv. 25)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -53,
+        25
+      ],
+      "pos": [
+        -53,
+        25
+      ]
+    },
+    "jogador": {
+      "nome": "Vidro",
+      "classe": "Executor",
+      "nivelBase": 5,
+      "nivelClasse": 7,
+      "hp": "126/126",
+      "sp": "25/25"
+    },
+    "id": "S-268",
+    "status": "pendente",
+    "criadoEm": "2026-11-08T22:36:00",
+    "imagem": "img/S-268.png"
   }
 ]

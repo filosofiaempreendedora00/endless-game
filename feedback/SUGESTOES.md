@@ -2,7 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (5)
+## Pendentes (20)
 
 ### S-248 · Área do mapa: Área da tela (1640×618 px)
 - **Status:** pendente · **Quando:** 2026-11-08T22:12:12 · **Mapa:** Campos de Valcinza (tile [-190, 284])
@@ -34,7 +34,97 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** Gostaria que os cactos tivessem um pouco mais de detalhes e não fossem tão monocromáticos assim seriam importante um pouco de textura de cactos de fato
 - ![print](img/S-252.png)
 
-## Feitas (247)
+### S-253 · Área do mapa: Área da tela (700×396 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:17:14 · **Mapa:** Dunas de Sal-Rubro (tile [2, 228])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Essas asas fechadas ficaram esquisitos a parte digamos da cartilagem ou seja essa parte das asas que abrem junto com as penas ficou um pouco artificial essas penas também poderiam ser melhoradas tal como as pernas desse Pegasus e também o formato da bunda e também a própria cauda poderia ser muito mais elegante e mais fluido em termos de movimento Mas de todos os pontos de melhoria é dessa criatura o que eu mais senti falta são as asas bem feitas tanto em termos de plumas ou seja apenas mas principalmente da estrutura que segura as asas
+- ![print](img/S-253.png)
+
+### S-254 · Área do mapa: Área da tela (211×127 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:17:41 · **Mapa:** Dunas de Sal-Rubro (tile [-4, 228])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Melhorar a estética deste fogo ou melhor desta fogueira para que pareça um fogo de verdade ardente e tornar as Pedrinhas mais reais e também As madeiras ou seja melhore a fogueira como um todo
+- ![print](img/S-254.png)
+
+### S-255 · Área do mapa: Área da tela (265×189 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:18:06 · **Mapa:** Dunas de Sal-Rubro (tile [9, 235])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Desenhe melhor esse Pegasus para que não fique assim tão esquisito e também pode dar um leve movimento desta Bandeira para que ela não fique estática e é importante que ela esteja conectada a parte da madeira e não flutuando
+- ![print](img/S-255.png)
+
+### S-256 · Área do mapa: Área da tela (213×201 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:19:54 · **Mapa:** Dunas de Sal-Rubro (tile [-60, 300])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que fosse mais Evidente o contato dos pés dessa criatura com o solo e também desce algum efeito de barulho quando ela estivesse andando e ela também pudesse emitir alguns grunhidos malignos e talvez uma voz aterrorizante e um barulho meio que indicando que é uma criatura pesada e também gostaria que a espada dela fosse melhor trabalhada em termos de acabamento e também as pernas fossem mais parecidas com de um Fauno não necessariamente com pelos mas eu digo em termos de formato pois ele está meio parecido com um Mewtwo com essa cinturinha
+- ![print](img/S-256.png)
+
+### S-257 · Área do mapa: Área da tela (153×167 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:20:18 · **Mapa:** Dunas de Sal-Rubro (tile [-34, 331])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que essa criatura fosse um pouco maior e o rosto tivesse menos cara de psicopata e também tivesse um bico levemente maior
+- ![print](img/S-257.png)
+
+### S-258 · Área do mapa: Área da tela (452×472 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:21:51 · **Mapa:** Vale da Geada (tile [-230, 12])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Preciso que esse dragão seja muito melhorado esteticamente e reforço que você deve se inspirar muito nos dragões de Skyrim
+- ![print](img/S-258.png)
+
+### S-259 · Área do mapa: Área da tela (239×192 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:22:23 · **Mapa:** Vale da Geada (tile [-322, -34])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Estou sentindo um exagero dessas pedras com limo esverdeado na verdade prefiro pedras mais cinzentas e que sim Enquanto estamos na Neve elas podem ser encobertas com neve mas não necessariamente com o limo pois não combina com o ambiente
+- ![print](img/S-259.png)
+
+### S-260 · Área do mapa: Área da tela (696×299 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:23:01 · **Mapa:** Vale da Geada (tile [-372, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Aqui poderia ser um estábulo aos mods do estábulo que você já criou em outra situação e inclusive incluir alguns cavalos aqui dentro claro que os cavalos precisam ser esteticamente compatíveis com o que há de melhor em termos de cavalos há na atualidade
+- ![print](img/S-260.png)
+
+### S-261 · Área do mapa: Área da tela (700×302 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:23:51 · **Mapa:** Vale da Geada (tile [-405, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu não gostei da ideia desses riscos aleatórios eu entendi que você se inspirou na The Wall de Game of Thrones mas eu preferia que fosse melhorado isso esteticamente para que ficasse ainda mais compatível e não com essas listras aleatórias
+- ![print](img/S-261.png)
+
+### S-262 · Área do mapa: Área da tela (572×265 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:24:17 · **Mapa:** Vale da Geada (tile [-434, 229])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu não gosto dessa linha verde no perímetro poderia de fato se inspirar no que você já viu no Game of Thrones com a The Wall
+- ![print](img/S-262.png)
+
+### S-263 · Área do mapa: Área da tela (281×243 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:25:04 · **Mapa:** Vila de Alvorada (tile [1298, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse chapéu de urso ainda não está encaixando na cabeça desse nosso colega
+- ![print](img/S-263.png)
+
+### S-264 · Área do mapa: Área da tela (1183×230 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:26:15 · **Mapa:** Vila de Alvorada (tile [1305, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gosto da ideia de feno mas essa disposição do feno embaixo de todos os cavalos ficou um pouco artificial demais eu gosto da ideia dessa sala ter um aspecto mais rústico e não tão simétrico e perfeitinho e outra coisa é que em sendo isso um estábulo eu preciso que os cavalos fiquem presos com uma portinha na frente deles e não soltos da forma como estão e inclusive pode ter algo amarrando os cavalos em um dos muros outra coisa que eu gostaria de falar é para deixar os fenos das laterais dessa sala ainda mais realistas
+- ![print](img/S-264.png)
+
+### S-266 · Área do mapa: Área da tela (473×330 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:33:12 · **Mapa:** Vila de Alvorada (tile [-55, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse gráfico de pelos Queimados ficou um pouco destoante do restante do gráfico do jogo Então gostaria que você repensasse isso e gostaria de ver o fogo no rabo desse personagem maior tal quanto à evolução Então a primeira evolução é o fogo pequeno uma outra é um fogo médio e a terceira um fogo maior e também gostaria de que esses pelos fossem melhor feitos e não assim parecendo um Bombril
+- ![print](img/S-266.png)
+
+### S-267 · Área do mapa: Área da tela (235×200 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:34:15 · **Mapa:** Vila de Alvorada (tile [-53, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu falei que eu gostaria que essa segunda evolução tivesse um pouco mais de cristais do que há hoje nela e talvez um pouco menos de limo e também gostaria que o rosto fosse menos cônico ou seja o animal tivesse mais parecido com um tatu real e inclusive essas pernas tem muito a melhorar pois parecem demais ainda com figuras geométricas
+- ![print](img/S-267.png)
+
+### S-268 · Área do mapa: Área da tela (317×254 px)
+- **Status:** pendente · **Quando:** 2026-11-08T22:36:00 · **Mapa:** Vila de Alvorada (tile [-53, 25])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Não gostei de várias coisas eu queria que essa terceira evolução fosse de fato a continuidade da segunda evolução ou seja tivessem cristais nas costas maiores e ainda houvesse a predominância de algo esverdeado porém não assim totalmente azul e com essa cauda esquisita novamente o que você pode se inspirar Talvez seja no torterra do Pokémon Apesar de que o do Terra é uma tartaruga e aqui estamos falando de tatu porém ele precisa ter uma estrutura nas costas realmente mais interessante em termos de cristais maiores e mais imponentes e novamente manter a predominância e a lógica das evoluções e claro que os tamanhos também precisam ser refeitos o menor de todos precisa ser menor ou do Meio um pouco maior do que o menor e essa terceira evolução ainda pode ser um pouquinho maior do que é agora
+- ![print](img/S-268.png)
+
+## Feitas (248)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -1774,3 +1864,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** nao gostei desse chao precendo mil moedas
 - ![print](img/S-247.png)
 - **Resposta do Claude:** Troquei as "moedinhas" por um calçamento de verdade: pedras irregulares encaixadas de uns 23 cm, abauladas, com juntas de terra, musgo e tons variados (vila e Pedraclara).
+
+### S-265 · Área do mapa: Área da tela (478×409 px)
+- **Status:** feito · **Quando:** 2026-11-08T22:30:24 · **Mapa:** Vila de Alvorada (tile [-68, 33])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu vou tentar traduzir melhor o meu incômodo da Batalha Mili e depois vou tentar relatar o meu incômodo da Batalha ranged Mas o que eu gosto gostaria de dizer é que se eu tiver com o botão esquerdo do meu mouse selecionado em um inimigo e eu for andando em volta desse meu inimigo é de suma importância que o meu boneco girando mesmo que eu vá andando para frente com W com a e com D mas se eu tiver nessa posição da foto e com o meu mouse selecionado nesse boneco como inimigo e eu selecionando nele e clicando nele com o alvo vermelho eu preciso Obrigatoriamente que o meu boneco fique na direção oposta atacando ele mesmo ou seja ele não fica atacando de costas que sim de frente na prática Ele ficaria praticamente de frente para mim que sou o controlador dele nesse cenário eu gostaria de entender você tem claro isso que eu estou te pedindo Ou seja eu quero poder fazer um kiting melee facilitado, de forma que o fato de eu clocar no monstro e andar em volta dele, fizesse o meu personagem focar no monstro que eu selecionei e fosse girando o corpo em volta dele, dando porrada no bicho
+- ![print](img/S-265.png)
+- **Resposta do Claude:** Clicou e segurou o esquerdo num inimigo = ele fica travado: o corpo gira sempre de frente para ele e o WASD anda pela câmera (W para longe dela, A/D para os lados, S para perto), então dá para rodear o monstro batendo nele (kiting corpo a corpo). Também entrou o modo de combate: durante a luta (e 5 s depois) ele fica na postura de luta parado e com a guarda erguida no tronco correndo, sem voltar "à paisana" entre os golpes.

@@ -248,6 +248,14 @@ export function makeHuman(opts = {}) {
       const a = acts[key] || (acts[key] = mixer.clipAction(clip)); a.blendMode = THREE.AdditiveAnimationBlendMode;
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(THREE.LoopOnce); a.clampWhenFinished = false; a.setEffectiveWeight(1); a.play();
     },
+    /* postura de luta só no tronco e nos braços (guarda erguida) somada à corrida: entre um golpe e outro o boneco não volta "à paisana" */
+    layer(n, w, dt) {
+      const list = animsFor(sex, dwarf), src = n ? THREE.AnimationClip.findByName(list, humanAnimName(n)) : null, key = src ? 'ly:' + src.name : null;
+      if (key && !upperClips[key]) { const c = src.clone(); c.name = key; c.tracks = c.tracks.filter(tk => UPPER_RE.test(tk.name.split('.')[0]) && !/position|scale/.test(tk.name)); upperClips[key] = c; }
+      const k = Math.min(1, dt * 7);
+      for (const [name, a] of Object.entries(acts)) { if (!name.startsWith('ly:')) continue; const goal = name === key ? w : 0; a._lw = (a._lw || 0) + (goal - (a._lw || 0)) * k; if (a._lw < 0.01 && goal === 0) { a._lw = 0; if (a.isRunning()) a.stop(); continue; } a.setEffectiveWeight(a._lw); }
+      if (key && w > 0) { const a = acts[key] || (acts[key] = mixer.clipAction(upperClips[key])); if (!a.isRunning()) { a._lw = a._lw || 0; a.setLoop(THREE.LoopRepeat); a.setEffectiveWeight(a._lw); a.play(); } }
+    },
   };
   root.userData.human = true; root.userData.sex = sex;
   if (sex === 'f') feminize(skel);
