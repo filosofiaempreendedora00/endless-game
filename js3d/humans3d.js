@@ -53,11 +53,14 @@ export const humanAnims = () => (G.anims ? G.anims.animations : []);
    e o esqueleto mantém as proporções femininas. */
 const femClips = [];
 const dwarfClips = { m: [], f: [] };
+let DWARF_HIP = 0.69; // razão altura da pélvis anão/humano (calculada ao montar o 1º anão)
 function animsFor(sex, dwarf) {
   const all = humanAnims();
   if (dwarf) { // S-178: anões sem trilhas de escala (as proporções de anão ficam nos ossos); elas também sem posição, como as mulheres
     const base = sex === 'f' ? animsFor('f') : all, out = dwarfClips[sex === 'f' ? 'f' : 'm'];
-    if (out.length !== base.length) { out.length = 0; for (const c of base) out.push(new THREE.AnimationClip(c.name, c.duration, c.tracks.filter(t => !t.name.endsWith('.scale')))); }
+    if (out.length !== base.length) { out.length = 0; for (const c of base) { // sem escala e sem posição fora da raiz/pélvis (o esqueleto de anão mantém as próprias medidas); a pélvis desce junto com as pernas
+      const tr = c.tracks.filter(t => !t.name.endsWith('.scale') && (!t.name.endsWith('.position') || /^(root|pelvis)\./.test(t.name))).map(t => { if (t.name !== 'pelvis.position') return t; const n = t.clone(); for (let i = 0; i < n.values.length; i++) n.values[i] *= DWARF_HIP; return n; });
+      out.push(new THREE.AnimationClip(c.name, c.duration, tr)); } }
     return out;
   }
   if (sex !== 'f') return all;
@@ -115,30 +118,106 @@ function mergeOutfit(scene) {
     for (const o of list) o.parent.remove(o);
   }
 }
-/* S-178: corpo de ANÃO (proporções no espírito dos anões de MMO): cabeça grande, tronco largo e atarracado, braços grossos,
-   pernas curtas e fortes, mãos e pés grandes. Tudo por escala nos ossos (as animações de anão não têm trilha de escala),
-   e o corpo inteiro é alargado. Depois de encurtar as pernas, desce o boneco para os pés ficarem no chão. */
-const DWARF_BONES = { // [fator no comprimento do osso, fator na grossura]
-  /* S-288 (de novo): só as PERNAS encurtam. Escalar coluna/pescoço/braços fazia os filhos herdarem a escala
-     (braços e cabeça esmagados de cima para baixo, tronco "achatado") — era isso que deixava o anão desconfigurado. */
-  thigh_l: [0.84, 1], thigh_r: [0.84, 1], calf_l: [0.9, 1], calf_r: [0.9, 1],
+/* ANÃO DE VERDADE (pedido do Roberto: "outra criatura, não o humano distorcido", no espírito dos anões de MMO).
+   Nada de escala nos ossos (era o que esmagava). O corpo é REESCULPIDO no repouso:
+   1) proporções novas mudando só a POSIÇÃO de repouso dos ossos (pernas curtas, tronco curto, pescoço quase nenhum,
+      ombros bem largos, braços curtos);
+   2) toda malha presa ao esqueleto (roupa, rosto, olhos, cabelo, barba) é recalculada para esse repouso
+      (v' = Σ w·B'·B⁻¹·v) e os ossos ganham novos "inversos de repouso" — as animações giram os ossos novos;
+   3) volume esculpido por cima: braços/coxas/panturrilhas/pescoço grossos, tronco em barril com barriga, mãos e pés grandes;
+   4) rosto grosseiro: nariz batatudo, sobrancelha pesada, maçãs e mandíbula largas, orelhas maiores; barba farta.
+   Tudo em cache por malha de origem (o mesmo anão é reaproveitado por todos os anões do mesmo sexo/roupa). */
+const DWARF_REST = { // multiplicador na posição de repouso (eixo y = comprimento do osso)
+  calf_l: [1, 0.74, 1], calf_r: [1, 0.74, 1], foot_l: [1, 0.72, 1], foot_r: [1, 0.72, 1], // pernas curtas
+  thigh_l: [1.4, 1, 1], thigh_r: [1.4, 1, 1],            // pernas afastadas (base larga)
+  spine_01: [1, 0.9, 1], spine_02: [1, 0.85, 1], spine_03: [1, 0.85, 1], // tronco curto
+  neck_01: [1, 0.72, 1], Head: [1, 0.5, 1],              // pescoço curto e grosso
+  clavicle_l: [1, 0.86, 1], clavicle_r: [1, 0.86, 1],
+  upperarm_l: [1, 1.45, 1], upperarm_r: [1, 1.45, 1],    // ombros bem largos (a clavícula fica mais comprida)
+  lowerarm_l: [1, 0.8, 1], lowerarm_r: [1, 0.8, 1], hand_l: [1, 0.82, 1], hand_r: [1, 0.82, 1], // braços curtos
 };
+const DW_THICK = { upperarm: ['lowerarm', 0.4], lowerarm: ['hand', 0.36], thigh: ['calf', 0.34], calf: ['foot', 0.4], clavicle: ['upperarm', 0.22], neck_01: ['Head', 0.5] };
+const dwCache = new Map();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _m = new THREE.Matrix4(), _n3 = new THREE.Matrix3();
+const gauss = (u, cx, cy, cz, rx, ry, rz) => Math.exp(-(((u.x - cx) / rx) ** 2 + ((u.y - cy) / ry) ** 2 + ((u.z - cz) / rz) ** 2));
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 function applyDwarfBody(obj, root, skel) {
   root.userData.dwarf = true;
-  const by = n => skel.bones.find(b => b.name === n);
-  humanIdlePose(root); const foot = by('foot_l') || by('ball_l'), before = new THREE.Vector3(), after = new THREE.Vector3(); if (foot) foot.getWorldPosition(before);
-  for (const [n, [L, T]] of Object.entries(DWARF_BONES)) {
-    const b = by(n); if (!b) continue;
-    const ch = b.children.find(c => c.isBone); const ax = ch ? ch.position : new THREE.Vector3(0, 1, 0);
-    const a = Math.abs(ax.x) >= Math.abs(ax.y) && Math.abs(ax.x) >= Math.abs(ax.z) ? 'x' : Math.abs(ax.y) >= Math.abs(ax.z) ? 'y' : 'z'; // eixo do comprimento do osso
-    b.scale.set(a === 'x' ? L : T, a === 'y' ? L : T, a === 'z' ? L : T);
-  }
-  const head = by('Head'); if (head) head.scale.setScalar(1.07); // cabeça só um pouco maior
-  obj.scale.set(1.06, 0.97, 1.06); // corpo um pouco mais largo por igual (forte), sem esmagar
-  root.updateMatrixWorld(true);
-  if (foot) { foot.getWorldPosition(after); root.position.y += (before.y * 0.95 - after.y) / 0.95; } // pés no chão
-  root.userData.dwarfDrop = root.position.y;
+  const bones = skel.bones, by = n => bones.find(b => b.name === n);
+  obj.updateMatrixWorld(true);
+  // pernas mais curtas → a pélvis desce o mesmo tanto (pés no chão)
+  const legOld = by('calf_l').position.y + by('foot_l').position.y;
+  for (const [n, f] of Object.entries(DWARF_REST)) { const b = by(n); if (b) b.position.multiply(_v.set(f[0], f[1], f[2])); }
+  const legNew = by('calf_l').position.y + by('foot_l').position.y, pel = by('pelvis'), pz0 = pel.position.z;
+  pel.position.z -= legOld - legNew; root.userData.dwarfHip = DWARF_HIP = pel.position.z / pz0;
+  obj.updateMatrixWorld(true);
+  const P = n => { const b = by(n); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
+  const BW = new Map(bones.map(b => [b, b.matrixWorld.clone()]));
+  const fp = [P('pelvis'), P('Head'), P('hand_l')].map(v => v.toArray().map(x => x.toFixed(3)).join()).join('|');
+  const H = P('Head'), FOOT = { l: P('foot_l'), r: P('foot_r') }, HAND = { l: P('hand_l'), r: P('hand_r') }, SP1 = P('spine_01'), SEG = {};
+  for (const [k, [c]] of Object.entries(DW_THICK)) for (const s of ['l', 'r']) { const a = P(k === 'neck_01' ? k : k + '_' + s), b = P(c === 'Head' ? c : c + '_' + s); if (a && b) SEG[k === 'neck_01' ? k : k + '_' + s] = [a, b]; }
+  const sculpt = (p, bn, w, mesh, d) => { // deslocamento esculpido de um vértice (p no repouso novo), somado por peso de osso
+    let m = /^(upperarm|lowerarm|thigh|calf|clavicle)_([lr])$/.exec(bn), key = m ? m[1] : bn;
+    if (DW_THICK[key] && SEG[bn]) { const [a, b] = SEG[bn], ab = _w.copy(b).sub(a), t = Math.max(0, Math.min(1, _v.copy(p).sub(a).dot(ab) / ab.lengthSq())); const q = a.clone().addScaledVector(ab, t), r = _v.copy(p).sub(q), L = r.length(); if (L > 1e-5) d.addScaledVector(r, Math.min(L * DW_THICK[key][1], 0.03) / L * w); return; } // engrossa até 3 cm (ombreiras e peças soltas não voam para longe)
+    m = /(hand|thumb|index|middle|ring|pinky)\w*_([lr])$/.exec(bn); if (m) { d.addScaledVector(_v.copy(p).sub(HAND[m[2]]), 0.24 * w); return; }
+    m = /^(foot|ball)\w*_([lr])$/.exec(bn); if (m) { const F = FOOT[m[2]]; d.x += (p.x - F.x) * 0.32 * w; d.y += p.y * 0.12 * w; d.z += (p.z - F.z + 0.03) * 0.32 * w; return; }
+    if (/^(pelvis|spine_0[123])$/.test(bn)) { // tronco em barril, com barriga
+      const ux = p.x, uz = p.z - SP1.z, kx = bn === 'pelvis' ? 0.14 : bn === 'spine_01' ? 0.2 : 0.22;
+      d.x += ux * kx * w; d.z += (uz > 0 ? uz * 0.24 : uz * 0.12) * w;
+      d.z += 0.055 * Math.exp(-(((p.y - SP1.y - 0.03) / 0.13) ** 2)) * sstep(-0.02, 0.07, uz) * (1 - Math.min(1, Math.abs(ux) / 0.2)) * w; return;
+    }
+    if (bn === 'Head') { // rosto grosseiro (coordenadas relativas ao osso da cabeça; +z = frente)
+      const u = _v.copy(p).sub(H), sx = Math.sign(u.x) || 1;
+      let gx = 0, gy = 0, gz = 0, g; const eyes = /^Eyes/.test(mesh);
+      if (!eyes) {
+        g = gauss(u, 0, 0.045, 0.14, 0.034, 0.032, 0.035); gx += u.x * 1.1 * g; gz += 0.016 * g; gy -= 0.006 * g;    // nariz grande
+        g = gauss(u, 0, 0.036, 0.15, 0.022, 0.02, 0.022); gx += u.x * 0.9 * g; gy += (u.y - 0.036) * 0.7 * g; gz += (u.z - 0.13) * 0.5 * g; // ponta redonda e larga (batatudo)
+        g = gauss(u, 0, 0.03, 0.12, 0.034, 0.018, 0.025); gx += u.x * 1.1 * g; gz += 0.006 * g;                      // narinas largas
+        g = gauss(u, 0, 0.122, 0.085, 0.075, 0.013, 0.03); gz += 0.016 * g; gy += 0.003 * g;                         // sobrancelha pesada (acima dos olhos, sem fechá-los)
+        g = gauss(u, sx * 0.05, 0.062, 0.075, 0.025, 0.02, 0.03); gx += sx * 0.012 * g; gz += 0.005 * g;              // maçãs largas
+      }
+      const jaw = sstep(0.035, -0.03, u.y) * sstep(-0.05, 0.02, u.z); gx += u.x * 0.38 * jaw; gz += 0.008 * jaw;         // mandíbula larga e quadrada
+      if (!eyes) { g = gauss(u, sx * 0.078, 0.065, -0.005, 0.028, 0.032, 0.03); gx += (u.x - sx * 0.078) * 0.35 * g + sx * 0.006 * g; gy += (u.y - 0.065) * 0.3 * g; } // orelhas maiores
+      gx += u.x * 0.07;                                                                                                  // cabeça um pouco mais larga
+      if (/Beard/.test(mesh)) { const lo = Math.min(0, u.y - 0.02); gy += lo * 1.0; gx += u.x * 0.28 * sstep(0.03, -0.02, u.y); gz += Math.max(0, u.z) * 0.3 * sstep(0.03, -0.03, u.y); } // barba farta e comprida
+      if (/Eyebrows/.test(mesh)) { gy += Math.max(0, u.y - 0.106) * 1.1 + 0.004; gz += 0.004; gx += u.x * 0.1; }    // sobrancelhas grossas (crescem para cima, sem cobrir os olhos)
+      d.x += gx * w; d.y += gy * w; d.z += gz * w;
+    }
+  };
+  root.traverse(o => {
+    if (!o.isSkinnedMesh) return;
+    const sk = o.skeleton, key = o.geometry.uuid + '|' + fp + '|' + sk.bones.map(b => b.name).join(',').length;
+    let C = dwCache.get(key);
+    if (!C) {
+      const g = o.geometry.clone(), pos = g.attributes.position, nor = g.attributes.normal, si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+      const M = sk.bones.map((b, i) => new THREE.Matrix4().multiplyMatrices(BW.get(b) || b.matrixWorld, sk.boneInverses[i]));
+      const bind = o.bindMatrix, bindInv = new THREE.Matrix4().copy(bind).invert(), N = pos.count, base = new Float32Array(N * 3), nb = nor ? new Float32Array(N * 3) : null;
+      const acc = new THREE.Vector3(), nacc = new THREE.Vector3(), d = new THREE.Vector3(), q = new THREE.Vector3();
+      for (let i = 0; i < N; i++) {
+        q.fromBufferAttribute(pos, i).applyMatrix4(bind); acc.set(0, 0, 0); nacc.set(0, 0, 0);
+        for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (!w) continue; const bi = si.getComponent(i, k); acc.addScaledVector(_w.copy(q).applyMatrix4(M[bi]), w); if (nor) nacc.addScaledVector(_w.fromBufferAttribute(nor, i).applyMatrix3(_n3.setFromMatrix4(M[bi])), w); }
+        d.set(0, 0, 0); for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w) sculpt(acc, sk.bones[si.getComponent(i, k)].name, w, o.name, d); }
+        base[i * 3] = acc.x; base[i * 3 + 1] = acc.y; base[i * 3 + 2] = acc.z; if (nb) { nacc.normalize(); nb[i * 3] = nacc.x; nb[i * 3 + 1] = nacc.y; nb[i * 3 + 2] = nacc.z; }
+        acc.add(d).applyMatrix4(bindInv); pos.setXYZ(i, acc.x, acc.y, acc.z);
+      }
+      if (nor && g.index) { // normais: as originais (mantêm quinas) + a mudança causada pela escultura
+        const gs = g.clone(); gs.attributes.position.array.set(base); for (let i = 0; i < N; i++) { _v.fromArray(base, i * 3).applyMatrix4(bindInv); gs.attributes.position.setXYZ(i, _v.x, _v.y, _v.z); }
+        gs.computeVertexNormals(); const ga = g.clone(); ga.computeVertexNormals();
+        for (let i = 0; i < N; i++) { _v.fromArray(nb, i * 3).add(_w.fromBufferAttribute(ga.attributes.normal, i)).sub(q.fromBufferAttribute(gs.attributes.normal, i)).normalize(); nor.setXYZ(i, _v.x, _v.y, _v.z); }
+        gs.dispose(); ga.dispose();
+      }
+      if (g.attributes.tangent) { try { g.computeTangents(); } catch (e) { } }
+      g.computeBoundingSphere();
+      C = { geo: g, inv: sk.bones.map(b => new THREE.Matrix4().copy(BW.get(b) || b.matrixWorld).invert()) };
+      dwCache.set(key, C);
+    }
+    o.geometry = C.geo; o.skeleton.boneInverses = C.inv.slice();
+  });
+  // pele um pouco mais corada (anão de forja)
+  root.traverse(o => { if (o.isSkinnedMesh && o.material && (/SuperHero/.test(o.name) || /Regular/.test(o.material.name))) o.material = dwarfSkin(o.material); });
 }
+const dwSkinCache = new Map();
+function dwarfSkin(mat) { if (dwSkinCache.has(mat.uuid)) return dwSkinCache.get(mat.uuid); const m = mat.clone(); m.color = new THREE.Color('#ffe0d2'); m.needsUpdate = true; dwSkinCache.set(mat.uuid, m); return m; }
 /* S-246: peças presas nos ossos de anão (ombreiras, braçadeiras, armas, chapéu) herdavam a escala desigual do osso e
    ficavam esticadas/achatadas. Aqui cada peça recebe a escala inversa (mantendo o volume), só nos anões. */
 export function unsquashDwarf(root) {

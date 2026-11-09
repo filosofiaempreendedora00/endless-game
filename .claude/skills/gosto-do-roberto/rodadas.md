@@ -200,3 +200,4 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Física/colisão importa para "jogadores que não são master": nunca pode prender nem atravessar.
 - Lição operacional: com 6–7 ajudantes testando ao mesmo tempo, o Mac dele trava e o jogo dele não carrega — evitar tantos jogos abertos ao mesmo tempo e não deixar arquivo novo referenciado antes de existir.
 - 2026-11-09: o Vidro (anão) seguia "esmagado e desconfigurado" na vitrine mesmo depois de 2 correções. Causa real: escala nos ossos da coluna/pescoço/braços é herdada pelos filhos e deforma. Anão agora = só pernas mais curtas + corpo levemente mais largo por igual. Lição: quando ele repete uma queixa, olhe na tela DELE (o personagem dele), não num caso parecido.
+- 2026-11-09: anão deve ser OUTRA CRIATURA (WoW/MMO, "meio hobbit"), não humano distorcido: corpo reesculpido com pernas curtas, barril, ombros largos, mãos/pés grandes e rosto grosseiro.
