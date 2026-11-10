@@ -217,3 +217,8 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Pégaso/cavalos: "mais realista" = olhos úmidos vivos, beiços móveis, pernas finas anatômicas e cauda com física.
 - Entregues as 7 propostas aprovadas (monstros, Arena, verificador, música, voo, clima, missões). O verificador (__api.qa / botão no Painel) deve rodar antes de cada entrega para pegar flutuação/colisão antes dele.
 - Processo: rodar no máximo 4 ajudantes ao mesmo tempo (7 travaram o Mac dele).
+
+### Online fase 1 + S-309/S-310, 2026-11-10
+- Declaração de objetivo: o jogo será MULTIPLAYER completo (plano em docs/ONLINE.md). Daqui em diante toda entrega pensa em vários jogadores e em servidor juiz.
+- S-309: "boneco de posto" = mistura aditiva de animações abrindo os braços; golpe andando deve substituir o tronco, não somar. Ele pede para generalizar a todas as classes.
+- S-310: vaivém de IA na borda da área ("pra lá e pra cá travadão") — histerese/tempo de calma em decisões de IA é obrigatório.

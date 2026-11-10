@@ -17,6 +17,7 @@ import { makePet } from './pets3d.js';
 import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
+import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { runQA, showQA } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
@@ -1562,19 +1563,21 @@ function updateMonster(m, dt) {
   if (frozen || stunned) { m.moving = false; if (m.vis.critter) m.vis.critter.animate(t, false, dt); return; }
   const dp = Math.hypot(P.x - m.x, P.z - m.z);
   const safe = zoneAt(P.x, P.z).safe;
-  if (!m.aggro && d.aggressive && !S.p.dead && !safe && dp < d.aggroRange * TM * 1.3) { m.aggro = true; m.returning = false; }
-  if (m.aggro && (S.p.dead || safe || Math.hypot(m.x - m.home.x, m.z - m.home.z) > 38)) { m.aggro = false; m.returning = true; m.hp = m.maxHp; }
+  // S-310: voltando para casa (desistiu da perseguição) ele não se irrita de novo no caminho — antes alternava perseguir/voltar a cada quadro no limite da área ("pra lá e pra cá")
+  if (!m.aggro && !m.returning && t >= (m.calmUntil || 0) && d.aggressive && !S.p.dead && !safe && dp < d.aggroRange * TM * 1.3) { m.aggro = true; m.returning = false; }
+  if (m.aggro && (S.p.dead || safe || Math.hypot(m.x - m.home.x, m.z - m.home.z) > 38)) { m.aggro = false; m.returning = true; m.hp = m.maxHp; m.inReach = false; m.calmUntil = t + 3; }
   let goal = null, speed = d.speed / 32 * TM;
   if (m.aggro) {
     const reach = d.range * TM + m.radius + 0.7;
-    if (dp > reach) { goal = { x: P.x, z: P.z }; speed *= 1.25; }
+    m.inReach = m.inReach ? dp <= reach + 0.6 : dp <= reach; // S-310: folga para não ficar parando/andando na borda do alcance
+    if (!m.inReach) { goal = { x: P.x, z: P.z }; speed *= 1.25; }
     else {
       m.yaw = angLerp(m.yaw, Math.atan2(P.x - m.x, P.z - m.z), Math.min(1, dt * 10));
       if (t >= m.nextAttack && t >= m.lockAnim) { m.nextAttack = t + d.aspd / 1000; monsterAttack(m); }
     }
   } else if (m.returning) {
     goal = m.home; speed *= 1.4;
-    if (Math.hypot(m.x - m.home.x, m.z - m.home.z) < 1.5) m.returning = false;
+    if (Math.hypot(m.x - m.home.x, m.z - m.home.z) < 1.5) { m.returning = false; m.calmUntil = Math.max(m.calmUntil || 0, t + 1.5); }
   } else {
     if (t >= m.nextThink) { m.nextThink = t + 2 + rng() * 5; m.wander = rng() < 0.6 ? { x: m.home.x + (rng() * 2 - 1) * 8, z: m.home.z + (rng() * 2 - 1) * 8 } : null; if (m.wander && lakeDist(m.wander.x, m.wander.z) < LAKE.r + 3) m.wander = null; }
     if (m.wander) { goal = m.wander; speed *= 0.5; if (Math.hypot(m.x - m.wander.x, m.z - m.wander.z) < 0.6) m.wander = null; }
@@ -1585,7 +1588,8 @@ function updateMonster(m, dt) {
     m.yaw = angLerp(m.yaw, ang, Math.min(1, dt * 8));
     const nx = m.x + Math.sin(ang) * speed * dt, nz = m.z + Math.cos(ang) * speed * dt;
     const r = resolve(nx, nz, m.radius);
-    m.x = r.x; m.z = r.z; m.moving = true;
+    const stepD = Math.hypot(r.x - m.x, r.z - m.z); m.x = r.x; m.z = r.z; m.moving = stepD > speed * dt * 0.2; // S-310: bloqueado num obstáculo não fica "andando no lugar"
+    if (!m.moving && !m.aggro) { m.blockT = (m.blockT || 0) + dt; if (m.blockT > 0.6) { m.wander = null; if (m.returning && m.blockT > 0) m.returning = false; m.blockT = 0; } } else m.blockT = 0; // vagando contra a parede: desiste do destino
     const ld = lakeDist(m.x, m.z), lim = LAKE.r + 2.5; // monstros não entram no lago
     if (!m.interior && ld < lim) { const a = Math.atan2(m.z - LAKE.z, m.x - LAKE.x), rr = lim * lakeShape(LAKE.x + Math.cos(a), LAKE.z + Math.sin(a)) + 0.1; m.x = LAKE.x + Math.cos(a) * rr; m.z = LAKE.z + Math.sin(a) * rr; if (m.wander) m.wander = null; }
   }
@@ -3064,7 +3068,7 @@ function step(dt) {
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
   }
 }
@@ -3130,7 +3134,7 @@ function draw(dt) {
   renderer.render(scene, camera);
 }
 // para testes automáticos: avança o jogo sem depender do requestAnimationFrame
-window.__sim = (sec, fps = 30) => { for (let i = 0; i < sec * fps; i++) step(1 / fps); draw(1 / fps); };
+if (isAdmin()) window.__sim = (sec, fps = 30) => { for (let i = 0; i < sec * fps; i++) step(1 / fps); draw(1 / fps); };
 
 /* =========================== Início =========================== */
 /* =========================================================================
@@ -3386,7 +3390,7 @@ function showCreate3d(list, opts = {}) {
     const c = createCharacter(name, look, st.pet);
     const s = {}; for (const k of SAVE_FIELDS3) s[k] = c[k];
     Object.assign(s, { mapId: 'vila', x: 20 * CONFIG.TILE + 16, y: 18 * CONFIG.TILE + 16, uid: G.uid, savedAt: Date.now() });
-    try { await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); } catch (e) { }
+    try { const r = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s) }); if (r.status === 403) { const j = await r.json().catch(() => ({})); nameEl.focus(); return err(j.msg || 'Esse nome já pertence a outro jogador. Escolha outro.'); } } catch (e) { } // online: nome de outro jogador é recusado
     stage.dispose(); startWith(s);
     log('Você tem 48 pontos de atributo para distribuir (C).', 'sys');
   };
@@ -3428,6 +3432,7 @@ function startWith(s) {
   buildPlayerModel(); buildPet();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
   S.started = true; hudDirty = true; syncG(); UI.refreshOpen(); aspdTool();
+  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES }); // online: outros jogadores por perto
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
@@ -3692,7 +3697,8 @@ function drawAdmMap(cv, clean) { // clean (S-232): no Painel do Mestre só o map
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  globalThis.__world = { scene, groundAt }; // o que o jogo precisa entre módulos (sem ferramentas de teste)
+  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();

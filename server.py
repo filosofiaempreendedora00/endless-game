@@ -5,6 +5,8 @@ Uso:
     python3 server.py            # abre em http://localhost:5577
     python3 server.py 9000       # outra porta
     python3 server.py --relatorio  # só regenera feedback/SUGESTOES.md
+    python3 server.py --online     # abre para a rede (outras pessoas jogam junto; veja ONLINE.md)
+    python3 server.py --online 9000
 
 As sugestões feitas no jogo (tecla Q) ficam em:
     feedback/sugestoes.json   (dados completos, lidos pelo Claude)
@@ -110,6 +112,56 @@ SAVES_DIR = os.path.join(ROOT, 'saves')
 TRASH_DIR = os.path.join(SAVES_DIR, 'lixeira')
 SAVE_LOCK = threading.Lock()
 
+# ---------------- Online (fase 1): dono de cada save, presença no mundo e chat ----------------
+import hashlib
+LOCAL_ADDRS = ('127.0.0.1', '::1', '::ffff:127.0.0.1')
+PRIVATE_PREFIXES = ('/saves', '/feedback', '/.git', '/.claude', '/server.py', '/ONLINE.md')  # quem vem de fora não lê arquivos internos
+
+
+def owner_hash(token):
+    """O navegador de cada jogador guarda um token aleatório; no save fica só o hash dele (não dá para descobrir o token)."""
+    t = str(token or '').strip()
+    if not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', t):
+        return None
+    return hashlib.sha256(('aethra:' + t).encode()).hexdigest()[:40]
+
+
+WORLD_LOCK = threading.Lock()
+WORLD = {'players': {}, 'chat': [], 'seq': 0}
+WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed')
+WORLD_NEAR = 150.0   # vê quem está a até 150 m (ou na mesma sala)
+WORLD_TTL = 8.0      # sem notícia há 8 s = saiu
+
+
+def world_tick():
+    now = time.time()
+    for pid, p in list(WORLD['players'].items()):
+        if now - p['seen'] > WORLD_TTL:
+            del WORLD['players'][pid]
+
+
+def world_view(pid, since):
+    me = WORLD['players'].get(pid) or {}
+    room, mx, mz = me.get('room'), float(me.get('x') or 0), float(me.get('z') or 0)
+    out = []
+    for k, v in WORLD['players'].items():
+        if k == pid:
+            continue
+        if (v.get('room') or None) != (room or None):
+            continue
+        try:
+            if math.hypot(float(v.get('x') or 0) - mx, float(v.get('z') or 0) - mz) > WORLD_NEAR:
+                continue
+        except (TypeError, ValueError):
+            continue
+        out.append({'id': k, **{f: v.get(f) for f in WORLD_FIELDS}, 'age': round(now_age(v), 3)})
+    chat = [c for c in WORLD['chat'] if c['seq'] > since]
+    return {'players': out, 'chat': chat, 'seq': WORLD['seq'], 't': time.time()}
+
+
+def now_age(v):
+    return time.time() - v['seen']
+
 
 def slug(name):
     s = re.sub(r'[^a-z0-9]+', '_', str(name).lower()).strip('_')
@@ -135,7 +187,8 @@ def deleted_ids(name):
     return ids
 
 
-def list_saves():
+def list_saves(owner=None, local=True):
+    """Local (o Roberto) vê todos; quem vem de fora só os que têm o seu dono."""
     out = []
     if not os.path.isdir(SAVES_DIR):
         return out
@@ -145,6 +198,8 @@ def list_saves():
         try:
             with open(os.path.join(SAVES_DIR, fn), encoding='utf-8') as f:
                 s = json.load(f)
+            if not local and (not owner or s.get('_owner') != owner):
+                continue
             out.append({'slug': fn[:-5], 'name': s.get('name'), 'cls': s.get('cls'), 'baseLv': s.get('baseLv'),
                         'jobLv': s.get('jobLv'), 'mapId': s.get('mapId'), 'savedAt': s.get('savedAt', 0)})
         except (OSError, ValueError):
@@ -232,23 +287,45 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    # quem está pedindo: local (o Roberto, administrador, no próprio computador) ou alguém de fora pela rede
+    def is_local(self):
+        return self.client_address[0] in LOCAL_ADDRS and not self.headers.get('X-Forwarded-For')
+
+    def owner(self):
+        return owner_hash(self.headers.get('X-Aethra-Token'))
+
     def do_GET(self):
         path = self.path.split('?')[0]
+        local = self.is_local()
+        if not local and any(path == p or path.startswith(p + '/') or path.startswith(p + '.') for p in PRIVATE_PREFIXES):
+            return self.send_json(403, {'erro': 'acesso negado'})
+        if path == '/api/me':
+            return self.send_json(200, {'admin': local})
         if path == '/api/feedback':
             with LOCK:
-                return self.send_json(200, load())
+                items = load()
+            if not local:  # de fora: só as próprias sugestões
+                own = self.owner()
+                items = [i for i in items if own and i.get('_owner') == own]
+            return self.send_json(200, [{k: v for k, v in i.items() if k != '_owner'} for i in items])
         if path == '/api/propostas':
+            if not local:
+                return self.send_json(200, [])
             with LOCK:
                 return self.send_json(200, load_props())
         if path == '/api/saves':
             with SAVE_LOCK:
-                return self.send_json(200, list_saves())
+                return self.send_json(200, list_saves(self.owner(), local))
         if path.startswith('/api/save/'):
             try:
                 with SAVE_LOCK, open(save_path(path[len('/api/save/'):]), encoding='utf-8') as f:
-                    return self.send_json(200, json.load(f))
+                    s = json.load(f)
             except (OSError, ValueError):
                 return self.send_json(404, {'erro': 'personagem não encontrado'})
+            if not local and (not self.owner() or s.get('_owner') != self.owner()):
+                return self.send_json(404, {'erro': 'personagem não encontrado'})
+            s.pop('_owner', None)
+            return self.send_json(200, s)
         return super().do_GET()
 
     def read_json(self, limit):
@@ -266,7 +343,24 @@ class Handler(SimpleHTTPRequestHandler):
         if not isinstance(data, dict) or not str(data.get('name', '')).strip() or 'cls' not in data:
             return self.send_json(400, {'erro': 'save inválido'})
         p = save_path(data['name'])
+        local, own = self.is_local(), self.owner()
+        data.pop('_owner', None)  # o dono quem decide é o servidor, nunca o que vem no pedido
+        if not local and not own:
+            return self.send_json(403, {'erro': 'sem_token', 'msg': 'Seu navegador não mandou a chave do jogador. Recarregue a página.'})
         with SAVE_LOCK:
+            # online: alguém de fora só grava personagem que é dele; nome de personagem de outro jogador (ou antigo, sem dono) é recusado
+            try:
+                with open(p, encoding='utf-8') as f:
+                    prev_owner = json.load(f).get('_owner')
+                exists = True
+            except (OSError, ValueError):
+                prev_owner, exists = None, False
+            if not local and exists and prev_owner != own:
+                return self.send_json(403, {'erro': 'nome_ocupado', 'msg': 'Esse nome já pertence a outro jogador. Escolha outro.'})
+            if prev_owner:
+                data['_owner'] = prev_owner  # gravado de qualquer lugar, continua do mesmo dono
+            elif not local:
+                data['_owner'] = own
             # personagem apagado nunca volta: nem por cópia do navegador, nem por uma aba que ficou aberta
             cid = data.get('charId')
             dead = deleted_ids(data['name'])
@@ -299,6 +393,14 @@ class Handler(SimpleHTTPRequestHandler):
         with SAVE_LOCK:
             if not os.path.exists(p):
                 return self.send_json(404, {'erro': 'personagem não encontrado'})
+            if not self.is_local():  # online: só apaga o próprio personagem
+                try:
+                    with open(p, encoding='utf-8') as f:
+                        mine = json.load(f).get('_owner')
+                except (OSError, ValueError):
+                    mine = None
+                if not self.owner() or mine != self.owner():
+                    return self.send_json(404, {'erro': 'personagem não encontrado'})
             os.makedirs(TRASH_DIR, exist_ok=True)
             stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
             os.replace(p, os.path.join(TRASH_DIR, f'{os.path.basename(p)[:-5]}-{stamp}.json'))
@@ -379,10 +481,56 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(200, {'ok': True})
         return self.send_json(404, {'erro': 'rota desconhecida'})
 
+    # presença no mundo e chat entre jogadores (fase 1 do online: o servidor só repassa)
+    def world(self, path):
+        data = self.read_json(64 * 1024)
+        if not isinstance(data, dict) or not data.get('id'):
+            return self.send_json(400, {'erro': 'dados inválidos'})
+        pid = str(data['id'])[:64]
+        now = time.time()
+        with WORLD_LOCK:
+            world_tick()
+            P = WORLD['players']
+            if path == '/api/world/sync':
+                p = P.get(pid)
+                if not p:
+                    p = P[pid] = {'seen': now, 'last': 0}
+                if now - p['last'] >= 0.08:  # limite simples: no máximo ~12 atualizações por segundo
+                    for f in WORLD_FIELDS:
+                        if f in data:
+                            v = data[f]
+                            if isinstance(v, str):
+                                v = v[:64]
+                            p[f] = v
+                    p['name'] = str(p.get('name') or 'Aventureiro')[:24]
+                    p['last'] = now
+                p['seen'] = now
+                return self.send_json(200, world_view(pid, int(data.get('since') or 0)))
+            if path == '/api/world/chat':
+                p = P.get(pid)
+                text = re.sub(r'\s+', ' ', str(data.get('text') or '')).strip()[:200]
+                if not p or not text or text.startswith('/'):
+                    return self.send_json(200, {'ok': False})
+                if now - p.get('lastChat', 0) < 0.7:  # contra enxurrada de mensagens
+                    return self.send_json(200, {'ok': False, 'erro': 'devagar'})
+                p['lastChat'] = now
+                WORLD['seq'] += 1
+                WORLD['chat'].append({'seq': WORLD['seq'], 'id': pid, 'name': p.get('name'), 'text': text, 't': now})
+                WORLD['chat'] = WORLD['chat'][-100:]
+                return self.send_json(200, {'ok': True, 'seq': WORLD['seq']})
+            if path == '/api/world/leave':
+                P.pop(pid, None)
+                return self.send_json(200, {'ok': True})
+        return self.send_json(404, {'erro': 'rota desconhecida'})
+
     def do_POST(self):
         if self.path.split('?')[0] == '/api/save':
             return self.save_character()
+        if self.path.split('?')[0].startswith('/api/world/'):
+            return self.world(self.path.split('?')[0])
         if self.path.split('?')[0] == '/api/propostas':
+            if not self.is_local():
+                return self.send_json(403, {'erro': 'só o administrador'})
             return self.answer_prop()
         if self.path.split('?')[0].startswith('/api/arena/'):
             return self.arena(self.path.split('?')[0])
@@ -405,6 +553,12 @@ class Handler(SimpleHTTPRequestHandler):
             rec = dict(data)
             rec.update({'id': sid, 'status': 'pendente', 'criadoEm': datetime.datetime.now().isoformat(timespec='seconds')})
             rec.pop('resposta', None)
+            rec.pop('_owner', None)
+            if not self.is_local():  # online: sugestão de outro jogador entra marcada, com o nome dele
+                rec['remoto'] = True
+                rec['autor'] = str(((data.get('jogador') or {}) if isinstance(data.get('jogador'), dict) else {}).get('nome') or 'jogador de fora')[:24]
+                if self.owner():
+                    rec['_owner'] = self.owner()
             if isinstance(shot, str) and shot.startswith('data:image/png;base64,'):
                 try:
                     raw = base64.b64decode(shot.split(',', 1)[1], validate=True)
@@ -427,16 +581,30 @@ def main():
         return
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     wanted = int(args[0]) if args else int(os.environ.get('PORT', DEFAULT_PORT))
+    online = '--online' in sys.argv  # abre para a rede: outras pessoas jogam junto (veja ONLINE.md)
+    host = '0.0.0.0' if online else '127.0.0.1'
     srv = None
     for port in range(wanted, wanted + 20):  # se a porta estiver ocupada, tenta as próximas
         try:
-            srv = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+            srv = ThreadingHTTPServer((host, port), Handler)
             break
         except OSError:
             print(f'Porta {port} ocupada, tentando {port + 1}...', flush=True)
     if not srv:
         sys.exit(f'Nenhuma porta livre entre {wanted} e {wanted + 19}.')
     print(f'🎮 Jogo em http://localhost:{port}  (Ctrl+C para parar)', flush=True)
+    if online:
+        ip = '?'
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('10.255.255.255', 1))  # não envia nada: só descobre o IP desta máquina na rede
+            ip = s.getsockname()[0]
+            s.close()
+        except OSError:
+            pass
+        print(f'🌐 MODO ONLINE: quem estiver na mesma rede entra por http://{ip}:{port}', flush=True)
+        print('   Você (neste computador) continua sendo o administrador; quem entra de fora só vê e grava os próprios personagens.', flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

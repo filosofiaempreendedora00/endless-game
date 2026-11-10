@@ -312,27 +312,49 @@ export function makeHuman(opts = {}) {
   const obj = new THREE.Group(); obj.add(root);
   const mixer = new THREE.AnimationMixer(root), acts = {};
   const upperClips = {}, UPPER_RE = /spine|neck|head|clavicle|upperarm|lowerarm|hand|thumb|index|middle|ring|pinky/i;
+  /* S-309: camada só do tronco/braços. O golpe gira o QUADRIL no clipe original; sem o quadril, a coluna sozinha girava demais
+     sobre o quadril da corrida e os braços abriam "em avião". Aqui a rotação do quadril do golpe é assada dentro da spine_01
+     (relativa ao quadril de repouso), então o peito fica virado como no golpe de verdade, com as pernas correndo por baixo. */
+  const pelvisBone = skel.bones.find(b => b.name === 'pelvis'), pelvisRestInv = pelvisBone ? pelvisBone.quaternion.clone().invert() : null;
+  const upperOf = (src, key) => {
+    const c = src.clone(); c.name = key; c.tracks = c.tracks.filter(tk => UPPER_RE.test(tk.name.split('.')[0]) && !/position|scale/.test(tk.name));
+    const pt = src.tracks.find(tk => tk.name === 'pelvis.quaternion'), si = c.tracks.findIndex(tk => tk.name === 'spine_01.quaternion');
+    if (pt && si >= 0 && pelvisRestInv) {
+      const st = c.tracks[si].clone(), pi = pt.createInterpolant(), qp = new THREE.Quaternion(), qs = new THREE.Quaternion(), v = st.values;
+      for (let i = 0; i < st.times.length; i++) { const r = pi.evaluate(st.times[i]); qp.set(r[0], r[1], r[2], r[3]); qs.fromArray(v, i * 4); qp.premultiply(pelvisRestInv).multiply(qs).normalize(); qp.toArray(v, i * 4); }
+      c.tracks[si] = st;
+    }
+    return c;
+  };
   const anim = {
     name: '', cur: null,
     play(n, o = {}) { const list = animsFor(sex, dwarf), clip = THREE.AnimationClip.findByName(list, humanAnimName(n)) || THREE.AnimationClip.findByName(list, 'Idle_Loop'); if (!clip) return; const a = acts[clip.name] || (acts[clip.name] = mixer.clipAction(clip));
       if (this.cur === a && !o.restart && !o.once) { a.setEffectiveTimeScale(o.speed || 1); this.name = n; return; }
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(o.once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = !!o.once;
       if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, o.fade ?? 0.2, false); a.play(); this.cur = a; this.name = n; },
-    update(dt) { mixer.update(dt); },
+    update(dt) {
+      mixer.update(dt);
+      // S-309: o golpe por cima da corrida some suave no fim (sem estalo de volta para a pose de correr)
+      for (const [k, a] of Object.entries(acts)) { if (!k.startsWith('upr:') || !a.enabled || a._fading || a.getEffectiveWeight() <= 0) continue; const left = (a.getClip().duration - a.time) / Math.max(0.01, a.getEffectiveTimeScale()); if (left < 0.1) { a.fadeOut(Math.max(0.04, left)); a._fading = true; } }
+    },
     /* S-236: golpe só no tronco e nos braços, somado por cima da corrida (as pernas continuam andando de verdade) */
     overlay(n, o = {}) {
       const list = animsFor(sex, dwarf), src = THREE.AnimationClip.findByName(list, humanAnimName(n)); if (!src) return;
-      const key = 'up:' + src.name; let clip = upperClips[key];
-      if (!clip) { clip = src.clone(); clip.name = key; clip.tracks = clip.tracks.filter(tk => UPPER_RE.test(tk.name.split('.')[0]) && !/position|scale/.test(tk.name)); THREE.AnimationUtils.makeClipAdditive(clip); upperClips[key] = clip; }
-      const a = acts[key] || (acts[key] = mixer.clipAction(clip)); a.blendMode = THREE.AdditiveAnimationBlendMode;
-      a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(THREE.LoopOnce); a.clampWhenFinished = false; a.setEffectiveWeight(1); a.play();
+      /* S-309: o golpe SUBSTITUI o tronco e os braços (camada normal, peso alto) em vez de somar deltas aditivos sobre a corrida e a guarda —
+         a soma abria os braços "como boneco de posto" ao andar de lado. As pernas continuam com a corrida/ré. */
+      const key = 'upr:' + src.name; let clip = upperClips[key];
+      if (!clip) { clip = upperOf(src, key); upperClips[key] = clip; }
+      for (const [k, b] of Object.entries(acts)) if (k.startsWith('upr:') && k !== key && b.enabled && !b._fading) { b.fadeOut(0.07); b._fading = true; } // golpe anterior cede suave ao novo (ASPD alto)
+      const a = acts[key] || (acts[key] = mixer.clipAction(clip)); a.blendMode = THREE.NormalAnimationBlendMode;
+      a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(THREE.LoopOnce); a.clampWhenFinished = true; a._fading = false;
+      a.setEffectiveWeight(6); a.fadeIn(Math.min(0.06, 0.25 / Math.max(1, o.speed || 1))); a.play();
     },
     /* postura de luta só no tronco e nos braços (guarda erguida) somada à corrida: entre um golpe e outro o boneco não volta "à paisana" */
     layer(n, w, dt) {
       const list = animsFor(sex, dwarf), src = n ? THREE.AnimationClip.findByName(list, humanAnimName(n)) : null, key = src ? 'ly:' + src.name : null;
-      if (key && !upperClips[key]) { const c = src.clone(); c.name = key; c.tracks = c.tracks.filter(tk => UPPER_RE.test(tk.name.split('.')[0]) && !/position|scale/.test(tk.name)); upperClips[key] = c; }
-      const k = Math.min(1, dt * 7);
-      for (const [name, a] of Object.entries(acts)) { if (!name.startsWith('ly:')) continue; const goal = name === key ? w : 0; a._lw = (a._lw || 0) + (goal - (a._lw || 0)) * k; if (a._lw < 0.01 && goal === 0) { a._lw = 0; if (a.isRunning()) a.stop(); continue; } a.setEffectiveWeight(a._lw); }
+      if (key && !upperClips[key]) upperClips[key] = upperOf(src, key);
+      const k = Math.min(1, dt * 7), busy = Object.entries(acts).some(([nm, b]) => nm.startsWith('upr:') && b.enabled && b.getEffectiveWeight() > 0.3); // S-309: guarda some enquanto o golpe toca no tronco e volta suave depois
+      for (const [name, a] of Object.entries(acts)) { if (!name.startsWith('ly:')) continue; const goal = name === key && !busy ? w : 0; a._lw = (a._lw || 0) + (goal - (a._lw || 0)) * k; if (a._lw < 0.01 && goal === 0) { a._lw = 0; if (a.isRunning()) a.stop(); continue; } a.setEffectiveWeight(a._lw); }
       if (key && w > 0) { const a = acts[key] || (acts[key] = mixer.clipAction(upperClips[key])); if (!a.isRunning()) { a._lw = a._lw || 0; a.setLoop(THREE.LoopRepeat); a.setEffectiveWeight(a._lw); a.play(); } }
     },
   };

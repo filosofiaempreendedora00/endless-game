@@ -15087,9 +15087,10 @@
       "sp": "26/239"
     },
     "id": "S-309",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-09T23:47:37",
-    "imagem": "img/S-309.png"
+    "imagem": "img/S-309.png",
+    "resposta": "Golpeando enquanto você anda de lado ou em volta do inimigo, o golpe agora toma conta do tronco e dos braços e as pernas seguem correndo por baixo — nada de braços abrindo como boneco de posto. Com a katar as estocadas ficam compactas na direção do alvo mesmo em ASPD 190, e a guarda volta suave quando você para. Vale para todas as armas."
   },
   {
     "texto": "bugou demais ele aqu pra la e pra ca travadao",
@@ -15133,8 +15134,9 @@
       "sp": "239/239"
     },
     "id": "S-310",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-09T23:59:05",
-    "imagem": "img/S-310.png"
+    "imagem": "img/S-310.png",
+    "resposta": "O lobo ficava indo e voltando porque, no limite da área dele, desistia de te perseguir e no quadro seguinte te via de novo (trocava de ideia dezenas de vezes por segundo). Agora, quando desiste, volta para casa de verdade e só se irrita de novo depois; não fica parando e andando na borda do alcance, não \"anda no lugar\" quando esbarra em algo e troca de passo sem alternar. A correção da inteligência vale para todos os monstros."
   }
 ]

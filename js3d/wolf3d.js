@@ -267,8 +267,11 @@ export function realWolf(color = '#8a8f99') {
       root.getWorldPosition(wp); root.getWorldQuaternion(_q); _e.setFromQuaternion(_q, 'YXZ'); const yaw = _e.y, sc = root.getWorldScale(_v).x || 1;
       if (has && dt > 0) { const d = Math.hypot(wp.x - prev.x, wp.z - prev.z) / sc; const v = d > 1.5 * sc ? 0 : d / dt; spd += (v - spd) * Math.min(1, dt * 7); let dy = yaw - yaw0; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; yawRate += (dy / dt - yawRate) * Math.min(1, dt * 5); }
       prev.copy(wp); yaw0 = yaw; has = true;
-      let v = spd; if (moving && v < 0.15) v = 1.0; if (!moving && v < 0.25) v = 0; // prévia (Bestiário) andando sem sair do lugar
-      const tg = v < 1.35 ? 'walk' : v < 3.8 ? 'trot' : 'gallop';
+      const inWorld = (() => { const A = globalThis.__world || globalThis.__api; if (!A || !A.scene) return false; let top = root; while (top.parent) top = top.parent; return top === A.scene; })();
+      let v = spd; if (moving && v < 0.15 && !inWorld) v = 1.0; if (!moving && v < 0.25) v = 0; // prévia (Bestiário) anda sem sair do lugar; no mundo, bloqueado = parado (S-310)
+      // S-310: troca de marcha com folga (histerese) — perto do limite ela não fica alternando passo/trote/galope
+      const cur = W.gallop > W.trot && W.gallop > W.walk ? 'gallop' : W.trot > W.walk ? 'trot' : 'walk';
+      const tg = cur === 'walk' ? (v > 1.6 ? (v > 4.1 ? 'gallop' : 'trot') : 'walk') : cur === 'trot' ? (v < 1.1 ? 'walk' : v > 4.1 ? 'gallop' : 'trot') : (v < 3.5 ? (v < 1.1 ? 'walk' : 'trot') : 'gallop');
       for (const k in W) W[k] += ((k === tg ? 1 : 0) - W[k]) * Math.min(1, dt * 4);
       mv += ((v > 0.05 ? 1 : 0) - mv) * Math.min(1, dt * 6);
       const g = (f) => W.walk * GAITS.walk[f] + W.trot * GAITS.trot[f] + W.gallop * GAITS.gallop[f], sum = W.walk + W.trot + W.gallop || 1;
@@ -280,7 +283,7 @@ export function realWolf(color = '#8a8f99') {
       const open = bite ? (bk < 0.25 ? ss(0.05, 0.25, bk) * 0.3 : bk < 0.42 ? 0.3 + ss(0.25, 0.4, bk) * 0.5 : 0.8 * (1 - ss(0.42, 0.5, bk))) : 0;
       const hk = (t - hitT) / 0.4, flinch = hk > 0 && hk < 1 ? Math.sin(hk * Math.PI) * (1 - hk) : 0;
       // chão irregular: cada pata procura a altura do terreno e o corpo inclina na encosta (só no mundo, não nas prévias)
-      let gfn = null; { const A = globalThis.__api; if (A && A.groundAt && A.scene) { let top = root; while (top.parent) top = top.parent; if (top === A.scene) gfn = A.groundAt; } }
+      let gfn = null; { const A = globalThis.__world || globalThis.__api; if (A && A.groundAt && A.scene) { let top = root; while (top.parent) top = top.parent; if (top === A.scene) gfn = A.groundAt; } }
       const gdy = (x, z) => { if (!gfn) return 0; root.localToWorld(_g.set(x, 0, z)); return Math.max(-0.3, Math.min(0.3, (gfn(_g.x, _g.z) - wp.y) / sc)); };
       const dyF = (gdy(-0.09, FOOT.f[1]) + gdy(0.09, FOOT.f[1])) / 2, dyH = (gdy(-0.1, FOOT.h[1]) + gdy(0.1, FOOT.h[1])) / 2;
       slope += (Math.max(-0.35, Math.min(0.35, -(dyF - dyH) / 0.75)) - slope) * Math.min(1, dt * 8); lift0 += ((dyF + dyH) / 2 * 0.6 - lift0) * Math.min(1, dt * 8);

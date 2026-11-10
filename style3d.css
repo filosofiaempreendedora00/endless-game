@@ -187,3 +187,9 @@ body.g3d { background: #9fd3ff; }
 /* S-307: saudação curta dos NPCs (balão discreto acima da cabeça) */
 .npc-say { position: absolute; left: 0; top: 0; max-width: 240px; padding: 5px 10px; border-radius: 10px; background: rgba(250, 244, 228, 0.92); color: #2a2018; font-size: 13px; font-style: italic; line-height: 1.25; text-align: center; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); white-space: normal; transition: opacity 0.15s; }
 .npc-say::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: rgba(250, 244, 228, 0.92); border-bottom: 0; }
+
+/* online: outros jogadores (placa com nome e classe) e as falas deles no chat */
+.net-name { position: absolute; left: 0; top: 0; pointer-events: none; text-align: center; white-space: nowrap; text-shadow: 0 1px 3px #000, 0 0 2px #000; }
+.net-name b { display: block; color: #8fd8ff; font-size: 13px; letter-spacing: 0.02em; }
+.net-name span { display: block; color: #cfe6f5; font-size: 10px; opacity: 0.85; }
+#log .net { color: #9fdcff; }

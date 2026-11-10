@@ -2,21 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (2)
+## Pendentes (0)
 
-### S-309 · Área do mapa: Área da tela (286×312 px)
-- **Status:** pendente · **Quando:** 2026-11-09T23:47:37 · **Mapa:** Vila de Alvorada (tile [-68, 32])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Quando o meu personagem estiver com catarro na mão e sendo selecionado o botão esquerdo do meu mouse e ele fique atacando e se movendo para o lado com w a s d eu não quero que os braços dos do meu boneco fiquem totalmente se abrindo por completo parecendo que eu sou um boneco de posto e sim as animações de ataque continuam enquanto eu vou fazendo meio que um slide em volta do meu inimigo sem que essas animações de ataques sejam quebradas por algo totalmente esquisito esteticamente e também peço que a essência dessa minha sugestão extrapole para outras situações de personagens caso essa situação não seja exclusiva hoje do personagem que utiliza a katar
-- ![print](img/S-309.png)
+_Nenhuma._
 
-### S-310 · Área do mapa: Área da tela (163×139 px)
-- **Status:** pendente · **Quando:** 2026-11-09T23:59:05 · **Mapa:** Bosque Sussurrante (tile [117, 7])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** bugou demais ele aqu pra la e pra ca travadao
-- ![print](img/S-310.png)
-
-## Feitas (308)
+## Feitas (310)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2183,3 +2173,17 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Já vi que mudou consideravelmente este Pegasus porém eu gostaria que ele fosse ainda mais realista com olhos mais vivos e reais assim como o focinho e a parte da Boca e as pernas ainda ficaram esquisitas e esse rabo está muito duro e não realista seria realmente interessante chegar mais próximo da figura de um cavalo aqui porém Claro Mantendo as asas como estão e em resumo fosse mais realista
 - ![print](img/S-308.png)
 - **Resposta do Claude:** O Pégaso ficou bem mais próximo de um cavalo de verdade, com as mesmas asas: olhos escuros e úmidos que piscam e olham em volta, beiços macios, narinas que abrem ao respirar e mastigar parado, pernas finas com joelho, jarrete, boleto e casco de verdade dobrando certo, e a cauda solta caindo pelo peso e balançando com atraso. Os cavalos ganharam as mesmas melhorias.
+
+### S-309 · Área do mapa: Área da tela (286×312 px)
+- **Status:** feito · **Quando:** 2026-11-09T23:47:37 · **Mapa:** Vila de Alvorada (tile [-68, 32])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Quando o meu personagem estiver com catarro na mão e sendo selecionado o botão esquerdo do meu mouse e ele fique atacando e se movendo para o lado com w a s d eu não quero que os braços dos do meu boneco fiquem totalmente se abrindo por completo parecendo que eu sou um boneco de posto e sim as animações de ataque continuam enquanto eu vou fazendo meio que um slide em volta do meu inimigo sem que essas animações de ataques sejam quebradas por algo totalmente esquisito esteticamente e também peço que a essência dessa minha sugestão extrapole para outras situações de personagens caso essa situação não seja exclusiva hoje do personagem que utiliza a katar
+- ![print](img/S-309.png)
+- **Resposta do Claude:** Golpeando enquanto você anda de lado ou em volta do inimigo, o golpe agora toma conta do tronco e dos braços e as pernas seguem correndo por baixo — nada de braços abrindo como boneco de posto. Com a katar as estocadas ficam compactas na direção do alvo mesmo em ASPD 190, e a guarda volta suave quando você para. Vale para todas as armas.
+
+### S-310 · Área do mapa: Área da tela (163×139 px)
+- **Status:** feito · **Quando:** 2026-11-09T23:59:05 · **Mapa:** Bosque Sussurrante (tile [117, 7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** bugou demais ele aqu pra la e pra ca travadao
+- ![print](img/S-310.png)
+- **Resposta do Claude:** O lobo ficava indo e voltando porque, no limite da área dele, desistia de te perseguir e no quadro seguinte te via de novo (trocava de ideia dezenas de vezes por segundo). Agora, quando desiste, volta para casa de verdade e só se irrita de novo depois; não fica parando e andando na borda do alcance, não "anda no lugar" quando esbarra em algo e troca de passo sem alternar. A correção da inteligência vale para todos os monstros.

@@ -59,6 +59,7 @@ function handleChat(v) {
   const [cmd, ...args] = v.slice(1).split(/\s+/);
   const n = parseInt(args[0]);
   const dev = t => UI.log('[dev] ' + t, 'dev');
+  if (!isAdmin() && !['ajuda', 'salvar'].includes(cmd.toLowerCase())) { UI.log('Comandos de teste só para o administrador. Digite /ajuda.', 'warn'); return; } // online: jogador de fora não trapaceia
   switch (cmd.toLowerCase()) {
     case 'ajuda': UI.log('Comandos: /salvar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /carta monstro', 'sys'); break;
     case 'salvar': saveGame(); UI.log('Jogo salvo.', 'sys'); break;
