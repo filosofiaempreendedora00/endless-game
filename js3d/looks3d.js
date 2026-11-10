@@ -271,6 +271,19 @@ function fitToBone(root, b, holder, quatInRoot, posInRoot) {
   const wp = posInRoot.clone(); root.localToWorld(wp); holder.position.copy(b.worldToLocal(wp));
 }
 const rootPos = (root, o) => root.worldToLocal(o.getWorldPosition(_v()));
+// S-304: onde fica o cabo dentro do punho fechado (espaço do personagem, pose parada): C = centro do punho (meio das falanges dobradas, puxado
+// para a palma), A = eixo do cabo (do mindinho para o indicador, um pouco para a frente), E = direção do fio (do pulso para o punho, perpendicular a A)
+// ponto do cabo segurado pela mão, no espaço da peça KayKit (y = comprimento; o pomo fica no y negativo)
+const GRIP_Y = { '1H_Sword': -0.17, '1H_Sword_Offhand': -0.17, '2H_Sword': -0.16, '1H_Axe': -0.12, '1H_Axe_Offhand': -0.12, '2H_Axe': -0.2, Knife: -0.1, Knife_Offhand: -0.1, '1H_Wand': -0.12 };
+function fistFrame(root, s) {
+  const hand = bone(root, 'hand_' + s), fb = ['index', 'middle', 'ring', 'pinky'].map(n => bone(root, n + '_02_' + s)).filter(Boolean), i1 = bone(root, 'index_01_' + s), p1 = bone(root, 'pinky_01_' + s);
+  if (!hand || fb.length < 4 || !i1 || !p1) return null;
+  root.updateMatrixWorld(true);
+  const wrist = rootPos(root, hand), C = fb.reduce((a, b) => a.add(rootPos(root, b)), new THREE.Vector3()).multiplyScalar(0.25).lerp(wrist, 0.22);
+  const A = rootPos(root, i1).sub(rootPos(root, p1)).normalize().lerp(new THREE.Vector3(0, 0, 1), 0.2).normalize();
+  const E = C.clone().sub(wrist); E.sub(A.clone().multiplyScalar(E.dot(A))).normalize();
+  return { C, A, E };
+}
 // caneca de madeira de verdade (aduelas, aros de ferro e alça), em pé na mão
 function tankard() {
   const g = new THREE.Group(), wood = std('#7a5232', { roughness: 0.8 }), iron = std('#3a3632', { metalness: 0.7, roughness: 0.45 }), beer = std('#d89a2a', { roughness: 0.3 }), foam = std('#f4ecd8', { roughness: 0.9 });
@@ -341,8 +354,15 @@ export function humanBorrow(root, MODELS, model, itemName, extraScale = 1) {
     const ctr = box.getCenter(new THREE.Vector3()), cv = ctr.clone(), key = size.x === len ? 'x' : size.y === len ? 'y' : 'z';
     const gripF = Math.max(0.3, Math.min(0.62, (at.y - 0.06) / (ITEM_LEN[itemName] || 1.5))); // S-220: o pé do cajado quase no chão, a mão no cabo
     cv[key] = box.min[key] + len * gripF; c.position.copy(cv.multiplyScalar(-1));
-  } else { // arma: o cabo na palma, a lâmina para frente (orientação do osso da mão do esqueleto realista)
-    holder.rotation.set(0, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02); // (testado) a lâmina cai para frente, natural na mão parada
+  } else { // S-304: arma DENTRO do punho fechado — o cabo atravessa a mão do mindinho ao indicador, centrado na palma, lâmina saindo pelo lado do polegar
+    const F = fistFrame(root, left ? 'l' : 'r');
+    if (F) {
+      const qc = c.quaternion, X = new THREE.Vector3(1, 0, 0).applyQuaternion(qc), Y = new THREE.Vector3(0, 1, 0).applyQuaternion(qc), Z = new THREE.Vector3(0, 0, 1).applyQuaternion(qc);
+      const to = new THREE.Matrix4().makeBasis(F.E, F.A, new THREE.Vector3().crossVectors(F.E, F.A)), from = new THREE.Matrix4().makeBasis(X, Y, Z);
+      const qh = new THREE.Quaternion().setFromRotationMatrix(to.multiply(from.invert()));
+      const g = new THREE.Vector3(0, GRIP_Y[itemName] ?? -0.12, 0).multiply(c.scale).applyQuaternion(qc); c.position.copy(g.multiplyScalar(-1)); // o ponto do cabo que a mão segura fica no centro do punho
+      fitToBone(root, b, holder, qh, F.C);
+    } else { holder.rotation.set(0, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02); }
   }
   c.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   root.userData.items = root.userData.items || {}; root.userData.items[itemName] = c;

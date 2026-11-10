@@ -116,5 +116,57 @@
     ],
     "status": "aprovada",
     "respondidoEm": "2026-11-08T17:26:51"
+  },
+  {
+    "id": "P-009",
+    "titulo": "Todos os monstros no padrão do lobo",
+    "detalhe": "Levar o método do lobo (corpo inteiriço com esqueleto, pelagem/pele de verdade, patas que não deslizam, andar, trote e bote naturais) para os monstros que ainda são \"peças coladas\": Fungolino, Coelho-Chifre, Abelha Rubra, Gotinhas, Espantalho, Golem de Musgo, Guardião e os esqueletos. Um por vez, do mais visto (vale) ao mais raro. Junta a proposta P-001, que você já aprovou.",
+    "principios": [
+      "Nada de fake/geométrico (★★★★★)",
+      "Vivo e animado",
+      "Mascotes/monstros com anatomia crível"
+    ],
+    "evidencias": [
+      "S-248",
+      "S-251",
+      "S-250",
+      "S-304",
+      "S-039",
+      "S-044",
+      "S-053"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-010",
+    "titulo": "Jogo abrindo em segundos, sem travar",
+    "detalhe": "Hoje o mundo leva de 30 a 75 s para carregar e chegou a travar. Proposta: medir o que pesa na abertura (castelo, cidades, Vigília, colossos, pelagens), montar só a região onde você está e o resto aos poucos em segundo plano, com barra de progresso de verdade. Meta: entrar no mundo em menos de 10 s e manter 60 quadros na vila.",
+    "principios": [
+      "Desempenho é parte do gosto",
+      "Mundo grande com escala épica"
+    ],
+    "evidencias": [
+      "S-069",
+      "S-042",
+      "conversa 2026-11-08 (\"não estou conseguindo carregar o mundo\")"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-011",
+    "titulo": "Golpe que pesa: impacto no combate",
+    "detalhe": "Completar o combate liso com sensação de acerto: micro-pausa de 50 ms no impacto, o monstro recua e pisca, poeira/faísca/sangue estilizado conforme o alvo (osso, pedra, carne), número de dano saltando e tremidinha de câmera só nos golpes fortes e críticos. Tudo discreto e só quando acerta.",
+    "principios": [
+      "Vivo e animado",
+      "Referências fortes (WoW/Skyrim no combate)"
+    ],
+    "evidencias": [
+      "S-265",
+      "S-233",
+      "S-293",
+      "S-294",
+      "S-292"
+    ],
+    "status": "proposta"
   }
 ]

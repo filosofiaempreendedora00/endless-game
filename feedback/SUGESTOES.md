@@ -6,7 +6,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 
 _Nenhuma._
 
-## Feitas (303)
+## Feitas (304)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2138,3 +2138,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** ideal o portal se parecer com um portal no minimapa e nao com um triangulo e ele ficzar mais nas extremidades do mapa e nao assim no meio de um corredor
 - ![print](img/S-303.png)
 - **Resposta do Claude:** No mapa da masmorra as escadas agora aparecem como portal (anel brilhante com redemoinho, roxo para descer e azul para subir), e a descida de cada andar fica num beco na borda do labirinto, nunca no meio de um corredor.
+
+### S-304 · Interface: Área de 594×164 px em Palco do personagem
+- **Status:** feito · **Quando:** 2026-11-09T21:53:07 · **Tela:** Seleção de personagens
+- **Onde no código:** js3d/main3d.js → chooseCharacter (vitrine, makeStage) · style.css (.cs-*)
+- **Sugestão:** Repara que aqui ainda está com a parte de baixo sendo cortada pelas laterais ou seja está com um risco vertical e eu não quero isso existem algumas formas de resolver este problema uma delas é chegar a seta da esquerda um pouco mais para esquerda permitindo com que tudo que está lá embaixo seja visível e Redondo um segundo problema que eu observei é que esse monstro ainda está com as pernas um pouco esquisitas rosto também esquisito e ele como um todo ainda está excessivamente geométrico eu gostaria de transformar esse Monstro em algo um pouco mais natural e um outro problema que precisa ser resolvido é a forma como a espada fica na mão do personagem pois repare que ele está de Punhos cerrados e você precisa de alguma forma inteligente e bem feita incluir a espada corretamente posicionada na mão dele e não dessa forma que está pois está claramente errado
+- ![print](img/S-304.png)
+- **Resposta do Claude:** Vitrine: o círculo do pedestal agora sempre cabe inteiro (o palco ficou um pouco mais largo e as bordas somem suaves), sem o risco vertical cortando embaixo. O tatu foi refeito como tatu de verdade: casco comprido em barril com placas chatas e cintas, focinho longo e fino, olhos pequenos, orelhas em folha e patas curtas e grossas com garras de cavar. E as armas (espadas, machados, facas, varinhas) agora ficam dentro da mão fechada: o cabo atravessa o punho do mindinho ao indicador e a guarda encosta na mão — parado, em guarda, atacando e correndo, também no anão.

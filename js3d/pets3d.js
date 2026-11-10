@@ -596,24 +596,30 @@ function rockArmadillo(stage, scale) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   // S-268: o Monolito continua o Rochedo (pedra esverdeada com cristais MAIORES), não vira um bicho azul de vidro
   const crystal = false, gem = stage === 2;
-  const shellBase = new THREE.Color(['#b8a07a', '#8a8670', '#6f8064'][stage]), shellDark = new THREE.Color(['#5a4632', '#3e3a30', '#2c3a2a'][stage]), shellLight = new THREE.Color(['#e0cca0', '#b8b098', '#aec8a0'][stage]);
-  const skinC = new THREE.Color(['#c9a48a', '#b39280', '#9a8478'][stage]), skinDark = new THREE.Color('#6a4e40'), moss = new THREE.Color('#5d8a3a'), mossL = new THREE.Color('#8ab04a');
+  const shellBase = new THREE.Color(['#a38e6e', '#8a8670', '#6f8064'][stage]), shellDark = new THREE.Color(['#4a3a2c', '#3e3a30', '#2c3a2a'][stage]), shellLight = new THREE.Color(['#cdb994', '#b8b098', '#aec8a0'][stage]);
+  const skinC = new THREE.Color(['#a48c7c', '#a08676', '#9a8478'][stage]), skinDark = new THREE.Color('#5a4638'), /* S-304: pele cinza-amarronzada de tatu (não rosada) */ moss = new THREE.Color('#5d8a3a'), mossL = new THREE.Color('#8ab04a');
   const SHELL = crystal ? new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05, emissive: '#1a7a9a', emissiveIntensity: 0.35, sheen: 0.4, sheenColor: new THREE.Color('#9affff') }) : VC(0.78);
   const SKIN = VC(0.9);
-  const L = 0.32, W = 0.195, H = 0.18, cy = 0.2;
-  const AMAX = 2.4; // o casco desce mais pelos lados (fechado)
+  // S-304: tatu de verdade — casco comprido em barril (não uma bola), baixo, cobrindo as patas; escudo da frente,
+  // cintas no meio e escudo de trás com escamas chatas (não "bolinhas")
+  const L = 0.3, W = 0.158, H = 0.13, cy = 0.106;
+  const AMAX = 2.32; // o casco desce pelos lados até perto do chão (esconde a parte de cima das patas)
+  const droop = u => -0.05 * ss(0.5, 1, Math.abs(u)); // escudos da frente e de trás descem sobre o pescoço e o quadril (como num tatu de verdade)
+  const prof = u => { const p = u > 0 ? 2.25 : 2.7; return Math.pow(Math.max(0, 1 - Math.pow(Math.abs(u), p)), 1 / p); }; // perfil "barril": cheio no meio; a frente afina até o tamanho do pescoço
+  const arch = u => 1 + 0.09 * ss(0.6, -0.5, u) - 0.05 * ss(0.5, 1, u); // dorso mais alto atrás, baixando para a cabeça
   function shellPiece(z0, z1, segZ, segA, pat) {
     const pos = [], col = [], idx = [], c = new THREE.Color();
     for (let i = 0; i <= segZ; i++) for (let j = 0; j <= segA; j++) {
-      const t = i / segZ, z = z0 + (z1 - z0) * t, a = -AMAX + 2 * AMAX * j / segA, rho = Math.sqrt(Math.max(0, 1 - z * z));
+      const t = i / segZ, z = z0 + (z1 - z0) * t, a = -AMAX + 2 * AMAX * j / segA, rho = prof(z);
       const nx = rho * Math.sin(a), ny = rho * Math.cos(a), p = pat(t, a, z);
-      let r = p.r; if (ny < -0.25) r *= 1 + (-0.25 - ny) * 0.2;
-      pos.push(nx * W * r, ny * H * r * (1 + 0.06 * ss(-0.3, 0.3, z)) + cy + 0.04, z * L * r + 0.01);
+      let r = p.r; if (ny < -0.25) r *= 1 + (-0.25 - ny) * 0.12; // borda de baixo abre um pouco (saia do casco)
+      pos.push(nx * W * r, ny * H * r * arch(z) + cy + 0.04 + droop(z), z * L * r + 0.01);
       const hv = hash(p.id, 7);
-      c.copy(shellBase).offsetHSL((hv - 0.5) * (crystal ? 0.05 : 0.015), (hv - 0.5) * 0.05, (hv - 0.5) * 0.09);
+      c.copy(shellBase).offsetHSL((hv - 0.5) * (crystal ? 0.05 : 0.02), (hv - 0.5) * 0.06, (hv - 0.5) * 0.15); // cada placa com seu tom (nada de "parede de tijolo" igual)
+      c.lerp(shellDark, ss(0.1, -0.6, ny) * 0.35); // mais escuro descendo pelos lados
       c.lerp(shellLight, ss(0.4, 1, p.edge) * (crystal ? 0.55 : 0.45) * ss(-0.3, 0.8, ny));
       if (crystal) c.lerp(new THREE.Color('#7af0ff'), (1 - ss(0, 0.35, p.edge)) * 0.85); // veios luminosos entre as placas
-      else c.lerp(shellDark, (1 - ss(0, 0.5, p.edge)) * 0.8);
+      else c.lerp(shellDark, (1 - ss(0, 0.16, p.edge)) * 0.55); // sulcos finos entre as placas (nada de "bolinhas" com contorno grosso)
       if (gem) c.lerp(new THREE.Color('#58d8a0'), (1 - ss(0, 0.22, p.edge)) * 0.45 * ss(-0.2, 0.6, ny)); // veios de cristal verde entre as placas
       if (ny < -0.1) c.lerp(shellDark, 0.2);
       if (stage >= 1 && ny > 0.45) { /* S-267: menos limo (só manchas no alto do casco) */ const mn = Math.sin(nx * 23 + 1) * Math.cos(z * 19) * 0.5 + 0.5; c.lerp(hv > 0.5 ? moss : mossL, ss(0.5, 0.85, ny) * ss(0.45, 0.8, mn) * 0.7 * (0.55 + 0.45 * ss(0.2, 0.8, p.edge))); }
@@ -626,12 +632,13 @@ function rockArmadillo(stage, scale) {
   const shellParts = [];
   const scutes = (rowsPerUnit, cols, off) => (t, a, z) => {
     const row = Math.abs(z) * rowsPerUnit, fr = fract(row), cc = (a / (2 * Math.PI)) * cols + (Math.floor(row) % 2) * 0.5, fc = fract(cc);
-    const e = Math.max(0, 1 - Math.hypot((fc - 0.5) * 1.0, (fr - 0.5) * 1.05) * 2.1), edge = Math.min(1, e / 0.4);
+    // placas poligonais encaixadas (cantos levemente arredondados), sulco fino entre elas
+    const dq = Math.pow(Math.pow(Math.abs(fc - 0.5) * 2, 4) + Math.pow(Math.abs(fr - 0.5) * 2, 4), 0.25), e = Math.max(0, 1 - dq), edge = Math.min(1, e / 0.22);
     // cristal: placas facetadas (pirâmide baixa) em vez de domo
-    return { r: crystal ? 1 + 0.02 * Math.min(1, e * 1.8) - 0.008 : 1 + 0.012 * Math.sqrt(edge) - 0.005, edge, id: Math.floor(row) * 57 + Math.floor(cc) + off };
+    return { r: crystal ? 1 + 0.02 * Math.min(1, e * 1.8) - 0.008 : 1 + 0.004 * Math.min(1, edge * 1.5) - 0.002, edge, id: Math.floor(row) * 57 + Math.floor(cc) + off }; // placas quase chatas
   };
-  shellParts.push(shellPiece(0.28, 0.95, 70, 220, scutes(crystal ? 11 : 16, crystal ? 16 : 22, 999)));
-  shellParts.push(shellPiece(-0.96, -0.3, 70, 220, scutes(crystal ? 11 : 16, crystal ? 16 : 22, 0)));
+  shellParts.push(shellPiece(0.28, 0.985, 90, 240, scutes(crystal ? 11 : 26, crystal ? 16 : 40, 999))); // termina numa borda do tamanho do pescoço (a cabeça sai dali)
+  shellParts.push(shellPiece(-0.985, -0.3, 90, 240, scutes(crystal ? 11 : 26, crystal ? 16 : 40, 0)));
   const NB = 8;
   for (let b = 0; b < NB; b++) {
     const zf = 0.3 - b * (0.6 / NB) + 0.02, zb = zf - 0.6 / NB - 0.03; // cintas sobrepostas (sem fresta)
@@ -645,85 +652,104 @@ function rockArmadillo(stage, scale) {
   const shellG = mergeGeometries(shellParts);
   body.add(new THREE.Mesh(shellG, SHELL));
   // corpo inteiro por dentro do casco (fecha qualquer fresta: não se vê o vazio) + barriga de couro
-  const hullG = sculpt(40, 28, (v, x, y, z) => v.set(x * W * 0.97, y * H * 0.97 + cy + 0.035, z * L * 0.97 + 0.01));
-  vcolor(hullG, (c, x, y) => c.copy(skinC).lerp(skinDark, 0.55));
+  const hullG = sculpt(40, 28, (v, x, y, z) => { const k = prof(z) / Math.max(0.05, Math.sqrt(Math.max(0, 1 - z * z))); v.set(x * W * 0.96 * Math.min(1.6, k), y * H * 0.96 * Math.min(1.6, k) * arch(z) + cy + 0.04 + droop(z), z * L * 0.95 + 0.01); });
+  vcolor(hullG, (c, x, y, z) => c.copy(skinC).lerp(skinDark, 0.3 + (Math.sin(z * 260) * 0.5 + 0.5) * 0.2)); // pele enrugada (aparece só na boca do casco)
   body.add(new THREE.Mesh(hullG, SKIN));
-  const bellyG = sculpt(40, 28, (v, x, y, z) => { const w = 1 + 0.03 * Math.sin(z * 30); v.set(x * W * 0.9 * w, y * H * 0.66 + cy - 0.015, z * L * 0.93); });
+  const bellyG = sculpt(40, 28, (v, x, y, z) => { const w = 1 + 0.03 * Math.sin(z * 30); v.set(x * W * 0.88 * w, Math.max(y, -0.92) * H * 0.62 + cy + 0.0, z * L * 0.9); });
   vcolor(bellyG, (c, x, y, z) => { c.copy(skinC).lerp(skinDark, (Math.sin(z * 90) * 0.5 + 0.5) * 0.15); });
   body.add(new THREE.Mesh(bellyG, SKIN));
   // aba do casco: borda grossa de verdade em volta (o casco tem espessura)
-  { const pts = []; for (let k = 0; k <= 96; k++) { const z = -0.95 + 1.9 * k / 96, rho = Math.sqrt(Math.max(0, 1 - z * z)); pts.push(V3(Math.sin(AMAX) * rho * W * 1.01, Math.cos(AMAX) * rho * H * 1.01 + cy + 0.04, z * L + 0.01)); }
+  { const pts = []; for (let k = 0; k <= 96; k++) { const z = -0.97 + 1.92 * k / 96, rho = prof(z), r = 1 + (-0.25 - Math.cos(AMAX)) * 0.12; pts.push(V3(Math.sin(AMAX) * rho * W * r * 1.005, Math.cos(AMAX) * rho * H * r * arch(z) + cy + 0.04 + droop(z), z * L * r + 0.01)); }
     const lipG = mergeGeometries([1, -1].map(sx => { const g = taper(pts.map(p => V3(p.x * sx, p.y, p.z)), 0.008, 0.008, 96, 8); return strip(vcolor(g, c => c.copy(crystal ? shellLight : shellDark).lerp(shellBase, 0.4))); }));
     body.add(new THREE.Mesh(lipG, SHELL)); }
   // ---- cabeça: focinho longo de tatu, escudo de escamas, orelhas grandes em pé ----
-  const neck = new THREE.Group(); neck.position.set(0, cy + 0.02, L * 0.88); body.add(neck);
-  const neckG = taper([V3(0, 0, -0.05), V3(0, 0.005, 0.02), V3(0, 0.01, 0.06)], 0.075, 0.06, 12, 18);
+  // S-304: a cabeça sai de baixo da borda da frente do casco, baixa, e afina num focinho longo e fino (sem disco, sem "porquinho")
+  const neck = new THREE.Group(); neck.position.set(0, cy - 0.012, L * 0.92); body.add(neck);
+  const neckG = taper([V3(0, 0.006, -0.07), V3(0, 0.002, -0.015), V3(0, -0.002, 0.03)], 0.05, 0.04, 12, 18); // pescoço de pele enrugada que enche a boca do casco
   { const P = neckG.attributes.position; for (let k = 0; k < P.count; k++) { const z = P.getZ(k), s = 1 + Math.sin(z * 140) * 0.06; P.setX(k, P.getX(k) * s); P.setY(k, (P.getY(k) - 0.005) * s + 0.005); } neckG.computeVertexNormals(); }
   vcolor(neckG, (c, x, y, z) => c.copy(skinC).lerp(skinDark, (Math.sin(z * 140) * 0.5 + 0.5) * 0.35));
   neck.add(new THREE.Mesh(neckG, SKIN));
-  const head = new THREE.Group(); head.position.set(0, 0.015, 0.06); neck.add(head);
-  const headG = sculpt(60, 44, (v, x, y, z) => {
-    const t = ss(-0.3, 1, z);
-    // S-267: crânio arredondado que "quebra" para um focinho em tubo (largura quase constante, ponta de porquinho) — não um cone
-    const s = 1 - 0.56 * ss(0.28, 0.6, t) - 0.07 * ss(0.6, 1, t) + 0.06 * Math.exp(-Math.pow((t - 0.12) / 0.14, 2));
-    let X = x * 0.068 * s, Y = y * 0.058 * (s * 0.92 + 0.08 * (1 - t)), Z = z * 0.06 + Math.max(0, z) * 0.13;
-    Y -= 0.02 * ss(0.3, 1, t) + 0.006 * t;
-    if (y > 0.15 && z < 0.7) { const cu = Z * 34, ca = X * 34 + (Math.floor(cu) % 2) * 0.5, e = Math.min(fract(cu), 1 - fract(cu), fract(ca), 1 - fract(ca)); Y += 0.0028 * ss(0, 0.25, e); }
-    else Y += Math.sin(Z * 170) * 0.0009 * (1 - t);
+  const head = new THREE.Group(); head.position.set(0, 0.002, 0.028); head.rotation.x = 0.16; head.scale.setScalar(1.15); neck.add(head);
+  const HW = t => 0.043 * (1 - 0.8 * ss(0.12, 1.0, t)) * (1 + 0.1 * Math.exp(-Math.pow((t - 0.16) / 0.12, 2))); // largura: crânio largo atrás, afina até a ponta
+  const HH = t => 0.036 * (1 - 0.74 * ss(0.12, 1.0, t));
+  const HZ = t => -0.034 + t * 0.158, HDROP = t => -0.02 * t * t; // comprimento e leve curva para baixo
+  const shieldPat = (X, Z) => { const cu = Z * 210, ca = X * 210 + (Math.floor(cu) % 2) * 0.5, fu = fract(cu), fa = fract(ca); return Math.pow(Math.pow(Math.abs(fu - 0.5) * 2, 4) + Math.pow(Math.abs(fa - 0.5) * 2, 4), 0.25); }; // escudo cefálico (placas miúdas)
+  const headG = sculpt(64, 40, (v, x, y, z) => {
+    const t = (z + 1) / 2;
+    let X = x * HW(t), Y = y * HH(t) * (y > 0 ? 0.86 : 1.0), Z = HZ(t);
+    Y += HDROP(t);
+    if (y > 0.25 && t < 0.62) Y += 0.0016 * ss(0.95, 0.6, shieldPat(X, Z)); // relevo das plaquinhas no alto da cabeça
+    else Y += Math.sin(Z * 260) * 0.0005 * (1 - t); // pele do focinho com ruguinhas
     v.set(X, Y, Z);
   });
   vcolor(headG, (c, x, y, z, ny) => {
-    if (ny > 0.25 && y > -0.008 && z < 0.12) { const cu = z * 34, ca = x * 34 + (Math.floor(cu) % 2) * 0.5, e = Math.min(fract(cu), 1 - fract(cu), fract(ca), 1 - fract(ca)); c.copy(shellBase).offsetHSL(0, 0, (hash(Math.floor(cu), Math.floor(ca)) - 0.5) * 0.12).lerp(crystal ? new THREE.Color('#7af0ff') : shellDark, (1 - ss(0, 0.2, e)) * 0.7); }
-    else c.copy(skinC).lerp(skinDark, (Math.sin(z * 200) * 0.5 + 0.5) * 0.2);
-    if (z > 0.17) c.lerp(new THREE.Color('#8a5a50'), ss(0.17, 0.19, z));
+    const t = (z + 0.034) / 0.158;
+    if (ny > 0.35 && t < 0.62) { const d = shieldPat(x, z); c.copy(shellBase).offsetHSL(0, 0, (hash(Math.floor(z * 210), Math.floor(x * 210)) - 0.5) * 0.08).lerp(shellDark, ss(0.7, 0.98, d) * 0.6).lerp(skinC, ss(0.5, 0.62, t)); }
+    else c.copy(skinC).lerp(skinDark, 0.15 + (Math.sin(z * 260) * 0.5 + 0.5) * 0.12);
+    if (t > 0.86) c.lerp(new THREE.Color('#7a5248'), ss(0.86, 0.97, t)); // ponta do focinho mais escura
   });
   head.add(new THREE.Mesh(headG, SKIN));
-  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.0145, 18, 12), mat('#5a3a34', { roughness: 0.45 })); snout.scale.set(1.15, 0.85, 0.45); snout.position.set(0, -0.027, 0.188); head.add(snout);
-  head.add(merged([-1, 1].map(sx => at(new THREE.SphereGeometry(0.0033, 8, 6), sx * 0.0055, -0.027, 0.194)), mat('#1a0e0c')));
-  // olhos de conta com pálpebras que piscam e se espremem
+  // ponta do focinho: almofada úmida pequena com duas narinas (nada de "nariz de porco")
+  const tipZ = HZ(1), tipY = HDROP(1);
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.0062, 18, 12), mat('#4a302a', { roughness: 0.32 })); snout.scale.set(1.15, 0.85, 0.4); snout.position.set(0, tipY + 0.0005, tipZ - 0.0015); head.add(snout);
+  head.add(merged([-1, 1].map(sx => at(new THREE.SphereGeometry(0.0019, 8, 6), sx * 0.0035, tipY + 0.001, tipZ + 0.0035)), mat('#120806')));
+  // boca: risco fino embaixo do focinho
+  head.add(merged([taper([V3(-0.012, -0.012, 0.035), V3(-0.006, tipY - 0.004, 0.09), V3(0, tipY - 0.005, tipZ - 0.006)], 0.0012, 0.001, 10, 5), taper([V3(0.012, -0.012, 0.035), V3(0.006, tipY - 0.004, 0.09), V3(0, tipY - 0.005, tipZ - 0.006)], 0.0012, 0.001, 10, 5)], mat('#3a2420', { roughness: 0.6 })));
+  // olhos pequenos e brilhantes, encaixados na lateral do crânio, com pálpebra
   const EYE = mat('#0c0806', { roughness: 0.05 }), GL = new THREE.MeshBasicMaterial({ color: '#ffffff' }), eyes = [];
   for (const sx of [-1, 1]) {
-    const e = new THREE.Group(); e.position.set(sx * 0.043, 0.012, 0.04); e.rotation.y = sx * 0.6; head.add(e);
-    e.add(merged([at(new THREE.SphereGeometry(0.0105, 16, 12), 0, 0, 0)], EYE), merged([at(new THREE.SphereGeometry(0.0026, 8, 6), 0.003, 0.004, 0.009)], GL));
-    const lid = new THREE.Mesh(vcolor(new THREE.SphereGeometry(0.0125, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), c => c.copy(skinC).lerp(skinDark, 0.3)), SKIN); e.add(lid);
+    const te = 0.33, e = new THREE.Group(); e.position.set(sx * HW(te) * 0.86, HH(te) * 0.38 + HDROP(te), HZ(te)); e.rotation.y = sx * 1.0; head.add(e);
+    e.add(merged([at(new THREE.SphereGeometry(0.0058, 16, 12), 0, 0, 0)], EYE), merged([at(new THREE.SphereGeometry(0.0015, 8, 6), 0.0016, 0.0022, 0.005)], GL));
+    const lid = new THREE.Mesh(vcolor(new THREE.SphereGeometry(0.0068, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), c => c.copy(skinC).lerp(skinDark, 0.35)), SKIN); e.add(lid);
     eyes.push({ lid });
   }
-  // orelhas grandes, em pé, de couro fino (bem de tatu)
-  const earG = sculpt(20, 16, (v, x, y, z) => { const u = (y + 1) / 2; v.set(x * 0.02 * (1 - u * 0.35), u * 0.055, z * 0.006 - x * x * 0.018); }); vcolor(earG, (c, x, y, z) => c.copy(skinC).lerp(skinDark, 0.3).lerp(new THREE.Color('#6a4840'), z > 0.002 ? 0.4 : 0));
-  const ears = [-1, 1].map(sx => { const e = new THREE.Mesh(earG, SKIN); e.position.set(sx * 0.036, 0.038, -0.025); e.rotation.set(-0.25, sx * 0.55, -sx * 0.18); head.add(e); return e; });
+  // orelhas em pé em forma de folha (couro fino, com dobra no meio), atrás dos olhos
+  const earG = sculpt(22, 18, (v, x, y, z) => { const u = (y + 1) / 2, wdt = 0.0135 * Math.sin(Math.PI * Math.min(1, u * 1.05 + 0.08)) * (1 - u * 0.25); v.set(x * wdt, u * 0.042, z * 0.0022 - Math.abs(x) * wdt * 0.55 + 0.004 * Math.sin(u * Math.PI)); });
+  vcolor(earG, (c, x, y, z) => c.copy(skinC).lerp(skinDark, 0.3).lerp(new THREE.Color('#7a5046'), z > 0.0005 ? 0.35 : 0));
+  const ears = [-1, 1].map(sx => { const te = 0.2, e = new THREE.Mesh(earG, SKIN); e.position.set(sx * HW(te) * 0.62, HH(te) * 0.62 + HDROP(te), HZ(te)); e.rotation.set(-0.35, sx * 0.5, -sx * 0.32); head.add(e); return e; });
   if (stage >= 1) { // chifres (pedra no Rochedo, cristal no Monolito)
-    const hornG = mergeGeometries([-1, 1].map(sx => strip(taper([V3(sx * 0.028, 0.048, 0.0), V3(sx * 0.042, 0.072, -0.05), V3(sx * 0.046, 0.078, -0.11)], 0.015, 0.003, 10, 12))));
+    const hornG = mergeGeometries([-1, 1].map(sx => strip(taper([V3(sx * 0.016, 0.026, -0.006), V3(sx * 0.026, 0.042, -0.036), V3(sx * 0.029, 0.047, -0.078)], 0.011, 0.0025, 10, 12))));
     vcolor(hornG, (c, x, y, z) => c.copy(shellBase).lerp(crystal ? shellLight : shellDark, ss(0, -0.1, z) * 0.6));
     head.add(new THREE.Mesh(hornG, SHELL));
   }
   // ---- patas: coxa escamada em anéis, pele enrugada, garras longas ----
   const CLAW = mat('#2a221c', { roughness: 0.35 });
-  const legs = [[-0.13, 0.17, true], [0.13, 0.17, true], [-0.14, -0.17, false], [0.14, -0.17, false]].map(([x, z, front]) => {
-    const pv = new THREE.Group(); pv.position.set(x, cy - 0.02, z); body.add(pv); const sx = Math.sign(x);
-    // S-267: pata de tatu de verdade — braço musculoso que sai de baixo do casco, cotovelo/joelho dobrado, pele enrugada em dobras
-    // finas, punho grosso e pé largo e achatado (uma peça só, sem bolas encaixadas)
-    const R0 = front ? 0.04 : 0.05, lp = front ? [V3(0, 0.04, -0.004), V3(sx * 0.006, -0.03, -0.012), V3(sx * 0.01, -0.095, 0.006), V3(sx * 0.01, -0.152, 0.012)] : [V3(0, 0.04, 0.01), V3(sx * 0.006, -0.03, -0.02), V3(sx * 0.009, -0.1, -0.008), V3(sx * 0.01, -0.152, 0.008)];
-    const legT = taper(lp, 0, 0, 22, 18, u => R0 * (1 - 0.42 * ss(0, 0.75, u) + 0.12 * Math.exp(-Math.pow((u - 0.15) / 0.12, 2))) * (1 + 0.035 * Math.sin(u * 46)));
-    const topCap = vcolor(strip(capSphere(R0 * 0.98, 0, 0.04, front ? -0.004 : 0.01)), c => c.copy(skinC).lerp(shellDark, 0.3));
-    const footG = sculpt(22, 14, (v, xx, y, zz) => { const toe = Math.max(0, zz); v.set(xx * (0.03 + toe * 0.008), Math.max(y, -0.35) * 0.016 * (1 - toe * 0.35), zz * 0.036 + toe * 0.012); }); footG.translate(sx * 0.01, -0.162, 0.016);
-    const lg = weld(mergeGeometries([strip(vcolor(legT, (c, xx, y) => { const u = (0.04 - y) / 0.19; c.copy(skinC).lerp(shellBase, 0.25 * (1 - u)).lerp(skinDark, (Math.sin(u * 46) * 0.5 + 0.5) * 0.22); })), topCap, strip(vcolor(footG, c => c.copy(skinC).lerp(skinDark, 0.35)))]));
+  // S-304: patas curtas e grossas que saem de baixo da saia do casco (nada de pernas de palito); pele de escamas miúdas,
+  // pé largo e chato; na frente 3 garras longas e curvas de cavar, atrás 5 garras curtas
+  const LEG = 0.092; // do pivô (sob o casco) até o chão
+  const legs = [[-0.098, 0.165, true], [0.098, 0.165, true], [-0.105, -0.165, false], [0.105, -0.165, false]].map(([x, z, front]) => {
+    const pv = new THREE.Group(); pv.position.set(x, LEG, z); body.add(pv); const sx = Math.sign(x);
+    const R0 = front ? 0.036 : 0.043;
+    const lp = front ? [V3(0, 0.03, 0), V3(sx * 0.008, -0.022, 0.004), V3(sx * 0.012, -0.058, 0.01), V3(sx * 0.013, -0.08, 0.014)]
+                     : [V3(0, 0.03, 0.004), V3(sx * 0.008, -0.026, -0.012), V3(sx * 0.012, -0.062, -0.006), V3(sx * 0.013, -0.08, 0.0)];
+    const legT = taper(lp, 0, 0, 30, 18, u => R0 * (1 - 0.32 * ss(0, 0.85, u) + 0.1 * Math.exp(-Math.pow((u - 0.2) / 0.14, 2))) * (1 + 0.018 * Math.sin(u * 47) + 0.012 * Math.sin(u * 83 + 1.3))); // dobras de pele irregulares (sem "sanfona")
+    const topCap = vcolor(strip(capSphere(R0 * 0.98, 0, 0.03, front ? 0 : 0.004)), c => c.copy(skinC).lerp(skinDark, 0.35));
+    // pé de tatu: comprido para a frente, mais largo nos dedos, sola chata (nada de "rodela")
+    const fz = front ? 0.012 : -0.006, fl = front ? 0.026 : 0.036;
+    const footG = sculpt(24, 14, (v, xx, y, zz) => { const toe = ss(-0.6, 1, zz); v.set(xx * (0.0135 + toe * 0.009), Math.max(y, -0.45) * 0.0115 * (1 - toe * 0.45), zz * fl); });
+    footG.translate(sx * 0.013, -LEG + 0.005, fz + fl * 0.55);
+    const scaleCol = (c, xx, y, zz) => { const sp = hash(Math.floor(y * 380), Math.floor((xx + zz) * 380)), band = 0.5 + 0.5 * Math.sin((0.03 - y) / 0.11 * 47); c.copy(skinC).lerp(skinDark, 0.2 + sp * 0.16 + (1 - band) * 0.08).lerp(shellBase, y > -0.035 ? 0.3 * sp : 0); }; // escamas miúdas e dobras escuras nas patas
+    const lg = weld(mergeGeometries([strip(vcolor(legT, scaleCol)), topCap, strip(vcolor(footG, c => c.copy(skinC).lerp(skinDark, 0.4)))]));
     pv.add(new THREE.Mesh(lg, SKIN));
-    const nC = front ? 3 : 4, cl = [];
-    for (let k = 0; k < nC; k++) { const xx = (k - (nC - 1) / 2) * (front ? 0.017 : 0.013); cl.push(taper([V3(xx, 0, 0), V3(xx, -0.004, front ? 0.022 : 0.012), V3(xx, -0.014, front ? 0.036 : 0.019)], front ? 0.0065 : 0.005, 0.0008, 8, 8)); }
-    const cm = merged(cl, CLAW); cm.position.set(sx * 0.01, -0.165, 0.05); pv.add(cm);
+    const nC = front ? 3 : 5, cl = [];
+    for (let k = 0; k < nC; k++) {
+      const m = (k - (nC - 1) / 2), xx = m * (front ? 0.009 : 0.0072), lc = front ? (k === 1 ? 0.034 : 0.026) : 0.014 - Math.abs(m) * 0.002;
+      cl.push(taper([V3(xx, 0.002, 0), V3(xx * 1.1, 0.0, lc * 0.55), V3(xx * 1.15, -0.0055, lc)], front ? 0.0042 : 0.0034, 0.0006, 10, 8));
+    }
+    const cm = merged(cl, CLAW); cm.position.set(sx * 0.013, -LEG + 0.004, fz + fl * 1.4); pv.add(cm);
     return { pv, front, x, idx: front ? (x < 0 ? 0 : 1) : (x < 0 ? 2 : 3) };
   });
-  // ---- rabo: anéis que encaixam um no outro (2 segmentos que balançam) ----
-  const tailA = new THREE.Group(); tailA.position.set(0, cy - 0.04, -L * 0.9); body.add(tailA); // sai da base do casco, junto do chão
-  const tailB = new THREE.Group(); tailB.position.set(0, -0.085, -0.125); tailA.add(tailB);
+  // ---- rabo: comprido, afinando até a ponta, com anéis de placas; sai da borda de trás do casco ----
+  const tailA = new THREE.Group(); tailA.position.set(0, cy - 0.018, -L * 0.93); body.add(tailA);
+  const tailB = new THREE.Group(); tailB.position.set(0, -0.058, -0.125); tailA.add(tailB);
   const ringed = (g, n) => { const P = g.attributes.position; for (let k = 0; k < P.count; k++) { const d = Math.hypot(P.getZ(k), P.getY(k)), s = 1 + (fract(d * n) > 0.72 ? 0.07 : 0); P.setX(k, P.getX(k) * s); } g.computeVertexNormals(); vcolor(g, (c, x, y, z) => { const f = fract(Math.hypot(z, y) * n); c.copy(shellBase).lerp(crystal ? shellLight : shellDark, f > 0.72 ? 0.45 : 0).offsetHSL(0, 0, (Math.floor(Math.hypot(z, y) * n) % 2) * 0.04); }); return g; };
   // S-268: rabo de tatu de verdade — longo, fino, anelado, caindo até quase encostar no chão (nada de cone espetado)
-  tailA.add(new THREE.Mesh(ringed(taper([V3(0, 0.005, 0.03), V3(0, -0.045, -0.06), V3(0, -0.085, -0.125)], 0.036, 0.022, 18, 14), 60), SHELL));
-  tailB.add(new THREE.Mesh(ringed(taper([V3(0, 0, 0.005), V3(0, -0.03, -0.08), V3(0, -0.045, -0.17)], 0.0225, 0.005, 20, 12), 75), SHELL));
+  tailA.add(new THREE.Mesh(ringed(taper([V3(0, 0.008, 0.045), V3(0, -0.028, -0.06), V3(0, -0.058, -0.125)], 0.036, 0.018, 18, 16), 70), SHELL));
+  tailB.add(new THREE.Mesh(ringed(taper([V3(0, 0, 0.006), V3(0, -0.016, -0.09), V3(0, -0.02, -0.19)], 0.0185, 0.0035, 22, 12), 85), SHELL));
   // ---- evolução ----
   let spire = null, spireLight = null;
   const rngS = (() => { let s = 31 + stage; return () => (s = s * 16807 % 2147483647) / 2147483647; })();
-  const onShell = (u, a) => { const rho = Math.sqrt(1 - u * u), z = u * L * 1.02, ca = Math.cos(a) * rho, sa = Math.sin(a) * rho; return { p: V3(sa * W * 1.02, cy + 0.04 + ca * H * 1.02, z + 0.01), n: V3(sa / W, ca / H, u / L).normalize() }; };
+  const onShell = (u, a) => { const rho = prof(u), z = u * L * 1.02, ca = Math.cos(a) * rho, sa = Math.sin(a) * rho; return { p: V3(sa * W * 1.02, cy + 0.04 + ca * H * 1.02 * arch(u) + droop(u), z + 0.01), n: V3(sa / W, ca / H, u / L).normalize() }; };
   if (stage === 1) { // Rochedo: musgo, pedrinhas, grama, florzinhas e cristais nascendo
     const CRY = new THREE.MeshPhysicalMaterial({ color: '#8affd8', emissive: '#2ad0a0', emissiveIntensity: 0.5, roughness: 0.08, clearcoat: 1, transparent: true, opacity: 0.9 });
     const cg = [];
@@ -772,14 +798,14 @@ function rockArmadillo(stage, scale) {
   }
   const dust = new THREE.Mesh(new THREE.TorusGeometry(1, 0.25, 8, 40), new THREE.MeshBasicMaterial({ color: '#b8a888', transparent: true, opacity: 0, depthWrite: false })); dust.rotation.x = Math.PI / 2; dust.userData.noShadow = true; root.add(dust);
   shadows(root);
-  const gait = makeGait(0.17, { Amax: 0.65, fMin: 1.6 });
+  const gait = makeGait(0.1, { Amax: 0.6, fMin: 2.2 }); // patas curtas: passos curtos e rápidos (sem deslizar)
   let look = 0, atk = -9, T = 0, blink = 2, sniff = 0, tvA = 0, tvB = 0, tA = 0, tB = 0;
   return { root, attack() { atk = T; }, animate(t, m, dt) {
     T = t; const v = m.speed * PET_VMAX / scale, k = (t - atk) / 0.8;
     const rear = k >= 0 && k < 1 ? (k < 0.45 ? Math.sin(k / 0.45 * Math.PI / 2) : k < 0.55 ? 1 - (k - 0.45) / 0.1 * 1.15 : -0.15 * (1 - (k - 0.55) / 0.45)) : 0;
     const st = gait.step(v, dt), moving = st.v > 0.05, run = clamp(st.v / 2.5, 0, 1);
     let lowest = 0;
-    for (const Lg of legs) { const c = gait.leg(Lg.idx), hip = -c.sw * st.A; Lg.pv.rotation.x = hip + (Lg.front ? -Math.max(0, rear) * 0.9 : Math.max(0, rear) * 0.3); Lg.pv.rotation.z = (Lg.x < 0 ? 1 : -1) * c.lift * 0.12; lowest = Math.max(lowest, (1 - Math.cos(hip)) * 0.17 - c.lift * 0.0); }
+    for (const Lg of legs) { const c = gait.leg(Lg.idx), hip = -c.sw * st.A; Lg.pv.rotation.x = hip + (Lg.front ? -Math.max(0, rear) * 0.9 : Math.max(0, rear) * 0.3); Lg.pv.rotation.z = (Lg.x < 0 ? 1 : -1) * c.lift * 0.12; lowest = Math.max(lowest, (1 - Math.cos(hip)) * LEG); }
     // gingado pesado: rola de um lado para o outro com as passadas
     const bob = moving ? Math.abs(Math.sin(st.cyc * Math.PI * 2)) * 0.006 : 0;
     body.position.y = -lowest * 0.8 + bob + Math.max(0, rear) * 0.1 + Math.min(0, rear) * 0.06 + Math.sin(t * 1.6) * 0.002;

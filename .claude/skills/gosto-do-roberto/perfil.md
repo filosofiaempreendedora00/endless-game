@@ -173,6 +173,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Combate de clicar e travar o alvo (ele quer mira e habilidade).
 - Emoji como ícone de item.
 - Equipamento "frankenstein" (peça que não encaixa no corpo) e chapéu flutuando.
+- Arma colada do lado de fora do punho fechado (S-292, S-304): o cabo passa por dentro da mão.
+- Borda do palco/vitrine cortando o pedestal ou o mascote (S-069, S-304).
 
 ## Checklist de entrega
 Passe pelo que você tocou antes de dizer "feito":

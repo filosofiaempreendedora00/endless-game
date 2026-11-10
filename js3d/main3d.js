@@ -3091,6 +3091,7 @@ function makeStage(cv) {
     let x0 = -0.5, x1 = 0.5, h = HERO_H, depth = 0.5;
     if (cur) { const e = extent(cur.ch.obj), rr0 = Math.min(e.rad, 0.85); x0 = -rr0; x1 = rr0; h = Math.max(1.1, e.top); depth = rr0; } // S-288: altura real do boneco (anão é mais baixo) e raio sem os efeitos soltos
     if (pet) { const e = extent(pet.obj); x0 = Math.min(x0, pet.obj.position.x - e.rad); x1 = Math.max(x1, pet.obj.position.x + e.rad); h = Math.max(h, e.top); depth = Math.max(depth, pet.obj.position.z + e.rad); }
+    x0 = Math.min(x0, -1.2); x1 = Math.max(x1, 1.2); // S-304: o círculo do pedestal (raio 1,15) cabe inteiro na largura — nada cortado por um risco vertical
     const th = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), wHalf = (x1 - x0) / 2 + 0.12, hHalf = h / 2 + 0.16;
     let face = HERO_H * 0.68; // altura do rosto: centro da cabeça de verdade (anão é mais baixo)
     if (cur) { const hb = new THREE.Box3(); cur.ch.obj.traverse(o => { if (o.isSkinnedMesh && o.visible && (o.name === 'PlayerHead' || /^SuperHero/i.test(o.name) || /_Head(_Hooded)?$/.test(o.name))) { o.computeBoundingBox(); hb.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld)); } }); if (!hb.isEmpty()) face = hb.getCenter(new THREE.Vector3()).y - 0.02; const hbone = cur.ch.root.getObjectByName('Head'); if (hbone) { const v = new THREE.Vector3(); hbone.getWorldPosition(v); face = v.y + 0.09; } } // corpo realista: mira o osso da cabeça
@@ -3152,7 +3153,7 @@ async function chooseCharacter() {
     <div class="cs-head"><h1>${GAME_TITLE}</h1><div class="sub">SEUS PERSONAGENS</div></div>
     <div class="cs-main">
       <button class="cs-arrow" id="cs-prev" title="Anterior (←)">‹</button>
-      <div class="cs-stage"><canvas id="cs-cv" width="500" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
+      <div class="cs-stage"><canvas id="cs-cv" width="580" height="620"></canvas><div class="cs-hint">arraste ou <b>A</b>/<b>D</b> para girar · rodinha aproxima · <b>←</b>/<b>→</b> troca de personagem</div></div>
       <button class="cs-arrow" id="cs-next" title="Próximo (→)">›</button>
       <div class="cs-info" id="cs-info"></div>
     </div>

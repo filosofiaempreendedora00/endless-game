@@ -201,3 +201,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Lição operacional: com 6–7 ajudantes testando ao mesmo tempo, o Mac dele trava e o jogo dele não carrega — evitar tantos jogos abertos ao mesmo tempo e não deixar arquivo novo referenciado antes de existir.
 - 2026-11-09: o Vidro (anão) seguia "esmagado e desconfigurado" na vitrine mesmo depois de 2 correções. Causa real: escala nos ossos da coluna/pescoço/braços é herdada pelos filhos e deforma. Anão agora = só pernas mais curtas + corpo levemente mais largo por igual. Lição: quando ele repete uma queixa, olhe na tela DELE (o personagem dele), não num caso parecido.
 - 2026-11-09: anão deve ser OUTRA CRIATURA (WoW/MMO, "meio hobbit"), não humano distorcido: corpo reesculpido com pernas curtas, barril, ombros largos, mãos/pés grandes e rosto grosseiro.
+
+### S-304 + propostas P-009 a P-011, 2026-11-09
+- Reincidências na vitrine (corte vertical, já pedido em S-069/S-288): ao estreitar o palco para tirar o "vazio" (S-288), cortei o pedestal — uma correção não pode criar o defeito vizinho. Agora o enquadramento sempre inclui o pedestal e as bordas somem suaves.
+- "Punhos cerrados com a espada colada" = arma tem que estar DENTRO da mão (cabo pelo punho, guarda no indicador) — vale para toda arma, de todo personagem.
+- Tatu "excessivamente geométrico" de novo: o padrão do lobo (corpo inteiriço, anatomia real) é o mínimo para qualquer bicho.
+- Propostas priorizadas por peso × frequência na tela × reincidência ÷ esforço: P-009 monstros no padrão do lobo, P-010 carregamento rápido (ele travou para abrir), P-011 impacto no combate. Há 7 aprovadas ainda não feitas (P-001..P-004, P-006..P-008).
