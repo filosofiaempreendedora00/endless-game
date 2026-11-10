@@ -1161,7 +1161,7 @@ function attackAnim(p, me) {
     if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: sp }); S.overlayAtk = true; }
     else { me.anim.play(clip, { once: true, restart: true, fade: Math.min(0.06, delay * 0.25), speed: sp }); S.overlayAtk = false; }
     S.lunge = { t: S.time, d: 0.12 };
-    return { sound: 'stab', katar: true };
+    return { sound: 'katarSlash', katar: true };
   }
   const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
   // S-292: com arma na mão, golpeia só com a mão da arma (Punch_Jab é a esquerda: sai); os dois punhos só sem arma equipada
@@ -1675,14 +1675,14 @@ function hurtMonster(m, res, elem) {
   if (res.miss) { floatAt(m.obj.position, 'Errou', '#cfd6e0', m.height + 0.4); Sound.play('miss'); m.aggro = true; m.hitByPlayer = true; return; }
   if (m.def.dummy) { // boneco de treino: mostra o dano, guarda para o DPS e nunca cai
     (m.dps = m.dps || []).push([S.time, res.dmg]); m.total = (m.total || 0) + res.dmg;
-    floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : '#ffffff', m.height + 0.4, res.crit); Sound.play(res.crit ? 'crit' : 'hit');
+    floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : '#ffffff', m.height + 0.4, res.crit); Sound.play(S.hitSfx ? (res.crit ? S.hitSfx + 'Crit' : S.hitSfx) : res.crit ? 'crit' : 'hit');
     if (m.vis.critter.hit) m.vis.critter.hit(Math.sign(Math.cos(Math.atan2(S.pos.x - m.x, S.pos.z - m.z) - m.yaw)) || 1);
     return;
   }
   m.hp -= res.dmg; m.aggro = true; m.returning = false; m.hitByPlayer = true;
   const strong = elem && elem !== 'neutro' && elem !== 'veneno' && elementMult(elem, m.def.element) > 1;
   floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : strong ? '#ffb070' : elem === 'veneno' ? '#9be36a' : '#ffffff', m.height + 0.4, res.crit);
-  Sound.play(res.crit ? 'crit' : 'hit');
+  Sound.play(S.hitSfx ? (res.crit ? S.hitSfx + 'Crit' : S.hitSfx) : res.crit ? 'crit' : 'hit');
   { const sx = MON_SFX[m.def.shape]; if (sx && sx.hurt && Math.random() < (sx.hurtP ?? 0.6)) Sound.play(sx.hurt); }
   if (m.vis.critter) { const r = m.vis.critter.root, s0 = r.scale.x; r.scale.setScalar(s0 * 1.15); later(0.08, () => r.scale.setScalar(s0)); }
   else if (S.time >= m.lockAnim) { monAnim(m, 'Hit_A', { once: true, restart: true, fade: 0.05 }); m.lockAnim = S.time + 0.3; }
@@ -2114,9 +2114,10 @@ function playerAttack(m) {
   S.sitting = false;
   const hit = () => {
     if (m.dead) return;
-    hurtMonster(m, rollPhys(p, m, 1, 'neutro')); if (!p.d.ranged) Sound.play('impact');
+    if (ca && ca.katar) { S.hitSfx = 'katarRend'; hurtMonster(m, rollPhys(p, m, 1, 'neutro')); S.hitSfx = null; } // katar: rasgo + faíscas no lugar do baque/sino
+    else { hurtMonster(m, rollPhys(p, m, 1, 'neutro')); if (!p.d.ranged) Sound.play('impact'); }
     if (p.d.doubleAttack && !p.d.ranged && Math.random() * 100 < p.d.doubleAttack) later(0.15, () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 1, 'neutro')); });
-    if (ca && ca.katar) later(Math.min(0.08, p.d.aspd / 4000), () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 0.25, 'neutro')); }); // katar: segundo número menor logo depois (como no RO)
+    if (ca && ca.katar) later(Math.min(0.08, p.d.aspd / 4000), () => { if (!m.dead) { S.hitSfx = 'katarSpark'; hurtMonster(m, rollPhys(p, m, 0.25, 'neutro')); S.hitSfx = null; } }); // katar: segundo número menor logo depois (como no RO)
   };
   if (p.d.magicAuto) { // projétil arcano do cajado
     me.anim.play('Spellcast_Shoot', { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) });
@@ -2124,7 +2125,7 @@ function playerAttack(m) {
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
   else if (p.d.ranged) { const isBow = ca.sound !== 'magic'; Sound.play(isBow ? 'bowDraw' : 'magic'); later(0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
-  else { Sound.play(ca.sound || 'swing'); later(0.28, hit); }
+  else { Sound.play(ca.sound || 'swing'); later(ca && ca.katar ? Math.min(0.12, p.d.aspd / 2000) : 0.28, hit); } // katar: o rasgo cai no meio da estocada, mesmo em ASPD alto
 }
 function playerDie() {
   const p = S.p;
