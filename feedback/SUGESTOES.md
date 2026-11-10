@@ -2,11 +2,27 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (3)
 
-_Nenhuma._
+### S-306 · Área do mapa: Área da tela (206×331 px)
+- **Status:** pendente · **Quando:** 2026-11-09T22:59:39 · **Mapa:** Vila de Alvorada (tile [-77, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Ok salvo bugs simples de elementos entrando dentro da roupa que precisam ser corrigidos porém o que eu preciso que melhore é o semblante dela pois o rosto está muito maléfico e carrancudo quando Na verdade uma irmã Clara precisava ter um rosto doce e meigo e também ela não pode ser careca Como está atualmente
+- ![print](img/S-306.png)
 
-## Feitas (304)
+### S-307 · Área do mapa: Área da tela (79×123 px)
+- **Status:** pendente · **Quando:** 2026-11-09T23:00:39 · **Mapa:** Vila de Alvorada (tile [-78, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** rosto tambem ficou muito grosseiro e carrancudo, inha que ser mais convidativo e humano. Animacoes de quando alguem chega perto tbm seriam interessantes. Estilo skyrim. Mas isso alido pra todos npcs. Algo inspirado realmente no skyrim. Criar um bom padrao nao bugado
+- ![print](img/S-307.png)
+
+### S-308 · Área do mapa: Área da tela (331×198 px)
+- **Status:** pendente · **Quando:** 2026-11-09T23:02:30 · **Mapa:** Vila de Alvorada (tile [-33, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Já vi que mudou consideravelmente este Pegasus porém eu gostaria que ele fosse ainda mais realista com olhos mais vivos e reais assim como o focinho e a parte da Boca e as pernas ainda ficaram esquisitas e esse rabo está muito duro e não realista seria realmente interessante chegar mais próximo da figura de um cavalo aqui porém Claro Mantendo as asas como estão e em resumo fosse mais realista
+- ![print](img/S-308.png)
+
+## Feitas (305)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2145,3 +2161,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Repara que aqui ainda está com a parte de baixo sendo cortada pelas laterais ou seja está com um risco vertical e eu não quero isso existem algumas formas de resolver este problema uma delas é chegar a seta da esquerda um pouco mais para esquerda permitindo com que tudo que está lá embaixo seja visível e Redondo um segundo problema que eu observei é que esse monstro ainda está com as pernas um pouco esquisitas rosto também esquisito e ele como um todo ainda está excessivamente geométrico eu gostaria de transformar esse Monstro em algo um pouco mais natural e um outro problema que precisa ser resolvido é a forma como a espada fica na mão do personagem pois repare que ele está de Punhos cerrados e você precisa de alguma forma inteligente e bem feita incluir a espada corretamente posicionada na mão dele e não dessa forma que está pois está claramente errado
 - ![print](img/S-304.png)
 - **Resposta do Claude:** Vitrine: o círculo do pedestal agora sempre cabe inteiro (o palco ficou um pouco mais largo e as bordas somem suaves), sem o risco vertical cortando embaixo. O tatu foi refeito como tatu de verdade: casco comprido em barril com placas chatas e cintas, focinho longo e fino, olhos pequenos, orelhas em folha e patas curtas e grossas com garras de cavar. E as armas (espadas, machados, facas, varinhas) agora ficam dentro da mão fechada: o cabo atravessa o punho do mindinho ao indicador e a guarda encosta na mão — parado, em guarda, atacando e correndo, também no anão.
+
+### S-305 · Área do mapa: Área da tela (370×296 px)
+- **Status:** feito · **Quando:** 2026-11-09T22:44:24 · **Mapa:** Vila de Alvorada (tile [-73, 35])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostaria de tornar a distância da Hit Box mais realista pois sendo sincero dessa distância não era para o boneco receber nenhum golpe então na prática eu preciso de estar um pouco mais Mili para que o meu golpe seja acertado e eu também não gostaria de que fosse revezando entre golpe de espada e soco e sim apenas golpes de espada podendo sim ter duas animações diferentes e aleatórias mas não o suco e aproveitando eu gostaria de criar a funcionalidade na qual se eu estivesse distante de um alvo e segurança o botão esquerdo automaticamente o meu boneco seria movido até o monstro ou algo claro isso falando em heróis Miss mas também sendo válidos para heróis em gente porém claro que os heróis Rangers ficariam a distância do seu Range e não se tornaria MELEES
+- ![print](img/S-305.png)
+- **Resposta do Claude:** O golpe corpo a corpo agora só acerta quando a arma alcança o corpo do alvo (raio do monstro + seu corpo + comprimento da arma: adaga/katar curtas, espada média, lança longa). Com espada, machado, maça ou lança é só golpe de arma, sem soco, alternando dois ritmos de talho. E segurando o botão esquerdo num monstro longe, o boneco corre sozinho até ele e começa a bater; arqueiros e magos param na distância do próprio alcance.

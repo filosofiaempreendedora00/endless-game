@@ -62,6 +62,7 @@ const WEAPON_TYPES = {
   cajado: { name: 'Cajado', range: 4.5, delay: 1.15, magic: true }, // dispara um projétil arcano (alcance menor que o arco)
   arco: { name: 'Arco', range: 6, delay: 1.05 },
   garra: { name: 'Garras', range: 1.4, delay: 0.75 },
+  katar: { name: 'Katar', range: 1.4, delay: 0.7 }, // punhal de soco em par (Executor): golpes curtos e muito rápidos
 };
 // tipos de equipamento (o que cada item é)
 const SLOT_NAMES = { cabeca: 'Cabeça (topo)', rosto: 'Cabeça (meio)', boca: 'Cabeça (baixo)', armadura: 'Armadura', arma: 'Arma', escudo: 'Escudo', capa: 'Capa', botas: 'Botas', acessorio: 'Acessório' };
@@ -70,7 +71,7 @@ const EQUIP_TYPES = Object.keys(SLOT_NAMES);
 const EQUIP_SLOTS = [...EQUIP_TYPES, 'acessorio2'];
 const slotType = s => (s === 'acessorio2' ? 'acessorio' : s);
 const SLOT_LABELS = { ...SLOT_NAMES, acessorio: 'Acessório 1', acessorio2: 'Acessório 2' };
-const TWO_HANDED = ['arco']; // armas de duas mãos não deixam usar escudo
+const TWO_HANDED = ['arco', 'katar']; // armas de duas mãos não deixam usar escudo
 
 /* ---------------- Classes (carreira em Y) ---------------- */
 const CLASSES = {
@@ -136,7 +137,7 @@ const CLASSES = {
   },
   lamina_sombria: {
     name: 'Executor', tier: 2, parent: 'ladino', icon: '🌑', color: '#2a2233', accent: '#9a6bff', hat: 'hood', cape: true,
-    hpMod: 1.5, spMod: 1.0, skills: ['golpe_sombrio', 'danca_das_laminas'], next: [], gift: [['garras_gemeas', 1]],
+    hpMod: 1.5, spMod: 1.0, weapons: ['adaga', 'espada', 'garra', 'katar'], skills: ['golpe_sombrio', 'danca_das_laminas'], next: [], gift: [['katar_de_ferro', 1]],
     desc: 'Assassino das sombras. Críticos garantidos e uma dança de lâminas mortal.',
   },
   saqueador: {
@@ -368,6 +369,9 @@ const ITEMS = {
   arco_curto: { name: 'Arco Curto', type: 'arma', wtype: 'arco', icon: '🏹', price: 350, atk: 25, slots: 2, lv: 1 },
   arco_composto: { name: 'Arco Composto', type: 'arma', wtype: 'arco', icon: '🏹', price: 2400, atk: 58, slots: 1, lv: 15 },
   arco_lunar: { name: 'Arco Lunar', type: 'arma', wtype: 'arco', icon: '🌙', price: 9000, atk: 95, slots: 1, lv: 28, bonuses: { dex: 3, crit: 5 }, desc: 'Brilha fracamente sob a lua.' },
+  katar_de_ferro: { name: 'Katar de Ferro', type: 'arma', wtype: 'katar', icon: '🗡️', price: 2400, atk: 60, slots: 2, lv: 12, bonuses: { crit: 4 }, desc: 'Par de punhais de soco: a mão fecha na travessa e a lâmina continua o braço. Só o Executor sabe usá-las.' },
+  katar_rubra: { name: 'Katar Rubra', type: 'arma', wtype: 'katar', icon: '🗡️', price: 7800, atk: 92, slots: 1, lv: 25, bonuses: { crit: 8, aspdPct: 5 }, desc: 'Katares de aço claro com guarnição de ouro e uma pedra rubra. Golpes ainda mais rápidos.' },
+  katar_do_eclipse: { name: 'Katar do Eclipse', type: 'arma', wtype: 'katar', icon: '🗡️', price: 24000, atk: 130, slots: 1, lv: 40, bonuses: { crit: 12, aspdPct: 8, atkPct: 5 }, desc: 'Lâminas que bebem a luz. Rara: dizem que só aparecem nas mãos de quem já caçou nas Criptas Profundas.' },
   garras_gemeas: { name: 'Garras Gêmeas', type: 'arma', wtype: 'garra', icon: '🐾', price: 2000, atk: 52, slots: 1, lv: 12, bonuses: { crit: 6 } },
 
   // Armaduras
@@ -523,12 +527,12 @@ const MONSTERS = {
   },
   espectro: {
     name: 'Espectro Pálido', lv: 31, hp: 1300, atk: [90, 120], def: 10, mdef: 40, exp: 780, jexp: 590, element: 'sombra', shape: 'ghost', color: '#a8c8ff', size: 1, speed: 70, aggressive: true, range: 5, flee: 70,
-    drops: [['ectoplasma', 0.5], ['pocao_azul', 0.1], ['arco_lunar', 0.008], ['cajado_arcano', 0.01]],
+    drops: [['ectoplasma', 0.5], ['pocao_azul', 0.1], ['arco_lunar', 0.008], ['cajado_arcano', 0.01], ['katar_do_eclipse', 0.004]],
     card: { equip: 'cabeca', bonuses: { int: 3, matkPct: 6 } },
   },
   cavaleiro_caido: {
     name: 'Cavaleiro Caído', lv: 34, hp: 2600, atk: [110, 150], def: 45, exp: 1050, jexp: 780, element: 'sombra', shape: 'knight', color: '#3c3f4a', size: 1.15, speed: 65, aggressive: true,
-    drops: [['fragmento_ferro', 0.5], ['cota_de_malha', 0.03], ['espada_longa', 0.03]],
+    drops: [['fragmento_ferro', 0.5], ['cota_de_malha', 0.03], ['espada_longa', 0.03], ['katar_rubra', 0.012]],
     card: { equip: 'arma', bonuses: { str: 3, atk: 15 } },
   },
   guardiao_ancestral: {
@@ -647,7 +651,7 @@ SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive'
 /* ---------------- Loja ---------------- */
 const FRUIT_SHOP = ['maca', 'laranja', 'pera', 'banana', 'uvas', 'melancia', 'frutinha_azul'];
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
-  'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto',
+  'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto', 'katar_de_ferro',
   'tunica_algodao', 'colete_couro', 'bandana', 'chapeu_de_palha', 'chapeu_de_mago', 'chapeu_de_bardo', 'tricornio', 'capuz_sombrio', 'faixa_de_penas', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
 
 /* ---------------- Rótulos de bônus ---------------- */

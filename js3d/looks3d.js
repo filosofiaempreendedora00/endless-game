@@ -31,7 +31,7 @@ export const CLASS_LOOKS = {
   cacador: { outfit: 'Barbarian', show: [], bow: { wood: '#4a2c14', tip: '#d8c8a0', h: 1.4 }, tint: { body: '#8a6a3a', legs: '#5a4028', cape: '#4a3020' }, style: 'ranged', extras: ['quiver', 'falcon'] },
   menestrel: { outfit: 'Rogue', show: [], bow: { wood: '#8a3a2a', h: 1.1 }, tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute'] }, // S-108: as notas só aparecem com a Canção de Batalha ativa (songAura em main3d)
   ladino: { outfit: 'Rogue', show: [], dagger: {}, tint: { body: '#3e4a34', legs: '#2e2a26', cape: '#2a2a33' }, style: 'dual', extras: ['thiefGear'] }, // S-201/S-202: gatuno com UMA adaga
-  lamina_sombria: { outfit: 'Rogue', show: [], dagger: { glow: '#b06aff' }, tint: { body: '#221a2e', legs: '#18121f', cape: '#2a1440' }, style: 'dual', extras: ['shoulderSpikes', 'shadowWisps'] },
+  lamina_sombria: { outfit: 'Rogue', show: [], dagger: { glow: '#b06aff' }, katar: {}, tint: { body: '#221a2e', legs: '#18121f', cape: '#2a1440' }, style: 'dual', extras: ['shoulderSpikes', 'shadowWisps'] },
   saqueador: { outfit: 'Barbarian', show: ['1H_Axe'], tint: { body: '#7a5a3a', legs: '#4a3a2a', cape: '#a8842a' }, style: 'dual', extras: ['lootBag', 'goldCoins'] },
 };
 
@@ -412,7 +412,9 @@ export function dressHuman(ch, cls, MODELS, opts = {}) {
   // round 15: armadura sob medida, arco e adaga de verdade; escudo SÓ se estiver equipado (S-202: vale para todas as classes)
   if (L.armor) applyArmor(root, L.armor, fx);
   if (L.bow) holdBow(root, codeBow(L.bow));
-  if (L.dagger) holdDagger(root, codeDagger(L.dagger));
+  // katar: o Executor usa o par de katares (opts.wtype permite trocar pela adaga quando a arma equipada não for katar)
+  if (L.katar && (!opts.wtype || opts.wtype === 'katar')) holdKatars(root, { ...L.katar, ...katarLook(opts.weaponId) });
+  else if (L.dagger) holdDagger(root, codeDagger(L.dagger));
   if (L.staff) holdStaff(root, codeStaff(L.staff));
   if (opts.offhand) strapShield(root, codeShield(SHIELD_KIND[opts.offhand] || (/paladino|guardiao/.test(cls) ? 'cavaleiro' : 'madeira')));
   // S-147: sem a capa chapada nas costas (não combina com o corpo realista) — vale para todas as classes
@@ -1342,6 +1344,70 @@ function holdDagger(root, dagger) {
   dagger.scale.setScalar(1.3); holder.add(dagger); dagger.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   root.userData.items = root.userData.items || {}; root.userData.items.Knife = dagger; return dagger;
 }
+/* ---------------- KATAR (punhal de soco) do Executor ----------------
+   Peça em espaço próprio: x = atravessado no punho (mindinho → indicador), y = para a frente (pulso → punho → ponta),
+   z = espessura (normal da palma). Origem = centro da travessa que a mão fecha.
+   Punho em H: travessa de couro dentro da mão, duas barras laterais que correm por fora do pulso sobre o antebraço,
+   placa frontal logo à frente dos nós dos dedos e lâmina larga triangular de dois gumes com nervura central. */
+const _katarCache = {};
+function katarBladeGeo(len, w0, th) {
+  const L = 28, M = 12, pos = [], idx = [];
+  for (const side of [1, -1]) {
+    const base = pos.length / 3;
+    for (let i = 0; i <= L; i++) {
+      const t = i / L, half = w0 / 2 * Math.pow(1 - t, 0.8) * (1 + 0.1 * Math.sin(Math.PI * Math.min(1, t * 1.6))), thick = th * (1 - 0.55 * t);
+      for (let j = 0; j <= M; j++) { const u = j / M * 2 - 1; pos.push(u * half, t * len, side * thick * Math.pow(1 - Math.abs(u), 0.85)); }
+    }
+    for (let i = 0; i < L; i++) for (let j = 0; j < M; j++) { const a = base + i * (M + 1) + j, b = a + M + 1; if (side > 0) idx.push(a, b, a + 1, b, b + 1, a + 1); else idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+export function codeKatar(opt = {}) {
+  const key = JSON.stringify(opt), g = new THREE.Group();
+  const steel = _katarCache['s' + key] || (_katarCache['s' + key] = opt.glow ? glowMat(opt.glow, 0.55, { metalness: 0.7, roughness: 0.28, color: opt.steel || '#3a2a5a' }) : new THREE.MeshStandardMaterial({ color: opt.steel || '#eef2f7', map: metalTex('aco'), roughness: 0.3, metalness: 0.5, emissive: '#2a3038', emissiveIntensity: 0.35 }));
+  const frame = _katarCache['f' + key] || (_katarCache['f' + key] = opt.gold ? armorMat('#c9a24a', 'ouro') : new THREE.MeshStandardMaterial({ color: opt.frame || '#9aa0aa', map: metalTex('aco'), roughness: 0.4, metalness: 0.5 }));
+  const leather = _katarCache.lea || (_katarCache.lea = new THREE.MeshStandardMaterial({ color: '#3a2216', map: metalTex('couro'), roughness: 0.85 }));
+  const len = opt.len || 0.34, W = 0.112, bx = W / 2; // barras por fora da mão
+  // lâmina
+  const blade = new THREE.Mesh(katarBladeGeo(len, opt.width || 0.072, 0.0065), steel); blade.position.y = 0.072; g.add(blade);
+  // fio da nervura (linha clara) e reforço da base
+  const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.0012, 0.0024, len * 0.62, 6), steel); rib.position.y = 0.072 + len * 0.31; for (const s of [1, -1]) { const r2 = rib.clone(); r2.position.z = s * 0.0062; g.add(r2); }
+  const ric = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.07, 6, 16), frame); ric.rotation.z = Math.PI / 2; ric.scale.set(1, 1, 1.6); ric.position.y = 0.072; g.add(ric); // reforço onde a lâmina nasce
+  // placa frontal (liga as barras e segura a lâmina), arredondada
+  const plate = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, W - 0.018, 6, 18), frame); plate.rotation.z = Math.PI / 2; plate.scale.set(1, 1, 1.35); plate.position.y = 0.06; g.add(plate);
+  // barras laterais (achatadas, correm por fora do pulso sobre o antebraço, terminam arredondadas e um pouco abertas)
+  for (const s of [-1, 1]) {
+    const bar = new THREE.Mesh(new THREE.CapsuleGeometry(0.0065, 0.2, 6, 14), frame); bar.scale.set(1, 1, 2.4); bar.position.set(s * bx, -0.045, 0); bar.rotation.z = s * 0.06; g.add(bar);
+    const knob = new THREE.Mesh(new THREE.SphereGeometry(0.009, 14, 10), frame); knob.position.set(s * (bx + 0.008), -0.152, 0); g.add(knob);
+  }
+  // travessa (a mão fecha aqui): cilindro com tiras de couro
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.0115, 0.0115, W - 0.004, 18), leather); grip.rotation.z = Math.PI / 2; g.add(grip);
+  for (let k = -3; k <= 3; k++) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0118, 0.0016, 6, 18), leather); ring.rotation.y = Math.PI / 2; ring.position.x = k * 0.012; g.add(ring); }
+  if (opt.second !== false) { const g2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.0055, W - 0.004, 12), frame); g2.rotation.z = Math.PI / 2; g2.position.y = -0.085; g.add(g2); } // 2ª travessa, sobre o pulso
+  if (opt.gem) { const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.009, 2), glowMat(opt.gem, 1.1)); gem.position.set(0, 0.06, 0.013); g.add(gem); }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  return g;
+}
+const KATAR_LOOKS = { katar_de_ferro: {}, katar_rubra: { gold: true, gem: '#ff4a3a', steel: '#e2e6ec' }, katar_do_eclipse: { glow: '#9a5aff', gold: true, gem: '#c8a0ff', len: 0.38 } };
+export const katarLook = id => KATAR_LOOKS[id] || {};
+// o par: uma katar em cada mão, a travessa no centro do punho fechado, lâmina continuando o antebraço para a frente
+export function holdKatars(root, opt = {}) {
+  humanIdlePose(root); const out = {};
+  for (const s of ['r', 'l']) {
+    const hand = bone(root, 'hand_' + s), f = fistFrame(root, s); if (!hand || !f) continue;
+    const fore = bone(root, 'lowerarm_' + s), fp = fore ? rootPos(root, fore) : null, wrist = rootPos(root, hand);
+    // "para a frente" = do pulso para o punho, mas puxado para a linha do antebraço (katar é a continuação do braço)
+    const E = f.E.clone(); if (fp) E.lerp(wrist.clone().sub(fp).normalize(), 0.45).normalize();
+    const A = f.A.clone().sub(E.clone().multiplyScalar(f.A.dot(E))).normalize(), N = new THREE.Vector3().crossVectors(A, E).normalize();
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(A, E, N));
+    const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, q, f.C.clone());
+    const k = codeKatar(opt); holder.add(k); out[s] = k;
+  }
+  root.userData.items = root.userData.items || {}; root.userData.items.Katar_R = out.r; root.userData.items.Katar_L = out.l;
+  root.userData.katar = out; return out;
+}
+// o jogador tem katar equipada?
+export function hasKatar(p) { const w = p && p.equip && p.equip.arma; const it = w && typeof ITEMS !== 'undefined' && ITEMS[w.id]; return !!(it && it.wtype === 'katar'); }
 /* conjuntos de armadura por classe/papel */
 const ARMOR_SETS = {
   // guerreiro (S-195): armadura simples — gibão de couro com couraça de aço no peito, ombreiras e braçadeiras de couro

@@ -21,6 +21,7 @@ const ICON_RECIPES = {
   cajado_de_salgueiro: ['staff', { wood: '#8a6a3a', gem: '#7ad06a' }], cajado_arcano: ['staff', { wood: '#3a2a4a', gem: '#9a6aff', ornate: true }],
   arco_curto: ['bow', { wood: '#8a5a2a' }], arco_composto: ['bow', { wood: '#5a3a1a', tips: '#c8ccd2', big: true }], arco_lunar: ['bow', { wood: '#cfd8ff', glow: '#9ab8ff', big: true }],
   garras_gemeas: ['claws', { c: '#c8ccd2' }],
+  katar_de_ferro: ['katar', { blade: '#d4dae2', frame: '#5a5e66' }], katar_rubra: ['katar', { blade: '#e8ecf2', frame: '#c9a24a', gem: '#ff4a3a' }], katar_do_eclipse: ['katar', { blade: '#5a3a8a', frame: '#c9a24a', gem: '#c8a0ff', glow: '#9a5aff' }],
   // ---- armaduras e roupas
   tunica_algodao: ['tunic', { c: '#d8cbb0', c2: '#f2e8d2' }], colete_couro: ['tunic', { c: '#7a4a2a', c2: '#a8703f', vest: true }], cota_de_malha: ['tunic', { c: '#8a909a', c2: '#c8ced8', mail: true }],
   manto_arcano: ['robe', { c: '#3a2a7a', c2: '#6a5ac0', trim: '#e8c060' }],
@@ -42,7 +43,7 @@ const ICON_RECIPES = {
 };
 // genéricos por tipo (itens novos sem receita)
 const ICON_BY_TYPE = { consumivel: ['potion', { c: '#5ad06a', c2: '#b8ffb0' }], armadura: ['tunic', { c: '#8a7a6a', c2: '#c0b0a0' }], cabeca: ['helm', { c: '#9a8a7a' }], escudo: ['shield', { c: '#8a5a2a', rim: '#6a6a70' }], capa: ['cape', { c: '#5a4a6a', c2: '#8a7a9a' }], botas: ['boot', { c: '#6a3a1a', c2: '#a0683a' }], acessorio: ['ring', { gem: '#5ad0ff' }], rosto: ['glasses', {}], boca: ['leaf', { c: '#5ac06a' }], etc: ['ore', { c: '#a0907a', c2: '#e0d0b8' }], carta: ['card', {}] };
-const ICON_BY_WTYPE = { adaga: ['dagger', { blade: '#c8ccd2', grip: '#6a4a2a' }], espada: ['sword', { blade: '#c8ccd2', grip: '#6a4a2a', guard: '#8a8a8a', len: 0.9 }], lanca: ['spear', { head: '#c8ccd2', shaft: '#7a5a34' }], cajado: ['staff', { wood: '#8a6a3a', gem: '#7ad06a' }], arco: ['bow', { wood: '#8a5a2a' }], garra: ['claws', { c: '#c8ccd2' }], machado: ['axe', { head: '#b8bec8', shaft: '#6a4a2a' }], maca: ['mace', { head: '#9aa2ac', shaft: '#6a4a2a' }] };
+const ICON_BY_WTYPE = { adaga: ['dagger', { blade: '#c8ccd2', grip: '#6a4a2a' }], espada: ['sword', { blade: '#c8ccd2', grip: '#6a4a2a', guard: '#8a8a8a', len: 0.9 }], lanca: ['spear', { head: '#c8ccd2', shaft: '#7a5a34' }], cajado: ['staff', { wood: '#8a6a3a', gem: '#7ad06a' }], arco: ['bow', { wood: '#8a5a2a' }], garra: ['claws', { c: '#c8ccd2' }], katar: ['katar', { blade: '#d4dae2', frame: '#5a5e66' }], machado: ['axe', { head: '#b8bec8', shaft: '#6a4a2a' }], maca: ['mace', { head: '#9aa2ac', shaft: '#6a4a2a' }] };
 
 const IconPaint = (() => {
   const S = 128;
@@ -75,6 +76,14 @@ const IconPaint = (() => {
       x.beginPath(); x.roundRect(-5, 29, 10, 26, 3); fillStroke(x, o.grip, 2.5); x.strokeStyle = 'rgba(0,0,0,0.35)'; x.lineWidth = 2; for (let k = 0; k < 4; k++) { x.beginPath(); x.moveTo(-5, 33 + k * 6); x.lineTo(5, 36 + k * 6); x.stroke(); }
       ball(x, 0, 59, 6, o.guard || '#8a8a8a'); x.restore(); },
     dagger(x, o) { P.sword(x, { ...o, len: 0.62, guard: o.guard || '#7a7a7a' }); },
+    katar(x, o) { x.save(); x.translate(64, 66); x.rotate(Math.PI / 4); // punho em H + lâmina larga triangular
+      if (o.glow) { x.shadowColor = o.glow; x.shadowBlur = 12; }
+      x.beginPath(); x.moveTo(0, -60); x.quadraticCurveTo(17, -22, 15, -6); x.lineTo(-15, -6); x.quadraticCurveTo(-17, -22, 0, -60); x.closePath(); fillStroke(x, lin(x, -15, 0, 15, 0, [[0, shade(o.blade, -0.4)], [0.48, shade(o.blade, 0.45)], [0.52, o.blade], [1, shade(o.blade, -0.3)]]));
+      x.shadowBlur = 0; x.beginPath(); x.moveTo(0, -56); x.lineTo(0, -8); x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,255,255,0.6)'; x.stroke();
+      x.beginPath(); x.roundRect(-20, -8, 40, 8, 4); fillStroke(x, o.frame, 2.5);
+      for (const s of [-1, 1]) { x.beginPath(); x.roundRect(s * 17 - 3, -2, 6, 52, 3); fillStroke(x, o.frame, 2.5); }
+      x.beginPath(); x.roundRect(-14, 12, 28, 9, 4); fillStroke(x, '#4a2a18', 2); x.beginPath(); x.roundRect(-14, 34, 28, 5, 2); fillStroke(x, o.frame, 2);
+      if (o.gem) ball(x, 0, -4, 4, o.gem); x.restore(); },
     spear(x, o) { x.save(); x.translate(64, 64); x.rotate(Math.PI / 4); x.beginPath(); x.roundRect(-4, -30, 8, 86, 3); fillStroke(x, lin(x, -4, 0, 4, 0, [[0, shade(o.shaft, -0.3)], [0.5, shade(o.shaft, 0.3)], [1, shade(o.shaft, -0.3)]]), 2.5);
       x.beginPath(); x.moveTo(0, -60); x.bezierCurveTo(12, -46, 12, -36, 0, -28); x.bezierCurveTo(-12, -36, -12, -46, 0, -60); fillStroke(x, lin(x, -10, 0, 10, 0, [[0, shade(o.head, -0.3)], [0.5, shade(o.head, 0.45)], [1, shade(o.head, -0.3)]])); x.beginPath(); x.roundRect(-7, -30, 14, 6, 2); fillStroke(x, '#5a5a60', 2); x.restore(); },
     staff(x, o) { x.save(); x.translate(64, 64); x.rotate(Math.PI / 5); x.beginPath(); x.moveTo(-4, -40); x.bezierCurveTo(-7, 0, -2, 30, -3, 58); x.lineTo(4, 58); x.bezierCurveTo(5, 30, 3, 0, 4, -40); x.closePath(); fillStroke(x, lin(x, -5, 0, 5, 0, [[0, shade(o.wood, -0.35)], [0.5, shade(o.wood, 0.3)], [1, shade(o.wood, -0.35)]]), 2.5);

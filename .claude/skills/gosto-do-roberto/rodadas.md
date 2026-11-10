@@ -207,3 +207,7 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - "Punhos cerrados com a espada colada" = arma tem que estar DENTRO da mão (cabo pelo punho, guarda no indicador) — vale para toda arma, de todo personagem.
 - Tatu "excessivamente geométrico" de novo: o padrão do lobo (corpo inteiriço, anatomia real) é o mínimo para qualquer bicho.
 - Propostas priorizadas por peso × frequência na tela × reincidência ÷ esforço: P-009 monstros no padrão do lobo, P-010 carregamento rápido (ele travou para abrir), P-011 impacto no combate. Há 7 aprovadas ainda não feitas (P-001..P-004, P-006..P-008).
+
+### S-305 + katar do Executor, 2026-11-09
+- Combate é o foco agora: alcance realista (sem acertar de longe), arma sem soco, correr até o alvo segurando o clique (rangers param no alcance).
+- Pedido explícito de referência: Algoz/Mercenário do RO com katar e ASPD ~190 — o RO manda nos SISTEMAS e no "feel" de classe; ele quer reproduzir a sensação, em 3D profissional. Ferramenta de teste (barrinha de ASPD) faz parte do pedido: ele quer calibrar vendo.

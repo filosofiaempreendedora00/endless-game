@@ -14,7 +14,7 @@ import { LEVELS, levelAt } from './levels3d.js'; // S-281: andares e escadas ond
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
+import { hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { buildCatacombs as buildDungeon, FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
@@ -451,9 +451,9 @@ let lojaTab = 'skins';
 let lojaSel = null, lojaStop = null;
 const lojaThumbs = {};
 function lojaObj(kind, k) {
-  if (kind === 'skin') { const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: (dt, t) => { ch.anim.update(dt); d.update && d.update(t || 0); } }; } // S-299: capa/efeitos da roupa também andam na prévia
+  if (kind === 'skin') { const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p), { weaponId: wpnOf(S.p) }); try { applySkin(ch, k); } catch (e) { } ch.anim.play('Idle'); return { obj: ch.obj, tick: (dt, t) => { ch.anim.update(dt); d.update && d.update(t || 0); } }; } // S-299: capa/efeitos da roupa também andam na prévia
   const mt = makeMount(k), g = new THREE.Group(); g.add(mt.obj);
-  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p)); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
+  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p), { weaponId: wpnOf(S.p) }); ch.anim.play('Sit_Chair_Idle'); ch.obj.position.set(0, (mt.saddleY || 1.5) + (mt.bodyY || 0) - 0.52, 0); g.add(ch.obj);
   // S-299: a capa de pano (física) só se ajeita quando a roupa é atualizada — sem isso ficava um "retângulo" parado no quadril em todas as montarias
   return { obj: g, tick: (dt, t) => { mt.animate && mt.animate(t, { speed: 0, turn: 0 }, dt); ch.anim.update(dt); riderPose(ch, mt, { t }); d.update && d.update(t); } };
 }
@@ -1155,16 +1155,34 @@ const CLASS_ATTACK = {
   mago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.0 }, arquimago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.1 }, sabio_elemental: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.05 },
 };
 function attackAnim(p, me) {
+  if (hasKatar(p)) { // katar (Executor), no espírito do Algoz do RO: estocadas alternadas esquerda/direita cujo ritmo segue a velocidade de ataque (ASPD 190 = rajada contínua)
+    const delay = Math.max(0.12, p.d.aspd / 1000); S.katN = (S.katN || 0) + 1; const clip = S.katN % 2 ? 'Punch_Cross' : 'Punch_Jab', dur = clip === 'Punch_Cross' ? 1.0 : 0.867;
+    const sp = Math.min(6.5, Math.max(1.4, dur * 0.8 / delay)); S.lastAtk = S.time;
+    if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: sp }); S.overlayAtk = true; }
+    else { me.anim.play(clip, { once: true, restart: true, fade: Math.min(0.06, delay * 0.25), speed: sp }); S.overlayAtk = false; }
+    S.lunge = { t: S.time, d: 0.12 };
+    return { sound: 'stab', katar: true };
+  }
   const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
   // S-292: com arma na mão, golpeia só com a mão da arma (Punch_Jab é a esquerda: sai); os dois punhos só sem arma equipada
   const armed = !!(p.equip && p.equip.arma), melee = ca.sound !== 'magic' && ca.sound !== 'bow';
   let clips = !melee ? ca.clips : armed ? ca.clips.filter(c => c !== 'Punch_Jab') : ['Punch_Jab', 'Punch_Cross'];
   if (melee && armed && clips.length < 2 && ca.clips.some(c => /^Punch/.test(c))) clips = ['Punch_Cross', 'Sword_Attack']; // estocada + talho, os dois com a mão direita
-  S.atkN = (S.atkN || 0) + 1; const clip = clips[S.atkN % clips.length]; S.lastAtk = S.time;
-  if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = true; } // S-236: andando, o golpe vai só no tronco e as pernas seguem andando
-  else { me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = false; }
+  { const wt = (weaponInfo(p) || {}).wtype; if (melee && armed && /^(espada|machado|maca|lanca)/.test(wt || '')) clips = ['Sword_Attack']; } // S-305: espada/machado/maça/lança = só golpe de arma, nunca soco
+  S.atkN = (S.atkN || 0) + 1; const clip = clips[S.atkN % clips.length]; S.lastAtk = S.time; const vary = clips.length === 1 && clip === 'Sword_Attack' ? (S.atkN % 2 ? 1.12 : 0.94) : 1; // dois ritmos de talho alternados
+  if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: vary * ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = true; } // S-236: andando, o golpe vai só no tronco e as pernas seguem andando
+  else { me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: vary * ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = false; }
   if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
   return ca;
+}
+// S-305: alcance de verdade — o golpe só acerta se a arma alcança o CORPO do alvo (raio dele + meu corpo + comprimento da arma)
+const WEAPON_REACH = { adaga: 0.7, katar: 0.75, espada: 1.05, machado: 1.0, maca: 1.0, lanca: 1.7, espada2: 1.35, machado2: 1.3 };
+function weaponInfo(p) { const it = p.equip && p.equip.arma && ITEMS[p.equip.arma.id]; return it || null; }
+function attackReach(p, m) {
+  const r = (m && m.radius) || 0.5;
+  if (p.d.ranged || p.d.magicAuto) return Math.max(12, p.d.rangeTiles * TM) + r;
+  const it = weaponInfo(p), wt = it ? it.wtype : null, two = it && typeof TWO_HANDED !== 'undefined' && TWO_HANDED.includes(it.wtype);
+  return r + 0.4 + (wt ? (WEAPON_REACH[wt + (two && WEAPON_REACH[wt + '2'] ? '2' : '')] ?? 1.0) : 0.55);
 }
 // modo de combate: postura de luta da classe (parado) e guarda no tronco (andando) enquanto houver luta por perto
 function stanceOf(p) { const ca = CLASS_ATTACK[p.cls]; if (p.d.magicAuto || (ca && ca.sound === 'magic')) return 'Spell_Simple_Idle_Loop'; if (p.d.ranged) return 'Pistol_Idle_Loop'; return 'Sword_Idle'; }
@@ -1247,11 +1265,11 @@ function aimPoint(dist = 30) {
 }
 function actionFire() {
   const p = S.p, t = S.time; if (!S.fire || p.dead || t < S.nextAttack || t < S.lockAnim || S.casting) return;
-  const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : p.d.rangeTiles * TM + 1.8;
+  const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : attackReach(p, null) + 0.3;
   const lk = fireLock();
-  if (lk) { const d = Math.hypot(lk.x - S.pos.x, lk.z - S.pos.z); if (d > reach + (lk.radius || 0.5)) return; } // travado e longe: só se aproxima (sem golpear o vento)
+  if (lk) { const d = Math.hypot(lk.x - S.pos.x, lk.z - S.pos.z); if (d > attackReach(p, lk)) return; } // travado e longe: vai até ele (S-305) sem golpear o vento
   else if (!isAction()) { const q = aimPoint(30); S.pos.yaw = Math.atan2(q.x - S.pos.x, q.z - S.pos.z); } // vira para onde o cursor aponta
-  const m = lk || aimTarget(reach);
+  let m = lk || aimTarget(reach); if (m && !ranged && Math.hypot(m.x - S.pos.x, m.z - S.pos.z) > attackReach(p, m)) m = null; // S-305: longe do corpo dele = golpe no vento
   S.nextAttack = t + p.d.aspd / 1000;
   vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
   if (m) { setTarget(m); playerAttack(m); return; }
@@ -1727,13 +1745,15 @@ function dressLook(ch, cls, look = {}, hatId = null) {
   return hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d;
 }
 const hatOf = p => (p && p.equip && p.equip.cabeca && p.equip.cabeca.id) || null;
+const wpnOf = p => (p && p.equip && p.equip.arma && p.equip.arma.id) || null;
 // personagem realista (S-093): roupa da classe + rosto/cabelo/pele do jogador + armas + enfeites + chapéu equipado
 const SKIN_HEX = { clara: '#e2b393', escura: '#8a5a3c' };
 function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   const look = normalizeLook(look0);
   const h = makeHuman({ race: look.race, sex: look.sex, outfit: extra.outfit || CLASS_OUTFIT[cls] || 'campones', hair: look.hair.style, hairColor: HAIR_COLORS[look.hair.color].hex, skin: look.skin, beard: (look.beard || look.race === 'anao') && look.sex === 'm', hood: extra.hood });
   h.root.userData.skin = new THREE.Color(SKIN_HEX[look.skin]);
-  const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand }) : { style: '1h', update: () => { } };
+  const wid = extra.weaponId, wopt = wid !== undefined ? { wtype: wid && ITEMS[wid] ? ITEMS[wid].wtype : 'nenhuma', weaponId: wid } : {}; // katar do Executor só com katar equipada
+  const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand, ...wopt }) : { style: '1h', update: () => { } };
   if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
   const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
   unsquashDwarf(h.root); // S-246: peças da roupa sem esticar nos ossos de anão
@@ -1752,9 +1772,9 @@ const offOf = p => (p && p.equip && p.equip.escudo && p.equip.escudo.id) || null
 function buildPlayerModel() {
   if (S.me) scene.remove(S.me.obj);
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz;
-  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p), { offhand: offOf(S.p) });
+  const { ch, d } = makeHero(S.p.cls, S.p.look, hatOf(S.p), { offhand: offOf(S.p), weaponId: wpnOf(S.p) });
   let skinFx = null; try { skinFx = S.p.cosmetics && S.p.cosmetics.skin ? applySkin(ch, S.p.cosmetics.skin) : null; } catch (e) { }
-  S.me = { hatId: hatOf(S.p), offId: offOf(S.p), ...ch, look: { model: 'humano', show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
+  S.me = { hatId: hatOf(S.p), offId: offOf(S.p), wpnId: wpnOf(S.p), ...ch, look: { model: 'humano', show: L.show, style: d.style }, lookFx: skinFx ? t => { d.update(t); skinFx(t); } : d.update };
   scene.add(ch.obj);
   ch.anim.play('Idle');
   S.me.song = makeSongAura(); ch.obj.add(S.me.song);
@@ -1916,8 +1936,23 @@ function freeSpot(x, z, dir = 0) {
   }
   return null;
 }
+/* Barrinha de velocidade de ataque (teste do mestre): ASPD no estilo do RO — atraso entre golpes = (200 − ASPD) × 20 ms
+   (ASPD 190 = 0,20 s = 5 golpes por segundo). "Real" volta a usar a velocidade calculada pelos atributos. */
+function aspdTool() {
+  if (!isAdmin() || $('aspd-tool')) return;
+  const d = document.createElement('div'); d.id = 'aspd-tool';
+  d.innerHTML = `<div class="at-h"><b>⚔ Velocidade de ataque</b><button id="at-min" title="Recolher">−</button></div><div class="at-b"><input id="at-r" type="range" min="140" max="195" step="1" value="190"><div class="at-v" id="at-v"></div><label><input type="checkbox" id="at-on"> usar este valor (teste)</label></div>`;
+  document.body.appendChild(d);
+  const r = $('at-r'), on = $('at-on'), v = $('at-v');
+  try { const sv = JSON.parse(localStorage.getItem('aethra_aspd') || 'null'); if (sv) { r.value = sv.v; on.checked = !!sv.on; } } catch (e) { }
+  const show = () => { const a = +r.value, ms = (200 - a) * 20; S.aspdRO = on.checked ? a : 0; v.textContent = on.checked ? `ASPD ${a} · ${(ms / 1000).toFixed(2).replace('.', ',')} s · ${(1000 / ms).toFixed(1).replace('.', ',')} golpes/s` : `Real (atributos): ASPD ${Math.round(200 - (S.p ? S.p.d.aspd : 1200) / 20)}`; try { localStorage.setItem('aethra_aspd', JSON.stringify({ v: a, on: on.checked })); } catch (e) { } if (!on.checked && S.p) recalc(S.p); };
+  r.oninput = () => { on.checked = true; show(); }; r.onchange = () => r.blur(); on.onchange = () => { on.blur(); show(); };
+  $('at-min').onclick = () => { d.classList.toggle('min'); $('at-min').textContent = d.classList.contains('min') ? '+' : '−'; };
+  show();
+}
 function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
+  if (S.aspdRO) p.d.aspd = (200 - S.aspdRO) * 20; // barrinha de teste do mestre
   me.anim.update(dt);
   { // S-236: mirando (botão esquerdo) e andando de lado, as pernas viram para onde você anda e o tronco continua na mira
     const mi0 = moveInput(), rel = S.moveRel; let want = S.fire && !isAction() && !S.riding && mi0.any ? (mi0.fwd > 0 ? mi0.strafe * -0.6 : mi0.fwd < 0 ? mi0.strafe * 0.5 : mi0.strafe * -Math.PI / 2 * 0.9) : 0;
@@ -1959,6 +1994,12 @@ function updatePlayer(dt) {
     S.moveRel = rel;
     const sp = base * (rel != null ? (Math.abs(rel) < 0.8 ? 1 : Math.abs(rel) < 2.0 ? 0.85 : 0.6) : (mi.fwd < 0 ? 0.55 : mi.fwd === 0 ? 0.85 : 1)) * (inLake ? 0.6 : 1);
     vx = dx / l * sp; vz = dz / l * sp;
+  }
+  S.chasing = false;
+  { // S-305: segurando o esquerdo num alvo longe (sem apertar WASD), o boneco corre até o alcance da arma — corpo a corpo encosta, arqueiro/mago para no alcance dele
+    const lk = fireLock();
+    if (lk && !mi.any && !S.casting && !S.sitting) { const dx = lk.x - P.x, dz = lk.z - P.z, d = Math.hypot(dx, dz), want = attackReach(p, lk) - 0.25;
+      if (d > want) { const sp = base / ((S.fire || S.time - (S.lastAtk || -9) < 0.6) && !S.riding ? 0.55 : 1) * (inLake ? 0.6 : 1) * Math.min(1, (d - want) * 2 + 0.35); vx = dx / d * sp; vz = dz / d * sp; S.chasing = true; } }
   }
   // aceleração/desaceleração suave: ao soltar a tecla o personagem para em ~0,2 s, não de uma vez
   S.vel = S.vel || { x: 0, z: 0 };
@@ -2023,6 +2064,7 @@ function updatePlayer(dt) {
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
   else if (!P.ground) { if (me.anim.name !== 'Jump_Start') me.anim.play('Jump_Idle'); }
   else if (S.sitting) { if (me.anim.name !== 'Sit_Floor_Idle' && me.anim.name !== 'Sit_Floor_Down') { me.anim.play('Sit_Floor_Down', { once: true }); later(0.9, () => { if (S.sitting) me.anim.play('Sit_Floor_Idle'); }); } }
+  else if (S.chasing) me.anim.play('Running_A'); // S-305: correndo até o alvo
   else if (S.moveRel != null) { if (Math.abs(S.moveRel) > 2.0) me.anim.play('Walking_Backwards', { speed: -1.05 }); else me.anim.play('Running_A'); } // S-265: rodeando o alvo travado
   else if (mi.fwd > 0) me.anim.play('Running_A', { speed: S.god ? 1.9 : 1 });
   else if (mi.fwd < 0) me.anim.play('Walking_Backwards', { speed: -1.05 }); // a caminhada tocada ao contrário = passos para trás
@@ -2039,7 +2081,7 @@ function updatePlayer(dt) {
     const m = S.target;
     if (!m || m.dead) { S.autoAttack = false; }
     else if (!S.casting && t >= S.nextAttack && t >= S.lockAnim - 0.1) {
-      const d = Math.hypot(m.x - P.x, m.z - P.z), range = p.d.rangeTiles * TM + m.radius + 0.9;
+      const d = Math.hypot(m.x - P.x, m.z - P.z), range = attackReach(p, m);
       const facing = Math.cos(Math.atan2(m.x - P.x, m.z - P.z) - P.yaw) > 0.3;
       if (d > Math.max(range * 2.5, range + 12)) { // longe demais: sai do modo de combate (como no WoW)
         S.autoAttack = false; log('Você se afastou do alvo e saiu do combate.', 'sys');
@@ -2074,6 +2116,7 @@ function playerAttack(m) {
     if (m.dead) return;
     hurtMonster(m, rollPhys(p, m, 1, 'neutro')); if (!p.d.ranged) Sound.play('impact');
     if (p.d.doubleAttack && !p.d.ranged && Math.random() * 100 < p.d.doubleAttack) later(0.15, () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 1, 'neutro')); });
+    if (ca && ca.katar) later(Math.min(0.08, p.d.aspd / 4000), () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 0.25, 'neutro')); }); // katar: segundo número menor logo depois (como no RO)
   };
   if (p.d.magicAuto) { // projétil arcano do cajado
     me.anim.play('Spellcast_Shoot', { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) });
@@ -2359,7 +2402,7 @@ function trySkill(id) {
     if (sk.effect.dmg === 'magic') Sound.play('magic');
   } else executeSkill(a);
   // conjuradores e arqueiros não saem correndo para o corpo a corpo depois de uma magia
-  if (m && S.me.look.style !== 'cast' && !p.d.ranged && Math.hypot(m.x - S.pos.x, m.z - S.pos.z) <= p.d.rangeTiles * TM + m.radius + 0.9) S.autoAttack = true;
+  if (m && S.me.look.style !== 'cast' && !p.d.ranged && Math.hypot(m.x - S.pos.x, m.z - S.pos.z) <= attackReach(p, m)) S.autoAttack = true;
 }
 function executeSkill(a) {
   const p = S.p, sk = SKILLS[a.id], lv = a.lv, eff = sk.effect, me = S.me;
@@ -2955,7 +2998,7 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
-    if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p))) buildPlayerModel(); // trocou o chapéu ou o escudo
+    if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
     updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
     if (S.time - S.lastSave > 30) save3d();
   }
@@ -3034,8 +3077,8 @@ for (const l of [stageKey, stageRim]) { l.layers.set(1); scene.add(l, l.target);
 const STAGE_POS = new THREE.Vector3(1000, 0, 1000);
 stageKey.position.set(STAGE_POS.x + 2, 3, STAGE_POS.z + 4); stageKey.target.position.copy(STAGE_POS);
 stageRim.position.set(STAGE_POS.x - 3, 2.5, STAGE_POS.z - 3); stageRim.target.position.copy(STAGE_POS);
-function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null, hatId = null) {
-  const { ch, d } = makeHero(cls, look || {}, hatId);
+function buildPreviewChar(look, cls = 'aprendiz', cosmetics = null, hatId = null, weaponId) {
+  const { ch, d } = makeHero(cls, look || {}, hatId, { weaponId });
   let skinFx = null; try { skinFx = cosmetics && cosmetics.skin ? applySkin(ch, cosmetics.skin) : null; } catch (e) { }
   ch.anim.play('Idle');
   return { ch, fx: t => { d.update(t); if (skinFx) skinFx(t); } };
@@ -3134,7 +3177,7 @@ const thumbCacheChars = {};
 function charThumb(s) {
   const key = s.slug + '|' + s.cls + '|' + JSON.stringify(s.look || {}) + '|' + JSON.stringify((s.cosmetics || {}).skin || '') + '|' + hatOf(s);
   if (thumbCacheChars[key]) return thumbCacheChars[key];
-  const pc = buildPreviewChar(s.look, s.cls, s.cosmetics, hatOf(s)); const o = pc.ch.obj; o.position.set(1100, 0, 1000); o.rotation.y = 0.35; scene.add(o); pc.ch.anim.update(0.3); pc.fx(0.5);
+  const pc = buildPreviewChar(s.look, s.cls, s.cosmetics, hatOf(s), wpnOf(s)); const o = pc.ch.obj; o.position.set(1100, 0, 1000); o.rotation.y = 0.35; scene.add(o); pc.ch.anim.update(0.3); pc.fx(0.5);
   const url = renderObj(o, 140, 180); scene.remove(o);
   return (thumbCacheChars[key] = url);
 }
@@ -3169,7 +3212,7 @@ async function chooseCharacter() {
   const show = k => {
     i = (k + full.length) % full.length; const c = full[i], cl = CLASSES[c.cls];
     o.querySelectorAll('.cs-card[data-k]').forEach(el => el.classList.toggle('on', +el.dataset.k === i));
-    csStage.setChar(buildPreviewChar(c.look, c.cls, c.cosmetics, hatOf(c))); csStage.setPet(c.pet && c.pet.species);
+    csStage.setChar(buildPreviewChar(c.look, c.cls, c.cosmetics, hatOf(c), wpnOf(c))); csStage.setPet(c.pet && c.pet.species);
     const race = RACES[(c.look && c.look.race) || 'humano'], pi = c.pet ? petInfo(c.pet) : null;
     const zn = c.pos3d ? zoneAt(c.pos3d.x, c.pos3d.z) : null, bxp = Math.floor((c.baseExp || 0) / baseExpNext(c.baseLv) * 100);
     $('cs-info').innerHTML = `<div class="cs-name">${escH(c.name)}</div>
@@ -3318,7 +3361,7 @@ function startWith(s) {
   terrainNear(S.pos.x, S.pos.z); cullGrass(S.pos.x, S.pos.z, true);
   buildPlayerModel(); buildPet();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
-  S.started = true; hudDirty = true; syncG(); UI.refreshOpen();
+  S.started = true; hudDirty = true; syncG(); UI.refreshOpen(); aspdTool();
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
