@@ -184,3 +184,6 @@ body.g3d { background: #9fd3ff; }
 #aspd-tool .at-v { font-weight: 700; color: #fff; margin-bottom: 4px; }
 #aspd-tool label { color: #b9b2c8; font-size: 11px; display: flex; gap: 6px; align-items: center; }
 #aspd-tool.min .at-b { display: none; }
+/* S-307: saudação curta dos NPCs (balão discreto acima da cabeça) */
+.npc-say { position: absolute; left: 0; top: 0; max-width: 240px; padding: 5px 10px; border-radius: 10px; background: rgba(250, 244, 228, 0.92); color: #2a2018; font-size: 13px; font-style: italic; line-height: 1.25; text-align: center; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); white-space: normal; transition: opacity 0.15s; }
+.npc-say::after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: rgba(250, 244, 228, 0.92); border-bottom: 0; }

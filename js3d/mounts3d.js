@@ -650,7 +650,7 @@ export function makeRunnerBird(D = MOUNTS.trotavento, opts = {}) {
    material (tom do dorso, ventre, focinho e "meias" escuras), crina e cauda de fios.
    makeHorse(D, { wings }) — com asas de penas vira o Pégaso (Noctívago, S-230).
    ========================================================================= */
-const HORSE_BONES = { root: [null, [0, 0, 0]], hips: ['root', [0, 1.18, -0.5]], chest: ['hips', [0, 1.2, 0.42]], neck: ['chest', [0, 1.36, 0.74]], head: ['neck', [0, 1.86, 1.08]], tail: ['hips', [0, 1.36, -0.88]] };
+const HORSE_BONES = { root: [null, [0, 0, 0]], hips: ['root', [0, 1.18, -0.5]], chest: ['hips', [0, 1.2, 0.42]], neck: ['chest', [0, 1.36, 0.74]], head: ['neck', [0, 1.86, 1.08]], jaw: ['head', [0, 1.69, 1.13]], tail: ['hips', [0, 1.36, -0.88]] }; // S-308: mandíbula própria (beiço de baixo e queixo mastigam)
 for (const s of [-1, 1]) Object.assign(HORSE_BONES, {
   ['up' + s]: ['chest', [s * 0.17, 1.1, 0.56]], ['fo' + s]: ['up' + s, [s * 0.17, 0.86, 0.5]], ['ca' + s]: ['fo' + s, [s * 0.165, 0.48, 0.52]], ['pa' + s]: ['ca' + s, [s * 0.165, 0.15, 0.53]],
   ['th' + s]: ['hips', [s * 0.19, 1.12, -0.5]], ['sh' + s]: ['th' + s, [s * 0.18, 0.86, -0.36]], ['mt' + s]: ['sh' + s, [s * 0.165, 0.55, -0.66]], ['pb' + s]: ['mt' + s, [s * 0.165, 0.16, -0.6]],
@@ -677,12 +677,16 @@ function horseParts() {
   E([0, 1.92, 1.07], [0.085, 0.08, 0.1], 'head', 0.04);          // nuca
   E([0, 1.86, 1.14], [0.1, 0.095, 0.09], 'head', 0.04);          // testa larga e plana
   for (let i = 0; i <= 5; i++) { const u = i / 5; E([0, 1.83 - u * 0.25, 1.19 + u * 0.27], [0.088 - u * 0.03, 0.085 - u * 0.012, 0.085 - u * 0.012], 'head', 0.05); } // chanfro (afina para o focinho)
-  for (let i = 0; i <= 4; i++) { const u = i / 4; E([0, 1.675 - u * 0.17, 1.18 + u * 0.27], [0.07 - u * 0.025, 0.06 - u * 0.02, 0.06 - u * 0.02], 'head', 0.06); } // mandíbula (linha do queixo)
-  E([0, 1.54, 1.5], [0.066, 0.072, 0.07], 'head', 0.03);          // focinho macio
-  E([0, 1.475, 1.46], [0.04, 0.032, 0.05], 'head', 0.02);         // beiço de baixo / queixo
+  for (let i = 0; i <= 4; i++) { const u = i / 4; E([0, 1.675 - u * 0.17, 1.18 + u * 0.27], [0.07 - u * 0.025, 0.06 - u * 0.02, 0.06 - u * 0.02], i < 2 ? 'head' : 'jaw', 0.06); } // mandíbula (linha do queixo)
+  E([0, 1.545, 1.49], [0.066, 0.07, 0.072], 'head', 0.03);        // focinho macio
+  // S-308: boca de cavalo de verdade — beiço de cima carnudo e levemente caído por cima do de baixo, beiço de baixo
+  // mais estreito e móvel, e o "queixinho" redondo atrás dele (os dois na mandíbula, que mastiga)
+  E([0, 1.505, 1.515], [0.06, 0.034, 0.045], 'head', 0.022);      // beiço de cima
+  E([0, 1.468, 1.478], [0.043, 0.026, 0.044], 'jaw', 0.018);      // beiço de baixo
+  E([0, 1.462, 1.415], [0.036, 0.033, 0.042], 'jaw', 0.025);      // queixo
   for (const s of [-1, 1]) {
     E([s * 0.062, 1.73, 1.1], [0.055, 0.115, 0.115], 'head', 0.045); // ganacha (bochecha larga e redonda)
-    E([s * 0.04, 1.565, 1.525], [0.034, 0.04, 0.034], 'head', 0.02); // asa da narina
+    E([s * 0.043, 1.568, 1.52], [0.04, 0.047, 0.038], 'head', 0.02); // asa da narina (maior, abre ao respirar)
     E([s * 0.075, 1.85, 1.12], [0.03, 0.035, 0.04], 'head', 0.02);   // arcada do olho
   }
   for (const s of [-1, 1]) {
@@ -690,30 +694,61 @@ function horseParts() {
     E([s * 0.16, 1.24, 0.52], [0.09, 0.22, 0.15], 'up' + s, 0.08);
     C([s * 0.17, 1.1, 0.56], [s * 0.17, 0.86, 0.5], 0.13, 0.1, 'up' + s, 0.07);
     C([s * 0.17, 0.86, 0.5], [s * 0.165, 0.5, 0.52], 0.092, 0.05, 'fo' + s, 0.05);
-    E([s * 0.168, 0.78, 0.49], [0.075, 0.1, 0.078], 'fo' + s, 0.04);     // S-253: antebraço musculoso em cima, afinando
-    E([s * 0.165, 0.49, 0.525], [0.058, 0.065, 0.066], 'ca' + s, 0.03);  // joelho (achatado na frente)
-    for (let i = 0; i <= 4; i++) { const u = i / 4; E([s * 0.165, 0.45 - u * 0.27, 0.526], [0.038, 0.06, 0.048], 'ca' + s, 0.02); } // canela chata dos lados, com tendão atrás
-    E([s * 0.165, 0.15, 0.535], [0.055, 0.055, 0.064], 'pa' + s, 0.03);     // boleto
-    C([s * 0.165, 0.14, 0.545], [s * 0.165, 0.075, 0.585], 0.04, 0.042, 'pa' + s, 0.02); // quartela inclinada
-    C([s * 0.165, 0.09, 0.586], [s * 0.165, 0.056, 0.6], 0.046, 0.057, 'pa' + s, 0.015); // casco que abre embaixo
+    E([s * 0.168, 0.77, 0.495], [0.085, 0.125, 0.09], 'fo' + s, 0.045);   // S-253/S-308: antebraço musculoso em cima (afina até o joelho)
+    // S-308: do joelho para baixo as peças vão numa malha à parte, bem mais fina (low = qual perna) — canela lisa e reta, sem "calombos"
+    { const L0 = P.length, x = s * 0.165;
+      C([x, 0.6, 0.512], [x, 0.5, 0.52], 0.044, 0.046, 'fo' + s, 0.03);        // ponta do antebraço (só para emendar; fica por dentro da malha grossa)
+      E([x, 0.49, 0.522], [0.054, 0.055, 0.058], 'ca' + s, 0.022);           // joelho: bloco achatado na frente, bem marcado
+      E([x, 0.495, 0.49], [0.034, 0.036, 0.026], 'ca' + s, 0.018);          // osso acessório do joelho (saliência atrás)
+      C([x, 0.45, 0.527], [x, 0.19, 0.527], 0.031, 0.029, 'ca' + s, 0.02);  // canela fina e reta
+      C([x, 0.43, 0.5], [x, 0.2, 0.502], 0.017, 0.016, 'ca' + s, 0.022);    // tendão atrás da canela
+      E([x, 0.155, 0.523], [0.042, 0.045, 0.05], 'pa' + s, 0.022);          // boleto (redondo, saliente atrás)
+      E([x, 0.142, 0.49], [0.02, 0.022, 0.02], 'pa' + s, 0.018);            // esporão atrás do boleto
+      C([x, 0.14, 0.535], [x, 0.088, 0.578], 0.03, 0.032, 'pa' + s, 0.016); // quartela inclinada
+      E([x, 0.083, 0.588], [0.04, 0.022, 0.042], 'pa' + s, 0.03);           // coroa do casco
+      E([x, 0.055, 0.6], [0.048, 0.03, 0.054], 'pa' + s, 0.03);             // muralha do casco (abre para baixo, inclinada para a frente)
+      E([x, 0.026, 0.608], [0.056, 0.026, 0.062], 'pa' + s, 0.03);          // sola larga, quase plana no chão (as três fundidas: casco liso, sem "discos")
+      for (let q = L0; q < P.length; q++) P[q].low = 'f' + s; }
     // traseira: coxa grande, soldra, gaskin, jarrete (ângulo marcado), canela, boleto e casco
     E([s * 0.18, 1.1, -0.55], [0.13, 0.27, 0.24], 'th' + s, 0.1);
     C([s * 0.19, 1.05, -0.5], [s * 0.18, 0.86, -0.36], 0.15, 0.11, 'th' + s, 0.08);
     C([s * 0.18, 0.86, -0.36], [s * 0.168, 0.56, -0.66], 0.108, 0.055, 'sh' + s, 0.06);
     E([s * 0.175, 0.76, -0.47], [0.07, 0.11, 0.08], 'sh' + s, 0.05);     // S-253: gaskin (músculo da perna) marcado
-    E([s * 0.168, 0.57, -0.69], [0.048, 0.075, 0.065], 'mt' + s, 0.03);  // ponta do jarrete (ângulo marcado)
-    for (let i = 0; i <= 4; i++) { const u = i / 4; E([s * 0.165, 0.52 - u * 0.34, -0.655 + u * 0.06], [0.04, 0.065, 0.05], 'mt' + s, 0.02); } // canela traseira
-    E([s * 0.165, 0.15, -0.59], [0.055, 0.055, 0.064], 'pb' + s, 0.03);
-    C([s * 0.165, 0.14, -0.585], [s * 0.165, 0.075, -0.55], 0.04, 0.042, 'pb' + s, 0.02);
-    C([s * 0.165, 0.09, -0.548], [s * 0.165, 0.056, -0.535], 0.046, 0.057, 'pb' + s, 0.015);
+    { const L0 = P.length, x = s * 0.165;
+      C([s * 0.172, 0.66, -0.6], [s * 0.168, 0.56, -0.66], 0.05, 0.048, 'sh' + s, 0.03); // ponta da perna (só para emendar)
+      E([s * 0.168, 0.57, -0.69], [0.042, 0.07, 0.058], 'mt' + s, 0.025);     // ponta do jarrete (ângulo marcado)
+      E([x, 0.53, -0.66], [0.044, 0.05, 0.05], 'mt' + s, 0.022);             // jarrete (articulação larga)
+      C([x, 0.5, -0.656], [x, 0.19, -0.6], 0.032, 0.03, 'mt' + s, 0.02);    // canela traseira (fina e reta)
+      C([x, 0.5, -0.69], [x, 0.21, -0.628], 0.018, 0.016, 'mt' + s, 0.022);  // tendão
+      E([x, 0.155, -0.597], [0.042, 0.045, 0.05], 'pb' + s, 0.022);          // boleto
+      E([x, 0.142, -0.628], [0.02, 0.022, 0.02], 'pb' + s, 0.018);           // esporão
+      C([x, 0.14, -0.585], [x, 0.088, -0.552], 0.03, 0.032, 'pb' + s, 0.016); // quartela
+      E([x, 0.083, -0.544], [0.04, 0.022, 0.042], 'pb' + s, 0.03);           // coroa do casco
+      E([x, 0.055, -0.534], [0.048, 0.03, 0.054], 'pb' + s, 0.03);           // muralha do casco
+      E([x, 0.026, -0.527], [0.056, 0.026, 0.06], 'pb' + s, 0.03);           // sola
+      for (let q = L0; q < P.length; q++) P[q].low = 'h' + s; }
   }
   E([0, 1.33, -0.86], [0.07, 0.07, 0.08], 'tail', 0.06); // raiz da cauda
   return P;
 }
 let _horseGeo = null, _headParts = null;
 // ponto na pele da cabeça (lado s) na altura y/profundidade z: anda de dentro para fora até sair do corpo
-function horseSkin(s, y, z, off = 0.004) { const P = _headParts || (_headParts = horseParts().filter(q => q.bone === 'head' || q.bone === 'neck')); let x = 0; for (; x < 0.3; x += 0.002) { let d = 0.25; for (const q of P) d = smin(d, sdPrim(x * s, y, z, q), q.k); if (d > 0) break; } return [s * (x + off), y, z]; }
-function horseGeometry() { return _horseGeo || (_horseGeo = sdfSkinnedGeometry(horseParts(), HORSE_BONES, [-0.48, -0.02, -1.0], [0.96, 2.16, 2.6], 0.022)); }
+// ponto na FRENTE do focinho (x, y): anda para a frente até sair da pele (narinas e vinco da boca)
+function horseFront(x, y, off = 0) { const P = _headParts || (_headParts = horseParts().filter(q => q.bone === 'head' || q.bone === 'neck' || q.bone === 'jaw')); for (let z = 1.75; z > 1.2; z -= 0.002) { let d = 0.25; for (const q of P) d = smin(d, sdPrim(x, y, z, q), q.k); if (d < 0) return [x, y, z + off]; } return null; } // vem da frente para trás até encostar na pele (null = não há pele ali)
+function horseSkin(s, y, z, off = 0.004) { const P = _headParts || (_headParts = horseParts().filter(q => q.bone === 'head' || q.bone === 'neck' || q.bone === 'jaw')); let x = 0; for (; x < 0.3; x += 0.002) { let d = 0.25; for (const q of P) d = smin(d, sdPrim(x * s, y, z, q), q.k); if (d > 0) break; } return [s * (x + off), y, z]; }
+function horseGeometry() { return _horseGeo || (_horseGeo = sdfSkinnedGeometry(horseParts().filter(q => !q.low), HORSE_BONES, [-0.48, -0.02, -1.0], [0.96, 2.16, 2.6], 0.022)); }
+// S-308: canelas, boletos, quartelas e cascos numa malha de 8 mm por perna (a do corpo é de 22 mm: pernas finas viravam "salsichas")
+let _horseLegGeo = null;
+function horseLegGeometry() {
+  if (_horseLegGeo) return _horseLegGeo;
+  const groups = {}; for (const q of horseParts()) if (q.low) (groups[q.low] = groups[q.low] || []).push(q);
+  const geos = Object.values(groups).map(ps => {
+    const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+    for (const q of ps) for (let a = 0; a < 3; a++) { const r = q.a ? Math.max(q.r0, q.r1) : q.r[a], c0 = q.a ? Math.min(q.a[a], q.b[a]) : q.c[a], c1 = q.a ? Math.max(q.a[a], q.b[a]) : q.c[a]; lo[a] = Math.min(lo[a], c0 - r - 0.03); hi[a] = Math.max(hi[a], c1 + r + 0.03); }
+    return sdfSkinnedGeometry(ps, HORSE_BONES, lo, [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]], 0.008);
+  });
+  return (_horseLegGeo = mergeGeometries(geos));
+}
 function horseMaterial(D) {
   const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.68, metalness: 0 });
   const coat = new THREE.Color(D.coat || D.wool), dark = new THREE.Color(D.points || D.skin), muzzle = new THREE.Color(D.muzzle || D.skin);
@@ -813,29 +848,39 @@ function featherWing(side, C) {
 export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   const obj = new THREE.Group(), body = new THREE.Group(); obj.add(body);
   const rig = sdfRig(horseGeometry(), HORSE_BONES, horseMaterial(D)), { at, R, bones } = rig; body.add(rig.mesh);
+  { const legs = new THREE.SkinnedMesh(horseLegGeometry(), rig.mesh.material); legs.bind(rig.mesh.skeleton, rig.mesh.bindMatrix); legs.castShadow = legs.receiveShadow = true; legs.frustumCulled = false; body.add(legs); } // S-308: pernas finas e lisas, no mesmo esqueleto
   const DARK = new THREE.MeshStandardMaterial({ color: '#120e0c', roughness: 0.3 });
   const MANE = D.glow ? new THREE.MeshStandardMaterial({ color: D.mane, emissive: D.mane, emissiveIntensity: 0.45, roughness: 0.55 }) : new THREE.MeshStandardMaterial({ color: D.mane, roughness: 0.6 });
   // olhos nas laterais (amendoados, escuros e úmidos, com pálpebra que pisca), narinas em vírgula, orelhas em concha que se mexem
-  const lids = [], ears = [], COATP = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).multiplyScalar(0.95), roughness: 0.6 });
+  const NOSM = new THREE.MeshStandardMaterial({ color: '#16100d', roughness: 0.85 }); // narina: fenda escura e fosca (sem brilho de "feijão")
+  const lids = [], ears = [], eyes = [], nostrils = [], COATP = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).multiplyScalar(0.95), roughness: 0.6 });
   const dir = (x, y, z) => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(x, y, z).normalize());
   for (const s of [-1, 1]) {
     const eg = new THREE.Group(); eg.quaternion.copy(dir(s * 0.93, 0.12, 0.35)); at('head', eg, s * 0.098, 1.85, 1.135);
     // S-290: olho de cavalo de verdade (e não uma conta preta): globo úmido com córnea brilhante, íris castanha
     // com pupila horizontal, pálpebras de cima e de baixo na cor da pelagem, borda escura e cílios de cima
-    const EM = new THREE.MeshPhysicalMaterial({ color: '#1c100a', roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.03 });
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.03, 24, 18), EM); ball.scale.set(1.5, 0.8, 0.55); eg.add(ball); // amendoado
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.022, 20, 14), new THREE.MeshPhysicalMaterial({ color: '#3e2210', roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05 })); iris.scale.set(1.45, 0.78, 0.5); iris.position.z = 0.0055; eg.add(iris);
-    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.013, 16, 10), new THREE.MeshStandardMaterial({ color: '#050302', roughness: 0.1 })); pup.scale.set(1.5, 0.42, 0.45); pup.position.z = 0.0095; eg.add(pup); // pupila horizontal
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.004, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.scale.set(1.6, 0.8, 1); hl.position.set(0.012, 0.007, 0.0165); eg.add(hl);
+    // S-308: olho vivo — o globo (íris escura grande, quase sem branco à mostra) gira de leve para olhar em volta; por cima,
+    // uma córnea transparente e úmida com reflexo especular forte (fica parada: o brilho não "gira" junto) e cílios
+    const gl = new THREE.Group(); eg.add(gl); eyes.push(gl);
+    const EM = new THREE.MeshPhysicalMaterial({ color: '#160c07', roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.03 });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.03, 24, 18), EM); ball.scale.set(1.5, 0.8, 0.55); gl.add(ball); // amendoado
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.025, 24, 16), new THREE.MeshPhysicalMaterial({ color: '#2c170b', roughness: 0.35, clearcoat: 1, clearcoatRoughness: 0.05 })); iris.scale.set(1.5, 0.82, 0.48); iris.position.z = 0.0052; gl.add(iris);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0235, 0.0026, 8, 32), new THREE.MeshStandardMaterial({ color: '#1a0c06', roughness: 0.4 })); ring.scale.set(1.5, 0.82, 1); ring.position.z = 0.009; gl.add(ring); // aro escuro da íris
+    const pup = new THREE.Mesh(new THREE.SphereGeometry(0.013, 16, 10), new THREE.MeshStandardMaterial({ color: '#030202', roughness: 0.1 })); pup.scale.set(1.6, 0.46, 0.45); pup.position.z = 0.0098; gl.add(pup); // pupila horizontal
+    const cornea = new THREE.Mesh(new THREE.SphereGeometry(0.032, 28, 18), new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.12, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.0, specularIntensity: 1, depthWrite: false })); cornea.scale.set(1.5, 0.82, 0.62); cornea.position.z = 0.001; eg.add(cornea);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.0026, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85 })); hl.scale.set(1.4, 0.8, 1); hl.position.set(0.013, 0.008, 0.0172); eg.add(hl);
+    const hl2 = new THREE.Mesh(new THREE.SphereGeometry(0.0014, 8, 6), new THREE.MeshBasicMaterial({ color: '#dfe8ff', transparent: true, opacity: 0.55 })); hl2.position.set(-0.016, -0.006, 0.0165); eg.add(hl2); // segundo reflexo, menor
+    const LASH = new THREE.MeshStandardMaterial({ color: '#2a1a12', roughness: 0.9 });
+    const lash = hairStrands([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(k => { const u = 0.15 + k / 10 * 0.75, x = (u - 0.5) * 0.085, y = 0.02 * Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.5) * 2, 2))) + 0.002; return { pts: [V(x, y, 0.013), V(x * 1.04, y + 0.003, 0.021), V(x * 1.07, y + 0.0005, 0.027)], r0: 0.0012, r1: 0.0004 }; }), LASH); eg.add(lash); // cílios curtos e deitados para fora (cavalo, não desenho)
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.0045, 8, 32), DARK); rim.scale.set(1.5, 0.8, 1); eg.add(rim);
     const lid = new THREE.Mesh(new THREE.SphereGeometry(0.032, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2), COATP); lid.scale.set(1.5, 0.85, 0.66); lid.rotation.x = -1.35; eg.add(lid); lids.push(lid); // pisca
     // dobras de pele: pálpebra de cima pesada (cobre o topo do olho), pálpebra de baixo e a ruga acima do olho
     const FOLD = new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).multiplyScalar(0.86), roughness: 0.7 });
     const up = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.0075, 10, 28, Math.PI), FOLD); up.scale.set(1.52, 0.72, 1); up.position.set(0, 0.002, 0.004); eg.add(up);
     const low = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 8, 28, Math.PI), FOLD); low.scale.set(1.5, 0.7, 1); low.rotation.z = Math.PI; low.position.z = 0.002; eg.add(low);
-    const brow = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.005, 8, 24, Math.PI * 0.8), FOLD); brow.scale.set(1.4, 0.75, 1); brow.rotation.z = Math.PI * 0.1; brow.position.set(-0.004, 0.006, -0.002); eg.add(brow);
+    up.scale.z = 0.55; low.scale.z = 0.55; // S-308: dobras rentes ao olho (sem o arco solto de "sobrancelha", que parecia contorno de desenho)
     // narina: fenda escura em vírgula rente à asa do focinho
-    const nos = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), DARK); nos.scale.set(0.009, 0.022, 0.007); nos.quaternion.copy(dir(s * 0.55, 0.15, 0.82)).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -s * 0.35)); at('head', nos, s * 0.056, 1.567, 1.548);
+    const nos = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), NOSM); nos.scale.set(0.012, 0.028, 0.008); nostrils.push(nos); /* S-308: narina maior, dilata ao respirar */ nos.quaternion.copy(dir(s * 0.55, 0.15, 0.82)).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -s * 0.35)); nos.scale.set(0.009, 0.026, 0.012); at('head', nos, ...(horseFront(s * 0.042, 1.568, -0.0085) || horseSkin(s, 1.567, 1.55, -0.003))); // narina grande na frente-lado do focinho: fenda escura em vírgula rente à pele
     const mouth = new THREE.Mesh(taper([V(s * 0.036, 1.497, 1.53), V(s * 0.05, 1.5, 1.49), V(s * 0.052, 1.51, 1.45)], 0.004, 0.003, 8, 6), DARK); bones.head.add(mouth); mouth.position.set(0, -HORSE_BONES.head[1][1], -HORSE_BONES.head[1][2]); // canto da boca
     // orelha em concha (aberta para a frente), pontuda, com o lado de dentro mais escuro e pelos claros
     const ear = new THREE.Group(); ear.position.set(s * 0.06, 1.975, 1.05); at('head', ear, s * 0.06, 1.975, 1.05);
@@ -846,6 +891,9 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
     const tuft = hairStrands([0, 1, 2, 3, 4].map(k => ({ pts: [V(-0.014 + k * 0.007, 0.015, -0.004), V(-0.011 + k * 0.006, 0.05, 0.012), V(-0.008 + k * 0.004, 0.085, 0.016)], r0: 0.0025, r1: 0.0008 })), new THREE.MeshStandardMaterial({ color: new THREE.Color(D.coat || D.wool).lerp(new THREE.Color('#efe4d4'), 0.5), roughness: 0.9 })); ear.add(tuft);
     ear.userData.base = new THREE.Euler(-0.12, s * 0.38, s * 0.18); ear.rotation.copy(ear.userData.base); ear.userData.s = s; ears.push(ear);
   }
+  { // S-308: vinco da boca na frente do focinho (entre o beiço de cima e o de baixo), emendando nos cantos
+    const pts = [-0.034, -0.022, -0.011, 0, 0.011, 0.022, 0.034].map(x => horseFront(x, 1.488 + Math.abs(x) * 0.15, -0.0015)).filter(Boolean).map(q => V(...q));
+    if (pts.length >= 3) { const crease = new THREE.Mesh(taper(pts, 0.0032, 0.0032, 16, 6), DARK); at('head', crease, 0, 0, 0); } } // (at com 0,0,0 = geometria nas coordenadas de repouso)
   // crina: fios descendo de um lado do pescoço + topete
   const manePaths = []; let sd = 9; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
   // linha da crista (topo do pescoço) da cernelha até a nuca; os fios caem para um lado, por fora do pescoço
@@ -859,12 +907,16 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
   const tailSegs = []; let tp = new THREE.Group(); at('tail', tp, 0, 1.33, -0.9);
   const tailRoot = tp;
   // S-253: cauda longa e cheia, em 7 elos que ondulam com atraso (fios finos, que abrem um pouco embaixo e terminam em ponta)
-  const TL = opts.wings ? 1.06 : 1;
-  for (let k = 0; k < 7; k++) { const g = new THREE.Group(); g.position.set(0, k ? -0.11 * TL : 0, k ? -0.035 : 0); tp.add(g); tailSegs.push(g); tp = g;
-    if (k === 0) { const dock = new THREE.Mesh(taper([V(0, 0.03, 0.03), V(0, -0.1, -0.02), V(0, -0.22, -0.045)], 0.055, 0.03, 12, 10), COATP); g.add(dock); } // S-290: sabugo (base carnuda) de onde os fios nascem
-    const ps = [], n = k < 2 ? 34 : k < 5 ? 26 : 22, spread = 0.06 + k * 0.015; /* S-290: cauda mais cheia */ for (let i = 0; i < n; i++) { const ox = (rnd() - 0.5) * spread * 2, oz = (rnd() - 0.5) * spread, L = (0.16 + rnd() * 0.08 + (k === 6 ? 0.22 + rnd() * 0.12 : 0)) * TL, cw = (rnd() - 0.5) * 0.03;
-      ps.push({ pts: [V(ox * 0.4, 0.02, oz * 0.4 + 0.01), V(ox * 0.8 + cw, -L * 0.45, -0.02 + oz), V(ox * 1.05 + cw * 1.5, -L * 0.8, -0.025 + oz * 1.1), V(ox * 1.1 + cw * 2, -L, -0.015 + oz * 1.1)], r0: k < 2 ? 0.017 : 0.013, r1: 0.0025 }); }
+  // S-308: cauda SOLTA — o sabugo sai arqueado para trás e os fios CAEM pelo peso; 9 elos curtos com física de mola
+  // (cada um atrasa em relação ao de cima), fios finos e muitos, que abrem um pouco no trote e esvoaçam no galope
+  const TL = opts.wings ? 1.06 : 1, NT = 9;
+  for (let k = 0; k < NT; k++) { const g = new THREE.Group(); g.position.set(0, k ? -0.095 * TL : 0, k ? -0.012 : 0); tp.add(g); tailSegs.push(g); tp = g; g.userData.ax = 0; g.userData.ay = 0; g.userData.vx = 0; g.userData.vy = 0;
+    if (k === 0) { const dock = new THREE.Mesh(taper([V(0, 0.03, 0.03), V(0, -0.08, -0.015), V(0, -0.17, -0.03)], 0.055, 0.028, 12, 10), COATP); g.add(dock); } // sabugo (base carnuda) de onde os fios nascem
+    const ps = [], n = k < 2 ? 46 : k < 6 ? 34 : 26, spread = 0.05 + k * 0.013;
+    for (let i = 0; i < n; i++) { const ox = (rnd() - 0.5) * spread * 2, oz = (rnd() - 0.5) * spread * 0.8, L = (0.14 + rnd() * 0.1 + (k === NT - 1 ? 0.2 + rnd() * 0.16 : 0)) * TL, cw = (rnd() - 0.5) * 0.04, cz = (rnd() - 0.5) * 0.03;
+      ps.push({ pts: [V(ox * 0.4, 0.02, oz * 0.4 + 0.008), V(ox * 0.85 + cw * 0.5, -L * 0.35, oz + cz * 0.5), V(ox * 1.05 + cw, -L * 0.7, oz * 1.05 + cz), V(ox * 1.12 + cw * 1.6, -L, oz * 1.1 + cz * 1.4)], r0: k < 2 ? 0.011 : 0.009, r1: 0.0018 }); }
     g.add(hairStrands(ps, MANE)); }
+  const TAIL_REST = [0.95, -0.42, -0.26, -0.12, -0.05, -0.03, -0.02, -0.01, 0]; // ângulos de repouso: arco do sabugo e fios caindo quase na vertical
   // sela de couro com arção, manta com borda, cilha, estribos e rédeas
   const LEATHER = new THREE.MeshStandardMaterial({ color: '#5a3820', roughness: 0.5 }), METAL = new THREE.MeshStandardMaterial({ color: '#c9b07a', roughness: 0.3, metalness: 0.7 });
   const saddle = new THREE.Group(); at('chest', saddle, 0, 0, 0);
@@ -922,8 +974,8 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
         // passo/trote: diagonais juntas; galope: pares quase juntos com a frente adiantada
         const walkOff = (front ? 0 : 0.5) + (sd > 0 ? 0.5 : 0) + (front ? 0 : 0.25), runOff = (front ? 0.0 : 0.45) + (sd > 0 ? 0.08 : 0);
         const p = ph + Math.PI * 2 * (walkOff * (1 - run) + runOff * run), sw = Math.sin(p), lift = Math.max(0, Math.cos(p)), g = gait * (1 - air), amp = 0.34 + run * 0.3;
-        if (front) { R('up' + sd).x = sw * amp * g - 0.9 * air; R('fo' + sd).x = -sw * 0.1 * g; R('ca' + sd).x = lift * (1.1 + run * 0.4) * g + 1.6 * air; R('pa' + sd).x = -lift * 0.5 * g - 0.3 * air; }
-        else { R('th' + sd).x = sw * amp * g + 0.6 * air; R('sh' + sd).x = -lift * (0.4 + run * 0.3) * g - 0.3 * air; R('mt' + sd).x = lift * (0.7 + run * 0.3) * g + 0.5 * air; R('pb' + sd).x = -lift * 0.5 * g; }
+        if (front) { R('up' + sd).x = sw * amp * g - 0.9 * air; R('fo' + sd).x = -sw * 0.1 * g; R('ca' + sd).x = lift * (1.1 + run * 0.4) * g + 1.6 * air; R('pa' + sd).x = lift * (0.45 + run * 0.25) * g + 0.4 * air; } // S-308: o boleto dobra para TRÁS ao levantar (o casco recolhe, sola para trás), como num cavalo de verdade
+        else { R('th' + sd).x = sw * amp * g + 0.6 * air; R('sh' + sd).x = -lift * (0.4 + run * 0.3) * g - 0.3 * air; R('mt' + sd).x = lift * (0.7 + run * 0.3) * g + 0.5 * air; R('pb' + sd).x = lift * (0.4 + run * 0.2) * g + 0.2 * air; }
       }
       body.position.y = Math.abs(Math.sin(ph)) * (0.03 + run * 0.06) * gait * (1 - air) + Math.sin(t * 1.3) * 0.006 * (1 - gait);
       pitch += ((m.air ? (m.vy > 0 ? 0.16 : -0.14) : 0) - pitch) * (1 - Math.exp(-dt * 7));
@@ -934,11 +986,24 @@ export function makeHorse(D = MOUNTS.lanudo, opts = {}) {
       R('head').x = -Math.sin(ph * 2) * 0.05 * gait + (1 - gait) * Math.sin(t * 0.9 + 1) * 0.04;
       R('chest').x = Math.sin(ph * 2) * 0.03 * run * gait; R('hips').x = -Math.sin(ph * 2) * 0.025 * run * gait;
       mane.rotation.z = Math.sin(t * 3) * 0.04 * (0.3 + gait);
-      tailSegs.forEach((g, k) => { // S-253: onda que desce pela cauda (cada elo atrasa um pouco), mais solta no galope e no voo
-        const wv = t * (1.3 + s * 2.6) - k * 0.62; g.rotation.x = (k === 0 ? 0.42 : 0.06) + gait * (0.2 + run * 0.28) * (k === 0 ? 1 : 0.22) + air * (k === 0 ? 0.5 : 0.08) + Math.sin(wv * 0.7) * 0.03 * k / 6;
-        g.rotation.y = Math.sin(wv) * (0.03 + k * 0.035) * (1 + gait * 0.5) - m.turn * 0.04 * k; g.rotation.z = Math.sin(wv * 0.5 + 1) * 0.02 * k / 6; });
+      // S-308: cauda com física de mola — cada elo persegue seu alvo com atraso (os de baixo mais moles), então ela balança,
+      // atrasa nas curvas e no arranque, cai pelo peso parada, sobe e esvoaça no galope e abre um pouco no trote
+      const accel = (gait - (tailSegs.lastG ?? gait)) / Math.max(dt, 1e-3); tailSegs.lastG = gait;
+      tailSegs.forEach((g, k) => { const u = g.userData, wv = t * (1.1 + s * 2.4) - k * 0.55;
+        const tx = TAIL_REST[k] + (k === 0 ? gait * 0.28 + run * 0.45 + air * 0.5 : k < 3 ? run * 0.12 + air * 0.1 : run * 0.05) + Math.sin(wv * 0.7) * 0.025 * (k / NT) * (1 + run) - Math.max(-0.6, Math.min(0.6, accel * 0.04)) * (k ? 0.12 : 0);
+        const ty = Math.sin(wv) * (0.015 + k * 0.02) * (0.4 + gait * 0.9) - m.turn * 0.05 * (k ? 1 : 0.4);
+        const st = 60 - k * 5.5, dmp = 9 - k * 0.5; // mola + amortecimento (elos de baixo mais moles = mais atraso)
+        if (!u.init) { u.ax = tx; u.ay = ty; u.init = true; }
+        for (let h = Math.min(dt, 0.1), q = Math.ceil(h / 0.02), e2 = h / q; q > 0; q--) { u.vx += ((tx - u.ax) * st - u.vx * dmp) * e2; u.ax += u.vx * e2; u.vy += ((ty - u.ay) * st - u.vy * dmp) * e2; u.ay += u.vy * e2; } // passos curtos = estável
+        g.rotation.x = u.ax; g.rotation.y = u.ay; g.rotation.z = Math.sin(wv * 0.5 + 1) * 0.015 * k / NT;
+        if (k >= 3) g.scale.x = 1 + gait * 0.18 * (k / NT) + run * 0.12; });
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.16; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.5 + Math.random() * 4; }
       for (const l of lids) l.rotation.x = -1.75 + bl * 1.5;
+      // S-308: olhar vivo (o globo dá pequenas olhadas de vez em quando), narinas que abrem ao respirar e mastigar parado
+      if (t > (eyes.nextT || 0)) { eyes.gx = (Math.random() - 0.5) * 0.35; eyes.gy = (Math.random() - 0.5) * 0.18; eyes.nextT = t + 1.2 + Math.random() * 3; }
+      for (const e of eyes) { e.rotation.y += ((eyes.gx || 0) - e.rotation.y) * Math.min(1, dt * 14); e.rotation.x += ((eyes.gy || 0) - e.rotation.x) * Math.min(1, dt * 14); }
+      const breath = 0.5 + 0.5 * Math.sin(t * (1.4 + gait * 2.6 + run * 2)); for (const n of nostrils) n.scale.x = 0.009 * (1 + breath * (0.3 + run * 0.6));
+      const chew = (1 - gait) * (Math.sin(t * 0.21) > 0.55 ? Math.max(0, Math.sin(t * 5.2)) : 0); R('jaw').x = chew * 0.06 + run * 0.04 * breath;
       for (const e of ears) { const b0 = e.userData.base, sd2 = e.userData.s, fl2 = Math.max(0, Math.sin(t * 1.7 + sd2 * 2.1) - 0.93) * 9, swv = Math.sin(t * 0.37 + sd2) * 0.35 * (1 - gait); // orelhas: viram para os lados, tremem de vez em quando e deitam um pouco no galope
         e.rotation.set(b0.x + run * 0.45 - fl2 * 0.15, b0.y + sd2 * (swv + look * 0.6), b0.z + fl2 * sd2 * 0.12); }
       if (wings) { // asas dobradas junto ao corpo; abertas no ar / no salto e de vez em quando se esticam e batem

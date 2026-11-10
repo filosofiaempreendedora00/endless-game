@@ -211,3 +211,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 ### S-305 + katar do Executor, 2026-11-09
 - Combate é o foco agora: alcance realista (sem acertar de longe), arma sem soco, correr até o alvo segurando o clique (rangers param no alcance).
 - Pedido explícito de referência: Algoz/Mercenário do RO com katar e ASPD ~190 — o RO manda nos SISTEMAS e no "feel" de classe; ele quer reproduzir a sensação, em 3D profissional. Ferramenta de teste (barrinha de ASPD) faz parte do pedido: ele quer calibrar vendo.
+
+### S-306 a S-308 + propostas aprovadas P-001..P-008, 2026-11-10
+- NPCs: rosto "maléfico/carrancudo" incomoda muito — rostos padrão devem ser convidativos; reação estilo Skyrim (olhar, acenar, saudar) virou o padrão para todos.
+- Pégaso/cavalos: "mais realista" = olhos úmidos vivos, beiços móveis, pernas finas anatômicas e cauda com física.
+- Entregues as 7 propostas aprovadas (monstros, Arena, verificador, música, voo, clima, missões). O verificador (__api.qa / botão no Painel) deve rodar antes de cada entrega para pegar flutuação/colisão antes dele.
+- Processo: rodar no máximo 4 ajudantes ao mesmo tempo (7 travaram o Mac dele).

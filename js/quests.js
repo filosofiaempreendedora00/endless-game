@@ -6,6 +6,7 @@
    o grosso continua vindo de caçar monstros.
    Estado no save: p.quests = { active: { id: { n: [contagens] } }, done: [ids] }
    Objetivos: kill (monstro, qtd) · collect (item, qtd — entregue no fim) · talk (npc)
+              · goto (lugar: x, z, r, label; mapX/mapZ = onde marcar no mapa se o lugar for uma sala) — P-008
    ========================================================================= */
 const QUESTS = {
   // ---------- História principal: "A Sombra sobre Alvorada" ----------
@@ -65,6 +66,27 @@ const QUESTS = {
   sq_gui: { name: 'O lobo das histórias', giver: 'gui', turnIn: 'gui', lv: 20,
     text: 'Conto há trinta anos a história do <b>Lobo Alfa</b> da floresta. Dizem que ele voltou. Prove que é verdade: derrote-o e traga a <b>Presa do Alfa</b>.',
     done: 'Ha! Então era verdade! Agora tenho um final novo para a minha história, e você está nele.', obj: [{ kill: 'lobo_alfa', n: 1 }, { collect: 'presa_alfa', n: 1 }], reward: { expPct: 0.14, zeny: 1500 } },
+  // ---------- P-008: "A Lenda dos Que Dormem de Pé" — leva do vale às Dunas, aos Colossos, ao Santuário e às Catacumbas ----------
+  lc1: { name: 'A canção das pedras', giver: 'teodoro', turnIn: 'isis', lv: 18, requires: 'mq6', chain: 'Lenda dos Colossos',
+    text: 'Quando eu era menino, as avós cantavam sobre os <b>Que Dormem de Pé</b>: gigantes de pedra que se ajoelharam para vigiar alguma coisa debaixo da terra. Quem ainda sabe a canção inteira é a <b>Ísis</b>, mercadora de <b>Pedraclara</b>. As caravanas dela cruzam as Dunas há anos.',
+    done: 'Teodoro ainda lembra dessa canção? Então ele também sente: a areia anda inquieta. Sente-se, vou te contar o que as caravanas viram.',
+    obj: [{ talk: 'isis' }], reward: { expPct: 0.1, zeny: 300 } },
+  lc2: { name: 'Sal nas pegadas', giver: 'isis', turnIn: 'isis', lv: 22, requires: 'lc1', chain: 'Lenda dos Colossos',
+    text: 'Minha última caravana voltou sem um dos guias. Acharam só as pegadas dele indo para o <b>coração das Dunas de Sal-Rubro</b>, e escorpiões por toda parte. Vá até lá, derrote <b>5 Escorpiões Rubros</b> e veja o que ele estava procurando.',
+    done: 'Um caco de pedra polida... com a mesma runa que está esculpida no peito do Rei de Pedra, lá na planície. O guia achou um pedaço de um colosso no meio do deserto. Como ele veio parar aqui?',
+    obj: [{ goto: 'dunas', x: 10, z: 292, r: 26, label: 'o coração das Dunas de Sal-Rubro' }, { kill: 'escorpiao_rubro', n: 5 }], reward: { expPct: 0.14, zeny: 900, items: [['pocao_vermelha', 6]] } },
+  lc3: { name: 'O caco e a coroa', giver: 'isis', turnIn: 'bastiao', lv: 24, requires: 'lc2', chain: 'Lenda dos Colossos',
+    text: 'Leve o caco até o <b>Rei de Pedra</b>, o colosso sentado no trono das <b>Ruínas dos Colossos</b>, e compare as runas. Depois conte ao <b>Bastião</b>, no portão de Pedraclara: ele cuida da estrada da planície.',
+    done: 'O caco encaixou na coroa do Rei? Então alguém está QUEBRANDO os colossos e levando os pedaços para longe... Ninguém faz isso por acaso.',
+    obj: [{ goto: 'rei', x: 78, z: -340, r: 16, label: 'o Rei de Pedra no trono' }], reward: { expPct: 0.12, zeny: 1200, items: [['ferrolume', 1]] } },
+  lc4: { name: 'Onde os gigantes enterram os seus', giver: 'bastiao', turnIn: 'bastiao', lv: 28, requires: 'lc3', chain: 'Lenda dos Colossos',
+    text: 'Os antigos diziam que, antes dos colossos, havia feras do tamanho de torres. A <b>grande ossada de presas</b>, perto da montanha, é o que sobrou de uma delas. As <b>Orvalhinhos Sombrios</b> se juntam lá como moscas. Vá até a ossada e derrote <b>6</b> delas.',
+    done: 'Então as sombras se juntam onde a terra guarda mortos antigos... e o caminho de pedra que sai dali leva direto ao Santuário Silente. Está tudo ligado.',
+    obj: [{ goto: 'ossada', x: -124, z: -378, r: 18, label: 'a grande ossada de presas' }, { kill: 'gotinha_sombria', n: 6 }], reward: { expPct: 0.14, zeny: 2500, items: [['pedra_egide', 1]] } },
+  lc5: { name: 'A porta que não faz barulho', giver: 'bastiao', turnIn: 'teodoro', lv: 30, requires: 'lc4', chain: 'Lenda dos Colossos',
+    text: 'No fim da calçada antiga, encravado na montanha, fica o <b>Santuário Silente</b>. Dizem que lá dentro nem os passos fazem barulho. Entre e desça ao <b>1º andar das Catacumbas</b>: é de lá que os colossos tentam nos proteger. Depois volte ao Ancião Teodoro e conte o que viu.',
+    done: 'Você desceu às Catacumbas e voltou para contar... Então a canção estava certa: os Que Dormem de Pé não dormem. Eles VIGIAM. E alguém lá embaixo quer que eles caiam. Guarde estas coisas: você vai precisar.',
+    obj: [{ goto: 'santuario', x: 0, z: -392, r: 16, label: 'o Santuário Silente' }, { goto: 'catacumbas', x: 1500, z: 0, r: 40, mapX: 0, mapZ: -392, label: 'o 1º andar das Catacumbas' }], reward: { expPct: 0.16, zeny: 4000, items: [['pocao_azul', 5], ['ferrolume', 1], ['pedra_egide', 1]] } },
 };
 const QUEST_GIVERS_NPC = { // NPC novo da história principal (S-126) — colocado na praça da vila pelo main3d
   teodoro: { id: 'teodoro', name: 'Ancião Teodoro', title: 'Guardião de Alvorada', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', face: 'sabio', hair: { style: 'curto', color: 'grisalho' }, beard: true } },
@@ -84,8 +106,8 @@ function questMarker(p, npcId) {
   for (const id in st.active) { const q = QUESTS[id]; if (q && q.turnIn === npcId) return '…'; }
   return '';
 }
-function objText(o) { if (o.kill) return `Derrotar ${MONSTERS[o.kill] ? MONSTERS[o.kill].name : o.kill}`; if (o.collect) return `Coletar ${ITEMS[o.collect] ? ITEMS[o.collect].name : o.collect}`; return `Falar com ${QUEST_NPC_NAMES[o.talk] || o.talk}`; }
-const QUEST_NPC_NAMES = { teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
+function objText(o) { if (o.goto) return `Ir até ${o.label || o.goto}`; if (o.kill) return `Derrotar ${MONSTERS[o.kill] ? MONSTERS[o.kill].name : o.kill}`; if (o.collect) return `Coletar ${ITEMS[o.collect] ? ITEMS[o.collect].name : o.collect}`; return `Falar com ${QUEST_NPC_NAMES[o.talk] || o.talk}`; }
+const QUEST_NPC_NAMES = { isis: 'Ísis', teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
 function questRewardText(p, q) {
   const r = q.reward || {}, parts = [];
   const exp = questExp(q); if (exp) parts.push(`<b class="gold">${exp.toLocaleString('pt-BR')} EXP</b>`);
@@ -102,6 +124,16 @@ function questOnKill(p, monsterType) {
 }
 function questAccept(p, id) { const q = QUESTS[id]; questState(p).active[id] = { n: q.obj.map(() => 0) }; UI.log(`📜 Missão aceita: ${q.name}`, 'lvl'); questTalkTo(p, null); if (typeof Sound !== 'undefined') Sound.play('click'); UI.markDirty(); }
 function questAbandon(p, id) { delete questState(p).active[id]; UI.log(`Missão abandonada: ${QUESTS[id].name}`, 'warn'); UI.markDirty(); }
+// P-008: objetivo "ir até" — o main3d chama a cada meio segundo com a posição do jogador
+function questOnMove(p, x, z) {
+  const st = questState(p); let changed = false;
+  for (const id in st.active) { const q = QUESTS[id]; if (!q) continue; q.obj.forEach((o, i) => {
+    if (!o.goto || st.active[id].n[i]) return;
+    if (Math.hypot(x - o.x, z - o.z) <= (o.r || 15)) { st.active[id].n[i] = 1; changed = true; UI.log(`📍 ${q.name}: lugar alcançado — ${o.label || o.goto}.`, 'sys'); if (questReady(p, id)) UI.log(`✅ ${q.name}: pronta! Volte para ${QUEST_NPC_NAMES[q.turnIn] || q.turnIn}.`, 'lvl'); }
+  }); }
+  if (changed) UI.markDirty();
+  return changed;
+}
 // conversa com o NPC: marca objetivos "falar com"
 function questTalkTo(p, npcId) {
   const st = questState(p);

@@ -14,12 +14,15 @@ import { LEVELS, levelAt } from './levels3d.js'; // S-281: andares e escadas ond
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
+import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
-import { buildCatacombs as buildDungeon, FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
+import { initWeather, updateWeather } from './weather3d.js';
+import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
+import { runQA, showQA } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { riderPose } from './ride3d.js';
+import { startFlight } from './flight3d.js'; // P-006: voo de Noctívago de verdade
 import { makeLightPool, vlight } from './lights3d.js';
 import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
@@ -48,6 +51,7 @@ const scene = new THREE.Scene();
 const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680'), FOG_FOREST = new THREE.Color('#a9c9b0');
 const FOG_SNOW = new THREE.Color('#e3edf4'), FOG_SAND = new THREE.Color('#ecd9b0'), FOG_PLAIN = new THREE.Color('#a9a79e');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
+initWeather(scene); // P-007: neve na Geada, areia nas Dunas, névoa baixa nos Colossos
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 1700);
 const lightPool = makeLightPool(scene, 3); // poucas luzes reais, levadas às fontes mais próximas
 const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
@@ -754,12 +758,16 @@ async function arenaSync() {
   const A = S.arena; if (!A || A.busy) return; A.busy = true; A.last = S.time;
   const p = S.p, d = p.d;
   const body = { id: A.id, name: p.name, cls: p.cls, look: p.look, hat: hatOf(p), skin: (p.cosmetics || {}).skin || null, x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw, moving: Math.hypot(S.vel.x, S.vel.z) > 0.5, anim: S.me.anim.name, maxHp: d.maxHp, def: d.def, mdef: d.mdef, flee: d.flee, baseLv: p.baseLv, since: A.since };
+  // P-002: toda cura feita aqui (poção, habilidade, regeneração) vira um pedido de cura ao servidor, que é quem decide o HP — antes o sync desfazia a cura
+  if (A.hpServer !== undefined && !A.dead && p.hp > A.hpServer) { body.heal = Math.round(p.hp - A.hpServer); body.healSrc = A.healSrc || 'cura'; A.healSrc = null; }
+  const hpSent = p.hp;
   try {
     const r = await (await fetch('/api/arena/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
     if (S.arena !== A) return;
     A.since = r.seq;
     if (r.you) {
-      p.hp = r.you.hp; A.kills = r.you.kills; A.deaths = r.you.deaths; hudDirty = true;
+      const late = Math.max(0, p.hp - hpSent); // cura que aconteceu enquanto o pedido viajava: vai no próximo sync
+      p.hp = Math.min(d.maxHp, r.you.hp + (r.you.dead ? 0 : late)); A.hpServer = r.you.hp; A.kills = r.you.kills; A.deaths = r.you.deaths; hudDirty = true;
       if (r.you.dead && !A.dead) { A.dead = true; S.autoAttack = false; S.me.anim.play('Death_A', { once: true, fade: 0.1 }); Sound.play('death'); }
       if (r.you.dead) $('arena-hud').dataset.dead = Math.ceil(r.you.respawn);
       if (!r.you.dead && A.dead) { A.dead = false; S.me.anim.play('Idle', { restart: true }); delete $('arena-hud').dataset.dead; }
@@ -814,7 +822,8 @@ function arenaEvent(e) {
   } else if (e.kind === 'morte') {
     log(`☠️ ${escH(e.killer || '?')} derrotou ${escH(e.victim || '?')}!`, 'card');
     if (e.killer === S.p.name && e.to !== A.id) { banner('Vitória!', `Você derrotou ${e.victim}`); Sound.play('levelup'); }
-  } else if (e.kind === 'entrou') log(`⚔️ ${escH(e.who || '?')} entrou na Arena.`, 'sys');
+  } else if (e.kind === 'cura') { const rv = e.to !== A.id && A.rivals.get(e.to); if (rv && e.amt > 0) floatAt(rv.obj.position, '+' + e.amt, '#5fe08a', rv.height + 0.4); } // P-002: cura do rival aparece em verde
+  else if (e.kind === 'entrou') log(`⚔️ ${escH(e.who || '?')} entrou na Arena.`, 'sys');
   else if (e.kind === 'saiu') log(`${escH(e.who || '?')} saiu da Arena.`, 'sys');
 }
 
@@ -926,8 +935,10 @@ function buildWorld() {
     const x = R.x + Math.cos(a) * 30, z = R.z + Math.sin(a) * 30;
     { // muro de pedra de verdade (S-092): blocos irregulares, musgo e topo quebrado
       const rot = -a + Math.PI / 2, len = 7 + rng() * 2.5, w = makeRuinWall(i * 7 + 3, len, 2.6 + rng() * 1.4);
-      w.position.set(x, heightAt(x, z) - 0.1, z); w.rotation.y = rot; scene.add(w); w.userData.asset = 'ruin_wall'; placed.push(w); occluders.push(w);
-      colliders.push({ x, z, r: len / 2, box: true, hx: len / 2, hz: 0.55, rot, name: 'ruin_wall' });
+      const gy = Math.min(heightAt(x, z), heightAt(x + Math.cos(rot) * len / 2, z - Math.sin(rot) * len / 2), heightAt(x - Math.cos(rot) * len / 2, z + Math.sin(rot) * len / 2)); // P-003: assenta no ponto mais baixo (sem vão sob a ponta)
+      w.position.set(x, gy - 0.15, z); w.rotation.y = rot; scene.add(w); w.userData.asset = 'ruin_wall'; placed.push(w); occluders.push(w);
+      w.rotation.y = 0; w.updateMatrixWorld(true); const wb = new THREE.Box3().setFromObject(w); w.rotation.y = rot; const hz = Math.max(0.55, (wb.max.z - wb.min.z) / 2 * 0.85); // P-003: colisão da espessura real (base de blocos caídos)
+      colliders.push({ x, z, r: len / 2, box: true, hx: len / 2, hz, rot, name: 'ruin_wall' });
     }
   }
   // lago: vitórias-régias
@@ -1012,9 +1023,9 @@ function buildFrontier() {
   const C = CITY2, wb = bbox('wall'), wlen = Math.max(4, (wb.max.x - wb.min.x) * WS * 0.96), R = 38;
   for (let a = 0; a < Math.PI * 2; a += wlen / R) {
     if (Math.cos(a) < 0 && Math.abs(Math.sin(a) * R) < 5.6 + wlen / 2) continue; // portão a oeste, na estrada (S-287: o vão é só entre as duas torres do portão)
-    place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.2 });
+    place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.55 }); // P-003: afundado o bastante para não abrir vão sob o canto em encosta
   }
-  for (const s of [-1, 1]) { const zc = s * (5.6 + wlen / 2 - 0.2), a = Math.PI - Math.asin(zc / R); place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.2 }); } // S-287: muro emendado em cada torre do portão
+  for (const s of [-1, 1]) { const zc = s * (5.6 + wlen / 2 - 0.2), a = Math.PI - Math.asin(zc / R); place('wall', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rot: -a + Math.PI / 2, sink: 0.55 }); } // S-287: muro emendado em cada torre do portão
   { // S-287: arco de pedra do portão ligando as duas torres (a entrada fica clara)
     const K = new CKit(), st = CM.greyStone(), gx = C.x - R - 0.5, gz = C.z, gy = heightAt(gx, gz);
     cArch(K, 7.2, 0.9, 1.6, st, 0, 4.2, 0, Math.PI / 2, 15);
@@ -1094,8 +1105,11 @@ function fly(k, cost) {
   const p = S.p, f = FLIGHTS[k];
   if (!S.god && p.zeny < cost) { log('Zeny insuficiente para o voo.', 'warn'); Sound.play('error'); return; }
   if (!S.god) { p.zeny -= cost; hudDirty = true; }
-  UI.close('dialog'); if (S.riding) dismount(true);
-  fadeTo(() => { teleport3d(f.x + 2.5, f.z + 1.5); banner(f.name, '🦇 Voo de Noctívago'); });
+  UI.close('dialog'); const remount = !!(S.riding && !S.riding.war); if (S.riding) dismount(true);
+  const land = yaw => { teleport3d(f.x + 2.5, f.z + 1.5); if (yaw !== undefined) { S.pos.yaw = S.cam.yaw = S.cam.viewYaw = yaw; } banner(f.name, '🦇 Voo de Noctívago'); if (remount) mount(); };
+  if (S.interior || S.p.dead) { fadeTo(() => land()); return; }
+  try { setTarget(null); S.autoAttack = false; S.fire = false; S.casting = null; startFlight({ scene, S, Sound, fadeTo, camera, onLand: land }, { x: f.x + 2.5, z: f.z + 1.5, name: f.name }); } // P-006: sobe no Pégaso e sobrevoa o mundo até lá
+  catch (e) { console.error(e); S.flight = null; fadeTo(() => land()); }
 }
 // ---------- Catacumbas do Santuário (masmorra) ----------
 /* =========================== Personagens animados =========================== */
@@ -1416,7 +1430,7 @@ function monsterVisual(m) {
   const s = Math.max(0.6, d.size) * (d.shape === 'blob' ? 1.1 : 1);
   cr.root.scale.setScalar(s);
   const obj = new THREE.Group(); obj.add(cr.root);
-  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : d.shape === 'cactus' ? 1.25 : d.shape === 'saltlizard' ? 0.7 : d.shape === 'scorpion' ? 0.55 : d.shape === 'ant' ? 0.55 : d.shape === 'runnerbird' ? 2.1 : d.shape === 'bat' ? 1.45 : 0.9) * s;
+  const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : d.shape === 'cactus' ? 1.25 : d.shape === 'saltlizard' ? 0.7 : d.shape === 'scorpion' ? 0.55 : d.shape === 'ant' ? 0.55 : d.shape === 'runnerbird' ? 2.1 : d.shape === 'bat' ? 1.45 : d.shape === 'scarecrow' ? 1.9 : d.shape === 'golem' ? 1.85 : d.shape === 'treant' ? 1.65 : 0.9) * s; // P-001: construtos com corpo próprio
   return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s * (d.shape === 'frostdragon' ? 1.3 : d.shape === 'saltlizard' ? 1.4 : 1) };
 }
 // miniaturas e visualização animada dos monstros (Bestiário)
@@ -1527,6 +1541,7 @@ function updateMonster(m, dt) {
       if (m.deathStyle === 'raro') { // brilha e se desfaz em luz
         const kk = Math.min(1, k / 0.3); r.scale.setScalar(Math.max(0.6, d.size) * (1 + kk * 0.15) * (k > 0.3 ? Math.max(0.01, 1 - (k - 0.3) * 4) : 1));
         if (!m.glowed) { m.glowed = true; r.traverse(o => { if (o.isMesh && o.material.emissive) { o.material = o.material.clone(); o.material.emissive.set('#fff2c0'); o.material.emissiveIntensity = 0.9; } }); }
+      } else if (cr.die) { cr.die(k, dt); // P-001: morte própria (espantalho desaba, golem desmorona, guardião ajoelha e tomba)
       } else { // cai de lado, fica um tempo e afunda devagar
         const f = Math.min(1, k / 0.45), ease = 1 - Math.pow(1 - f, 3);
         r.rotation.z = m.deathSide * ease * Math.PI / 2 * 0.95; r.position.y = (cr.flying ? -Math.min(1.05, k * 3) : 0) + Math.sin(f * Math.PI) * 0.08;
@@ -1600,6 +1615,9 @@ const MON_SFX = {
   scorpion: { step: 'boneStep', every: 0.25, attack: 'beeSting', pre: 'boneChatter', hurt: 'boneHit', die: 'boneDie' },
   ant: { step: 'boneStep', every: 0.22, attack: 'wolfBite', pre: 'boneChatter', die: 'beeDie' },
   runnerbird: { step: 'rabbitStep', every: 0.35, attack: 'swing', hurt: 'wolfHurt', die: 'wolfDie' },
+  scarecrow: { step: 'mushStep', every: 0.5, attack: 'heavySwing', hurt: 'boneHit', hurtP: 0.5, die: 'mushDie' }, // P-001
+  golem: { step: 'bossStep', every: 0.85, attack: 'slam', hurt: 'boneHit', hurtP: 0.5, die: 'quake' },
+  treant: { step: 'bossStep', every: 0.95, attack: 'heavySwing', pre: 'knightVoice', hurt: 'boneHit', hurtP: 0.4, die: 'quake', idle: 'knightVoice', idleEvery: 14, idleR: 30 },
   bat: { step: 'beeBuzz', every: 0.5, attack: 'wolfBite', die: 'beeDie', idle: 'ghostWail', idleEvery: 14, idleR: 16 },
   demonking: { step: 'hoofStomp', every: 0.9, attack: 'demonRoar', pre: 'demonVoice', hurt: 'demonGrowl', hurtP: 0.35, die: 'death', idle: ['demonGrowl', 'demonVoice', 'demonGrowl', 'demonRoar'], idleEvery: 7, idleR: 45, stepR: 34 }, // S-256: cascos pesados no ritmo das pisadas, grunhidos e voz
   goatmage: { attack: 'magic', pre: 'goatChant', die: 'ghostWail', idle: 'goatChant', idleEvery: 15, idleR: 30 },
@@ -1766,6 +1784,7 @@ function makeNpcHero(n) {
   for (const it of n.show || []) if (!/_Cape$/.test(it)) humanBorrow(ch.root, MODELS, n.model, it);
   const rfx = dressNpcRole(ch, n.id, MODELS); if (rfx) ch.roleFx = rfx; // S-193/S-197: freira, guarda...
   unsquashDwarf(ch.root);
+  try { softenFace(ch.root, { k: 1.5 }); } catch (e) { } // S-307: rosto convidativo (sobrancelha relaxada, olhos abertos, sorriso leve)
   return ch;
 }
 const offOf = p => (p && p.equip && p.equip.escudo && p.equip.escudo.id) || null; // S-202: escudo só aparece se estiver equipado
@@ -1953,6 +1972,7 @@ function aspdTool() {
 function updatePlayer(dt) {
   const p = S.p, P = S.pos, me = S.me, t = S.time;
   if (S.aspdRO) p.d.aspd = (200 - S.aspdRO) * 20; // barrinha de teste do mestre
+  if ((S._qmT = (S._qmT || 0) + dt) > 0.5) { S._qmT = 0; if (typeof questOnMove === 'function' && questOnMove(p, P.x, P.z)) hudDirty = true; } // P-008: objetivos "ir até"
   me.anim.update(dt);
   { // S-236: mirando (botão esquerdo) e andando de lado, as pernas viram para onde você anda e o tronco continua na mira
     const mi0 = moveInput(), rel = S.moveRel; let want = S.fire && !isAction() && !S.riding && mi0.any ? (mi0.fwd > 0 ? mi0.strafe * -0.6 : mi0.fwd < 0 ? mi0.strafe * 0.5 : mi0.strafe * -Math.PI / 2 * 0.9) : 0;
@@ -2419,7 +2439,7 @@ function executeSkill(a) {
     const R = makeMount('trotavento'); R.war = true; R.obj.position.set(S.pos.x, S.pos.y, S.pos.z); R.obj.rotation.y = S.pos.yaw; scene.add(R.obj);
     S.riding = R; S.sitting = false; ring(S.pos, 2, '#ffcf5a'); Sound.play('portal'); log('🐦 Montaria de Guerra: você monta no seu Trotavento e pode lutar montado.', 'lvl'); return;
   }
-  if (eff.kind === 'heal') { const v = eff.amount(lv, p); p.hp = Math.min(p.d.maxHp, p.hp + v); floatAt(me.obj.position, '+' + v, '#5fe08a', 2.2); ring(me.obj.position, 1.6, '#7dff9a'); Sound.play('heal'); return; }
+  if (eff.kind === 'heal') { const v = eff.amount(lv, p); p.hp = Math.min(p.d.maxHp, p.hp + v); if (S.arena) S.arena.healSrc = 'habilidade'; floatAt(me.obj.position, '+' + v, '#5fe08a', 2.2); ring(me.obj.position, 1.6, '#7dff9a'); Sound.play('heal'); return; }
   if (eff.kind === 'buff') { p.buffs[a.id] = { until: S.time + eff.dur / 1000, bonuses: eff.bonuses(lv) }; recalc(p); ring(me.obj.position, 1.8, sk.fxColor || '#ffd76a'); Sound.play('buff'); log(`${sk.name} ativada!`); return; }
   if (eff.kind === 'steal') {
     const m = a.m;
@@ -2432,12 +2452,12 @@ function executeSkill(a) {
   const hits = eff.hits ? eff.hits(lv) : 1, mult = eff.mult(lv), el = eff.element || 'neutro', col = ELEMENTS[el].color;
   const R = (eff.radius || 0) * TM;
   const center = sk.target === 'selfAoe' ? { x: S.pos.x, z: S.pos.z } : sk.target === 'ground' ? a.pt : { x: a.m.x, z: a.m.z };
-  const inRadius = (c, r) => S.monsters.filter(m => !m.dead && Math.hypot(m.x - c.x, m.z - c.z) <= r + m.radius);
+  const inRadius = (c, r) => [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])].filter(m => !m.dead && Math.hypot(m.x - c.x, m.z - c.z) <= r + m.radius); // P-002: na Arena a área também pega os rivais (nunca você)
   const hitOne = m => {
     if (!m || m.dead) return;
     const res = eff.dmg === 'magic' ? rollMagic(p, m, mult, el) : rollPhys(p, m, mult, el, { hitBonus: eff.hitBonus ? eff.hitBonus(lv) : 0, ignoreDef: eff.ignoreDef, autoCrit: eff.autoCrit, flat: eff.flat ? eff.flat(lv, p) : 0 });
     hurtMonster(m, res, el);
-    if (eff.status && !m.dead && !res.miss && Math.random() < eff.status.chance(lv)) {
+    if (eff.status && !m.isRival && !m.dead && !res.miss && Math.random() < eff.status.chance(lv)) { // status em rival ficaria só na sua tela (o servidor não conhece): fica de fora na Arena
       const s = eff.status;
       if (s.type === 'poison') m.status.poison = { until: S.time + s.dur / 1000, dmg: Math.max(2, p.d.atk * 0.15), next: S.time + 1 };
       else m.status[s.type] = S.time + (m.def.boss ? s.dur / 3000 : s.dur / 1000);
@@ -2521,6 +2541,48 @@ function floatAt(pos, text, color, h = 2, big = false) {
   const el = document.createElement('div'); el.className = 'float3d' + (big ? ' big' : ''); el.textContent = text; el.style.color = color;
   $('plates').appendChild(el);
   S.floaters.push({ el, pos: new THREE.Vector3(pos.x + (Math.random() - 0.5) * 0.5, pos.y + h, pos.z), t0: S.time });
+}
+/* S-307: NPCs notam o jogador (estilo Skyrim). Perto (< 6 m) e na frente deles, a cabeça e depois o tronco viram
+   suavemente para olhar você (limites naturais: cabeça/pescoço até ~60°, tronco até ~25°; sentados só a cabeça);
+   ao chegar, um aceno de cabeça e uma saudação curta num balão que some sozinho (cada NPC repete no máximo a cada 40 s).
+   Tudo depois do mixer, nos ossos — o NPC continua no lugar e virado para o balcão/parede como foi posto. */
+const _nq1 = new THREE.Quaternion(), _nq2 = new THREE.Quaternion(), _nq3 = new THREE.Quaternion(), _nAx = new THREE.Vector3(), _nUp = new THREE.Vector3(0, 1, 0), _nV = new THREE.Vector3();
+function npcTwist(b, axis, ang) { if (!b || !ang) return; b.parent.updateWorldMatrix(true, false); b.parent.getWorldQuaternion(_nq1); _nq2.setFromAxisAngle(axis, ang); _nq3.copy(_nq1).invert().multiply(_nq2).multiply(_nq1); b.quaternion.premultiply(_nq3); b.updateWorldMatrix(false, false); }
+const NPC_HELLO = ['Olá, {n}!', 'Bom dia, {n}.', 'Que bons ventos o trazem?', 'Seja bem-vindo, viajante.', 'Ah, {n}! Tudo bem por aí?', 'Cuidado lá fora, ouvi dizer que os lobos estão inquietos.'];
+function npcGreeting(n) {
+  if (n.greet) return n.greet;
+  const t = (n.title || '').toLowerCase(), nm = (S.p && S.p.name) || 'viajante', pick = a => a[Math.floor(Math.random() * a.length)].replace('{n}', nm);
+  if (n.heals) return pick(['Que a luz do Sol te guarde, {n}.', 'Precisa de cura? Estou aqui.', 'Vá em paz, {n}.']);
+  if (/guarda|vigia|sentinela|soldado/.test(t)) return pick(['Tudo em ordem por aqui.', 'Mantenha a lâmina embainhada na cidade.', 'Olhos abertos, {n}.']);
+  if (n.shopList || /mercad|feirant|ferreir|taverne|armeir/.test(t)) return pick(['Dê uma olhada, {n}! Preço justo.', 'Tenho o que você precisa!', 'Volte sempre, {n}.']);
+  if (/mentor|mestr|sábio|sabio|ancião|anciao/.test(t)) return pick(['Ah, {n}. Pronto para aprender?', 'Toda jornada começa com um passo.', 'Seja bem-vindo, {n}.']);
+  return pick(NPC_HELLO);
+}
+function npcSay(n, text) {
+  if (n._say) npcSayEnd(n);
+  const el = document.createElement('div'); el.className = 'npc-say'; el.textContent = text; $('plates').appendChild(el); n._say = { el, t0: S.time };
+}
+function npcSayEnd(n) { if (n._say) { n._say.el.remove(); n._say = null; } }
+function npcNotice(n, dt) {
+  if (!n.root || !n.obj.visible) return;
+  const B = n._bn || (n._bn = { sp: n.root.getObjectByName('spine_03'), nk: n.root.getObjectByName('neck_01'), hd: n.root.getObjectByName('Head') }); if (!B.hd || !B.nk) return;
+  const P = S.pos, dx = P.x - n.x, dz = P.z - n.z, dist = Math.hypot(dx, dz), seated = /^Sit/.test(n.anim.name || '');
+  let rel = Math.atan2(dx, dz) - n.obj.rotation.y; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2;
+  const near = dist < 6 && Math.abs(rel) < 2.2 && !(S.p && S.p.dead) && (!S.interior === !(n.x > HALF + 100)) ? 1 : 0; // mesma sala/mundo
+  n._lk = (n._lk || 0) + (near - (n._lk || 0)) * Math.min(1, dt * (near ? 2.6 : 1.6));
+  const yawT = Math.max(-1.4, Math.min(1.4, rel)); n._ly = (n._ly ?? 0) + (yawT - (n._ly ?? 0)) * Math.min(1, dt * 4.5);
+  B.hd.getWorldPosition(_nV); const hy = _nV.y, py = (S.me ? S.me.obj.position.y : P.y) + 1.5, pitchT = Math.max(-0.35, Math.min(0.3, Math.atan2(py - hy, Math.max(0.8, dist))));
+  n._lp = (n._lp ?? 0) + (pitchT - (n._lp ?? 0)) * Math.min(1, dt * 4);
+  // aceno de cabeça ao chegar perto + saudação
+  if (near && dist < 4.2 && S.time > (n._greetT ?? -99) + 40) { n._greetT = S.time; n._nod = S.time; npcSay(n, npcGreeting(n)); }
+  const nodK = n._nod != null && S.time - n._nod < 0.9 ? Math.sin((S.time - n._nod) / 0.9 * Math.PI) * 0.22 : 0;
+  const k = n._lk, lift = seated ? 0.06 : 0.13; { // a animação parada deixa a cabeça caída (olhar de baixo para cima, "carrancudo"): ergue um pouco sempre
+    const yaw = n._ly * k, spY = seated ? 0 : Math.max(-0.42, Math.min(0.42, yaw * 0.3)), rest = yaw - spY;
+    if (k > 0.005) { npcTwist(B.sp, _nUp, spY); npcTwist(B.nk, _nUp, rest * 0.4); npcTwist(B.hd, _nUp, rest * 0.6); }
+    const fy = n.obj.rotation.y + yaw; _nAx.set(Math.cos(fy), 0, -Math.sin(fy));
+    npcTwist(B.nk, _nAx, -(n._lp * k + lift) * 0.4 + nodK * 0.35); npcTwist(B.hd, _nAx, -(n._lp * k + lift) * 0.6 + nodK * 0.65);
+  }
+  if (n._say) { const age = S.time - n._say.t0; if (age > 3.4) npcSayEnd(n); else { B.hd.getWorldPosition(_nV); _nV.y += 0.42; const s = toScreen(_nV); n._say.el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`; n._say.el.style.opacity = s.vis ? String(Math.min(1, age * 4, (3.4 - age) * 2.5)) : '0'; } }
 }
 const plateEls = new Map();
 function updatePlates() {
@@ -2822,6 +2884,7 @@ function typing() { const t = document.activeElement && document.activeElement.t
 addEventListener('keydown', e => {
   if (!S.started || typing()) return;
   const k = e.key.toLowerCase();
+  if (S.flight) { if (k === 'escape') S.flight.skip(); return; } // P-006: voando não há controle; Esc chega logo
   if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (isAdmin()) UI.toggle('admin'); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
@@ -2983,15 +3046,16 @@ function step(dt) {
   if (S.started && !S.paused && !S.menuOpen) {
     S.time += dt;
     for (let i = S.timers.length - 1; i >= 0; i--) if (S.timers[i].at <= S.time) { const t = S.timers.splice(i, 1)[0]; t.fn(); }
-    updatePlayer(dt);
-    updatePet(dt);
+    if (S.flight) S.flight.update(dt); else updatePlayer(dt); // P-006: voando, o Pégaso conduz (sem controle do jogador)
+    if (!S.flight) updatePet(dt);
     for (const m of [...S.monsters]) { // monstros longe e calmos ficam parados (o mundo grande tem muitos)
       const far = Math.hypot(m.x - S.pos.x, m.z - S.pos.z);
+      if (S.flight) { m.obj.visible = !m.dead && far < 85; continue; } // P-006: ninguém ataca quem está voando
       if (!m.dead && !m.aggro && far > 70) { m.obj.visible = far < 85; continue; } // a névoa já esconde quem está longe
       m.obj.visible = true; updateMonster(m, dt);
     }
     separateBodies();
-    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
+    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
     for (let i = S.projectiles.length - 1; i >= 0; i--) {
       const pr = S.projectiles[i], to = pr.toFn(), d = to.distanceTo(pr.mesh.position), st = pr.speed * dt;
       if (d <= st + 0.2) { scene.remove(pr.mesh); S.projectiles.splice(i, 1); pr.onHit(); }
@@ -3000,8 +3064,8 @@ function step(dt) {
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); cullGrass(camera.position.x, camera.position.z);
-    if (S.time - S.lastSave > 30) save3d();
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
   }
 }
 function draw(dt) {
@@ -3037,6 +3101,7 @@ function draw(dt) {
         camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 12));
       }
     }
+    if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
     sun.position.set(P.x + 30, P.y + 60, P.z + 18); sun.target.position.set(P.x, P.y, P.z);
     sky.position.copy(camera.position);
     // névoa por região
@@ -3514,6 +3579,7 @@ function admPois() {
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
 }
+const qaCtx = () => ({ S, placed, colliders, groundAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
 function adminRender() {
   const p = S.p; if (!p) return;
   const body = UI.body('admin'), pois = admPois();
@@ -3547,13 +3613,14 @@ function adminRender() {
         <button class="adm-chip" data-cmd="cura">❤️ Curar tudo</button><button class="adm-chip" data-cmd="lv1">⭐ +1 Nível Base</button><button class="adm-chip" data-cmd="lv5">⭐ +5 Níveis Base</button>
         <button class="adm-chip" data-cmd="job1">✦ +1 Nível Classe</button><button class="adm-chip" data-cmd="job10">✦ +10 Níveis Classe</button><button class="adm-chip" data-cmd="zeny">💰 +10.000 z</button>
         <button class="adm-chip" data-cmd="rate">📈 EXP ${CONFIG.EXP_RATE}× (trocar)</button>
-        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
+        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-qa="1">🔍 Verificar o mundo</button><button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
     </div>`;
   body.querySelector('#adm-god').onclick = () => toggleGod();
   body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => ADMIN.setClass(el.dataset.cls));
   body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
   body.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { p.look = { ...(p.look || {}), race: el.dataset.race }; buildPlayerModel(); save3d(); log(`🧬 Raça trocada: ${RACES[el.dataset.race].name}.`, 'sys'); adminRender(); });
   body.querySelectorAll('[data-barber]').forEach(el => el.onclick = () => { UI.close('admin'); showCreate3d([], { edit: true, look: normalizeLook(p.look), cls: p.cls }); });
+  body.querySelectorAll('[data-qa]').forEach(el => el.onclick = async () => { el.textContent = '🔍 Verificando…'; el.disabled = true; const rep = await runQA(qaCtx()); UI.close('admin'); showQA(rep, teleport3d); });
   body.querySelectorAll('[data-aur]').forEach(el => el.onclick = () => { cosm().auroras += 1000; log('✦ +1.000 Auroras (teste do mestre).', 'sys'); UI.markDirty(); save3d(); });
   body.querySelectorAll('[data-petset]').forEach(el => el.onclick = () => { H3.setPet(el.dataset.petset, +el.dataset.st, true); adminRender(); });
   body.querySelectorAll('[data-pet]').forEach(el => el.onclick = () => { for (let i = 0; i < 5; i++) petExpGain(petExpNext(p.pet.lv) * 2); hudDirty = true; UI.markDirty(); });
@@ -3574,6 +3641,7 @@ function questTargets(id) {
   if (ready) { const t = npcAt(q.turnIn); if (t) out.push({ ...t, kind: '?', label: `Entregar: ${t.name}` }); return out; }
   for (const x of pr) { if (x.have >= x.need) continue; const o = x.o;
     if (o.talk) { const t = npcAt(o.talk); if (t) out.push({ ...t, kind: '!', label: `Falar com ${t.name}` }); }
+    if (o.goto) out.push({ x: o.mapX ?? o.x, z: o.mapZ ?? o.z, kind: '📍', label: `Ir até ${o.label || o.goto}` }); // P-008
     const mons = o.kill ? [o.kill] : o.collect ? Object.keys(MONSTERS).filter(mid => (MONSTERS[mid].drops || []).some(d => d[0] === o.collect)) : [];
     const zones = new Set(); for (const [zid, mid] of SPAWNS) if (mons.includes(mid)) zones.add(zid);
     for (const zid of zones) { const zp = zonePos(zid); if (zp) out.push({ ...zp, kind: '⚔', label: `${o.kill ? MONSTERS[o.kill].name : ITEMS[o.collect].name} · ${zp.name}` }); }
@@ -3624,7 +3692,7 @@ function drawAdmMap(cv, clean) { // clean (S-232): no Painel do Mestre só o map
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
-  window.__S3 = S; window.__api = { groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  window.__S3 = S; window.__api = { qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();

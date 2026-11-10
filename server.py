@@ -66,6 +66,35 @@ def arena_tick():
             arena_event('voltou', who=p.get('name'), id=pid)
 
 
+HEAL_SOURCES = ('cura', 'pocao', 'habilidade', 'regen')
+HEAL_ONE = 0.6      # uma cura sozinha vale no máximo 60% do HP máximo
+HEAL_WINDOW = 10.0  # e, somando tudo, no máximo 150% do HP máximo a cada 10 s (contra trapaça)
+HEAL_BUDGET = 1.5
+
+
+def arena_heal(pid, p, amount, src):
+    """P-002: o servidor decide quanto da cura vale (o HP é dele); devolve o quanto curou de fato."""
+    if not p or p['dead']:
+        return 0
+    try:
+        amount = int(amount)
+    except (TypeError, ValueError):
+        return 0
+    mx = int(p.get('maxHp') or 100)
+    if amount <= 0:
+        return 0
+    now = time.time()
+    log = [h for h in p.get('heals', []) if now - h[0] < HEAL_WINDOW]
+    used = sum(h[1] for h in log)
+    allowed = max(0, min(amount, int(mx * HEAL_ONE), int(mx * HEAL_BUDGET) - used, mx - p['hp']))
+    if allowed > 0:
+        p['hp'] += allowed
+        log.append((now, allowed))
+        arena_event('cura', to=pid, amt=allowed, src=src if src in HEAL_SOURCES else 'cura')
+    p['heals'] = log
+    return allowed
+
+
 def arena_view(pid, since):
     me = ARENA['players'].get(pid)
     others = [{'id': k, **{f: v.get(f) for f in ARENA_FIELDS}, 'hp': v['hp'], 'dead': v['dead'], 'kills': v['kills'], 'deaths': v['deaths']}
@@ -320,7 +349,13 @@ class Handler(SimpleHTTPRequestHandler):
                         p[f] = data[f]
                 p['seen'] = time.time()
                 p['hp'] = min(p['hp'], int(p.get('maxHp') or 100))
+                if data.get('heal'):  # cura feita no cliente desde o último sync (poção, habilidade, regeneração)
+                    arena_heal(pid, p, data.get('heal'), str(data.get('healSrc') or 'cura')[:12])
                 return self.send_json(200, arena_view(pid, int(data.get('since') or 0)))
+            if path == '/api/arena/heal':
+                p = P.get(pid)
+                got = arena_heal(pid, p, data.get('amount'), str(data.get('src') or 'cura')[:12])
+                return self.send_json(200, {'ok': got > 0, 'healed': got, 'hp': p['hp'] if p else 0})
             if path == '/api/arena/hit':
                 a, t = P.get(pid), P.get(str(data.get('to')))
                 if not a or not t or a['dead'] or t['dead']:

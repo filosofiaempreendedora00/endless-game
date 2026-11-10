@@ -13,8 +13,9 @@
       "S-053",
       "S-055"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:25:28"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:25:28",
+    "resposta": "Espantalho (roupa remendada, cabeça de saco, palha e forcado, anda aos trancos), Golem de Musgo (pedras lascadas com musgo e flores, pisa pesado e desmorona) e Guardião Ancestral (pedra com bronze e runas, espadão e escudo) ganharam corpo próprio, com andar, ataque e morte."
   },
   {
     "id": "P-002",
@@ -26,8 +27,9 @@
     "evidencias": [
       "S-060"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:25:13"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:25:13",
+    "resposta": "Na Arena, habilidades em área acertam os adversários (nunca você), e poções, curas e regeneração passam pelo servidor — a cura não some mais, com limite por cura e por 10 s contra trapaça."
   },
   {
     "id": "P-003",
@@ -42,8 +44,9 @@
       "S-054",
       "S-064"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:25:46"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:25:46",
+    "resposta": "Painel do Mestre → '🔍 Verificar o mundo': lista o que estiver flutuando, enterrado, em encosta íngreme, sem colisão ou com peça fora do corpo, com 'ir até lá'. Já corrigi árvores na encosta de Aelindra, a muralha de Pedraclara e os muros das ruínas (hoje: 0 problemas graves)."
   },
   {
     "id": "P-004",
@@ -56,8 +59,9 @@
       "S-002",
       "S-032"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:25:58"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:25:58",
+    "resposta": "O verificador também troca de zona, entra e sai da taverna e das Catacumbas e confirma que só uma música toca por vez e que é a certa — está tudo certo."
   },
   {
     "id": "P-005",
@@ -85,8 +89,9 @@
       "S-076",
       "S-015"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:26:14"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:26:14",
+    "resposta": "Voo de verdade: você sobe no Pégaso, decola e sobrevoa o mundo por cima das serras (dá para ver os Colossos), com vento, câmera atrás e inclinação nas curvas, e pousa no destino; Esc ou \"Pular\" chegam logo."
   },
   {
     "id": "P-007",
@@ -100,8 +105,9 @@
       "S-037",
       "S-076"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:26:20"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:26:20",
+    "resposta": "Clima por região: neve caindo com vento no Vale da Geada, rajadas de areia e véus de poeira nas Dunas e névoa baixa entre os Colossos, entrando e saindo suave e sumindo dentro das casas."
   },
   {
     "id": "P-008",
@@ -114,8 +120,9 @@
       "S-038",
       "S-076"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-08T17:26:51"
+    "status": "feita",
+    "respondidoEm": "2026-11-08T17:26:51",
+    "resposta": "Nova linha de missões 'A Lenda dos Que Dormem de Pé': do Ancião Teodoro à Ísis em Pedraclara, pelo coração das Dunas, o Rei de Pedra, a grande ossada e o Santuário Silente até as Catacumbas, com marcador 📍 no mapa e recompensas."
   },
   {
     "id": "P-009",

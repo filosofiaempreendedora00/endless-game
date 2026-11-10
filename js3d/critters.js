@@ -7,6 +7,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils
 import { sdfSkinnedGeometry, sdfRig, SDF_NOISE_GLSL, makeRunnerBird } from './mounts3d.js';
 import { realWolf } from './wolf3d.js';
 import { frostDragon as frostDragonV2 } from './dragon3d.js';
+import { scarecrow, mossGolem, ancientGuardian } from './golems3d.js'; // P-001
 
 // sombreado suave (nada de facetas quadradas)
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, flatShading: false, ...extra });
@@ -1103,6 +1104,9 @@ export function makeCritter(shape, color, boss, variant) {
     case 'ant': return giantAnt(color);
     case 'runnerbird': return wildRunner();
     case 'bat': return cryptBat(color);
+    case 'scarecrow': return scarecrow(color); // P-001: construtos com modelo próprio (golems3d.js)
+    case 'golem': return mossGolem();
+    case 'treant': return ancientGuardian(color);
     default: return slime(color);
   }
 }

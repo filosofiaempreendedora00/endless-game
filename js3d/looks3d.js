@@ -261,6 +261,59 @@ const _v = () => new THREE.Vector3();
 const CROSSBOW_FLIP = 1; // (testado) qual ponta da besta vai para a frente
 // S-128/S-130: debaixo de chapéu/elmo o cabelo não pode empurrar a peça para cima (ela ficava "flutuando"):
 // o cabelo curto some sob a peça; o comprido continua aparecendo por baixo (as pontas saem pela nuca)
+/* S-307: rosto convidativo para os NPCs. A cabeça base (Quaternius) tem pálpebra pesada, sobrancelha baixa e boca caída —
+   parecia "carrancuda". Sem morphs na malha, a expressão é esculpida nos vértices (pose de repouso): sobe e desfranze as
+   sobrancelhas (o meio sobe mais), abre um pouco a pálpebra de cima e ergue de leve os cantos da boca e as maçãs.
+   Pontos de referência medidos na própria malha (olhos), então vale para homem, mulher e anão. Cache por geometria de origem. */
+const _softCache = new Map();
+export function softenFace(root, o = {}) {
+  let head = null, eyes = null; const brows = [];
+  root.traverse(m => { if (!m.isSkinnedMesh) return; if (/^Super[Hh]ero_/.test(m.name)) head = m; else if (m.name === 'Eyes') eyes = m; else if (/^Eyebrows/.test(m.name)) brows.push(m); });
+  if (!head || !eyes) return;
+  eyes.geometry.computeBoundingBox(); const eb = eyes.geometry.boundingBox, ey = (eb.min.y + eb.max.y) / 2, er = (eb.max.z - eb.min.z) / 2, xe = eb.max.x - er, eyeZ = eb.max.z;
+  const female = /Female/.test(head.name), my = ey - (female ? 0.072 : 0.079), K = o.k ?? 1;
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const sculpt = (mesh, fn) => {
+    const key = mesh.geometry.uuid + ':' + K; let g = _softCache.get(key);
+    if (!g) { g = mesh.geometry.clone(); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), d = fn(x, y, z); if (d) P.setXYZ(i, x + d[0] * K, y + d[1] * K, z + d[2] * K); } P.needsUpdate = true; g.computeBoundingSphere(); _softCache.set(key, g); _softCache.set(g.uuid + ':' + K, g); }
+    mesh.geometry = g;
+  };
+  sculpt(head, (x, y, z) => {
+    if (z < 0.02 || y < my - 0.04 || y > ey + 0.06 || Math.abs(x) > 0.08) return null;
+    let dx = 0, dy = 0, dz = 0;
+    // testa/sobrancelha: sobe (o meio mais — desfranze)
+    const wb = sm(ey + 0.004, ey + 0.02, y) * (1 - sm(ey + 0.03, ey + 0.05, y)) * (1 - sm(0.05, 0.075, Math.abs(x)));
+    dy += wb * (0.0026 + 0.0022 * (1 - sm(0, 0.03, Math.abs(x))));
+    // pálpebra de cima: abre um pouco (olhar mais vivo, menos "sonolento/bravo")
+    for (const s of [-1, 1]) { const r = Math.hypot((x - s * xe) / 0.021, (y - (ey + 0.007)) / 0.0095); if (r < 1 && z > eyeZ - 0.03) { const w = (1 - r * r) ** 2; dy += 0.0017 * w; } }
+    // cantos da boca para cima e um tiquinho para trás/fora (sorriso leve, sem careta)
+    for (const s of [-1, 1]) { const r = Math.hypot((x - s * 0.022) / 0.015, (y - my) / 0.011); if (r < 1 && z > 0.05) { const w = (1 - r * r) ** 2; dy += 0.0021 * w; dz -= 0.0009 * w; dx += s * 0.0007 * w; } }
+    // maçãs do rosto sobem de leve (acompanha o sorriso)
+    for (const s of [-1, 1]) { const r = Math.hypot((x - s * 0.036) / 0.02, (y - (my + 0.032)) / 0.016); if (r < 1 && z > 0.04) dy += 0.0011 * (1 - r * r) ** 2; }
+    return dy || dx || dz ? [dx, dy, dz] : null;
+  });
+  for (const b of brows) sculpt(b, (x, y, z) => [0, 0.0032 + 0.0028 * (1 - sm(0, 0.032, Math.abs(x))), 0.0004]); // sobrancelhas relaxadas, sem "V" no meio
+}
+/* S-306: cabelo aparecendo sob o véu (risca no meio e duas mechas emoldurando a testa), feito em código sobre a cabeça */
+function veilFringe(root) {
+  // usa o próprio cabelo da personagem, "encolhido" para caber sob o véu: tudo que sairia do véu é puxado para perto da cabeça
+  // (o véu fica 2,6 cm fora da cabeça), então só aparece o cabelo da testa e das têmporas — nada atravessa o tecido
+  let hair = null, head = null; root.traverse(m => { if (!m.isSkinnedMesh) return; if (!hair && /^Hair_/.test(m.name) && !/Beard/.test(m.name)) hair = m; if (/^Super[Hh]ero_/.test(m.name)) head = m; });
+  if (!hair || !head) return;
+  const pts = sampleBody(root, ['Head'], /SuperHero/i); if (!pts.length) return;
+  const bb = new THREE.Box3(); for (const q of pts) bb.expandByPoint(q);
+  const top = bb.max.y, c = new THREE.Vector3((bb.min.x + bb.max.x) / 2, top - 0.095, (bb.min.z + bb.max.z) / 2);
+  let R = 0; for (const q of pts) if (q.y > c.y - 0.02) R = Math.max(R, q.distanceTo(c)); R += 0.009;
+  const g = hair.geometry.clone(), P = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < P.count; i++) {
+    v.set(P.getX(i), P.getY(i), P.getZ(i));
+    if (v.y < c.y - 0.05) v.y = c.y - 0.05 + (v.y - (c.y - 0.05)) * 0.08; // mechas compridas sobem para dentro do véu
+    const d = v.clone().sub(c), L = d.length(); if (L > R) v.copy(c).add(d.multiplyScalar(R / L));
+    P.setXYZ(i, v.x, v.y, v.z);
+  }
+  P.needsUpdate = true; g.computeBoundingSphere();
+  hair.geometry = g; hair.visible = true;
+}
 export function hairUnderHat(root, tight = false) {
   root.traverse(o => { if (o.isSkinnedMesh && /^Hair_/.test(o.name) && !/Beard/.test(o.name) && (tight || !/Long/.test(o.name))) o.visible = false; });
 }
@@ -1634,6 +1687,7 @@ function habit(root) {
   const crown = new THREE.Mesh(new THREE.SphereGeometry(0.06, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2), ivory); crown.position.set(hd.x, ht - 0.005, hd.z - 0.015); crown.scale.set(1.45, 0.45, 1.6); pinToBone(root, 'Head', crown);
   const circ = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.005, 8, 48), gold); circ.rotation.x = Math.PI / 2 - 0.28; circ.scale.set(1, 1.12, 1); circ.position.set(hd.x, ht - 0.07, hd.z + 0.01); pinToBone(root, 'Head', circ);
   hairUnderHat(root, true);
+  veilFringe(root); // S-306: nada de careca — o cabelo aparece sob o véu
   // cordão dourado na cintura com borla, livro de orações pendurado no quadril e medalhão do sol no peito
   const cord = new THREE.Mesh(new THREE.TorusGeometry(0.178, 0.009, 8, 48), gold); cord.rotation.x = Math.PI / 2; cord.scale.set(1, 0.8, 1); cord.position.set(pv.x, pv.y + 0.1, pv.z + 0.01); pinToBone(root, 'pelvis', cord);
   const sideX = pv.x + 0.17, book = new THREE.Group();

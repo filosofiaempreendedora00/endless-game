@@ -2,27 +2,21 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (3)
+## Pendentes (2)
 
-### S-306 · Área do mapa: Área da tela (206×331 px)
-- **Status:** pendente · **Quando:** 2026-11-09T22:59:39 · **Mapa:** Vila de Alvorada (tile [-77, 27])
+### S-309 · Área do mapa: Área da tela (286×312 px)
+- **Status:** pendente · **Quando:** 2026-11-09T23:47:37 · **Mapa:** Vila de Alvorada (tile [-68, 32])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Ok salvo bugs simples de elementos entrando dentro da roupa que precisam ser corrigidos porém o que eu preciso que melhore é o semblante dela pois o rosto está muito maléfico e carrancudo quando Na verdade uma irmã Clara precisava ter um rosto doce e meigo e também ela não pode ser careca Como está atualmente
-- ![print](img/S-306.png)
+- **Sugestão:** Quando o meu personagem estiver com catarro na mão e sendo selecionado o botão esquerdo do meu mouse e ele fique atacando e se movendo para o lado com w a s d eu não quero que os braços dos do meu boneco fiquem totalmente se abrindo por completo parecendo que eu sou um boneco de posto e sim as animações de ataque continuam enquanto eu vou fazendo meio que um slide em volta do meu inimigo sem que essas animações de ataques sejam quebradas por algo totalmente esquisito esteticamente e também peço que a essência dessa minha sugestão extrapole para outras situações de personagens caso essa situação não seja exclusiva hoje do personagem que utiliza a katar
+- ![print](img/S-309.png)
 
-### S-307 · Área do mapa: Área da tela (79×123 px)
-- **Status:** pendente · **Quando:** 2026-11-09T23:00:39 · **Mapa:** Vila de Alvorada (tile [-78, 14])
+### S-310 · Área do mapa: Área da tela (163×139 px)
+- **Status:** pendente · **Quando:** 2026-11-09T23:59:05 · **Mapa:** Bosque Sussurrante (tile [117, 7])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** rosto tambem ficou muito grosseiro e carrancudo, inha que ser mais convidativo e humano. Animacoes de quando alguem chega perto tbm seriam interessantes. Estilo skyrim. Mas isso alido pra todos npcs. Algo inspirado realmente no skyrim. Criar um bom padrao nao bugado
-- ![print](img/S-307.png)
+- **Sugestão:** bugou demais ele aqu pra la e pra ca travadao
+- ![print](img/S-310.png)
 
-### S-308 · Área do mapa: Área da tela (331×198 px)
-- **Status:** pendente · **Quando:** 2026-11-09T23:02:30 · **Mapa:** Vila de Alvorada (tile [-33, 26])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Já vi que mudou consideravelmente este Pegasus porém eu gostaria que ele fosse ainda mais realista com olhos mais vivos e reais assim como o focinho e a parte da Boca e as pernas ainda ficaram esquisitas e esse rabo está muito duro e não realista seria realmente interessante chegar mais próximo da figura de um cavalo aqui porém Claro Mantendo as asas como estão e em resumo fosse mais realista
-- ![print](img/S-308.png)
-
-## Feitas (305)
+## Feitas (308)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2168,3 +2162,24 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Eu gostaria de tornar a distância da Hit Box mais realista pois sendo sincero dessa distância não era para o boneco receber nenhum golpe então na prática eu preciso de estar um pouco mais Mili para que o meu golpe seja acertado e eu também não gostaria de que fosse revezando entre golpe de espada e soco e sim apenas golpes de espada podendo sim ter duas animações diferentes e aleatórias mas não o suco e aproveitando eu gostaria de criar a funcionalidade na qual se eu estivesse distante de um alvo e segurança o botão esquerdo automaticamente o meu boneco seria movido até o monstro ou algo claro isso falando em heróis Miss mas também sendo válidos para heróis em gente porém claro que os heróis Rangers ficariam a distância do seu Range e não se tornaria MELEES
 - ![print](img/S-305.png)
 - **Resposta do Claude:** O golpe corpo a corpo agora só acerta quando a arma alcança o corpo do alvo (raio do monstro + seu corpo + comprimento da arma: adaga/katar curtas, espada média, lança longa). Com espada, machado, maça ou lança é só golpe de arma, sem soco, alternando dois ritmos de talho. E segurando o botão esquerdo num monstro longe, o boneco corre sozinho até ele e começa a bater; arqueiros e magos param na distância do próprio alcance.
+
+### S-306 · Área do mapa: Área da tela (206×331 px)
+- **Status:** feito · **Quando:** 2026-11-09T22:59:39 · **Mapa:** Vila de Alvorada (tile [-77, 27])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Ok salvo bugs simples de elementos entrando dentro da roupa que precisam ser corrigidos porém o que eu preciso que melhore é o semblante dela pois o rosto está muito maléfico e carrancudo quando Na verdade uma irmã Clara precisava ter um rosto doce e meigo e também ela não pode ser careca Como está atualmente
+- ![print](img/S-306.png)
+- **Resposta do Claude:** A Irmã Clara (e a Irmã Mirela) ganhou rosto doce: sobrancelhas relaxadas, olhar mais aberto e um leve sorriso. E não está mais careca: o cabelo aparece repartido na testa, por baixo do véu, sem atravessar o tecido.
+
+### S-307 · Área do mapa: Área da tela (79×123 px)
+- **Status:** feito · **Quando:** 2026-11-09T23:00:39 · **Mapa:** Vila de Alvorada (tile [-78, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** rosto tambem ficou muito grosseiro e carrancudo, inha que ser mais convidativo e humano. Animacoes de quando alguem chega perto tbm seriam interessantes. Estilo skyrim. Mas isso alido pra todos npcs. Algo inspirado realmente no skyrim. Criar um bom padrao nao bugado
+- ![print](img/S-307.png)
+- **Resposta do Claude:** Todos os NPCs ficaram com rosto mais convidativo (sobrancelhas desfranzidas, olhos mais abertos, sorriso leve; anões fortes, mas simpáticos). E reagem como no Skyrim: quando você chega perto viram a cabeça e o tronco para te olhar, acenam e dizem uma saudação curta num balão, cada um do seu jeito; quando você se afasta, voltam ao normal.
+
+### S-308 · Área do mapa: Área da tela (331×198 px)
+- **Status:** feito · **Quando:** 2026-11-09T23:02:30 · **Mapa:** Vila de Alvorada (tile [-33, 26])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Já vi que mudou consideravelmente este Pegasus porém eu gostaria que ele fosse ainda mais realista com olhos mais vivos e reais assim como o focinho e a parte da Boca e as pernas ainda ficaram esquisitas e esse rabo está muito duro e não realista seria realmente interessante chegar mais próximo da figura de um cavalo aqui porém Claro Mantendo as asas como estão e em resumo fosse mais realista
+- ![print](img/S-308.png)
+- **Resposta do Claude:** O Pégaso ficou bem mais próximo de um cavalo de verdade, com as mesmas asas: olhos escuros e úmidos que piscam e olham em volta, beiços macios, narinas que abrem ao respirar e mastigar parado, pernas finas com joelho, jarrete, boleto e casco de verdade dobrando certo, e a cauda solta caindo pelo peso e balançando com atraso. Os cavalos ganharam as mesmas melhorias.

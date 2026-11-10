@@ -14950,9 +14950,10 @@
       "sp": "14/14"
     },
     "id": "S-306",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-09T22:59:39",
-    "imagem": "img/S-306.png"
+    "imagem": "img/S-306.png",
+    "resposta": "A Irmã Clara (e a Irmã Mirela) ganhou rosto doce: sobrancelhas relaxadas, olhar mais aberto e um leve sorriso. E não está mais careca: o cabelo aparece repartido na testa, por baixo do véu, sem atravessar o tecido."
   },
   {
     "texto": "rosto tambem ficou muito grosseiro e carrancudo, inha que ser mais convidativo e humano. Animacoes de quando alguem chega perto tbm seriam interessantes. Estilo skyrim. Mas isso alido pra todos npcs. Algo inspirado realmente no skyrim. Criar um bom padrao nao bugado",
@@ -14994,9 +14995,10 @@
       "sp": "14/14"
     },
     "id": "S-307",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-09T23:00:39",
-    "imagem": "img/S-307.png"
+    "imagem": "img/S-307.png",
+    "resposta": "Todos os NPCs ficaram com rosto mais convidativo (sobrancelhas desfranzidas, olhos mais abertos, sorriso leve; anões fortes, mas simpáticos). E reagem como no Skyrim: quando você chega perto viram a cabeça e o tronco para te olhar, acenam e dizem uma saudação curta num balão, cada um do seu jeito; quando você se afasta, voltam ao normal."
   },
   {
     "texto": "Já vi que mudou consideravelmente este Pegasus porém eu gostaria que ele fosse ainda mais realista com olhos mais vivos e reais assim como o focinho e a parte da Boca e as pernas ainda ficaram esquisitas e esse rabo está muito duro e não realista seria realmente interessante chegar mais próximo da figura de um cavalo aqui porém Claro Mantendo as asas como estão e em resumo fosse mais realista",
@@ -15038,8 +15040,101 @@
       "sp": "14/14"
     },
     "id": "S-308",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-09T23:02:30",
-    "imagem": "img/S-308.png"
+    "imagem": "img/S-308.png",
+    "resposta": "O Pégaso ficou bem mais próximo de um cavalo de verdade, com as mesmas asas: olhos escuros e úmidos que piscam e olham em volta, beiços macios, narinas que abrem ao respirar e mastigar parado, pernas finas com joelho, jarrete, boleto e casco de verdade dobrando certo, e a cauda solta caindo pelo peso e balançando com atraso. Os cavalos ganharam as mesmas melhorias."
+  },
+  {
+    "texto": "Quando o meu personagem estiver com catarro na mão e sendo selecionado o botão esquerdo do meu mouse e ele fique atacando e se movendo para o lado com w a s d eu não quero que os braços dos do meu boneco fiquem totalmente se abrindo por completo parecendo que eu sou um boneco de posto e sim as animações de ataque continuam enquanto eu vou fazendo meio que um slide em volta do meu inimigo sem que essas animações de ataques sejam quebradas por algo totalmente esquisito esteticamente e também peço que a essência dessa minha sugestão extrapole para outras situações de personagens caso essa situação não seja exclusiva hoje do personagem que utiliza a katar",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (286×312 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Executor Katar (Executor)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -68,
+        32
+      ],
+      "pos": [
+        -68,
+        32
+      ]
+    },
+    "jogador": {
+      "nome": "Executor Katar",
+      "classe": "Executor",
+      "nivelBase": 50,
+      "nivelClasse": 30,
+      "hp": "160/1631",
+      "sp": "26/239"
+    },
+    "id": "S-309",
+    "status": "pendente",
+    "criadoEm": "2026-11-09T23:47:37",
+    "imagem": "img/S-309.png"
+  },
+  {
+    "texto": "bugou demais ele aqu pra la e pra ca travadao",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (163×139 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Lobo Cinzento": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Lobo Cinzento",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:floresta",
+      "nome": "Bosque Sussurrante",
+      "tile": [
+        117,
+        7
+      ],
+      "pos": [
+        117,
+        7
+      ]
+    },
+    "jogador": {
+      "nome": "Executor Katar",
+      "classe": "Executor",
+      "nivelBase": 50,
+      "nivelClasse": 30,
+      "hp": "1631/1631",
+      "sp": "239/239"
+    },
+    "id": "S-310",
+    "status": "pendente",
+    "criadoEm": "2026-11-09T23:59:05",
+    "imagem": "img/S-310.png"
   }
 ]

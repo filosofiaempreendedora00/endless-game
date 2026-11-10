@@ -604,7 +604,7 @@ function buildElfCity(ctx) {
   // lanternas pela clareira e árvores comuns (bosque em volta)
   { const K = new Kit(); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 + 0.2, rr = 15 + (k % 2) * 4; elfLantern(K, Math.cos(a) * rr, gY(C.x + Math.cos(a) * rr, C.z + Math.sin(a) * rr) - gY(C.x, C.z), Math.sin(a) * rr, -a); } put(ctx, K, 'lanterna_elfica', C.x, C.z, 0, { occ: false }); }
   for (const [dx, dz] of [[10, 12], [-12, -14]]) { const L = vlight('#bfe6ff', 3, 14, 1.6); L.position.set(C.x + dx, gY(C.x + dx, C.z + dz) + 3, C.z + dz); ctx.scene.add(L); }
-  for (let k = 0; k < 46; k++) { const a = r() * Math.PI * 2, rr = 46 + r() * 30, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr; if (Math.abs(x - C.x) < 8 && z > C.z) continue; ctx.place((r() < 0.6 ? 'oakdark_' : 'pinedark_') + Math.floor(r() * 3), x, z, { scale: 1.1 + r() * 0.6 }); }
+  for (let k = 0; k < 46; k++) { const a = r() * Math.PI * 2, rr = 46 + r() * 30, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr; if (Math.abs(x - C.x) < 8 && z > C.z) continue; if (Math.hypot(heightAt(x + 1.2, z) - heightAt(x - 1.2, z), heightAt(x, z + 1.2) - heightAt(x, z - 1.2)) / 2.4 > 0.84) continue; /* P-003: nada de árvore na parede íngreme (> 40°) da bacia */ ctx.place((r() < 0.6 ? 'oakdark_' : 'pinedark_') + Math.floor(r() * 3), x, z, { scale: 1.1 + r() * 0.6 }); }
   for (const sx of [-1, 1]) { const b = makeBanner('elfo', 1.2, 3.4); b.position.set(C.x + sx * 6.5, gY(C.x, C.z + 42) + 6.5, C.z + 42.4); ctx.scene.add(b); }
   // NPCs: elfos (quase todos)
   const W = (n, dx, dz, yaw) => ctx.worldNpc(n, C.x + dx, C.z + dz, yaw);
