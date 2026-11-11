@@ -17,6 +17,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
+import { sdfSkinnedGeometry, sdfRig, SDF_NOISE_GLSL } from './mounts3d.js'; // S-330: raposa no mesmo método do lobo (malha contínua com esqueleto)
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...extra });
@@ -169,7 +170,399 @@ function makeGait(legLen, opt = {}) {
 const PET_VMAX = 7.5;
 
 /* =========================================================================
-   Faísca → Labareda → Solaris (raposa de fogo) — S-112, S-143, S-144
+   S-330: RAPOSA REALISTA (Faísca → Labareda → Solaris), no método do lobo (wolf3d.js)
+   - Corpo: UMA malha contínua (campo de distância + pele presa a ossos): patas finas e longas,
+     digitígradas, punho e jarrete marcados, almofadas e dedos; focinho fino e comprido; bochechas.
+   - Pelagem: cor pintada no material (ferrugem com dorso mais escuro e mesclado, barriga/garganta/
+     metade de baixo do rosto brancas, meias pretas, lábios e "lágrima" pretos) + camadas de pelo presas
+     ao esqueleto (colar e bochechas longos, focinho e patas curtos).
+   - Orelhas de verdade: grandes, finas, em concha, costas pretas e pelo claro por dentro; viram sozinhas.
+   - Rosto: olhos amendoados âmbar com pupila vertical, pálpebras, bigodes; expressões (calma, curiosa,
+     alerta, feliz). Cauda(s) à parte, volumosas, ponta branca, com física e o fogo do estágio na ponta.
+   - Andar: passo/trote/galope pela velocidade real, patas por IK (a pata de apoio fica no chão).
+   ========================================================================= */
+const fxLen = (x, y, z) => Math.sqrt(x * x + y * y + z * z);
+function fxCaps(px, py, pz, P) { const [ax, ay, az] = P.a, [bx, by, bz] = P.b, bax = bx - ax, bay = by - ay, baz = bz - az, pax = px - ax, pay = py - ay, paz = pz - az; const t = Math.max(0, Math.min(1, (pax * bax + pay * bay + paz * baz) / (bax * bax + bay * bay + baz * baz))); return fxLen(pax - bax * t, pay - bay * t, paz - baz * t) - (P.r0 + (P.r1 - P.r0) * t); }
+function fxEll(px, py, pz, P) { const [cx, cy, cz] = P.c, [rx, ry, rz] = P.r, x = px - cx, y = py - cy, z = pz - cz; const k0 = fxLen(x / rx, y / ry, z / rz), k1 = fxLen(x / (rx * rx), y / (ry * ry), z / (rz * rz)); return k1 > 1e-9 ? k0 * (k0 - 1) / k1 : -Math.min(rx, ry, rz); }
+const fxPrim = (x, y, z, P) => (P.a ? fxCaps(x, y, z, P) : fxEll(x, y, z, P));
+function fxSmin(a, b, k) { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; }
+const fxField = (parts, x, y, z) => { let d = 0.25; for (const P of parts) d = fxSmin(d, fxPrim(x, y, z, P), P.k); return d; };
+function fxSurface(parts, o, dir) { const l = fxLen(...dir), d = dir.map(v => v / l); let t = 0; for (; t < 0.3; t += 0.001) if (fxField(parts, o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t) > 0) break; return [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t]; }
+// esqueleto (metros, frente = +z, chão = 0; raposa-vermelha ~0,4 m na cernelha)
+const FB = { root: [null, [0, 0, 0]], hips: ['root', [0, 0.408, -0.192]], chest: ['hips', [0, 0.42, 0.108]], neck: ['chest', [0, 0.456, 0.216]], head: ['neck', [0, 0.54, 0.36]], jaw: ['head', [0, 0.5136, 0.402]], tail: ['hips', [0, 0.4, -0.31]] };
+for (const s of [-1, 1]) Object.assign(FB, {
+  ['ear' + s]: ['head', [s * 0.03, 0.585, 0.362]],
+  ['up' + s]: ['chest', [s * 0.058, 0.372, 0.162]], ['fo' + s]: ['up' + s, [s * 0.055, 0.249, 0.123]], ['pa' + s]: ['fo' + s, [s * 0.052, 0.078, 0.157]],
+  ['th' + s]: ['hips', [s * 0.06, 0.381, -0.252]], ['sh' + s]: ['th' + s, [s * 0.06, 0.264, -0.18]], ['mt' + s]: ['sh' + s, [s * 0.057, 0.12, -0.303]],
+});
+const FX_FOOT = { f: [0.018, 0.183], h: [0.018, -0.2688] };
+function foxParts() {
+  const P = [], C = (a, b, r0, r1, bone, k = 0.035) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.035) => P.push({ c, r, bone, k });
+  // tronco esguio: peito fundo e estreito, cernelha, cintura fina, garupa
+  E([0, 0.362, 0.126], [0.06, 0.105, 0.105], 'chest', 0.045);
+  C([0, 0.405, 0.15], [0, 0.411, -0.03], 0.08, 0.074, 'chest', 0.045);
+  E([0, 0.452, 0.112], [0.056, 0.044, 0.09], 'chest', 0.045);
+  C([0, 0.411, -0.03], [0, 0.412, -0.18], 0.07, 0.066, 'hips', 0.045);
+  E([0, 0.37, -0.08], [0.048, 0.036, 0.1], 'hips', 0.055);
+  E([0, 0.4, -0.24], [0.064, 0.07, 0.085], 'hips', 0.045);
+  // pescoço fino com colar de pelo e peito
+  C([0, 0.432, 0.18], [0, 0.516, 0.33], 0.054, 0.038, 'neck', 0.045);
+  E([0, 0.468, 0.236], [0.066, 0.08, 0.078], 'neck', 0.055);
+  E([0, 0.39, 0.21], [0.048, 0.062, 0.048], 'chest', 0.045);
+  // cabeça: crânio redondo, testa, focinho fino e comprido, ponta do nariz, mandíbula (osso próprio)
+  E([0, 0.553, 0.37], [0.05, 0.045, 0.055], 'head', 0.028);
+  E([0, 0.566, 0.404], [0.03, 0.024, 0.032], 'head', 0.022);
+  C([0, 0.541, 0.41], [0, 0.527, 0.508], 0.026, 0.0135, 'head', 0.026);
+  E([0, 0.534, 0.452], [0.024, 0.024, 0.044], 'head', 0.028);
+  E([0, 0.528, 0.515], [0.011, 0.0095, 0.009], 'head', 0.012);
+  C([0, 0.512, 0.39], [0, 0.512, 0.5], 0.02, 0.0095, 'jaw', 0.009);
+  for (const s of [-1, 1]) {
+    E([s * 0.04, 0.527, 0.358], [0.036, 0.037, 0.04], 'head', 0.03); // bochechas de pelo
+    // pata da frente: escápula, braço até o cotovelo, antebraço fino, punho, metacarpo, pata e dedos
+    E([s * 0.058, 0.372, 0.156], [0.028, 0.07, 0.052], 'up' + s, 0.04);
+    C([s * 0.058, 0.348, 0.162], [s * 0.055, 0.252, 0.126], 0.03, 0.02, 'up' + s, 0.03);
+    E([s * 0.055, 0.245, 0.115], [0.016, 0.019, 0.018], 'up' + s, 0.018);
+    C([s * 0.055, 0.249, 0.132], [s * 0.052, 0.084, 0.157], 0.017, 0.0105, 'fo' + s, 0.024);
+    E([s * 0.054, 0.2, 0.139], [0.016, 0.04, 0.018], 'fo' + s, 0.03);
+    E([s * 0.052, 0.078, 0.157], [0.0125, 0.015, 0.0135], 'pa' + s, 0.014);
+    C([s * 0.052, 0.078, 0.157], [s * 0.052, 0.026, 0.175], 0.0105, 0.0125, 'pa' + s, 0.014);
+    E([s * 0.052, 0.017, 0.184], [0.018, 0.0135, 0.025], 'pa' + s, 0.018);
+    for (let q = 0; q < 4; q++) E([s * 0.052 + (q - 1.5) * 0.0098, 0.012, 0.203 + (Math.abs(q - 1.5) < 1 ? 0.005 : 0)], [0.0072, 0.0085, 0.0095], 'pa' + s, 0.007);
+    // pata de trás: coxa, joelho à frente, perna fina até o jarrete alto, metatarso, pata e dedos
+    E([s * 0.06, 0.36, -0.252], [0.04, 0.085, 0.07], 'th' + s, 0.045);
+    C([s * 0.06, 0.372, -0.252], [s * 0.06, 0.264, -0.18], 0.05, 0.026, 'th' + s, 0.035);
+    C([s * 0.058, 0.264, -0.186], [s * 0.057, 0.12, -0.303], 0.022, 0.0115, 'sh' + s, 0.024);
+    E([s * 0.058, 0.222, -0.228], [0.019, 0.042, 0.024], 'sh' + s, 0.03);
+    E([s * 0.057, 0.12, -0.313], [0.011, 0.016, 0.015], 'mt' + s, 0.012);
+    C([s * 0.057, 0.12, -0.303], [s * 0.057, 0.026, -0.275], 0.012, 0.012, 'mt' + s, 0.014);
+    E([s * 0.057, 0.017, -0.267], [0.017, 0.0135, 0.024], 'mt' + s, 0.018);
+    for (let q = 0; q < 4; q++) E([s * 0.057 + (q - 1.5) * 0.0095, 0.012, -0.247 + (Math.abs(q - 1.5) < 1 ? 0.005 : 0)], [0.0068, 0.008, 0.009], 'mt' + s, 0.007);
+  }
+  C([0, 0.405, -0.25], [0, 0.402, -0.31], 0.03, 0.022, 'hips', 0.03); // raiz da cauda (a cauda é uma malha à parte)
+  return P;
+}
+// cauda: cadeia de 5 ossos, volumosa no meio, afinando na ponta (malha própria, uma por cauda)
+const TB = { t0: [null, [0, 0, 0]], t1: ['t0', [0, -0.004, -0.075]], t2: ['t1', [0, -0.014, -0.16]], t3: ['t2', [0, -0.032, -0.245]], t4: ['t3', [0, -0.056, -0.325]] };
+function tailParts() {
+  const P = [], C = (a, b, r0, r1, bone, k = 0.03) => P.push({ a, b, r0, r1, bone, k }), E = (c, r, bone, k = 0.03) => P.push({ c, r, bone, k });
+  C([0, 0, 0.012], [0, -0.004, -0.075], 0.017, 0.026, 't0'); C([0, -0.004, -0.075], [0, -0.014, -0.16], 0.026, 0.037, 't1');
+  C([0, -0.014, -0.16], [0, -0.032, -0.245], 0.037, 0.042, 't2'); C([0, -0.032, -0.245], [0, -0.056, -0.325], 0.042, 0.035, 't3'); C([0, -0.056, -0.325], [0, -0.074, -0.4], 0.035, 0.012, 't4', 0.025);
+  E([0, -0.03, -0.22], [0.04, 0.037, 0.1], 't2', 0.04);
+  return P;
+}
+let FOXG = null, TAILG = null, FOX_EYE = null, FOX_NOSE = null;
+function foxGeo() {
+  if (FOXG) return FOXG;
+  const P = foxParts();
+  FOXG = sdfSkinnedGeometry(P, FB, [-0.16, -0.012, -0.36], [0.32, 0.66, 0.92], 0.0085);
+  FOX_EYE = fxSurface(P, [0, 0.556, 0.385], [0.6, 0.12, 0.79]);
+  FOX_NOSE = fxSurface(P, [0, 0.531, 0.48], [0, 0, 1]);
+  TAILG = sdfSkinnedGeometry(tailParts(), TB, [-0.07, -0.13, -0.43], [0.14, 0.18, 0.47], 0.0072);
+  return FOXG;
+}
+// pelagem pintada (espaço de repouso: o desenho fica preso ao corpo) + comprimento do pelo por região
+const FOX_GLSL = `
+uniform vec3 uBase, uDark, uLight, uSock, uGold, uEye; uniform float uGoldK;
+float fHead(vec3 p){ return smoothstep(0.31, 0.35, p.z) * smoothstep(0.47, 0.5, p.y); }
+vec3 fCoat(vec3 p, vec3 n){
+  float hd = fHead(p), g = vn(p * vec3(160.0, 160.0, 70.0));
+  vec3 col = uBase;
+  col = mix(col, uDark * (0.7 + 0.6 * g), smoothstep(0.0, 0.7, n.y) * smoothstep(0.4, 0.46, p.y) * (1.0 - hd) * 0.55); // dorso mais escuro e mesclado
+  float wh = smoothstep(-0.5, -0.85, n.y) * smoothstep(0.38, 0.35, p.y) * (1.0 - hd);                                       // barriga (só por baixo)
+  wh = max(wh, smoothstep(0.045, 0.02, abs(p.x)) * smoothstep(0.17, 0.24, p.z) * smoothstep(0.5, 0.43, p.y) * (1.0 - hd)); // garganta e peito
+  wh = max(wh, hd * smoothstep(0.532, 0.522, p.y + (0.36 - p.z) * 0.02));                                                 // metade de baixo do rosto
+  wh = max(wh, hd * smoothstep(0.03, 0.045, abs(p.x)) * smoothstep(0.55, 0.53, p.y) * smoothstep(0.43, 0.38, p.z));       // bochechas
+  col = mix(col, uLight, clamp(wh, 0.0, 1.0));
+  float sock = smoothstep(0.21, 0.13, p.y) * (1.0 - hd);
+  sock = max(sock, smoothstep(0.27, 0.19, p.y) * smoothstep(0.0, 0.6, n.z) * step(0.05, p.z));                            // frente da pata dianteira, mais alta
+  col = mix(col, uSock, sock);                                                                                            // meias pretas
+  vec3 q = vec3(abs(p.x), p.y, p.z), a = uEye + vec3(-0.004, -0.005, 0.006), b = vec3(0.0135, 0.519, 0.468), ab = b - a;
+  float t = clamp(dot(q - a, ab) / dot(ab, ab), 0.0, 1.0);
+  col = mix(col, uSock, hd * smoothstep(0.0055, 0.002, length(q - a - ab * t)) * 0.75);                                   // "lágrima" escura do olho à boca
+  col = mix(col, uSock, hd * (1.0 - smoothstep(0.002, 0.0055, abs(p.y - 0.5145))) * smoothstep(0.42, 0.45, p.z) * smoothstep(0.005, 0.011, abs(p.x))); // lábios pretos
+  col = mix(col, vec3(0.03), hd * smoothstep(0.513, 0.52, p.z) * step(0.522, p.y));                                       // nariz
+  col = mix(col, vec3(0.04), hd * (1.0 - smoothstep(0.008, 0.014, length(q - uEye))));                                     // contorno dos olhos
+  col = mix(col, uGold, uGoldK * hd * smoothstep(0.012, 0.004, abs(p.x)) * smoothstep(0.555, 0.575, p.y) * smoothstep(0.43, 0.38, p.z)); // risca dourada (Solaris)
+  col = mix(col, vec3(0.05, 0.04, 0.04), smoothstep(0.012, 0.004, p.y));                                                  // almofadas
+  col = mix(col, col * vec3(0.86, 0.8, 0.78), hd * smoothstep(0.4, 0.46, p.z) * step(0.522, p.y) * (1.0 - wh));             // dorso do focinho um tom mais queimado
+  float fine = vn(vec3(p.x * 900.0, p.y * 900.0, p.z * 260.0));                                                             // pelo curto e fino (focinho, patas, testa)
+  return col * (0.9 + 0.2 * g) * (0.9 + 0.2 * fine);
+}
+float fFurLen(vec3 p){
+  float hd = fHead(p), L = 0.009;
+  L = mix(L, 0.024, smoothstep(0.16, 0.22, p.z) * (1.0 - smoothstep(0.31, 0.35, p.z)) * smoothstep(0.38, 0.44, p.y));     // colar
+  L = mix(L, 0.02, hd * smoothstep(0.03, 0.045, abs(p.x)) * smoothstep(0.55, 0.52, p.y) * (1.0 - smoothstep(0.4, 0.44, p.z))); // bochechas
+  L = mix(L, 0.016, smoothstep(-0.2, -0.26, p.z) * smoothstep(0.25, 0.32, p.y) * (1.0 - smoothstep(0.4, 0.43, p.y)));     // "calças" das coxas
+  L = mix(L, 0.014, smoothstep(0.36, 0.33, p.y) * (1.0 - hd) * step(0.2, p.y));                                           // barriga
+  L *= mix(0.22, 1.0, smoothstep(0.14, 0.24, p.y));                                                                       // patas: pelo curto
+  L *= 1.0 - 0.85 * hd * smoothstep(0.41, 0.45, p.z);                                                                     // focinho curto
+  L *= 1.0 - 0.75 * hd * smoothstep(0.55, 0.575, p.y);                                                                    // alto da cabeça: pelo bem curto
+  L *= 1.0 - 0.35 * hd;                                                                                                   // rosto todo mais curto e liso
+  L *= smoothstep(0.01, 0.02, length(vec3(abs(p.x), p.y, p.z) - uEye));                                                  // nada sobre os olhos
+  return L;
+}
+vec3 tCoat(vec3 p, vec3 n){
+  float g = vn(p * vec3(120.0, 120.0, 60.0)), tip = smoothstep(-0.33, -0.37, p.z);
+  vec3 col = mix(uBase, uDark * (0.6 + 0.8 * g), smoothstep(0.0, 0.8, n.y) * 0.5);
+  col = mix(col, uBase * 1.12, smoothstep(0.0, -0.7, n.y) * 0.4);
+  col = mix(col, uDark * 0.5, smoothstep(-0.29, -0.33, p.z) * (1.0 - tip) * 0.35);                                       // pelos de ponta preta antes da ponta branca
+  col = mix(col, uLight, tip);
+  return col * (0.88 + 0.24 * g);
+}
+float tFurLen(vec3 p){ return max(0.006, 0.034 * smoothstep(0.01, -0.07, p.z) * (1.0 - 0.6 * smoothstep(-0.38, -0.43, p.z))); }`;
+const FOX_MATS = {};
+function foxMats(stage) {
+  if (FOX_MATS[stage]) return FOX_MATS[stage];
+  const base = new THREE.Color(['#c9581f', '#bf4a17', '#d06a1c'][stage]);
+  const U = { uBase: base, uDark: base.clone().lerp(new THREE.Color('#3a1206'), 0.62), uLight: new THREE.Color('#f4ece0'), uSock: new THREE.Color('#1c1311'), uGold: new THREE.Color('#ffcf5a') };
+  const mk = (kind, f) => {
+    const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: f ? 1 : 0.92 }), COAT = kind === 'body' ? 'fCoat' : 'tCoat', LEN = kind === 'body' ? 'fFurLen' : 'tFurLen', comb = kind === 'body' ? 'vec3(0.0, -0.5, -0.86)' : 'vec3(0.0, -0.15, -1.0)';
+    m.onBeforeCompile = sh => {
+      for (const k in U) sh.uniforms[k] = { value: U[k] }; sh.uniforms.uGoldK = { value: stage === 2 ? 0.8 : 0 }; sh.uniforms.uEye = { value: new THREE.Vector3(...FOX_EYE) };
+      if (!f) {
+        sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position; vON = normal;');
+        sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON;\n' + SDF_NOISE_GLSL + FOX_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>\n diffuseColor.rgb *= ${COAT}(vOP, normalize(vON));`);
+      } else {
+        sh.uniforms.uF = { value: f };
+        sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + FOX_GLSL + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+          vOP = position; vON = normal; float h = ${LEN}(position) * uF;
+          transformed += normal * h + ${comb} * h * uF * 0.9;`);
+        sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + FOX_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+          float L = ${LEN}(vOP);
+          { // fios finos e redondos que afinam até a ponta (num plano escolhido pela normal: sem quadrados nem anéis)
+            vec3 an = abs(normalize(vON)); vec2 qq; float ax;
+            if (an.x > an.y && an.x > an.z) { qq = vOP.yz; ax = 1.0; } else if (an.y > an.z) { qq = vOP.zx; ax = 2.0; } else { qq = vOP.xy; ax = 3.0; }
+            qq = qq * 430.0 + vec2(0.37, 0.71) * ax; vec2 cc = floor(qq);
+            float hh = fract(sin(dot(cc, vec2(12.9898, 78.233)) + ax * 3.7) * 43758.5453);
+            vec2 fr = fract(qq) - 0.5 - (vec2(fract(hh * 91.7), fract(hh * 57.3)) - 0.5) * 0.45;
+            float th = (1.0 - uF * (0.78 + 0.18 * hh)) * (0.5 + 0.2 * hh);
+            if (L < 0.002 || length(fr) > th) discard;
+            diffuseColor.rgb *= ${COAT}(vOP, normalize(vON)) * mix(0.72, 1.08, uF) * (0.94 + 0.12 * hh);
+          }`);
+      }
+    };
+    m.customProgramCacheKey = () => 'fox-' + kind + '-' + f + '-' + stage;
+    return m;
+  };
+  const NL = 7, shellsOf = kind => Array.from({ length: NL }, (_, i) => mk(kind, (i + 1) / NL));
+  return (FOX_MATS[stage] = { body: mk('body', 0), tail: mk('tail', 0), bodyShells: shellsOf('body'), tailShells: shellsOf('tail') });
+}
+// orelha: lâmina fina em concha (frente creme com pelos, bordas ferrugem, costas e ponta pretas), duas faces + borda
+let EAR_G = null;
+function foxEarGeo() {
+  if (EAR_G) return EAR_G;
+  const NU = 16, NV = 10, Hh = 0.08, W = 0.052, cream = new THREE.Color('#efe3cf'), rust = new THREE.Color('#b8501c'), black = new THREE.Color('#17100d');
+  const wid = u => W * Math.pow(1 - u, 0.85) * (1 + 0.2 * Math.sin(Math.PI * u)) + 0.0015;
+  const cup = (u, v) => -0.017 * (1 - v * v) * Math.pow(Math.sin(Math.PI * Math.min(1, u * 1.1 + 0.06)), 0.65) - 0.004 * u * u;
+  const lay = k => { const pos = [], col = [], c = new THREE.Color();
+    for (let i = 0; i <= NU; i++) for (let j = 0; j <= NV; j++) {
+      const u = i / NU, v = j / NV * 2 - 1, w = wid(u) * (k ? 1.05 : 1);
+      pos.push(v * w / 2, u * Hh * (k ? 1.01 : 1), cup(u, v) - (k ? 0.0032 + 0.0015 * (1 - u) : 0));
+      if (!k) c.copy(cream).lerp(rust, ss(0.55, 0.95, Math.abs(v))).lerp(rust, ss(0.18, 0.0, u) * 0.7).lerp(black, ss(0.8, 0.95, u) * 0.85);
+      else c.copy(rust).lerp(black, ss(0.2, 0.4, u));
+      col.push(c.r, c.g, c.b);
+    }
+    return { pos, col }; };
+  const F = lay(0), B = lay(1), n = (NU + 1) * (NV + 1), id = (i, j) => i * (NV + 1) + j, fIdx = [], all = [];
+  for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) { const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1); fIdx.push(a, d, c, a, c, b); all.push(a, d, c, a, c, b, a + n, c + n, d + n, a + n, b + n, c + n); }
+  for (let i = 0; i < NU; i++) { const f0 = id(i, 0), f1 = id(i + 1, 0); all.push(f0, f1, f0 + n, f1, f1 + n, f0 + n); const g0 = id(i, NV), g1 = id(i + 1, NV); all.push(g0, g0 + n, g1, g1, g0 + n, g1 + n); }
+  const front = new THREE.BufferGeometry(); front.setAttribute('position', new THREE.Float32BufferAttribute(F.pos, 3)); front.setAttribute('color', new THREE.Float32BufferAttribute(F.col, 3)); front.setIndex(fIdx); front.computeVertexNormals();
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute([...F.pos, ...B.pos], 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute([...F.col, ...B.col], 3)); geo.setIndex(all); geo.computeVertexNormals();
+  return (EAR_G = { geo, front });
+}
+const FX_GAITS = {
+  walk: { off: [0.25, 0.75, 0.0, 0.5], duty: 0.62, cyc: 0.37, lift: 0.042 },
+  trot: { off: [0.0, 0.5, 0.5, 0.0], duty: 0.44, cyc: 0.63, lift: 0.06 },
+  gallop: { off: [0.52, 0.42, 0.0, 0.12], duty: 0.3, cyc: 1.2, lift: 0.085 },
+};
+const fxAng = (dz, dy) => Math.atan2(dz, -dy);
+const _fxv = new THREE.Vector3(), _fxq = new THREE.Quaternion(), _fxq2 = new THREE.Quaternion(), _fxe = new THREE.Euler();
+function realFox(stage, scale) {
+  SEED = 4242 + stage * 17;
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const geo = foxGeo(), M = foxMats(stage);
+  const rig = sdfRig(geo, FB, M.body), { at, bones } = rig, R = n => bones[n].rotation; body.add(rig.mesh);
+  const shellsOf = (g, mats, mesh, par) => mats.map(m => { const s = new THREE.SkinnedMesh(g, m); s.bind(mesh.skeleton, mesh.bindMatrix); s.frustumCulled = false; s.castShadow = false; s.receiveShadow = true; s.userData.noShadow = true; par.add(s); return s; });
+  const allShells = shellsOf(geo, M.bodyShells, rig.mesh, body);
+  bones.head.scale.setScalar(stage === 0 ? 1.24 : 1.14); // raposa tem cabeça grande para o corpo (filhote ainda mais)
+  // olhos amendoados âmbar com pupila vertical, brilho e pálpebra
+  const IRIS = new THREE.MeshStandardMaterial({ color: stage === 2 ? '#f2b232' : '#e09a2a', emissive: '#8a4a10', emissiveIntensity: 0.18, roughness: 0.06 }), DARK = new THREE.MeshStandardMaterial({ color: '#0b0808', roughness: 0.3 });
+  const LID = new THREE.MeshStandardMaterial({ color: new THREE.Color(['#8a3a14', '#7a2c0e', '#8e4410'][stage]), roughness: 0.95 });
+  const lids = [], eyes = [];
+  for (const s of [-1, 1]) {
+    const eg = new THREE.Group(); eg.rotation.set(-0.1, s * 0.5, s * -0.32); at('head', eg, s * FOX_EYE[0], FOX_EYE[1], FOX_EYE[2] - 0.004);
+    const ir = new THREE.Mesh(new THREE.SphereGeometry(0.0088, 20, 14), IRIS); ir.scale.set(1.35, 0.78, 0.42); eg.add(ir);
+    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.0072, 12, 10), DARK); pu.scale.set(0.32, 0.95, 0.42); pu.position.z = 0.0036; eg.add(pu);
+    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.0016, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.003, 0.003, 0.0048); eg.add(hl);
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.0118, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), LID); lid.scale.set(1.28, 0.05, 0.62); lid.position.y = 0.0008; eg.add(lid); lids.push(lid); eyes.push(eg);
+  }
+  // nariz úmido com narinas
+  { const ng = new THREE.SphereGeometry(0.0108, 22, 16); ng.scale(1.25, 0.82, 0.78); const P = ng.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), z = P.getZ(k); if (z > 0.004 && y < 0.002 && Math.abs(Math.abs(x) - 0.0048) < 0.003) P.setZ(k, z - 0.0026); } ng.computeVertexNormals();
+    at('head', new THREE.Mesh(ng, new THREE.MeshStandardMaterial({ color: '#0e0a0a', roughness: 0.16 })), 0, FOX_NOSE[1] + 0.001, FOX_NOSE[2] - 0.005); }
+  // boca: fundo escuro, língua (aparece ofegando/feliz) e presinhas
+  const TOOTH = new THREE.MeshStandardMaterial({ color: '#f1ebdc', roughness: 0.35 });
+  const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), new THREE.MeshStandardMaterial({ color: '#2a0d0d', roughness: 0.7 })); mouth.scale.set(0.014, 0.005, 0.04); at('head', mouth, 0, 0.5165, 0.462);
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), new THREE.MeshStandardMaterial({ color: '#c8586a', roughness: 0.45 })); tongue.scale.set(0.0105, 0.0035, 0.032); at('jaw', tongue, 0, 0.5145, 0.476);
+  for (const s of [-1, 1]) { const up = new THREE.Mesh(new THREE.ConeGeometry(0.0024, 0.01, 8), TOOTH); up.rotation.x = Math.PI; at('head', up, s * 0.0105, 0.5125, 0.496); const lo = new THREE.Mesh(new THREE.ConeGeometry(0.002, 0.008, 8), TOOTH); at('jaw', lo, s * 0.0088, 0.5165, 0.488); }
+  // bigodes (fios finos e escuros, caindo levemente para trás)
+  { const pts = []; for (const s of [-1, 1]) for (let k = 0; k < 6; k++) { const ox = s * 0.0165, oy = 0.5215 - (k % 3) * 0.0022, oz = 0.468 + Math.floor(k / 3) * 0.012, L = 0.046 + (k % 2) * 0.012, dx = s * (0.85 + (k % 3) * 0.05), dy = -0.08 - (k % 3) * 0.1, dz = -0.25 + Math.floor(k / 3) * 0.3, dl = Math.hypot(dx, dy, dz);
+      const mx = ox + dx / dl * L * 0.5, my = oy + dy / dl * L * 0.5, mz = oz + dz / dl * L * 0.5; pts.push(ox, oy, oz, mx, my, mz, mx, my, mz, ox + dx / dl * L, oy + dy / dl * L - 0.006, oz + dz / dl * L); }
+    const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const wl = new THREE.LineSegments(wg, new THREE.LineBasicMaterial({ color: '#1a1412', transparent: true, opacity: 0.7 })); wl.userData.noShadow = true; at('head', wl, 0, 0, 0); }
+  // orelhas de verdade (concha fina, pelos claros por dentro), presas ao osso de cada orelha
+  const EAR = foxEarGeo(), EARM = VC(0.88);
+  const ears = [-1, 1].map(s => {
+    const eg = new THREE.Group(), inner = new THREE.Group(); eg.add(inner); inner.rotation.set(-0.12, s * 0.35, -s * 0.22);
+    inner.add(new THREE.Mesh(EAR.geo, EARM));
+    furShells(inner, EAR.front, { len: 0.0075, den: 1100, comb: [0, 1, 0.5], n: 6, tip: 0.35, lenFn: (x, y) => ss(0.02, 0.0, Math.abs(x)) * ss(0.075, 0.04, y) });
+    at('ear' + s, eg, s * 0.03, 0.585, 0.362); return { eg, inner, s };
+  });
+  // caudas: Faísca 1, Labareda 2, Solaris 3 — cada uma com seu esqueleto, pelagem longa e o fogo na ponta
+  const tails = [], nT = stage + 1, spreadMax = nT === 1 ? 0 : nT === 2 ? 0.38 : 0.72;
+  for (let i = 0; i < nT; i++) {
+    const rest = nT === 1 ? 0 : (i / (nT - 1) - 0.5) * 2 * spreadMax, thin = nT === 3 ? 0.78 : nT === 2 ? 0.88 : 1;
+    const tr = sdfRig(TAILG, TB, M.tail), tg = new THREE.Group(); tg.add(tr.mesh); tg.scale.setScalar(thin); tg.rotation.y = rest;
+    allShells.push(...shellsOf(TAILG, M.tailShells, tr.mesh, tg));
+    at('tail', tg, 0, 0.4 + (nT === 3 && i === 1 ? 0.01 : 0), -0.31);
+    const fl = new THREE.Group(); tr.at('t4', fl, 0, -0.08, -0.41);
+    // S-266: o fogo da cauda cresce com a evolução — pequeno, médio e grande
+    const FS = [{ n: 50, r0: 0.02, rise: 0.12, size: 0.12, life: 0.45 }, { n: 75, r0: 0.026, rise: 0.24, size: 0.15, life: 0.6 }, { n: 95, r0: 0.032, rise: 0.36, size: 0.17, life: 0.7 }][stage];
+    const fire = makeFire(FS.n, { r0: FS.r0 * thin, rise: FS.rise, life: FS.life, size: FS.size, hot: stage === 2, core: true }); fl.add(fire.obj);
+    tails.push({ tg, tr, fl, fire, rest, yb: 0, vb: 0, ym: 0, vm: 0, pb: -0.3, vpb: 0, ph: i * 1.9 });
+  }
+  const neckFire = stage >= 1 ? makeFire(stage === 2 ? 30 : 18, { ring: 0.05, r0: 0.018, rise: 0.08, life: 0.45, size: 0.026, hot: stage === 2 }) : null;
+  if (neckFire) at('neck', neckFire.obj, 0, 0.5, 0.25);
+  const earFires = stage === 2 ? ears.map(e => { const f = makeFire(10, { r0: 0.005, rise: 0.05, life: 0.35, size: 0.02, hot: true }); f.obj.position.y = 0.082; e.inner.add(f.obj); return f; }) : [];
+  let light = null; if (stage >= 1) { light = vlight(stage === 2 ? '#ffb04a' : '#ff8a3a', stage === 2 ? 1.3 : 0.75, 4); light.position.set(0, 0.6, -0.35); root.add(light); }
+  shadows(root);
+  let shellsOn = true;
+  rig.mesh.onBeforeRender = (r, sc, cam) => { const on = cam.position.distanceTo(rig.mesh.getWorldPosition(_fxv)) < 26; if (on !== shellsOn) { shellsOn = on; allShells.forEach(s => (s.visible = on)); } }; // longe: só a malha pintada
+
+  // pernas: IK de 2 ossos + pata (plano sagital)
+  const BP = n => FB[n][1];
+  const legs = [['f', -1], ['f', 1], ['h', -1], ['h', 1]].map(([k, s], i) => {
+    const [a, b, c] = k === 'f' ? ['up' + s, 'fo' + s, 'pa' + s] : ['th' + s, 'sh' + s, 'mt' + s];
+    const A = BP(a), B = BP(b), Cc = BP(c), F = FX_FOOT[k];
+    return { i, k, s, a, b, c, l1: Math.hypot(B[1] - A[1], B[2] - A[2]), l2: Math.hypot(Cc[1] - B[1], Cc[2] - B[2]), l3: Math.hypot(F[0] - Cc[1], F[1] - Cc[2]), r1: fxAng(B[2] - A[2], B[1] - A[1]), r2: fxAng(Cc[2] - B[2], Cc[1] - B[1]), r3: fxAng(F[1] - Cc[2], F[0] - Cc[1]), fz: F[1], bend: k === 'f' ? -1 : 1 };
+  });
+  const rotYZ = (y, z, a) => [y * Math.cos(a) - z * Math.sin(a), y * Math.sin(a) + z * Math.cos(a)];
+  function pivot(leg) {
+    const bp = body.rotation.x, hp = FB.hips[1], [hy, hz] = rotYZ(hp[1], hp[2], bp);
+    let y = body.position.y + hy, z = body.position.z + hz, acc = bp + R('hips').x;
+    if (leg.k === 'f') { const cp = FB.chest[1], [dy, dz] = rotYZ(cp[1] - hp[1], cp[2] - hp[2], acc); y += dy; z += dz; acc += R('chest').x; const up = BP(leg.a), [ey, ez] = rotYZ(up[1] - cp[1], up[2] - cp[2], acc); return [y + ey, z + ez, acc]; }
+    const th = BP(leg.a), [ey, ez] = rotYZ(th[1] - hp[1], th[2] - hp[2], acc); return [y + ey, z + ez, acc];
+  }
+  function solveLeg(leg, fy, fz, th3) {
+    const [py, pz, acc] = pivot(leg);
+    const ay = fy + leg.l3 * Math.cos(th3), az = fz - leg.l3 * Math.sin(th3);
+    let dy = ay - py, dz = az - pz, d = Math.hypot(dy, dz); const dmax = leg.l1 + leg.l2 - 0.0015, dmin = Math.abs(leg.l1 - leg.l2) + 0.006;
+    if (d > dmax) { dy *= dmax / d; dz *= dmax / d; d = dmax; } else if (d < dmin) { dy *= dmin / d; dz *= dmin / d; d = dmin; }
+    const ad = fxAng(dz, dy), al = Math.acos(Math.max(-1, Math.min(1, (leg.l1 * leg.l1 + d * d - leg.l2 * leg.l2) / (2 * leg.l1 * d))));
+    const t1 = ad + leg.bend * al, ky = py - leg.l1 * Math.cos(t1), kz = pz + leg.l1 * Math.sin(t1), t2 = fxAng(pz + dz - kz, py + dy - ky);
+    const a1 = leg.r1 - acc - t1, a2 = leg.r2 - acc - a1 - t2, a3 = leg.r3 - acc - a1 - a2 - th3;
+    R(leg.a).x = a1; R(leg.b).x = a2; R(leg.c).x = a3;
+  }
+  // estado
+  const W = { walk: 1, trot: 0, gallop: 0 }, wp = new THREE.Vector3(), prev = new THREE.Vector3();
+  let has = false, spd = 0, ph = 0, mv = 0, yawRate = 0, lt = 0, at0 = -9, sniff = 0, look = 0, blinkAt = 1.5, earTw = [0, 0], earSw = [0, 0], earSwT = [0, 0], pant = 0, prevTurn = 0;
+  let expr = 'calma', exprT = 2, tiltDir = 1; const X = { curiosa: 0, alerta: 0, feliz: 0 };
+  return { root, attack() { at0 = lt; }, animate(t, m = {}, dt = 1 / 60) {
+    lt = t; dt = Math.min(0.1, Math.max(0, dt));
+    // velocidade medida pelo deslocamento de verdade (o passo casa com o chão); prévia parada = parada
+    root.getWorldPosition(wp); const sc = root.getWorldScale(_fxv).x || 1;
+    if (has && dt > 0) { const d = Math.hypot(wp.x - prev.x, wp.z - prev.z) / sc, v = d > 1.2 ? 0 : d / dt; spd += (v - spd) * Math.min(1, dt * 7); }
+    prev.copy(wp); has = true;
+    yawRate += ((m.turn || 0) - yawRate) * Math.min(1, dt * 5);
+    const v = spd < 0.12 ? 0 : spd;
+    const cur = W.gallop > W.trot && W.gallop > W.walk ? 'gallop' : W.trot > W.walk ? 'trot' : 'walk';
+    const tgt = cur === 'walk' ? (v > 0.95 ? (v > 2.4 ? 'gallop' : 'trot') : 'walk') : cur === 'trot' ? (v < 0.65 ? 'walk' : v > 2.4 ? 'gallop' : 'trot') : (v < 2.05 ? (v < 0.65 ? 'walk' : 'trot') : 'gallop');
+    for (const k in W) W[k] += ((k === tgt ? 1 : 0) - W[k]) * Math.min(1, dt * 4);
+    mv += ((v > 0.05 ? 1 : 0) - mv) * Math.min(1, dt * 6);
+    const g = f => W.walk * FX_GAITS.walk[f] + W.trot * FX_GAITS.trot[f] + W.gallop * FX_GAITS.gallop[f], sum = W.walk + W.trot + W.gallop || 1;
+    const cyc = g('cyc') / sum, duty = g('duty') / sum, liftH = g('lift') / sum, gal = W.gallop / sum, trot = W.trot / sum, run = clamp((trot + gal) * mv, 0, 1);
+    ph = (ph + v * dt / cyc) % 1; const P2 = ph * Math.PI * 2;
+    // ataque: agacha e dá o bote com mordida
+    const bk = (t - at0) / 0.55, bite = bk > 0 && bk < 1;
+    const crouch = bite ? (bk < 0.3 ? ss(0, 0.3, bk) : 1 - ss(0.3, 0.45, bk)) : 0, lunge = bite ? (bk < 0.3 ? 0 : bk < 0.45 ? ss(0.3, 0.45, bk) : 1 - ss(0.55, 1, bk)) : 0;
+    const open = bite ? (bk < 0.25 ? ss(0.05, 0.25, bk) * 0.3 : bk < 0.42 ? 0.3 + ss(0.25, 0.4, bk) * 0.5 : 0.8 * (1 - ss(0.42, 0.5, bk))) : 0;
+    // expressões: feliz andando; alerta logo depois de lutar; parada alterna calma/curiosa/alerta
+    if (mv > 0.5) expr = 'feliz'; else if (t - at0 < 3) expr = 'alerta'; else { exprT -= dt; if (exprT < 0 || expr === 'feliz') { const r = rnd(); expr = r < 0.4 ? 'calma' : r < 0.78 ? 'curiosa' : 'alerta'; exprT = 3 + rnd() * 4; tiltDir = rnd() < 0.5 ? -1 : 1; } }
+    for (const k in X) X[k] += ((expr === k ? 1 : 0) - X[k]) * Math.min(1, dt * 3);
+    // corpo: sobe e desce com a passada, balança no passo, arqueia no galope
+    const bob = (W.walk * Math.cos(P2 * 2) * 0.005 + W.trot * Math.cos(P2 * 2) * 0.01 + W.gallop * (Math.sin(P2) * 0.027)) * mv / sum;
+    body.position.y = bob - crouch * 0.042 - lunge * 0.012 + Math.sin(t * 1.9) * 0.0018 * (1 - mv);
+    body.position.z = -crouch * 0.036 + lunge * 0.18;
+    body.rotation.x = W.gallop * Math.cos(P2) * 0.07 * mv / sum + crouch * 0.05 - lunge * 0.04;
+    body.rotation.z = Math.max(-0.12, Math.min(0.12, -yawRate * 0.04 * mv));
+    R('hips').x = gal * Math.sin(P2) * 0.12 * mv; R('chest').x = -gal * Math.sin(P2) * 0.14 * mv;
+    R('hips').y = W.walk * Math.sin(P2) * 0.06 * mv / sum; R('hips').z = W.walk * Math.sin(P2) * 0.04 * mv / sum + trot * Math.sin(P2 * 2) * 0.02 * mv;
+    R('chest').y = -R('hips').y * 0.8 + yawRate * 0.04; R('chest').z = -R('hips').z * 0.6;
+    bones.chest.scale.setScalar(1 + Math.sin(t * (2.4 + pant * 6)) * (0.008 + pant * 0.008)); // respiração
+    // pernas: apoio (pata parada no chão) e balanço (sobe dobrando e vai à frente)
+    for (const leg of legs) {
+      const off = (W.walk * FX_GAITS.walk.off[leg.i] + W.trot * FX_GAITS.trot.off[leg.i] + W.gallop * FX_GAITS.gallop.off[leg.i]) / sum, u = (ph + off) % 1, Sd = cyc * duty * mv;
+      let fz = leg.fz, fy = FX_FOOT[leg.k][0], th3 = leg.r3;
+      if (u < duty) { const s = u / duty; fz += Sd * (0.5 - s); th3 -= (leg.k === 'f' ? 0.35 : 0.3) * ss(0.6, 1, s) * mv; }
+      else { const s = (u - duty) / (1 - duty), e = 0.5 - 0.5 * Math.cos(Math.PI * s); fz += Sd * (e - 0.5); fy += Math.sin(Math.PI * s) * liftH * mv * (leg.k === 'f' ? 1 : 0.85); th3 -= (leg.k === 'f' ? 1.35 : 0.55) * Math.sin(Math.PI * Math.min(1, s * 1.25)) * mv; }
+      if (bite) fz += leg.k === 'f' ? lunge * 0.07 - crouch * 0.018 : lunge * 0.025;
+      solveLeg(leg, fy, fz, th3);
+    }
+    // cabeça estabilizada; fareja e olha em volta parada; inclina curiosa
+    const sniffWant = mv < 0.1 && !bite && expr === 'calma' && Math.sin(t * 0.41 + 1.3) > 0.55 ? 1 : 0; sniff += (sniffWant - sniff) * Math.min(1, dt * 2);
+    const lookWant = mv < 0.1 && !bite ? Math.sin(t * 0.33) * 0.5 + Math.sin(t * 0.87) * 0.15 : yawRate * 0.15; look += (lookWant - look) * Math.min(1, dt * 3);
+    const comp = body.rotation.x + R('hips').x + R('chest').x;
+    const bt = Math.max(crouch, lunge); // no bote a cabeça vai à frente e para baixo, rente ao alvo (nunca para o céu)
+    R('neck').x = -comp - 0.26 * (1 - mv * 0.6) * (1 - bt) + (trot * 0.16 + gal * 0.1) * mv + W.walk * Math.sin(P2 * 2 + 0.6) * 0.035 * mv / sum + sniff * 0.7 + crouch * 0.3 + lunge * 0.32 - X.alerta * 0.08 * (1 - bt);
+    R('neck').y = look * 0.55 * (1 - sniff * 0.5) * (1 - bt); R('head').y = look * 0.4 * (1 - bt) + sniff * Math.sin(t * 2.6) * 0.15;
+    R('head').x = -sniff * 0.2 + lunge * 0.12 + crouch * 0.12 + Math.sin(t * 9) * 0.02 * sniff - X.curiosa * 0.06 * (1 - bt);
+    R('head').z = (bite && bk > 0.42 && bk < 0.62 ? Math.sin((bk - 0.42) * 70) * 0.16 : 0) + X.curiosa * tiltDir * 0.32; // inclina a cabeça, curiosa
+    pant += (((trot + gal) * mv > 0.5 ? 1 : 0) - pant) * Math.min(1, dt * 0.8);
+    const happyMouth = X.feliz * 0.12;
+    R('jaw').x = open * 1.0 + Math.max(pant * (0.24 + Math.sin(t * 10) * 0.05), happyMouth);
+    tongue.visible = pant > 0.15 || happyMouth > 0.06 || open > 0.2; tongue.scale.z = 0.032 + pant * 0.012;
+    // orelhas: em concha, viram sozinhas (cada uma para um lado), à frente curiosa/alerta, deitam no bote, para trás felizes
+    for (let k = 0; k < 2; k++) {
+      const s = k ? 1 : -1, e = ears[k];
+      earTw[k] = Math.max(0, earTw[k] - dt * 4); if (rnd() < dt * 0.3) earTw[k] = 1;
+      earSwT[k] -= dt; if (earSwT[k] < 0) { earSwT[k] = 1 + rnd() * 3; earSw[k] = (rnd() - 0.4) * 0.9; }
+      const swv = mv < 0.1 && !bite ? earSw[k] : 0;
+      R('ear' + s).x = -(gal * 0.6 * mv + Math.max(crouch, lunge) * 0.9) + X.alerta * 0.12 + X.curiosa * 0.1 - X.feliz * 0.22 + earTw[k] * 0.22;
+      R('ear' + s).z = s * (-earTw[k] * 0.25 - (gal * mv + crouch) * 0.2 - X.feliz * 0.25);
+      R('ear' + s).y = R('ear' + s).y + ((s * (swv - X.curiosa * 0.25) + look * 0.3) - R('ear' + s).y) * Math.min(1, dt * 6);
+      void e;
+    }
+    // piscar; feliz aperta os olhos; alerta arregala
+    let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.12; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.2 + rnd() * 3.5; }
+    for (const l of lids) l.scale.y = Math.max(0.05, bl * 0.78, X.feliz * 0.32 + Math.max(crouch, lunge) * 0.3 - X.alerta * 0.04);
+    IRIS.emissiveIntensity = 0.18 + Math.max(crouch, lunge) * 0.6 + X.alerta * 0.1;
+    // caudas: mola + amortecimento; caídas paradas, esticadas correndo, nunca se cruzam
+    const turnAcc = ((m.turn || 0) - prevTurn) / Math.max(dt, 1e-3); prevTurn = m.turn || 0;
+    for (const T2 of tails) {
+      const wag = Math.sin(t * (1.6 + run * 3) + T2.ph) * (0.16 - run * 0.08) + X.feliz * Math.sin(t * 6 + T2.ph) * 0.12 * (1 - run);
+      T2.vb += ((wag - yawRate * 0.12 - T2.yb) * 60 - T2.vb * 9 - turnAcc * 0.004) * dt; T2.yb += T2.vb * dt;
+      const tm = Math.sin(t * (1.6 + run * 3) + T2.ph - 0.9) * 0.25 + T2.vb * -0.08;
+      T2.vm += ((tm - T2.ym) * 45 - T2.vm * 7) * dt; T2.ym += T2.vm * dt;
+      const tp = -0.38 + 0.32 * run + crouch * 0.25 + lunge * 0.3 + X.alerta * 0.1 + Math.sin(P2 * 2) * 0.04 * run;
+      T2.vpb += ((tp - T2.pb) * 50 - T2.vpb * 8) * dt; T2.pb += T2.vpb * dt;
+    }
+    for (let i = 1; i < tails.length; i++) { const A0 = tails[i - 1], A1 = tails[i], minB = 0.55, minM = 0.5;
+      const db = (A1.rest + A1.yb) - (A0.rest + A0.yb); if (db < minB) { const d = (minB - db) / 2; A0.yb -= d; A1.yb += d; A0.vb = Math.min(A0.vb, 0); A1.vb = Math.max(A1.vb, 0); }
+      const dm = (A1.rest + A1.yb + A1.ym) - (A0.rest + A0.yb + A0.ym); if (dm < minM) { const d = (minM - dm) / 2; A0.ym -= d; A1.ym += d; } }
+    root.getWorldQuaternion(_fxq2);
+    for (const T2 of tails) {
+      const B = T2.tr.bones; B.t0.rotation.set(T2.pb, T2.yb, 0);
+      B.t1.rotation.set(0.05 * run, T2.ym * 0.35, 0); B.t2.rotation.set(0.06 * run - 0.04 * (1 - run), T2.ym * 0.3, 0); B.t3.rotation.set(0.06 * run, T2.ym * 0.25 + Math.sin(t * 2.2 + T2.ph) * 0.05, 0); B.t4.rotation.set(0.04 * run, T2.ym * 0.2 + Math.sin(t * 2.2 + T2.ph - 0.6) * 0.07, 0);
+      T2.fl.parent.updateWorldMatrix(true, false); T2.fl.parent.getWorldQuaternion(_fxq); T2.fl.quaternion.copy(_fxq.invert().multiply(_fxq2)); // a chama sempre sobe
+      T2.fire.update(t, dt, v * 0.05 * scale, 1);
+    }
+    if (neckFire) neckFire.update(t, dt, v * 0.02, 1);
+    earFires.forEach(f => f.update(t, dt, 0, 1));
+    if (light) light.intensity = (stage === 2 ? 1.3 : 0.75) + Math.sin(t * 11) * 0.15 + Math.sin(t * 23) * 0.08;
+  } };
+}
+
+/* =========================================================================
+   (antigo) Faísca → Labareda → Solaris (raposa de fogo) — S-112, S-143, S-144 — substituída por realFox (S-330)
    ========================================================================= */
 function fireFox(stage, scale) {
   SEED = 4242 + stage * 17;
@@ -833,7 +1226,7 @@ const STAGE_SCALE = [0.8, 1.05, 1.35];
 const STAGE_SCALE_SP = { terra: [0.62, 0.86, 1.55] }; // S-268: tatu — o menor menor, o do meio um pouco maior, o Monolito ainda maior
 export function makePet(species, stage) {
   const sc = (STAGE_SCALE_SP[species] || STAGE_SCALE)[stage];
-  const m = species === 'agua' ? waterSprite(stage, sc) : species === 'terra' ? rockArmadillo(stage, sc) : fireFox(stage, sc);
+  const m = species === 'agua' ? waterSprite(stage, sc) : species === 'terra' ? rockArmadillo(stage, sc) : realFox(stage, sc); // S-330: raposa realista (malha com esqueleto, como o lobo)
   m.root.scale.setScalar(sc);
   const obj = new THREE.Group(); obj.add(m.root);
   return { obj, ...m, height: 0.8 * sc };

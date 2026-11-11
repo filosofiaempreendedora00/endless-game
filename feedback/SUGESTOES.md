@@ -2,15 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (1)
+## Pendentes (0)
 
-### S-330 · Área do mapa: Área da tela (263×207 px) (sobre: Chat)
-- **Status:** pendente · **Quando:** 2026-11-10T22:59:23 · **Mapa:** Vila de Alvorada (tile [802, 8])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Eu preciso que esse mascote de raposa ainda seja mais realista eu entendo que nosso já melhoramos muito até aqui porém repare que essas pernas não estão tão legais e o rosto também poderia ser mais realista e expressivo e principalmente essas orelhas ainda estão como se fossem um brinquedo e não orelhas reais então ainda há mais a melhorar aqui nesta raposinha e também os pelos estavam hiper esquisitos e vi que você deu uma melhorada para não ficar tão parecido como uma palha de aço ou Bombril porém acredito que ainda temos melhorias para fazer nesse sentido repare ainda que todas essas mudanças que sol icito neste monstrinho não devem refletir apenas a terceira evolução como também a primeira é a segunda
-- ![print](img/S-330.png)
+_Nenhuma._
 
-## Feitas (330)
+## Feitas (331)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2324,6 +2320,13 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Em todas as animações de ataque com arco e flecha existe um bug bastante exacerbado em relação as pernas dos modelos eu preciso que você revisite essas animações para garantir que estejam realistas percebi que o início da animação é bem informidável porém ao longo dela começa um bug estratosférico
 - ![print](img/S-329.png)
 - **Resposta do Claude:** Achei a causa: nas animações de tiro as pernas ficam paradas e o motor deixava de reposicioná-las, então os ajustes de postura se somavam a cada quadro até as pernas abrirem e girarem. Agora cada osso volta à pose da animação antes de cada quadro — pernas firmes do primeiro ao último disparo, em todas as classes.
+
+### S-330 · Área do mapa: Área da tela (263×207 px) (sobre: Chat)
+- **Status:** feito · **Quando:** 2026-11-10T22:59:23 · **Mapa:** Vila de Alvorada (tile [802, 8])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Eu preciso que esse mascote de raposa ainda seja mais realista eu entendo que nosso já melhoramos muito até aqui porém repare que essas pernas não estão tão legais e o rosto também poderia ser mais realista e expressivo e principalmente essas orelhas ainda estão como se fossem um brinquedo e não orelhas reais então ainda há mais a melhorar aqui nesta raposinha e também os pelos estavam hiper esquisitos e vi que você deu uma melhorada para não ficar tão parecido como uma palha de aço ou Bombril porém acredito que ainda temos melhorias para fazer nesse sentido repare ainda que todas essas mudanças que sol icito neste monstrinho não devem refletir apenas a terceira evolução como também a primeira é a segunda
+- ![print](img/S-330.png)
+- **Resposta do Claude:** Refiz a raposa do zero nos três estágios, no padrão do lobo: corpo inteiriço com esqueleto, patas finas e longas na ponta dos dedos (punho e jarrete marcados, almofadas e dedos) e pelo macio e fino, sem cara de palha de aço — dorso mais escuro, barriga, garganta e rosto de baixo brancos, meias pretas, colar e bochechas mais peludos. Rosto de raposa de verdade: focinho fino, olhos âmbar com pupila vertical que piscam, lábios pretos, bigodes e expressões. Orelhas grandes, finas e em concha, pretas por fora e claras por dentro, cada uma mexendo para um lado. Cauda volumosa com ponta branca e física, com o fogo que cresce a cada evolução.
 
 ### S-331 · Área do mapa: Área da tela (250×338 px)
 - **Status:** feito · **Quando:** 2026-11-10T23:04:58 · **Mapa:** Dunas de Sal-Rubro (tile [-43, 295])

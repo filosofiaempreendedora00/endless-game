@@ -16282,9 +16282,10 @@
       "sp": "62/62"
     },
     "id": "S-330",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T22:59:23",
-    "imagem": "img/S-330.png"
+    "imagem": "img/S-330.png",
+    "resposta": "Refiz a raposa do zero nos três estágios, no padrão do lobo: corpo inteiriço com esqueleto, patas finas e longas na ponta dos dedos (punho e jarrete marcados, almofadas e dedos) e pelo macio e fino, sem cara de palha de aço — dorso mais escuro, barriga, garganta e rosto de baixo brancos, meias pretas, colar e bochechas mais peludos. Rosto de raposa de verdade: focinho fino, olhos âmbar com pupila vertical que piscam, lábios pretos, bigodes e expressões. Orelhas grandes, finas e em concha, pretas por fora e claras por dentro, cada uma mexendo para um lado. Cauda volumosa com ponta branca e física, com o fogo que cresce a cada evolução."
   },
   {
     "texto": "Está ocorrendo com essa classe em específico de o meu personagem começar a dar voltas em volta de si mesmo isso é claramente um bug o único ponto que eu gostaria que você investigasse é se este bug é exclusivo desta classe ou tem relação com as armas ou algum outro ponto pois reparei que isso tem sido recorrente este bug bastante esquisito",
