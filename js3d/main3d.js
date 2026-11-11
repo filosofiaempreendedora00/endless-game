@@ -17,13 +17,14 @@ import { makePet } from './pets3d.js';
 import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
 import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
+import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js'; // P-014/P-011: golpes sob medida por arma e impacto no acerto
 import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
 import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
-import { runQA, showQA } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música
+import { runQA, showQA, checkCharsDeep, showQAChars } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música · P-012: dos personagens
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { riderPose } from './ride3d.js';
@@ -159,11 +160,24 @@ function bbox(name) {
   return bboxCache[name];
 }
 const colliders = [];
-function freeAt(x, z, r) { return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); }
+// P-010: "o lugar está livre?" com grade espacial que cresce junto com a lista de colisões (antes varria TODAS as colisões a cada tentativa — milhares × milhares ao espalhar árvores)
+const FA = { n: 0, g: new Map(), C: 24 };
+function freeAt(x, z, r) {
+  if (colliders.length < FA.n || r > 12) { if (r > 12) return !colliders.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r); FA.n = 0; FA.g.clear(); }
+  for (; FA.n < colliders.length; FA.n++) { const c = colliders[FA.n], R = c.r + 12; for (let i = Math.floor((c.x - R) / FA.C); i <= Math.floor((c.x + R) / FA.C); i++) for (let j = Math.floor((c.z - R) / FA.C); j <= Math.floor((c.z + R) / FA.C); j++) { const k = i * 100003 + j; let a = FA.g.get(k); if (!a) FA.g.set(k, a = []); a.push(c); } }
+  const a = FA.g.get(Math.floor(x / FA.C) * 100003 + Math.floor(z / FA.C));
+  return !a || !a.some(c => Math.hypot(c.x - x, c.z - z) < c.r + r);
+}
 const TYPE_SCALE = { tower: 0.6, tent: 0.55, windmill: 0.9, crate_A: 0.55, crate_B: 0.55, sack: 0.55, target_prop: 0.55, fence: 0.75, market: 0.85 }; // poço, balde, bandeiras e ferraria são feitos em código no tamanho real (village3d)
 const occluders = []; // objetos que bloqueiam a câmera
 const placed = []; // todos os objetos de cenário (sugestões identificam o modelo)
 // junta as peças fixas de um objeto (mesmo material) numa malha só: bem menos chamadas de desenho
+// assinatura de aparência do material: dois materiais com a mesma aparência viram um só no bakeStatic (os especiais, com shader próprio, ficam separados)
+function matSig(m) {
+  if (m.onBeforeCompile && m.onBeforeCompile.toString().length > 20 || m.isShaderMaterial || m.userData && Object.keys(m.userData).length) return m.uuid;
+  const hx = c => c ? c.getHexString() : '-';
+  return [m.type, hx(m.color), hx(m.emissive), m.emissiveIntensity ?? '', m.map ? m.map.uuid : '-', m.normalMap ? m.normalMap.uuid : '-', m.bumpMap ? m.bumpMap.uuid : '-', m.roughnessMap ? m.roughnessMap.uuid : '-', m.envMap ? m.envMap.uuid : '-', m.roughness ?? '', m.metalness ?? '', m.bumpScale ?? '', m.transparent, m.opacity, m.side, m.vertexColors, m.flatShading, m.alphaTest, m.depthWrite, m.fog, m.wireframe].join('/');
+}
 function bakeStatic(obj) {
   obj.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(obj.matrixWorld).invert(), groups = new Map(), drop = [];
@@ -171,7 +185,7 @@ function bakeStatic(obj) {
     if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || Array.isArray(o.material) || o.userData.keep) return;
     const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
-    const key = o.material.uuid + '|' + Object.keys(g.attributes).sort().join(',') + '|' + o.castShadow;
+    const key = matSig(o.material) + '|' + Object.keys(g.attributes).sort().join(',') + '|' + o.castShadow; // P-010: materiais iguais criados à parte (uma fruta = um material) agora se juntam
     if (!groups.has(key)) groups.set(key, { mat: o.material, cast: o.castShadow, geos: [] });
     groups.get(key).geos.push(g); drop.push(o);
   });
@@ -567,8 +581,10 @@ function galleryAnim(n, dt = 1 / 30) {
   const stance = n.sonic ? 'Idle' : ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
   if (ph === 0 && n.gPh !== 0) n.anim.play('Idle', { fade: 0.3 });
   else if (ph === 1 && n.gPh !== 1) n.anim.play('Idle', { fade: 0.3 }); // S-342: pernas em pé; a guarda vem só no tronco
-  if (n.anim.layer) n.anim.layer(ph === 1 ? stance : null, 2.2, dt);
+  else if (ph === 2 && !n.sonic && n.gKind === undefined) { const wid = GALLERY_WEAPON[n.cls], it = wid && ITEMS[wid]; n.gKind = strikeKind(n.cls, it ? it.wtype : null, !!it) || (ca.sound === 'magic' ? (n.cls === 'sabio_elemental' ? 'gesto' : 'cajado') : null); }
+  if (ph === 2 && !n.sonic && n.gKind) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { startStrike(n, n.gKind, { variant: hit }); n.gHit = hit; if (n.gPh !== 2) n.anim.play('Idle', { fade: 0.2 }); } } // P-014: golpes sob medida também nos manequins
   else if (ph === 2 && !n.sonic) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: (ca.speed || 1) * (((CLASS_POSE[n.cls] || {}).atk || [0, 0, 1])[2]) }); n.gHit = hit; } }
+  if (n.anim.layer) n.anim.layer(ph === 1 || (ph === 2 && n.gKind) ? stance : null, 2.2, dt); // guarda só no tronco (fora da cadeia acima, senão o golpe nunca toca); com golpe sob medida a guarda fica por baixo
   if (ph !== 2) n.gHit = -1; n.gPh = ph;
   if (n._wolf) { n._wolf.root.visible = n.obj.visible; if (n.obj.visible) n._wolf.animate(S.time, false, dt); }
   if (n.root.userData.xbowState) { // S-325: caçador com besta — nas costas parado, em guarda na pose de luta, mira/coice/recarga nos golpes
@@ -590,6 +606,7 @@ function galleryAnim(n, dt = 1 / 30) {
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
     instrumentPose(n, { w: sm('_instW', ph > 0 ? 1 : 0, 5), play: sm('_instP', ph === 2 ? 1 : 0.15, 6), t: S.time + n.gOff });
   }
+  updateStrike(n, dt, { skipR: /^(mago|arquimago)$/.test(n.cls), skipL: n.cls === 'sabio_elemental' }); // P-014
 }
 function buildArena() {
   const A = ARENA_I, g = new THREE.Group(); g.position.set(A.x, 0, A.z); scene.add(g);
@@ -895,6 +912,16 @@ function arenaEvent(e) {
 
 /* =========================== Montagem do mundo =========================== */
 const clouds = [];
+const _cm = new THREE.Matrix4(), _cp = new THREE.Vector3(), _cs = new THREE.Vector3();
+function updateCloudInstances() { // P-010: puffs de nuvem instanciados, sempre de frente para a câmera
+  const M = S.cloudInst; if (!M) return; const q = camera.quaternion;
+  for (const { im, list } of M) { for (const p of list) { _cp.set(p.c.position.x + p.ox, p.c.position.y + p.oy, p.c.position.z + p.oz); _cs.set(p.sx, p.sy, 1); _cm.compose(_cp, q, _cs); im.setMatrixAt(p.i, _cm); } im.instanceMatrix.needsUpdate = true; }
+}
+const ROOSTS = []; // P-010: poleiros de voo (cada um com o Noctívago de ~300 peças) — só aparecem perto
+function cullRoosts() {
+  const c = camera.position;
+  for (const r of ROOSTS) { const d = Math.hypot(r.position.x - c.x, r.position.z - c.z); r.visible = d < 260; if (r.userData.noc) r.userData.noc.visible = d < 70; }
+}
 // prédio feito em código: assenta no ponto mais baixo do terreno sob ele, vira para a praça (centro C) e ganha colisão em caixas giradas
 function codeBuilding(hh, x, z, C, asset) {
   const rot = Math.atan2(C.x - x, C.z - z), cs = Math.cos(rot), sn = Math.sin(rot), W = (lx, lz) => ({ x: x + lx * cs + lz * sn, z: z - lx * sn + lz * cs });
@@ -903,7 +930,7 @@ function codeBuilding(hh, x, z, C, asset) {
   for (const [lx, lz, hx, hz] of hh.box) { const q = W(lx, lz); colliders.push({ x: q.x, z: q.z, r: Math.max(hx, hz), box: true, hx, hz, rot, name: asset }); }
   return { obj: bo, rot, door: hh.door ? W(hh.door[0], hh.door[1]) : null };
 }
-function buildWorld() {
+async function buildWorld() { // P-010: monta aos pedaços (worldYield cede a vez à tela entre as etapas)
   const hb = bbox('home_A'); WS = 6.5 / Math.max(0.01, hb.max.y - hb.min.y);
   MODELS.target_round = { scene: bakeStatic(makeTarget()), radius: 0.6, native: true }; // alvo de treino feito em código
   MODELS.wheelbarrow = { scene: bakeStatic(makeWheelbarrow()), radius: 0.55, native: true }; // carrinho de mão feito em código (S-082)
@@ -937,8 +964,11 @@ function buildWorld() {
       addDoorPortal(inside, hh.door.x, hh.door.z, hh.rot);
     }
   }
+  await worldYield('Casas por dentro');
   buildInteriors();
+  await worldYield('Arena');
   buildArena();
+  await worldYield('Vila de Alvorada');
   place('windmill', V.x - 34, V.z - 26, { rf: 0.4 });
   place('tower', V.x + 22, V.z - 9, { rf: 0.5 }); place('tower', V.x + 22, V.z + 14, { rf: 0.5 });
   place('flag_blue', V.x + 18, V.z - 6, { solid: false }); place('flag_blue', V.x + 18, V.z + 11, { solid: false });
@@ -971,6 +1001,7 @@ function buildWorld() {
       placed++;
     }
   };
+  await worldYield('Florestas e campos');
   // árvores feitas em código (mais naturais que os pinheiros pontudos do pacote)
   for (const [k, v] of Object.entries(makeTreeTemplates())) MODELS[k] = { ...v, native: true };
   scatter('campos', ['oak_0', 'oak_1', 'oak_2', 'oak_3', 'oak_4', 'oak_1', 'pine_0', 'pine_1'], 60, 0.45, 5, { s0: 0.85, s1: 0.4 });
@@ -990,7 +1021,9 @@ function buildWorld() {
   scatter('dunas', ['stone_0', 'stone_3', 'stone_4', 'stump_1', 'log_1'], 34, 0.3, 4, { s0: 0.8, s1: 1.2 });
   scatter('colossos', ['stump_0', 'stump_1', 'stump_2', 'log_0', 'log_1'], 22, 0.3, 10, { s0: 1.0, s1: 0.5 }); // S-161: terra arrasada, sem árvores verdes
   scatter('colossos', ['stone_3', 'stone_4', 'stone_5', 'stonedark_1', 'stonedark_2'], 50, 0.25, 6, { s0: 1.0, s1: 1.6 });
-  buildFrontier();
+  await worldYield('Regiões distantes');
+  await buildFrontier();
+  await worldYield('Ruínas de Kael');
   // ruínas: prédios destruídos e muros quebrados
   const R = ZONES.find(q => q.id === 'ruinas');
   const ruinBits = [['destroyed', -14, -6], ['destroyed', 12, -16], ['destroyed', 20, 8], ['scaffold', -22, 12], ['destroyed', -8, -26], ['tower', 2, -30]];
@@ -1009,6 +1042,7 @@ function buildWorld() {
   }
   // lago: vitórias-régias
   buildLilyPads();
+  await worldYield('Pinheiros do sopé');
   // pinheiros só no sopé das montanhas (nascem da terra, não no topo)
   for (let k = 0, n = 0; k < 16000 && n < 320; k++) {
     const x = (rng() * 2 - 1) * (HALF - 10), z = (rng() * 2 - 1) * (HALF - 10), mm = mountainMask(x, z);
@@ -1017,16 +1051,24 @@ function buildWorld() {
     if (Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT - 2 && !freeAt(x, z, 3)) continue;
     place((zoneWeight('geada', x, z) > 0.3 ? ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'] : ['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'])[Math.floor(rng() * (zoneWeight('geada', x, z) > 0.3 ? 4 : 6))], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
+  await worldYield('Montanhas e céu');
   { const dm = buildDistantMountains(); S.distantMtn = dm; dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
   // nuvens (auditoria): nada de bolotas de desenho — cúmulos macios feitos de vários "puffs" com textura de névoa,
   // base mais escura e topo iluminado pelo sol, que viram sempre para a câmera e andam devagar com o vento
-  { const tex = cloudPuffTex();
+  { // P-010: os ~650 "puffs" eram um Sprite cada = uma chamada de desenho cada; agora 3 InstancedMesh (um por faixa de opacidade), virados para a câmera a cada quadro
+    const tex = cloudPuffTex(), OP = [0.6, 0.7, 0.8], puffs = [];
     for (let i = 0; i < 46; i++) {
-      const g = new THREE.Group(), n = 9 + Math.floor(rng() * 10), w = 40 + rng() * 60;
-      for (let k = 0; k < n; k++) { const top = rng(), sh = 0.78 + top * 0.22, m = new THREE.SpriteMaterial({ map: tex, color: new THREE.Color(sh, sh, Math.min(1, sh + 0.04)), transparent: true, opacity: 0.55 + rng() * 0.3, depthWrite: false, fog: false });
-        const sp = new THREE.Sprite(m), sz = (16 + rng() * 24) * (1 - Math.abs(k / n - 0.5) * 0.6); sp.scale.set(sz * 1.6, sz, 1); sp.position.set((k / n - 0.5) * w + (rng() - 0.5) * 8, top * 8 + (rng() - 0.5) * 3, (rng() - 0.5) * 14); g.add(sp); }
-      g.position.set((rng() * 2 - 1) * (HALF + 40), 105 + rng() * 40, (rng() * 2 - 1) * (HALF + 40)); g.userData.asset = 'cloud'; scene.add(g); clouds.push(g);
-    } }
+      const g = new THREE.Object3D(), n = 9 + Math.floor(rng() * 10), w = 40 + rng() * 60;
+      for (let k = 0; k < n; k++) { const top = rng(), sh = 0.78 + top * 0.22, col = new THREE.Color(sh, sh, Math.min(1, sh + 0.04)), op = 0.55 + rng() * 0.3;
+        const sz = (16 + rng() * 24) * (1 - Math.abs(k / n - 0.5) * 0.6), ox = (k / n - 0.5) * w + (rng() - 0.5) * 8, oy = top * 8 + (rng() - 0.5) * 3, oz = (rng() - 0.5) * 14;
+        puffs.push({ c: g, ox, oy, oz, sx: sz * 1.6, sy: sz, col, b: op < 0.65 ? 0 : op < 0.75 ? 1 : 2 }); }
+      g.position.set((rng() * 2 - 1) * (HALF + 40), 105 + rng() * 40, (rng() * 2 - 1) * (HALF + 40)); g.userData.asset = 'cloud'; clouds.push(g);
+    }
+    const geo = new THREE.PlaneGeometry(1, 1);
+    S.cloudInst = OP.map((op, b) => { const list = puffs.filter(p => p.b === b), im = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: op, depthWrite: false, fog: false }), Math.max(1, list.length));
+      list.forEach((p, i) => { im.setColorAt(i, p.col); p.i = i; }); im.frustumCulled = false; im.userData.asset = 'cloud'; scene.add(im); return { im, list }; });
+    updateCloudInstances();
+  }
 }
 
 
@@ -1079,12 +1121,13 @@ const GRIFEIROS = {
   dunas: { id: 'samira', name: 'Samira', title: 'Mestra dos Noctívagos', model: 'Rogue', show: ['Rogue_Cape'], look: { race: 'humano', face: 'astuto', hair: { style: 'longo', color: 'preto' } } },
   colossos: { id: 'oto', name: 'Oto', title: 'Mestre dos Noctívagos', model: 'Rogue_Hooded', show: ['Rogue_Cape'], look: { race: 'elfo', face: 'gentil', hair: { style: 'franja', color: 'platinado' } } },
 };
-function buildFrontier() {
+async function buildFrontier() { // P-010: em etapas (worldYield)
   // pontos de voo: poleiro com o emblema + mestre-grifo
   for (const [k, f] of Object.entries(FLIGHTS)) {
-    const r = makeRoost(); r.position.set(f.x + 1.6, heightAt(f.x + 1.6, f.z - 0.4), f.z - 0.4); scene.add(r); roomAnims.push(r); for (const [lx, lz, rr] of r.userData.cols || []) colliders.push({ x: f.x + 1.6 + lx, z: f.z - 0.4 + lz, r: rr });
+    const r = makeRoost(); r.position.set(f.x + 1.6, heightAt(f.x + 1.6, f.z - 0.4), f.z - 0.4); scene.add(r); roomAnims.push(r); ROOSTS.push(r); for (const [lx, lz, rr] of r.userData.cols || []) colliders.push({ x: f.x + 1.6 + lx, z: f.z - 0.4 + lz, r: rr });
     worldNpc({ ...GRIFEIROS[k], grifo: k }, f.x, f.z, k === 'vila' ? -Math.PI / 2 : rng() * 6.28);
   }
+  await worldYield('Cidadela de Pedraclara');
   // ---------- Cidadela de Pedraclara: muralha de pedra, torres, portão a oeste ----------
   const C = CITY2, wb = bbox('wall'), wlen = Math.max(4, (wb.max.x - wb.min.x) * WS * 0.96), R = 38;
   for (let a = 0; a < Math.PI * 2; a += wlen / R) {
@@ -1120,6 +1163,7 @@ function buildFrontier() {
     place('tent', c.x + 5, c.z - 4, { rf: 0.6 }); place('crate_A', c.x - 3, c.z + 2.5, { rf: 0.6 }); place('barrel', c.x - 4, c.z + 3.6, { rf: 0.6 }); place('flag_blue', c.x + 3, c.z + 5, { solid: false });
     const f = makeCampfire(); f.position.set(c.x, heightAt(c.x, c.z), c.z); scene.add(f); roomAnims.push(f); colliders.push({ x: c.x, z: c.z, r: 0.7 });
   }
+  await worldYield('Planície dos Colossos');
   // ---------- Planície dos Colossos ----------
   // S-102: cinco colossos diferentes, maiores e esculpidos (cada um traz sua colisão em userData.cols)
   const colo = (o, id, x, z, rot) => landmark(o, id, x, z, rot, footprintCols(o) || o.userData.cols, heightAt(x, z) - 0.3); // S-302: colisão tirada da forma real (nada de atravessar braço, cabeça ou escombro)
@@ -1128,17 +1172,20 @@ function buildFrontier() {
   colo(makeStoneBeast(67), 'colosso_fera', -78, -352, 0.9);                     // fera agachada
   colo(makeFallenTitan(79), 'colosso_tita', 100, -275, -0.4);                   // titã caído com o braço erguido
   colo(makeHeadless(97), 'colosso_sem_cabeca', -96, -246, 1.1);                 // guerreiro sem cabeça (a cabeça caiu a seus pés)
+  await worldYield('Escombros e ossadas');
   buildRuins({ scene, placed, colliders, occluders, heightAt, roadDist }); // S-161: ruínas e escombros
   { const mist = makeMist(heightAt, 0, -300, 115, 30, 5); scene.add(mist); roomAnims.push(mist); } // névoa baixa: clima de mistério
   landmark(makeGiantHead(7), 'cabeca_gigante', 46, -252, 0.6, [[0, 0, 4.6]], heightAt(46, -252) - 1.4);
   for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + 0.2, x = Math.cos(a) * 24, z = -300 + Math.sin(a) * 24; if (Math.abs(x) < 5) continue; landmark(makeMonolith(30 + k, 6 + (k % 3) * 1.6), 'monolito', x, z, -a, [[0, 0, 1.2]]); }
   for (let k = 0; k < 6; k++) { const x = (k % 2 ? 1 : -1) * (40 + k * 17), z = -230 - k * 26; landmark(makeMonolith(60 + k, 5 + (k % 2) * 2), 'monolito', x, z, k, [[0, 0, 1.2]]); }
   for (const z of [-262, -338]) landmark(makeArch(z), 'arco', 0, z, 0, [[-4.5, 0, 1.1], [4.5, 0, 1.1]]);
+  await worldYield('Santuário Silente');
   // ---------- Santuário Silente: fachada encravada na montanha; o portal leva às Catacumbas ----------
   const ty = heightAt(TEMPLE.x, TEMPLE.z);
   const tpm = makeTemple(13), tp = landmark(tpm, 'santuario', TEMPLE.x, TEMPLE.z, 0, tpm.userData.cols, ty - 0.1);
   colliders.push({ x: TEMPLE.x, z: TEMPLE.z + 0.6, r: 15, box: true, hx: 15.2, hz: 10.4, rot: 0, name: 'santuario' });
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
+  await worldYield('Pedrafunda, Aelindra e a Vigília');
   // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
   S.cities = buildCities({ scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera, roomNpc, addDoorPortal, portals, INTERIORS, makePortal }); // S-274: salas com porta também nas cidades
   if (FROST.stable) { // S-260: cavalos presos nas baias do Estábulo da Vigília, com cabresto amarrado e feno espalhado
@@ -1155,7 +1202,9 @@ function buildFrontier() {
     if (tpl) for (const a of anc) { const bb = new THREE.Box3().setFromObject(a), H = bb.max.y - a.position.y, th = tpl.height || 9; const o = place(tpl === MODELS.oak_2 ? 'oak_2' : 'oak_0', a.position.x, a.position.z, { scale: H / th * 1.12, solid: false, y: a.position.y }); if (o) { o.userData.asset = 'arvore_ancia'; o.userData.big = true; } }
     cobblePlaza(CITY2.x, CITY2.z, 20, 8); // praça calçada também em Pedraclara
   }
+  await worldYield('Porto das Gaivotas');
   { const portCtx = { scene, place, worldNpc, roomNpc, colliders, occluders, placed, roomAnims, camera, addDoorPortal, portals }; S.port = buildPortCity(portCtx); buildMerchants(portCtx); } // S-208..S-218: Porto das Gaivotas (port3d)
+  await worldYield('Castelo de Valcinza');
   buildCastle({ scene, place, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals });
   if (S.cities && S.cities.refineBoard) { const b = S.cities.refineBoard, m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.92, b.h * 0.88), new THREE.MeshStandardMaterial({ map: refineBoardTex(), roughness: 0.9 })); m.position.set(b.x, b.y, b.z); m.rotation.y = b.yaw; m.translateZ(0.06); scene.add(m); m.userData.asset = 'tabela_refino'; placed.push(m); extraPick.push(m); } // S-124: tabela de refino na parede do ferreiro
 }
@@ -1236,6 +1285,15 @@ const CLASS_ATTACK = {
 };
 function attackAnim(p, me) {
   if (p.d.sonic) { S.lastAtk = S.time; S.overlayAtk = true; return { sound: instrSound(p), sonic: true }; } // S-324: com instrumento o "golpe" é o dedilhado (braços por IK em bardPose), sem clipe de corpo inteiro
+  { // P-014: golpe sob medida pela arma/classe (trajetória das mãos + tronco, depois do mixer); as pernas seguem a animação de base
+    const it = weaponInfo(p), wt = it ? it.wtype : null, armed = !!(p.equip && p.equip.arma), kind = !p.d.ranged && !p.d.magicAuto ? strikeKind(p.cls, wt, armed) : null;
+    if (kind) {
+      const r = startStrike(me, kind, { delay: p.d.aspd / 1000, speed: ((CLASS_POSE[p.cls] || {}).atk || [0, 0, 1])[2] }); S.lastAtk = S.time; S.overlayAtk = true;
+      if (r && r.lunge) S.lunge = { t: S.time, d: r.lunge };
+      const kat = hasKatar(p), dual = kind === 'duas' && !kat, ca = CLASS_ATTACK[p.cls] || {};
+      return { sound: kat ? 'katarSlash' : dual ? 'stab' : ca.sound || 'swing', katar: kat, dual, hitAt: r ? r.hitAt : 0.25, heavy: r && r.heavy, strike: kind };
+    }
+  }
   const dualDag = p.cls === 'lamina_sombria' && ((weaponInfo(p) || {}).wtype === 'adaga'); // S-322: Executor de duas adagas = golpes alternados, como a katar
   if (hasKatar(p) || dualDag) { // katar (Executor), no espírito do Algoz do RO: estocadas alternadas esquerda/direita cujo ritmo segue a velocidade de ataque (ASPD 190 = rajada contínua)
     const delay = Math.max(0.12, p.d.aspd / 1000); S.katN = (S.katN || 0) + 1; const clip = S.katN % 2 ? 'Punch_Cross' : 'Punch_Jab', dur = clip === 'Punch_Cross' ? 1.0 : 0.867;
@@ -1766,6 +1824,7 @@ function hurtMonster(m, res, elem) {
   if (m.def.dummy) { // boneco de treino: mostra o dano, guarda para o DPS e nunca cai
     (m.dps = m.dps || []).push([S.time, res.dmg]); m.total = (m.total || 0) + res.dmg;
     floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : '#ffffff', m.height + 0.4, res.crit); Sound.play(S.hitSfx ? (res.crit ? S.hitSfx + 'Crit' : S.hitSfx) : res.crit ? 'crit' : 'hit');
+    impact(m, { x: m.x - S.pos.x, z: m.z - S.pos.z }, { crit: res.crit, heavy: S.heavyHit }); // P-011
     if (m.vis.critter.hit) m.vis.critter.hit(Math.sign(Math.cos(Math.atan2(S.pos.x - m.x, S.pos.z - m.z) - m.yaw)) || 1);
     return;
   }
@@ -1774,6 +1833,7 @@ function hurtMonster(m, res, elem) {
   floatAt(m.obj.position, res.dmg, res.crit ? '#ffe36a' : strong ? '#ffb070' : elem === 'veneno' ? '#9be36a' : '#ffffff', m.height + 0.4, res.crit);
   Sound.play(S.hitSfx ? (res.crit ? S.hitSfx + 'Crit' : S.hitSfx) : res.crit ? 'crit' : 'hit');
   { const sx = MON_SFX[m.def.shape]; if (sx && sx.hurt && Math.random() < (sx.hurtP ?? 0.6)) Sound.play(sx.hurt); }
+  impact(m, { x: m.x - S.pos.x, z: m.z - S.pos.z }, { crit: res.crit, heavy: S.heavyHit }); // P-011: pausa curta, recuo, piscada e partículas pelo material do alvo
   if (m.vis.critter) { const r = m.vis.critter.root, s0 = r.scale.x; r.scale.setScalar(s0 * 1.15); later(0.08, () => r.scale.setScalar(s0)); }
   else if (S.time >= m.lockAnim) { monAnim(m, 'Hit_A', { once: true, restart: true, fade: 0.05 }); m.lockAnim = S.time + 0.3; }
   if (p.d.lifesteal) p.hp = Math.min(p.d.maxHp, p.hp + Math.floor(res.dmg * p.d.lifesteal / 100));
@@ -2130,7 +2190,8 @@ function updatePlayer(dt) {
       const armK = g('_poseArm', on && !atk && !ARMLESS_POSE.test(p.cls) ? 1 : 0, atk ? 18 : 5), atkK = g('_poseAtk', on && atk ? 1 : 0, atk ? 14 : 5);
       applyClassPose(me, p.cls, legK, bodyK, armK, atkK);
     }
-    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bardPose(me, p, t, dt); /* S-324: instrumento */ // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
+    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bardPose(me, p, t, dt); /* S-324: instrumento */
+    updateStrike(me, dt, { skipR: /^(mago|arquimago)$/.test(p.cls), skipL: p.cls === 'sabio_elemental' }); // P-014: golpe sob medida por cima de tudo (cajado/livro ficam com o IK deles) // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));
@@ -2291,13 +2352,13 @@ function playerAttack(m) {
     if (ca && ca.katar) later(Math.min(0.08, p.d.aspd / 4000), () => { if (!m.dead) { S.hitSfx = 'katarSpark'; hurtMonster(m, rollPhys(p, m, 0.25, 'neutro')); S.hitSfx = null; } }); // katar: segundo número menor logo depois (como no RO)
   };
   if (p.d.magicAuto) { // projétil arcano do cajado
-    me.anim.play('Spellcast_Shoot', { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) });
+    if (!startStrike(me, p.cls === 'sabio_elemental' ? 'gesto' : 'cajado', { delay: p.d.aspd / 1000 })) me.anim.play('Spellcast_Shoot', { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); // P-014: a mão livre conjura (o braço do cajado/livro segue o IK deles)
     Sound.play('magic');
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
   else if (p.d.sonic) { Sound.play(ca.sound || 'strum'); later(0.12, () => shoot(instrFrom(me), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#ffc8ee', () => { Sound.play('sonicHit'); hit(); }, 'sonic')); } // S-324: dedilhado → onda sonora até o alvo
   else if (p.d.ranged) { const isBow = ca.sound !== 'magic', xb = isBow && isXbow(p); if (xb) later(bowRelease(p) + 0.16, () => Sound.play('crossbowReload')); else Sound.play(isBow ? 'bowDraw' : 'magic'); later(isBow ? bowRelease(p) : 0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, xb ? 'bolt' : true)); } // S-325: besta dispara virote
-  else { Sound.play(ca.sound || 'swing'); later(ca && ca.katar ? Math.min(0.12, p.d.aspd / 2000) : 0.28, hit); } // katar: o rasgo cai no meio da estocada, mesmo em ASPD alto
+  else { Sound.play(ca.sound || 'swing'); S.heavyHit = !!(ca && ca.heavy); later(ca && ca.hitAt ? ca.hitAt : ca && ca.katar ? Math.min(0.12, p.d.aspd / 2000) : 0.28, hit); } // P-014: o acerto cai no instante do golpe sob medida · katar: no meio da estocada, mesmo em ASPD alto
 }
 function playerDie() {
   const p = S.p;
@@ -2952,12 +3013,27 @@ const WM = 640; // resolução do mapa pintado (cobre o mundo todo: -HALF..HALF)
 const worldMap = document.createElement('canvas'); worldMap.width = worldMap.height = WM;
 const w2m = v => (v / HALF + 1) / 2 * WM; // metros -> pixel do mapa pintado
 const mmBase = worldMap; // compatibilidade
-function buildMinimap() {
-  const g = worldMap.getContext('2d'), img = g.createImageData(WM, WM), step = HALF * 2 / WM;
+/* P-010: o mapa pintado custava ~8–10 s de uma vez (410 mil amostras do terreno). Agora: guardado no navegador
+   (chave = assinatura do world3d.js, então muda sozinho quando o terreno muda) e, quando precisa pintar, pinta aos
+   pedaços cedendo a vez à tela (o jogo e a vitrine continuam respondendo). */
+async function mmCacheKey() {
+  try { const t = await (await fetch('/js3d/world3d.js', { cache: 'no-cache' })).text(); let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return 'aethra_mm_' + WM + '_' + (h >>> 0).toString(36); } catch (e) { return null; }
+}
+async function buildMinimap() {
+  const g = worldMap.getContext('2d'), step = HALF * 2 / WM, key = await mmCacheKey();
+  let fromCache = false;
+  if (key) { try { const d = localStorage.getItem(key); if (d) { const bmp = await createImageBitmap(await (await fetch(d)).blob()); g.drawImage(bmp, 0, 0); fromCache = true; } } catch (e) { } }
+  if (!fromCache) { await paintMinimapBase(g, step); if (key) { try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('aethra_mm_') && k !== key) localStorage.removeItem(k); } localStorage.setItem(key, worldMap.toDataURL('image/webp', 0.92)); } catch (e) { } } }
+  drawMinimapObjects(g);
+}
+async function paintMinimapBase(g, step) {
+  const img = g.createImageData(WM, WM);
   // relevo com sombreado (luz vinda do noroeste) e cores do chão
   const H = new Float32Array((WM + 1) * (WM + 1));
-  for (let j = 0; j <= WM; j++) for (let i = 0; i <= WM; i++) H[j * (WM + 1) + i] = heightAt(-HALF + i * step, -HALF + j * step);
-  for (let j = 0; j < WM; j++) for (let i = 0; i < WM; i++) {
+  let t0 = performance.now();
+  const breathe = async () => { if (!document.hidden && performance.now() - t0 > 12) { await nextTask(); t0 = performance.now(); } }; // aba oculta: o navegador atrasa cada pausa, então pinta direto
+  for (let j = 0; j <= WM; j++) { for (let i = 0; i <= WM; i++) H[j * (WM + 1) + i] = heightAt(-HALF + i * step, -HALF + j * step); await breathe(); }
+  for (let j = 0; j < WM; j++) { await breathe(); for (let i = 0; i < WM; i++) {
     const x = -HALF + i * step, z = -HALF + j * step, h = H[j * (WM + 1) + i];
     const dl = lakeDist(x, z);
     let c;
@@ -2968,12 +3044,14 @@ function buildMinimap() {
     const edge = Math.max(Math.abs(x), Math.abs(z)) > PLAY_LIMIT ? 0.72 : 1; // fora da área jogável fica mais escuro
     const k = (j * WM + i) * 4;
     img.data[k] = Math.min(255, c.r * 255 * shade * edge); img.data[k + 1] = Math.min(255, c.g * 255 * shade * edge); img.data[k + 2] = Math.min(255, c.b * 255 * shade * edge); img.data[k + 3] = 255;
-  }
+  } }
   g.putImageData(img, 0, 0);
   // margem do lago
   g.strokeStyle = 'rgba(232,214,160,0.9)'; g.lineWidth = 2.5; g.beginPath();
   for (let i = 0; i <= 96; i++) { const a = i / 96 * Math.PI * 2, rr = LAKE.r * lakeShape(LAKE.x + Math.cos(a), LAKE.z + Math.sin(a)); const X = w2m(LAKE.x + Math.cos(a) * rr), Y = w2m(LAKE.z + Math.sin(a) * rr); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
   g.stroke();
+}
+function drawMinimapObjects(g) {
   // cenário: árvores, pedras e prédios
   const px = 300 / WM;
   for (const o of placed) {
@@ -3216,9 +3294,11 @@ function syncG() {
   if (S.zone) { G.mapId = 'mundo3d:' + S.zone.id; G.map.def.name = S.zone.name; }
 }
 function step(dt) {
+  if (S.worldDone) pumpSpawns(); // P-010: monstros das regiões longe nascem aos poucos
   ensureGallery();
   syncG();
   if (S.started && !S.paused && !S.menuOpen) {
+    initImpact(scene); dt = hitStopDt(dt); // P-011: micro-pausa de 40–60 ms no acerto
     S.time += dt;
     for (let i = S.timers.length - 1; i >= 0; i--) if (S.timers[i].at <= S.time) { const t = S.timers.splice(i, 1)[0]; t.fn(); }
     if (S.flight) S.flight.update(dt); else updatePlayer(dt); // P-006: voando, o Pégaso conduz (sem controle do jogador)
@@ -3239,8 +3319,9 @@ function step(dt) {
     }
     for (let i = S.fx.length - 1; i >= 0; i--) { const f = S.fx[i], k = (S.time - f.t0) / f.dur; if (k >= 1) { (f.parent || scene).remove(f.obj); S.fx.splice(i, 1); } else f.update(k); }
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
+    updateCloudInstances();
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
   }
 }
@@ -3278,6 +3359,7 @@ function draw(dt) {
       }
     }
     if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
+    else { updateImpact(dt); shakeCamera(camera, dt); } // P-011: recuo/piscada do alvo, partículas e tremidinha só em críticos/pesados
     sun.position.set(P.x + 30, P.y + 60, P.z + 18); sun.target.position.set(P.x, P.y, P.z);
     sky.position.copy(camera.position);
     // névoa por região
@@ -3585,6 +3667,10 @@ function renderObj(obj, W, H) {
   g.putImageData(img, 0, 0); return cv.toDataURL('image/png');
 }
 function startWith(s) {
+  if (!S.worldDone) { // P-010: clicou em Entrar antes de o mundo terminar de ser montado — mostra o progresso e entra assim que ficar pronto
+    $('loading3d').classList.remove('hidden'); worldProgressUI();
+    S.worldReady.then(() => { $('loading3d').classList.add('hidden'); startWith(s); }); return;
+  }
   if (!s.pet) {
     return showPetChoice(`${escH(s.name)}, três criaturinhas te seguiram até a vila... Qual delas vai te acompanhar?`, species => { s.pet = newPet(species); startWith(s); setTimeout(save3d, 500); log(`🐾 ${PETS[species].stages[0].name} agora é seu companheiro!`, 'card'); });
   }
@@ -3757,7 +3843,7 @@ function admPois() {
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
 }
-const qaCtx = () => ({ S, placed, colliders, groundAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
+const qaCtx = () => ({ renderer, scene, galleryAnim, ensureGallery, S, placed, colliders, groundAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
 function adminRender() {
   const p = S.p; if (!p) return;
   const body = UI.body('admin'), pois = admPois();
@@ -3795,7 +3881,7 @@ function adminRender() {
         <button class="adm-chip" data-cmd="cura">❤️ Curar tudo</button><button class="adm-chip" data-cmd="lv1">⭐ +1 Nível Base</button><button class="adm-chip" data-cmd="lv5">⭐ +5 Níveis Base</button>
         <button class="adm-chip" data-cmd="job1">✦ +1 Nível Classe</button><button class="adm-chip" data-cmd="job10">✦ +10 Níveis Classe</button><button class="adm-chip" data-cmd="zeny">💰 +10.000 z</button>
         <button class="adm-chip" data-cmd="rate">📈 EXP ${CONFIG.EXP_RATE}× (trocar)</button>
-        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-qa="1">🔍 Verificar o mundo</button><button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
+        ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-qa="1">🔍 Verificar o mundo</button><button class="adm-chip" data-qach="1">🧍 Verificar personagens</button><button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
     </div>`;
   body.querySelector('#adm-god').onclick = () => toggleGod();
   body.querySelector('#adm-pw-go').onclick = async () => { // fase 2 do online: senha da conta do administrador "robertofpj" (o servidor só aceita isso do computador local)
@@ -3807,6 +3893,7 @@ function adminRender() {
   body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
   body.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { p.look = { ...(p.look || {}), race: el.dataset.race }; buildPlayerModel(); save3d(); log(`🧬 Raça trocada: ${RACES[el.dataset.race].name}.`, 'sys'); adminRender(); });
   body.querySelectorAll('[data-barber]').forEach(el => el.onclick = () => { UI.close('admin'); showCreate3d([], { edit: true, look: normalizeLook(p.look), cls: p.cls }); });
+  body.querySelectorAll('[data-qach]').forEach(el => el.onclick = async () => { el.textContent = '🧍 Verificando…'; el.disabled = true; const rep = await checkCharsDeep(qaCtx(), { returnTo: false, onProgress: (i, n, nm) => { el.textContent = `🧍 ${i + 1}/${n} · ${nm}`; } }); UI.close('admin'); showQAChars(rep, qaCtx()); }); // P-012
   body.querySelectorAll('[data-qa]').forEach(el => el.onclick = async () => { el.textContent = '🔍 Verificando…'; el.disabled = true; const rep = await runQA(qaCtx()); UI.close('admin'); showQA(rep, teleport3d); });
   body.querySelectorAll('[data-aur]').forEach(el => el.onclick = () => { cosm().auroras += 1000; log('✦ +1.000 Auroras (teste do mestre).', 'sys'); UI.markDirty(); save3d(); });
   body.querySelectorAll('[data-petset]').forEach(el => el.onclick = () => { H3.setPet(el.dataset.petset, +el.dataset.st, true); adminRender(); });
@@ -3864,23 +3951,62 @@ function drawAdmMap(cv, clean) { // clean (S-232): no Painel do Mestre só o map
   c.strokeStyle = '#c9a24a'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, W - 3, W - 3);
 }
 
+/* ---------- P-010: carregamento em etapas ----------
+   nextTask: cede a vez ao navegador (desenha, responde a cliques) sem o atraso de setTimeout em aba oculta.
+   worldYield: marca a etapa (nome em pt-BR + tempo da anterior) e cede a vez. WB guarda o perfil (window.__loadProfile). */
+const nextTask = () => new Promise(r => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
+const WB = { done: false, step: '', k: 0, n: 19, t0: 0, last: 0, prof: [] };
+async function worldYield(label) {
+  const now = performance.now(); if (WB.step) WB.prof.push([WB.step, Math.round(now - WB.last)]); WB.last = now; WB.step = label; WB.k++;
+  worldProgressUI(); await nextTask();
+}
+function worldProgressUI() {
+  const pct = WB.done ? 100 : Math.min(99, Math.round(WB.k / WB.n * 100)), ld = $('loading3d'), waiting = ld && !ld.classList.contains('hidden');
+  if (waiting) { $('ld-txt').textContent = WB.done ? 'Entrando no mundo…' : `Montando o mundo: ${WB.step}… ${pct}%`; $('ld-bar').style.width = pct + '%'; }
+  let el = $('world-prog');
+  if (WB.done || S.started) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'world-prog'; el.style.cssText = 'position:fixed;left:14px;bottom:14px;z-index:70;padding:6px 10px 8px;min-width:210px;border-radius:9px;background:rgba(14,12,24,0.82);border:1px solid rgba(255,215,106,0.3);color:#cfc6b0;font:12px Nunito,sans-serif;pointer-events:none'; document.body.appendChild(el); }
+  el.innerHTML = `<div>🧱 Montando o mundo · <b style="color:#ffd76a">${WB.step}</b></div><div style="height:4px;margin-top:5px;border-radius:2px;background:rgba(255,255,255,0.1)"><div style="height:100%;width:${pct}%;border-radius:2px;background:linear-gradient(90deg,#c8902a,#ffd76a)"></div></div>`;
+}
+// monstros: os da vila nascem já; os das outras regiões entram numa fila e nascem aos poucos (5 ms por quadro), os mais perto de você primeiro
+function queueSpawns() {
+  const q = []; let idx = 0;
+  for (const [zone, type, n] of SPAWNS) for (let i = 0; i < n; i++) { if (zone === 'vila') spawnMonster(zone, type); else q.push({ zone, type, idx: idx++ }); }
+  S.spawnQueue = q; S._spSorted = null;
+}
+function pumpSpawns() {
+  const q = S.spawnQueue; if (!q || !q.length) return;
+  const key = S.started ? 'jogo' : 'menu';
+  if (S._spSorted !== key) { // reordena quando o jogo começa (você pode ter salvo longe da vila)
+    const c = z => { const zn = ZONES.find(o => o.id === z) || INTERIORS[z] || VILLAGE; return Math.hypot((zn.x ?? 0) - S.pos.x, (zn.z ?? 0) - S.pos.z); };
+    q.sort((a, b) => (c(b.zone) - c(a.zone)) || (b.idx - a.idx)); S._spSorted = key; // o último da lista é o mais perto (e, na mesma região, na ordem original)
+  }
+  const t0 = performance.now();
+  while (q.length && performance.now() - t0 < 5) { const s = q.pop(); spawnMonster(s.zone, s.type); }
+}
 (async function boot() {
   requestAnimationFrame(frame);
   await loadAll();
   await loadHumans(k => { const t = $('ld-txt'); if (t) t.textContent = 'Carregando personagens… ' + k; }); // corpos realistas (Quaternius, CC0)
   friendlyFaces(MODELS);
-  buildWorld();
-  terrainNear(VILLAGE.x, VILLAGE.z, 130); // detalhe em volta da vila (tela inicial e começo do jogo)
-  spawnNpcs();
-  for (const [zone, type, n] of SPAWNS) for (let i = 0; i < n; i++) spawnMonster(zone, type);
-  for (const [dx, dz] of [[-5, 13], [-1.5, 14.5], [2, 13]]) spawnMonster('vila', 'boneco_treino', { x: VILLAGE.x + dx, z: VILLAGE.z + dz }); // bonecos de treino (S-090)
-  buildMinimap();
+  // P-010: a vitrine abre logo; o mundo é montado em segundo plano, em etapas (worldYield), enquanto você escolhe o personagem
+  WB.t0 = WB.last = performance.now(); WB.step = 'Vila de Alvorada';
+  S.worldReady = (async () => {
+    await nextTask();
+    await buildWorld();
+    await worldYield('Terreno perto da vila'); terrainNear(VILLAGE.x, VILLAGE.z, 130); // detalhe em volta da vila (tela inicial e começo do jogo)
+    await worldYield('Moradores'); spawnNpcs();
+    await worldYield('Monstros'); queueSpawns();
+    for (const [dx, dz] of [[-5, 13], [-1.5, 14.5], [2, 13]]) spawnMonster('vila', 'boneco_treino', { x: VILLAGE.x + dx, z: VILLAGE.z + dz }); // bonecos de treino (S-090)
+    worldYield('Pronto'); WB.done = S.worldDone = true; worldProgressUI(); window.__loadProfile = WB.prof;
+    buildMinimap(); // o mapa pintado termina sozinho depois (não segura a entrada no mundo; da 2ª vez vem pronto do navegador)
+  })();
   installIntegration();
   $('mm-in').onclick = () => zoomMinimap(1); $('mm-out').onclick = () => zoomMinimap(-1);
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
   globalThis.__world = { scene, groundAt }; // o que o jogo precisa entre módulos (sem ferramentas de teste)
-  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { classPose: applyClassPose, CLASS_POSE, qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { classPose: applyClassPose, CLASS_POSE, qa: o => runQA(qaCtx(), o), qaChars: o => checkCharsDeep(qaCtx(), o), showQAChars: r => showQAChars(r, qaCtx()), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();

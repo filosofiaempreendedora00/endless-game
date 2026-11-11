@@ -6,7 +6,7 @@
    bowPose(me, o, ctx): me = { root, ... }, o = { w: peso da pose de combate, aim: 0 guarda → 1 mirando, draw: 0 corda solta → 1 na
    âncora, yaw: direção do alvo, twist: giro de lado já aplicado no corpo, nock: flecha visível }, ctx = { scene, makeArrow } */
 import * as THREE from 'three';
-import { handGrip } from './looks3d.js';
+import { gripHand } from './looks3d.js';
 
 const UP = new THREE.Vector3(0, 1, 0), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
 function setWorldQuat(b, wq) { b.parent.updateWorldMatrix(true, false); b.quaternion.copy(b.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(wq)); b.updateWorldMatrix(false, true); }
@@ -46,8 +46,8 @@ export function bowPose(me, o, ctx) {
   if (Weff < 0.02) { nock.visible = false; stringFx(bow, null, false); me._hpL = null; return; }
   const g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'), nk = g('neck_01'), s3 = g('spine_03');
   if (!sl || !el || !hl || !sr || !er || !hr || !hd) return;
-  (me._gripL || (me._gripL = handGrip(r, 'l', 1)))(); // mão do arco fechada em volta da empunhadura
-  (me._gripR || (me._gripR = handGrip(r, 'r', 0.55)))(); // dedos da corda em gancho
+  gripHand(r, 'l', 'punho'); // P-013: mão do arco fechada em volta da empunhadura (encosta no cabo registrado)
+  gripHand(r, 'r', 'corda'); // P-013: dedos da corda em gancho
   const W = Weff, A = Aeff, tw = o.twist || 0, fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
   r.updateWorldMatrix(true, true);
   // corpo de lado (twist no obj): o peito volta um pouco e a cabeça olha para o alvo
@@ -135,7 +135,7 @@ export function crossbowPose(me, o) {
   if (o.w < 0.02) return;
   const g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'), nk = g('neck_01'), s3 = g('spine_03');
   if (!sl || !el || !hl || !sr || !er || !hr || !hd) return;
-  (me._gripR || (me._gripR = handGrip(r, 'r', 1)))(); (me._gripL || (me._gripL = handGrip(r, 'l', 0.7)))();
+  gripHand(r, 'r', 'punho'); gripHand(r, 'l', 'apoio'); // P-013: cabo da besta no punho direito; esquerda apoia
   const W = o.w, A = Math.max(0, o.aim - (o.reload || 0) * 0.85), tw = o.twist || 0, rc = o.recoil || 0, rl = o.reload || 0;
   const fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
   r.updateWorldMatrix(true, true);

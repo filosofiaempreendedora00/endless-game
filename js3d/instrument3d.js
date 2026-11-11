@@ -5,7 +5,7 @@
    - "play" (0..1) é a intensidade: 0,15 = pronto para tocar, 1 = tocando (dedilhado rápido, corpo e cabeça no ritmo).
    instrumentPose(me, o): me = { root, ... }, o = { w: 0 nas costas → 1 nas mãos, play: 0..1, t: tempo } */
 import * as THREE from 'three';
-import { handGrip } from './looks3d.js';
+import { gripHand } from './looks3d.js';
 
 const UP = new THREE.Vector3(0, 1, 0), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
 function setWorldQuat(b, wq) { b.parent.updateWorldMatrix(true, false); b.quaternion.copy(b.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(wq)); b.updateWorldMatrix(false, true); }
@@ -47,7 +47,7 @@ export function instrumentPose(me, o) {
     ik2(sl, el, hl, pl.clone().add(az.clone().multiplyScalar(-0.035 - finger)).add(ay.clone().multiplyScalar(-0.03)), shL.clone().add(UP.clone().multiplyScalar(-0.45)).add(left.clone().multiplyScalar(0.25)), W);
     ik2(sr, er, hr, pr.clone().add(az.clone().multiplyScalar(-0.035 - finger)).add(ay.clone().multiplyScalar(-0.03)), shR.clone().add(UP.clone().multiplyScalar(-0.45)).add(left.clone().multiplyScalar(-0.25)), W);
     aimHand(hl, az.clone().negate().add(ay.clone().multiplyScalar(0.4)), 0.6 * W); aimHand(hr, az.clone().negate().add(ay.clone().multiplyScalar(0.4)), 0.6 * W);
-    (me._iGripL || (me._iGripL = handGrip(r, 'l', 0.45)))(); (me._iGripR || (me._iGripR = handGrip(r, 'r', 0.45)))();
+    gripHand(r, 'l', 'flauta'); gripHand(r, 'r', 'flauta'); // P-013
     return;
   }
   // alaúde/bandolim: mão esquerda por baixo do braço do instrumento (dedos sobem para os trastes), cotovelo baixo e para fora
@@ -62,5 +62,5 @@ export function instrumentPose(me, o) {
   const strum = Math.sin(t * (6 + 10 * P)) * (0.01 + 0.028 * P), body = I.obj.localToWorld(wr);
   ik2(sr, er, hr, body.clone().add(ax.clone().multiplyScalar(0.1 + strum)).add(ay.clone().multiplyScalar(-0.02)).add(az.clone().multiplyScalar(-0.06)), shR.clone().add(UP.clone().multiplyScalar(-0.15)).add(left.clone().multiplyScalar(-0.35)).add(fwd.clone().multiplyScalar(-0.25)), W);
   aimHand(hr, ax.clone().negate().add(az.clone().multiplyScalar(0.25)), 0.7 * W);
-  (me._iGripL || (me._iGripL = handGrip(r, 'l', 0.7)))(); (me._iGripR || (me._iGripR = handGrip(r, 'r', 0.35)))();
+  gripHand(r, 'l', 'alaude'); gripHand(r, 'r', 'dedilhar'); // P-013
 }

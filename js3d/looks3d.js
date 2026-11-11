@@ -459,6 +459,7 @@ export function humanBorrow(root, MODELS, model, itemName, extraScale = 1) {
       const qh = new THREE.Quaternion().setFromRotationMatrix(to.multiply(from.invert()));
       const g = new THREE.Vector3(0, GRIP_Y[itemName] ?? -0.12, 0).multiply(c.scale).applyQuaternion(qc); c.position.copy(g.multiplyScalar(-1)); // o ponto do cabo que a mão segura fica no centro do punho
       fitToBone(root, b, holder, qh, F.C);
+      gripOn(root, left ? 'l' : 'r', /Axe/.test(itemName) ? 'machado' : /Knife/.test(itemName) ? 'adaga' : /Wand/.test(itemName) ? 'varinha' : 'espada', holder, { axis: Y.clone() }); // P-013: dedos fecham no cabo
     } else { holder.rotation.set(0, 0, 0); holder.position.set(left ? -0.015 : 0.015, 0.085, 0.02); }
   }
   c.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
@@ -523,6 +524,7 @@ export function dressHuman(ch, cls, MODELS, opts = {}) {
   if (L.book) holdBook(root, codeBook(), fx); // S-314: livro do Sábio segurado pela lombada na mão esquerda
   if (opts.offhand) strapShield(root, codeShield(SHIELD_KIND[opts.offhand] || (/paladino|guardiao/.test(cls) ? 'paladino' : 'madeira')));
   // S-147: sem a capa chapada nas costas (não combina com o corpo realista) — vale para todas as classes
+  fx.push(() => fingerGrips(root)); // P-013: depois de tudo (IK do cajado etc.), os dedos fecham no que a mão segura
   return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
 }
 /* Veste o personagem: devolve { style, update(t) } */
@@ -1460,7 +1462,9 @@ function strapShield(root, shield) {
       for (const sx of [-1, 1]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 8), ST.metal); rv.scale.z = 0.6; rv.position.set(sx * ra, y, P - 0.002); holder.add(rv); } // rebites que prendem a alça no forro
     }
   }
-  root.userData.items = root.userData.items || {}; root.userData.items.shield = shield; return shield;
+  root.userData.items = root.userData.items || {}; root.userData.items.shield = shield;
+  gripOn(root, 'l', 'punho', shield, { r: 0 }); // P-013: mão do escudo fechada na alça de mão (enarme), sem cabo a encostar
+  return shield;
 }
 const SHIELD_KIND = { escudo_madeira: 'madeira', broquel_ferro: 'broquel', escudo_sagrado: 'paladino' };
 /* arco de verdade (S-200): recurvo de madeira laminada, empunhadura de couro, corda; na mão esquerda, em pé */
@@ -1492,6 +1496,7 @@ function holdBow(root, bow) {
   bow.position.z = -bow.userData.gripZ; bow.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   root.userData.items = root.userData.items || {}; root.userData.items.bow = bow;
   root.userData.bowState = s => { const tgt = s === 'hand' ? inHand : onBack; if (bow.parent !== tgt) { tgt.add(bow); root.userData.bowAt = s; } };
+  if (F) gripOn(root, 'l', 'arco', inHand, { axis: new THREE.Vector3(0, 1, 0), active: () => root.userData.bowAt === 'hand' }); // P-013: empunhadura do arco dentro do punho esquerdo
   root.userData.bowState('back');
   return bow;
 }
@@ -1572,6 +1577,7 @@ function holdCrossbow(root, xb) {
   xb.position.set(0, -xb.userData.gripY, -xb.userData.gripZ);
   root.userData.items = root.userData.items || {}; root.userData.items.xbow = xb;
   root.userData.xbowState = st => { const tgt = st === 'hand' ? inHand : onBack; if (xb.parent !== tgt) { tgt.add(xb); root.userData.xbowAt = st; } };
+  if (F) gripOn(root, 'r', 'besta', inHand, { axis: new THREE.Vector3(0, 1, 0.17), r: 0.017, active: () => root.userData.xbowAt === 'hand' }); // P-013: cabo de pistola no punho direito (o "para cima" da besta fica ~10° à frente do eixo do cabo)
   root.userData.xbowState('back');
   return xb;
 }
@@ -1839,7 +1845,8 @@ function holdStaff(root, staff, fx, ch, side = 'r') {
   holder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), aH); holder.position.copy(cH);
   staff.position.y = -grip; holder.add(staff); staff.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   root.userData.items = root.userData.items || {}; root.userData.items['2H_Staff'] = staff;
-  const curl = handGrip(root, side, 1);
+  gripOn(root, side, 'cajado', holder, { axis: new THREE.Vector3(0, 1, 0), r: staff.userData.gripR || GRIPS.cajado.r }); // P-013
+  const curl = () => fingerGrip(root, side);
   let w = 0, last = null;
   if (fx) fx.push(tt => {
     const now = performance.now(), dt = last === null || !(tt > last) ? 0.016 : Math.min(0.1, tt - last); last = tt;
@@ -1902,7 +1909,8 @@ function holdBook(root, book, fx, side = 'l') {
   const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(E, A, N));
   const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, q, F.C.clone().add(E.clone().multiplyScalar(-0.012)));
   holder.add(book); root.userData.items = root.userData.items || {}; root.userData.items.Spellbook = book;
-  const curl = handGrip(root, side, 0.8); if (fx) fx.push(() => curl());
+  gripOn(root, side, 'livro', holder, { point: E.clone().multiplyScalar(0.012).applyQuaternion(q.clone().invert()), axis: new THREE.Vector3(0, 1, 0) }); // P-013: lombada dentro da mão
+  if (fx) fx.push(() => fingerGrip(root, side));
   return book;
 }
 /* adaga de verdade (S-202): uma só, na mão direita */
@@ -1929,6 +1937,7 @@ function holdDagger(root, dagger, side = 'r', scale = 1.3) { // S-322: também n
     fitToBone(root, hand, holder, q, C.add(A.clone().multiplyScalar(0.052 * 1.3)));
   } else fitToBone(root, hand, holder, q, at.add(new THREE.Vector3(-0.005, -0.012, 0.01)));
   dagger.scale.setScalar(scale); holder.add(dagger); dagger.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  gripOn(root, side, scale < 1.2 ? 'espada' : 'adaga', holder, { point: new THREE.Vector3(0, -0.052 * 1.3, 0), axis: new THREE.Vector3(0, 1, 0) }); // P-013: o cabo passa pelo centro do punho (sabre usa a pegada de espada)
   root.userData.items = root.userData.items || {}; root.userData.items[side === 'r' ? 'Knife' : 'Knife_Offhand'] = dagger; return dagger;
 }
 /* S-321: sabre curto do Salteador — lâmina levemente curva de um gume com contrafio, guarda em S, cabo de couro trançado e pomo.
@@ -2155,6 +2164,7 @@ export function holdKatars(root, opt = {}) {
     const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(A, E, N));
     const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, q, f.C.clone());
     const k = codeKatar(opt); holder.add(k); out[s] = k;
+    gripOn(root, s, 'katar', holder, { axis: new THREE.Vector3(1, 0, 0) }); // P-013: a travessa do H atravessa o punho (eixo x do suporte)
   }
   root.userData.items = root.userData.items || {}; root.userData.items.Katar_R = out.r; root.userData.items.Katar_L = out.l;
   root.userData.katar = out; return out;
@@ -2512,17 +2522,128 @@ export function applyArmor(root, setId, fx = []) {
 /* papéis de NPC (S-193 freira/sacerdotisa, S-197 guarda) — o main3d chama dressNpcRole(ch, n.id, MODELS) */
 const NPC_ROLE = { clara: 'sacerdotisa', mirela: 'sacerdotisa', tobias: 'guarda', bastiao: 'guarda', ivra: 'mentora', bento: 'mercador' };
 export function dressNpcRole(ch, npcId, MODELS) {
-  const role = NPC_ROLE[npcId], root = ch.root; if (!role || !root.userData.human) return null;
+  const role = NPC_ROLE[npcId], root = ch.root; if (!root.userData.human) return null;
+  if (!role) return root.userData.grips ? () => fingerGrips(root) : null; // P-013: NPC com arma emprestada também fecha a mão no cabo
   const fx = [];
   if (role === 'guarda') guardKit(root, fx);
   else if (role === 'sacerdotisa') habit(root);
   else if (role === 'mentora') mentorGown(root, fx);
   else if (role === 'mercador') merchantHat(root);
+  if (root.userData.grips) fx.push(() => fingerGrips(root));
   return fx.length ? t => fx.forEach(f => f(t)) : null;
 }
-/* mão fechada no cabo (S-291): a cada quadro, depois da animação, dobra as falanges e o polegar em volta do cabo */
+/* =========================================================================================================
+   P-013: MÃOS DE VERDADE — sistema único de pegada (vale para jogador, NPCs, vitrine e galeria; humano/elfo/anão)
+   • GRIPS[tipo] é DADO: r = raio do cabo (m); curl = dobra base das falanges 01/02/03 dos 4 dedos (rad, eixo x local
+     — o mesmo sinal fecha as duas mãos); thumb = dobra das falanges 02/03 do polegar; over = polegar fecha POR CIMA dos
+     dedos (true) ou fica AO LADO, ao longo do cabo (false). Tipos sem r (corda, apoio, alaúde...) só dobram (nada a encostar).
+   • seatInHand(root, lado, obj, tipo, {point, axis, edge}) encaixa um objeto pelo PUNHO REAL (fistFrame: centro do punho
+     fechado, eixo mindinho→indicador e direção pulso→dedos) e já registra a pegada.
+   • gripOn(root, lado, tipo, obj, {point, axis, r, active}) só registra (para quem já tem encaixe próprio): point/axis são
+     o ponto e o eixo do cabo no espaço de `obj`; active() diz se a mão está segurando agora (ex.: arco nas costas = não).
+   • fingerGrip(root, lado) roda a cada quadro DEPOIS da animação (fx do dressHuman/dressNpcRole, ou gripHand em bow3d e
+     instrument3d): fecha cada dedo falange a falange até ENCOSTAR no cilindro do cabo (busca binária da dobra — nada
+     atravessa) e aplica no máximo uma vez por quadro por mão (o resto do jogo pode chamar sem medo).
+   ARMA NOVA: 1) modele com o cabo num eixo conhecido; 2) use um tipo de GRIPS (ou acrescente um); 3) chame
+   seatInHand(...) — ou o seu encaixe + gripOn(...). Dedos, mão esquerda/direita e anão vêm de graça.
+   ========================================================================================================= */
+export const GRIPS = {
+  espada: { r: 0.016, curl: [0.85, 1.05, 0.8], thumb: [0.45, 0.5], over: true },
+  machado: { r: 0.018, curl: [0.85, 1.05, 0.8], thumb: [0.45, 0.5], over: true },
+  adaga: { r: 0.0135, curl: [0.9, 1.1, 0.85], thumb: [0.5, 0.5], over: true },
+  katar: { r: 0.012, curl: [0.95, 1.15, 0.9], thumb: [0.55, 0.55], over: true },
+  varinha: { r: 0.01, curl: [0.7, 0.95, 0.7], thumb: [0.3, 0.3], over: false },
+  cajado: { r: 0.022, curl: [0.8, 1.0, 0.78], thumb: [0.35, 0.4], over: false },
+  livro: { r: 0.018, curl: [0.6, 0.8, 0.6], thumb: [0.25, 0.3], over: false },
+  arco: { r: 0.018, curl: [0.82, 1.0, 0.75], thumb: [0.42, 0.45], over: true },
+  besta: { r: 0.019, curl: [0.82, 1.0, 0.75], thumb: [0.42, 0.45], over: true },
+  escudo: { r: 0.014, curl: [0.85, 1.05, 0.8], thumb: [0.45, 0.5], over: true },
+  punho: { curl: [0.75, 0.95, 0.7], thumb: [0.35, 0.4] },      // mão fechada sem objeto registrado (guarda, legado)
+  corda: { curl: [0.42, 0.55, 0.42], thumb: [0.2, 0.22] },     // dedos em gancho na corda do arco
+  apoio: { curl: [0.5, 0.7, 0.5], thumb: [0.3, 0.3] },         // mão de apoio (besta, guarda)
+  alaude: { curl: [0.5, 0.7, 0.5], thumb: [0.35, 0.3] },       // mão no braço do instrumento
+  dedilhar: { curl: [0.25, 0.35, 0.25], thumb: [0.2, 0.2] },   // mão que dedilha
+  flauta: { curl: [0.3, 0.45, 0.35], thumb: [0.3, 0.3] },
+};
+const FINGER_NAMES = ['index', 'middle', 'ring', 'pinky', 'thumb'];
+let GRIP_SYSTEM = true; // false = comportamento antigo (só para comparar em teste)
+export function setGripSystem(on) { GRIP_SYSTEM = !!on; }
+export function gripOn(root, side, type, obj, o = {}) {
+  const G = (root.userData.grips = root.userData.grips || { l: [], r: [] });
+  G[side] = G[side].filter(g => g.obj !== obj);
+  G[side].unshift({ type, obj, point: o.point ? o.point.clone() : new THREE.Vector3(), axis: (o.axis ? o.axis.clone() : new THREE.Vector3(0, 1, 0)).normalize(), r: o.r ?? (GRIPS[type] && GRIPS[type].r), active: o.active || null });
+  return obj;
+}
+export function seatInHand(root, side, obj, type, o = {}) {
+  humanIdlePose(root); const hand = bone(root, 'hand_' + side), F = fistFrame(root, side); if (!hand || !F) return null;
+  const ax = (o.axis || new THREE.Vector3(0, 1, 0)).clone().normalize(), ed = (o.edge || new THREE.Vector3(0, 0, 1)).clone(); ed.sub(ax.clone().multiplyScalar(ed.dot(ax))).normalize();
+  const from = new THREE.Matrix4().makeBasis(ax, ed, new THREE.Vector3().crossVectors(ax, ed)), to = new THREE.Matrix4().makeBasis(F.A, F.E, new THREE.Vector3().crossVectors(F.A, F.E));
+  const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, new THREE.Quaternion().setFromRotationMatrix(to.multiply(from.invert())), F.C);
+  obj.position.copy((o.point || new THREE.Vector3()).clone().multiplyScalar(-1)); holder.add(obj);
+  obj.traverse(m => { if (m.isMesh) { m.castShadow = true; m.frustumCulled = false; } });
+  gripOn(root, side, type, holder, { axis: ax, r: o.r });
+  return holder;
+}
+function handChains(root, side) {
+  const k = '_hc' + side; if (root.userData[k]) return root.userData[k];
+  const out = [];
+  for (const f of FINGER_NAMES) { const bs = ['01', '02', '03'].map(j => root.getObjectByName(`${f}_${j}_${side}`)); if (bs.every(Boolean)) out.push({ f, bs, q0: bs.map(() => new THREE.Quaternion()), s: 1, n: 0 }); }
+  return (root.userData[k] = out);
+}
+const _fgR = new THREE.Quaternion(), _fgX = new THREE.Vector3(1, 0, 0), _fgP = new THREE.Vector3(), _fgA = new THREE.Vector3(), _fgD = new THREE.Vector3(), _fgT = new THREE.Vector3(), _fgU = new THREE.Vector3(), _fgV = new THREE.Vector3();
+function curlChain(c, ang, s) { for (let i = 0; i < 3; i++) c.bs[i].quaternion.copy(c.q0[i]).multiply(_fgR.setFromAxisAngle(_fgX, ang[i] * s)); c.bs[0].updateWorldMatrix(false, true); }
+function chainPen(c, A0, d, r) { // quanto o dedo entra no cilindro do cabo (>0 = atravessa)
+  const p1 = _fgU.setFromMatrixPosition(c.bs[1].matrixWorld), p2 = _fgV.setFromMatrixPosition(c.bs[2].matrixWorld), seg = p2.distanceTo(p1), fr = Math.max(0.0055, seg * 0.26); // matrizes já atualizadas em curlChain (barato)
+  _fgT.copy(p2).sub(p1).multiplyScalar(0.85).add(p2); // ponta do dedo
+  let pen = -1;
+  for (const P of [p1, p2, _fgT]) { _fgD.copy(P).sub(A0); _fgD.addScaledVector(d, -_fgD.dot(d)); pen = Math.max(pen, r + fr - _fgD.length()); }
+  return pen;
+}
+// fecha os dedos de uma mão (uma vez por quadro). type força uma pegada sem objeto (legado/instrumento/corda)
+export function fingerGrip(root, side, type) {
+  if (!GRIP_SYSTEM) return;
+  const chains = handChains(root, side); if (!chains.length) return;
+  const mark = '_gm' + side, b0 = chains[0].bs[0];
+  if (root.userData[mark] && b0.quaternion.equals(root.userData[mark])) return; // já fechada neste quadro (a animação não reescreveu)
+  const reg = root.userData.grips && root.userData.grips[side] && root.userData.grips[side].find(g => !g.active || g.active());
+  const G = GRIPS[reg ? reg.type : type]; if (!G) return;
+  const hand = b0.parent; if (hand) hand.updateWorldMatrix(true, false);
+  let A0 = null, d = null, r = 0;
+  if (reg && reg.r) { reg.obj.updateWorldMatrix(true, false); A0 = _fgP.copy(reg.point).applyMatrix4(reg.obj.matrixWorld); d = _fgA.copy(reg.axis).transformDirection(reg.obj.matrixWorld); r = reg.r; }
+  for (const c of chains) {
+    for (let i = 0; i < 3; i++) c.q0[i].copy(c.bs[i].quaternion);
+    const ang = c.f === 'thumb' ? [0, G.thumb[0] * (G.over === false ? 0.6 : 1), G.thumb[1] * (G.over === false ? 0.6 : 1)] : G.curl;
+    if (!A0) { c.s = 1; curlChain(c, ang, 1); continue; }
+    curlChain(c, ang, c.s);
+    if (c.n++ % 3 === 0 || chainPen(c, A0, d, r) > 0.0005) { // busca a dobra que ENCOSTA no cabo: a cada 3 quadros, ou na hora se a pose nova fez o dedo entrar
+      let lo = -0.75, hi = 1.3; // pode ABRIR o dedo (negativo) quando a própria animação já o fecha por dentro do cabo
+      curlChain(c, ang, hi); if (chainPen(c, A0, d, r) <= 0) lo = hi;
+      else for (let it = 0; it < 6; it++) { const m = (lo + hi) / 2; curlChain(c, ang, m); if (chainPen(c, A0, d, r) > 0) hi = m; else lo = m; }
+      c.s = lo; curlChain(c, ang, c.s);
+    }
+  }
+  root.userData[mark] = (root.userData[mark] || new THREE.Quaternion()).copy(b0.quaternion);
+}
+export function fingerGrips(root) { if (!root.userData.grips) return; fingerGrip(root, 'r'); fingerGrip(root, 'l'); }
+// atalho para quem controla a mão por conta própria (arco, besta, instrumento): fecha com a pegada registrada ou com o tipo dado
+export function gripHand(root, side, type) { fingerGrip(root, side, type); }
+// medição (teste): distância do eixo do cabo ao centro do punho e quanto os dedos entram no cabo, por mão registrada
+export function gripReport(root) {
+  const out = []; root.updateMatrixWorld(true);
+  for (const side of ['r', 'l']) {
+    const reg = root.userData.grips && root.userData.grips[side] && root.userData.grips[side].find(g => !g.active || g.active()); if (!reg || !reg.r) continue;
+    const chains = handChains(root, side), fb = ['index', 'middle', 'ring', 'pinky'].map(n => root.getObjectByName(`${n}_02_${side}`)).filter(Boolean), hb = root.getObjectByName('hand_' + side); if (fb.length < 4 || !hb) continue;
+    const C = fb.reduce((a, b) => a.add(b.getWorldPosition(new THREE.Vector3())), new THREE.Vector3()).multiplyScalar(0.25).lerp(hb.getWorldPosition(new THREE.Vector3()), 0.22);
+    const A0 = reg.point.clone().applyMatrix4(reg.obj.matrixWorld), d = reg.axis.clone().transformDirection(reg.obj.matrixWorld), v = C.clone().sub(A0); v.addScaledVector(d, -v.dot(d));
+    let pen = -1; for (const c of chains) if (c.f !== 'thumb') pen = Math.max(pen, chainPen(c, A0, d, reg.r));
+    out.push({ side, type: reg.type, eixo_cm: +(v.length() * 100).toFixed(1), penetra_mm: +(Math.max(0, pen) * 1000).toFixed(1) });
+  }
+  return out;
+}
+/* legado (S-291): handGrip(root, lado, k) — agora passa pelo sistema acima (pegada registrada, ou "punho" proporcional a k) */
 const _gq = new THREE.Quaternion(), _gAx = new THREE.Vector3();
 export function handGrip(root, side = 'r', k = 1) {
+  if (GRIP_SYSTEM) return () => fingerGrip(root, side, k >= 0.95 ? 'punho' : k >= 0.6 ? 'apoio' : k >= 0.4 ? 'corda' : 'dedilhar');
   const list = [];
   for (const f of ['index', 'middle', 'ring', 'pinky']) ['01', '02', '03'].forEach((j, i) => { const b = root.getObjectByName(`${f}_${j}_${side}`); if (b) list.push([b, [0.75, 0.95, 0.7][i] * k, 'x']); }); // (testado) eixo x local dobra as falanges para dentro da palma
   ['02', '03'].forEach((j, i) => { const b = root.getObjectByName(`thumb_${j}_${side}`); if (b) list.push([b, [0.35, 0.4][i] * k, 'x']); });
@@ -2578,6 +2699,7 @@ function guardKit(root, fx) {
     const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), A), C.add(A.clone().multiplyScalar(0.055)));
     holder.add(sw); sw.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
     root.userData.items = root.userData.items || {}; root.userData.items['1H_Sword'] = sw;
+    gripOn(root, 'r', 'espada', holder, { point: new THREE.Vector3(0, -0.055, 0), axis: new THREE.Vector3(0, 1, 0) }); // P-013
   }
   fx.push(handGrip(root, 'r'));
 }

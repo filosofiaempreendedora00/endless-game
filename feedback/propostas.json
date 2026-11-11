@@ -157,7 +157,9 @@
       "S-042",
       "conversa 2026-11-08 (\"não estou conseguindo carregar o mundo\")"
     ],
-    "status": "proposta"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "O jogo abre a vitrine em poucos segundos e monta o mundo aos poucos enquanto você escolhe o personagem, com uma barrinha mostrando cada parte; o mapa fica guardado no navegador, os monstros longe nascem aos poucos e a vila ficou ~25% mais leve de desenhar."
   },
   {
     "id": "P-011",
@@ -174,6 +176,117 @@
       "S-294",
       "S-292"
     ],
-    "status": "proposta"
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-012",
+    "titulo": "Verificador de roupas, armas e poses",
+    "detalhe": "Teste automático das 13 classes × 3 raças em parado, guarda, golpe, andando e montado: mede peça atravessando, malha exposta, arma fora da mão e pernas abertas; roda antes de cada entrega.",
+    "principios": [
+      "Física e coerência",
+      "A ferramenta de sugestões é sagrada"
+    ],
+    "evidencias": [
+      "S-337",
+      "S-338",
+      "S-339",
+      "S-342"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-013",
+    "titulo": "Mãos de verdade para todas as armas",
+    "detalhe": "Sistema único de dedos e pegada (espada, adaga, katar, arco, besta, cajado, livro, instrumento) no lugar de ajustes caso a caso.",
+    "principios": [
+      "Nada de fake",
+      "Física e coerência"
+    ],
+    "evidencias": [
+      "S-292",
+      "S-304",
+      "S-314",
+      "S-315",
+      "S-335"
+    ],
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Agora todas as armas usam o mesmo sistema de mão: cada tipo de pegada tem a sua forma (espada, adaga, katar, cajado, livro, arco, besta, escudo, instrumento), e os dedos fecham falange por falange até encostar no cabo, sem atravessar — nas duas mãos, em humano, elfo e anão."
+  },
+  {
+    "id": "P-014",
+    "titulo": "Golpes feitos sob medida por arma",
+    "detalhe": "Ataques próprios por tipo de arma e classe no lugar das animações do pacote, com impacto (inclui a P-011).",
+    "principios": [
+      "Vivo e animado",
+      "Cada classe com identidade"
+    ],
+    "evidencias": [
+      "S-305",
+      "S-309",
+      "S-319",
+      "S-331"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-015",
+    "titulo": "Rostos 2.0",
+    "detalhe": "Rostos realistas masculinos e femininos com expressões, mais opções no criador e NPCs variados.",
+    "principios": [
+      "Personagens humanos e bonitos"
+    ],
+    "evidencias": [
+      "S-073",
+      "S-306",
+      "S-307"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-016",
+    "titulo": "Habilidades com visual próprio por classe",
+    "detalhe": "Cada habilidade com animação, efeito e som próprios (inclui os elementos do Sábio).",
+    "principios": [
+      "Vivo e animado",
+      "Cada classe com identidade"
+    ],
+    "evidencias": [
+      "S-313",
+      "S-334"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-017",
+    "titulo": "NPCs com rotina",
+    "detalhe": "NPCs andam pela vila, trabalham, conversam entre si e vão para casa à noite.",
+    "principios": [
+      "Ambientes vivos"
+    ],
+    "evidencias": [
+      "S-277",
+      "S-307"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
+  },
+  {
+    "id": "P-018",
+    "titulo": "Primeira impressão do jogador novo",
+    "detalhe": "Tutorial guiado na vila (mover, atacar, falar, janelas) para quem entrar online.",
+    "principios": [
+      "Onboarding guiado"
+    ],
+    "evidencias": [
+      "S-038"
+    ],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T09:42:31"
   }
 ]

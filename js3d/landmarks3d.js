@@ -370,8 +370,10 @@ export function makeRoost() {
   for (const [x, z, r] of [[1.0, 1.4, 0.2], [1.2, 0.8, -0.3]]) { const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.45, 0.55, 3, 2, 2), hayM); const HP = h2.geometry.attributes.position; for (let i = 0; i < HP.count; i++) HP.setXYZ(i, HP.getX(i) + (Math.random() - 0.5) * 0.04, HP.getY(i) + (Math.random() - 0.5) * 0.04, HP.getZ(i) + (Math.random() - 0.5) * 0.04); h2.geometry.computeVertexNormals(); h2.position.set(x, 0.22, z); h2.rotation.y = r; g.add(h2); for (const bz of [-0.15, 0.15]) { const tie = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.012, 6, 16), dark); tie.scale.set(1, 0.85, 1); tie.position.set(x, 0.22, z + bz); tie.rotation.set(0, r + Math.PI / 2, 0); g.add(tie); } }
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   // o Noctívago, esperando o próximo voo
-  const noc = makeNoctivago(7); noc.obj.position.set(1.0, 0, -2.6); noc.obj.rotation.y = -0.5; g.add(noc.obj);
+  const noc = makeNoctivago(7); noc.obj.position.set(1.0, 0, -2.6); noc.obj.rotation.y = -0.5; g.add(noc.obj); g.userData.noc = noc.obj; // P-010: o main3d esconde o Noctívago de longe
+  noc.obj.traverse(o => { if (o.isMesh && o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); if (o.geometry.boundingSphere.radius * Math.max(o.scale.x, o.scale.y, o.scale.z) < 0.22) o.castShadow = false; } }); // penas pequenas não projetam sombra (metade das chamadas)
   g.userData.update = t => {
+    if (!g.visible) return; // P-010: longe, nem anima (pano + Noctívago)
     // S-255: pano ao vento — ondas que descem pelo tecido, a ponta solta balança mais, presa em cima (hang = 0 no varão)
     const gust = 0.75 + 0.25 * Math.sin(t * 0.37) + 0.12 * Math.sin(t * 1.13);
     for (let i = 0; i < P.count; i++) { const by = base[i * 3 + 1], bx = base[i * 3], hang = Math.min(1, -by / BH), h2 = hang * hang;
