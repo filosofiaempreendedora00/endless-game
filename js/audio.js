@@ -126,7 +126,10 @@ const Sound = {
   ctx: null, master: null, music: null, sfx: null, enabled: true,
   song: null, songId: null, step: 0, nextTime: 0, noiseBuf: null,
 
+  // cópias de teste (servidor local em porta que não é a 5577 do jogo do Roberto) nunca tocam som: nada de música vazando enquanto ele faz outra coisa
+  testCopy: (() => { try { return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(location.hostname) && !!location.port && location.port !== '5577'; } catch (e) { return false; } })(),
   init() {
+    if (this.testCopy) { this.enabled = false; return; }
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
