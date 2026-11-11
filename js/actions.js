@@ -99,6 +99,7 @@ function createCharacter(name, look = {}, petSpecies = null) {
     stats: { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 }, statPoints: CONFIG.STAT_START_POINTS, skillPoints: 0, skills: {},
     zeny: 150, inventory: [], equip: Object.fromEntries(EQUIP_SLOTS.map(s => [s, null])), hotbar: Array(HB_SLOTS * HB_PRESETS).fill(null), hotPreset: 0, hotRows: 1,
     hp: 1, sp: 1, charId: newCharId(), buffs: {}, cds: {}, pet: petSpecies ? newPet(petSpecies) : null,
+    tutorial: { step: -1 }, // P-018: só personagens novos fazem os primeiros passos (saves antigos não têm o campo = já concluído)
   };
   addItem(p, 'adaga_simples', 1); addItem(p, 'tunica_algodao', 1);
   addItem(p, 'maca', 10); addItem(p, 'pocao_vermelha', 3); addItem(p, 'pergaminho_retorno', 1);

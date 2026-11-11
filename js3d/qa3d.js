@@ -248,7 +248,7 @@ function measure(ctx, n, pose, ref, out, label) {
   const root = n.root, push = (tipo, gravidade, detalhe, valor) => out.push({ tipo, gravidade, objeto: label, pose, detalhe, valor, x: n.x, z: n.z, ref: n });
   const caps = bodyCapsules(root), groups = overlayGroups(root), atk = /golpe/.test(pose);
   // (a) roupa/armadura dentro do corpo (por peça presa a cada osso)
-  for (const [bone, meshes] of Object.entries(groups)) { const vs = []; meshes.forEach(m => vs.push(...worldVerts(m, 2, 800))); const r = insideFrac(vs, caps, 0.5); if (r.f > 0.15 && vs.length > 20) push('peça dentro do corpo', r.f > 0.35 ? 'alta' : 'media', `${(r.f * 100).toFixed(0)}% das peças presas a ${bone} estão dentro do corpo (${r.onde})`, r.f); }
+  for (const [bone, meshes] of Object.entries(groups)) { const vs = []; meshes.forEach(m => vs.push(...worldVerts(m, 2, 800))); const r = insideFrac(vs, caps, /^(lowerarm|upperarm|hand)_/.test(bone) ? 0.3 : 0.5); /* braçadeiras/mangas justas: a cápsula do braço mede pela roupa base (mais grossa); só conta se estiver bem fundo — conferido nas fotos (P-012) */ if (r.f > 0.15 && vs.length > 20) push('peça dentro do corpo', r.f > 0.35 ? 'alta' : 'media', `${(r.f * 100).toFixed(0)}% das peças presas a ${bone} estão dentro do corpo (${r.onde})`, r.f); }
   // (c) arma fora da mão
   for (const w of weaponsOf(root)) { const d = gripOffset(root, w); if (d != null && d > 0.065) push('arma fora da mão', d > 0.1 ? 'alta' : 'media', `${w.name}: cabo a ${(d * 100).toFixed(0)} cm do centro do punho (${w.hand})`, d); }
   // (d) pernas abertas / agachadas (no golpe a tolerância é maior)
@@ -260,9 +260,10 @@ function measure(ctx, n, pose, ref, out, label) {
   // (f) peça flutuando longe do osso
   for (const r of checkRig(root, label, n.x, n.z)) push(r.tipo, r.gravidade, r.detalhe, 0);
   // (g) barba/cabelo atravessando o tronco
-  root.traverse(o => { if (o.isSkinnedMesh && o.visible && /Beard/i.test(o.name)) { const r = insideFrac(worldVerts(o, 2, 1200), caps.filter(c => /tronco|pescoço/.test(c.nome)), 0.85); if (r.f > 0.06) push('barba atravessando o tronco/gola', r.f > 0.2 ? 'alta' : 'media', `${(r.f * 100).toFixed(0)}% da barba dentro do corpo/roupa`, r.f); } });
+  const nkB = boneOf(root, 'neck_01'), nkY = nkB ? nkB.getWorldPosition(new THREE.Vector3()).y : Infinity; // só a barba que desce sobre o peito (a raiz no queixo fica naturalmente junto do pescoço)
+  root.traverse(o => { if (o.isSkinnedMesh && o.visible && /Beard/i.test(o.name)) { const r = insideFrac(worldVerts(o, 2, 1200).filter(v => v.y < nkY - 0.02), caps.filter(c => /tronco/.test(c.nome)), 0.85); if (r.f > 0.06) push('barba atravessando o tronco/gola', r.f > 0.2 ? 'alta' : 'media', `${(r.f * 100).toFixed(0)}% da barba dentro do corpo/roupa`, r.f); } });
   // (b) roupa base/malha aparecendo (só faz sentido em quem usa armadura por cima)
-  if (n._armored && (pose === 'parado' || pose === 'guarda' || pose === 'golpe')) { const e = exposedBase(ctx, n); if (e != null && e > 0.1) push('malha/roupa de baixo aparecendo', e > 0.2 ? 'alta' : 'media', `${(e * 100).toFixed(0)}% da silhueta é a roupa de baixo (4 lados)`, e); }
+  if (n._armored && n.root.userData.underKind !== 'acolchoado' && (pose === 'parado' || pose === 'guarda' || pose === 'golpe')) { const e = exposedBase(ctx, n); if (e != null && e > 0.1) push('malha/roupa de baixo aparecendo', e > 0.2 ? 'alta' : 'media', `${(e * 100).toFixed(0)}% da silhueta é a roupa de baixo (4 lados)`, e); }
 }
 export async function checkCharsDeep(ctx, opts = {}) {
   const t0 = performance.now(), { S, teleport3d, ensureGallery } = ctx, out = [], fichas = [];

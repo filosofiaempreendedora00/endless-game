@@ -71,6 +71,7 @@ function myState() {
     anim: me && me.anim ? me.anim.name : 'Idle', moving: sp > 0.3, speed: +sp.toFixed(2), sit: !!S.sitting, dead: !!p.dead,
     room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp,
     atk: (S.atkN || 0) + (S.katN || 0), clip: me && me.anim ? me.anim.name : null,
+    sfx: S.skillFx || null, // P-016: última habilidade lançada (os outros jogadores mostram o mesmo efeito)
     comp: S.comp ? S.comp.state() : null, // S-325: lobo gigante do Caçador (os outros jogadores desenham pelo que chega aqui)
   };
 }
@@ -102,6 +103,7 @@ function receive(j) {
     if (R.snaps.length > 12) R.snaps.shift();
     if (o.atk !== undefined && R.atk !== undefined && o.atk > R.atk && o.clip && ATTACK_RE.test(o.clip)) R.pendingAtk = o.clip; // golpe novo: toca mesmo que tenha acontecido entre dois envios
     R.atk = o.atk;
+    if (o.sfx && C.playSkillFx) { if (R.sfxN !== undefined && o.sfx.n > R.sfxN) C.playSkillFx(o.sfx.id, { x: o.sfx.ox, y: o.sfx.oy, z: o.sfx.oz }, { x: o.sfx.tx, y: o.sfx.ty, z: o.sfx.tz }, { follow: () => R.root.position }); R.sfxN = o.sfx.n; } // P-016
   }
   for (const [id, R] of N.others) if (!seen.has(id) && now - R.lastSeen > 1.5) { drop(R); N.others.delete(id); }
 }

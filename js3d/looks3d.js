@@ -136,7 +136,9 @@ const EXTRAS = {
       const core = glowSpr('#ffffff', f.r * 3.4, 0.45), glint = glowSpr('#ffffff', f.r * 1.1, 0); glint.position.set(f.r * 0.6, f.h * 0.25, f.r * 0.7);
       o.add(m, core, glint, glowSpr(PAL[i], 0.1, 0.28)); o.userData = { m, core, glint, i }; gems.push(o); g.add(o); });
     fx.push(t => gems.forEach((o, i) => { const a = t * 0.55 + i * Math.PI / 2, r = 0.36; o.position.set(Math.cos(a) * r, 0.18 + Math.sin(a * 2 + i) * 0.035 + Math.sin(a) * 0.06, Math.sin(a) * r);
-      const { m, core, glint } = o.userData, c = paletteAt(PAL, t * 0.09 + i * 0.9); m.material.color.copy(c); m.material.emissive.copy(c); m.material.emissiveIntensity = 0.5 + 0.18 * Math.sin(t * 1.9 + i);
+      const { m, core, glint } = o.userData, c = paletteAt(PAL, t * 0.09 + i * 0.9);
+      { const gt = root.userData.gemTint, left = gt ? gt.until - performance.now() : 0; if (left > 0) c.lerp(_mc2.set(GEM_EL[gt.el] || '#ffffff'), Math.min(1, left / 400) * 0.85); } // P-016: ao lançar, as gemas acendem na cor do elemento (água, fogo, terra, vento)
+      m.material.color.copy(c); m.material.emissive.copy(c); m.material.emissiveIntensity = 0.5 + 0.18 * Math.sin(t * 1.9 + i);
       m.rotation.y = t * (0.5 + i * 0.12); core.material.color.copy(c).lerp(_mc2.set('#ffffff'), 0.5); core.material.opacity = 0.35 + 0.15 * Math.sin(t * 2.6 + i * 1.7);
       glint.material.opacity = Math.max(0, Math.sin(t * 1.3 + i * 2.2)) ** 8 * 0.9; })); // um brilho que passa de vez em quando
   },
@@ -685,6 +687,7 @@ export function dressHuman(ch, cls, MODELS, opts = {}) {
   if (opts.offhand) strapShield(root, codeShield(SHIELD_KIND[opts.offhand] || (/paladino|guardiao/.test(cls) ? 'paladino' : 'madeira')));
   // S-147: sem a capa chapada nas costas (não combina com o corpo realista) — vale para todas as classes
   fx.push(() => fingerGrips(root)); // P-013: depois de tudo (IK do cajado etc.), os dedos fecham no que a mão segura
+  if (!root.userData.armorSet) { try { seatBeard(root); } catch (e) { } } // verificador: barba (anão) repousa por cima do peito também sem armadura
   return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
 }
 /* Veste o personagem: devolve { style, update(t) } */
@@ -1928,8 +1931,9 @@ EXTRAS.bardGear = function (root) {
   pinToBone(root, 'pelvis', new THREE.Mesh(gb, leather));
   const pv = bonePos(root, 'pelvis');
   { const buckle = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 8, 4), gold); buckle.rotation.z = Math.PI / 4; const fz = sampleBody(root, ['pelvis'], /_(Body|Legs)/).reduce((m, p) => Math.max(m, p.z), 0); buckle.position.set(pv.x, pv.y + 0.05, fz + 0.035); pinToBone(root, 'pelvis', buckle); }
-  for (const [dx, dz, sc] of [[0.14, 0.05, 1], [-0.15, 0.03, 0.85], [0.1, -0.1, 0.8]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 * sc, 16, 12), leather); b.scale.set(1, 1.15, 0.6); b.position.set(pv.x + dx, pv.y - 0.02, pv.z + dz); pinToBone(root, 'pelvis', b);
-    const flap = new THREE.Mesh(new THREE.SphereGeometry(0.052 * sc, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), std('#3a1e0e', { roughness: 0.8 })); flap.scale.set(1, 0.7, 0.66); flap.position.set(pv.x + dx, pv.y + 0.012, pv.z + dz); pinToBone(root, 'pelvis', flap); }
+  const hsB = hipSize(root, pv.y + 0.03), py = pv.y + 0.03; // verificador: bolsinhas presas ao cinto, por FORA do quadril medido (no anão as coxas entravam nelas ao correr)
+  for (const [a, sc] of [[0.55, 1], [-0.62, 0.85], [2.4, 0.8]]) { const dx = Math.sin(a) * (hsB.rx + 0.035 * sc), dz = Math.cos(a) * (hsB.rz + 0.035 * sc); const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 * sc, 16, 12), leather); b.scale.set(1, 1.15, 0.6); b.position.set(pv.x + dx, py - 0.02, pv.z + dz); b.rotation.y = a; pinToBone(root, 'pelvis', b);
+    const flap = new THREE.Mesh(new THREE.SphereGeometry(0.052 * sc, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), std('#3a1e0e', { roughness: 0.8 })); flap.scale.set(1, 0.7, 0.66); flap.position.set(pv.x + dx, py + 0.012, pv.z + dz); flap.rotation.y = a; pinToBone(root, 'pelvis', flap); }
   // S-344: punhos de linho saindo da manga de veludo e botas altas de camurça com a boca dobrada — braços e pernas vestidos de verdade
   const linen = clothMat('#ece2cc', 0.9);
   for (const s of ['l', 'r']) {
@@ -1951,6 +1955,7 @@ function crystalGeo(r, h, opt = {}) {
 }
 function mysticMat(c, o = {}) { return new THREE.MeshPhysicalMaterial({ color: c, emissive: c, emissiveIntensity: o.ei ?? 0.45, roughness: o.rough ?? 0.07, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05, iridescence: o.irid ?? 0.9, iridescenceIOR: 1.55, envMap: armorEnv(), envMapIntensity: o.env ?? 1.4, transparent: true, opacity: o.op ?? 0.86 }); }
 const _mc = new THREE.Color(), _mc2 = new THREE.Color();
+const GEM_EL = { agua: '#4aa8ff', fogo: '#ff6a2a', terra: '#d8a24a', vento: '#a8ffe0' }; // P-016: cor das gemas do Sábio por elemento da habilidade
 function paletteAt(pal, t) { const n = pal.length, f = ((t % n) + n) % n, i = Math.floor(f); return _mc.set(pal[i]).lerp(_mc2.set(pal[(i + 1) % n]), f - i); }
 function glowSpr(c, s, o = 0.5) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: c, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.setScalar(s); return sp; }
 /* cajado de verdade (S-220): madeira retorcida de ~1,5 m, garras de madeira segurando um cristal no topo (sem anéis) */
@@ -2573,6 +2578,7 @@ function gambesonTex() {
   _gamb = new THREE.CanvasTexture(c); _gamb.wrapS = _gamb.wrapT = THREE.RepeatWrapping; _gamb.colorSpace = THREE.SRGBColorSpace; return _gamb;
 }
 function underLayer(root, top, legs, glove = '#3a2618', shrink = { body: 0.014, arms: 0.012, legs: 0.008 }, kind = 'malha') {
+  root.userData.underKind = kind; // o verificador não conta o gibão acolchoado (visível de propósito) como "malha aparecendo"
   root.traverse(o => { if (o.isSkinnedMesh && /Acc_|_Bracer/.test(o.name)) o.visible = false; }); // S-328: cinto/ombreira da roupa base sobram sob a armadura (abas atravessando a fralda) — a armadura tem os seus · S-338: a braçadeira de couro da roupa base também sai (aparecia entre as placas do antebraço)
   root.traverse(o => { if (!o.isSkinnedMesh || !/_(Arms|Legs|Body)/.test(o.name) || /Acc_/.test(o.name)) return;
     if (/_Arms/.test(o.name) && o.skeleton) { const hm = handMask(o).array; let s = 0; for (let i = 0; i < hm.length; i++) s += hm[i]; if (s / hm.length > 0.85) { o.material = o.material.clone(); o.material.color = new THREE.Color(glove); o.material.roughness = 0.72; o.material.metalness = 0.03; o.material.map = metalTex('couro'); return; } } // a mão em si: luva de couro inteira
@@ -2637,16 +2643,34 @@ const ARMOR_SETS = {
 const _bR = new THREE.Raycaster();
 function seatBeard(root) {
   const beards = []; root.traverse(o => { if (o.isSkinnedMesh && /Beard/i.test(o.name) && o.visible) beards.push(o); }); if (!beards.length) return;
-  const plates = []; root.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.parent && o.parent.parent && /^(spine_0[23]|neck_01)$/.test(o.parent.parent.name)) plates.push(o); }); if (!plates.length) return;
+  const plates = []; root.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.parent && o.parent.parent && /^(spine_0[23]|neck_01)$/.test(o.parent.parent.name)) plates.push(o); });
   humanIdlePose(root); root.updateMatrixWorld(true);
   const fwd = new THREE.Vector3(0, 0, 1).transformDirection(root.matrixWorld).normalize(), v = new THREE.Vector3(), M = new THREE.Matrix4(), S = new THREE.Matrix4(), A3 = new THREE.Matrix3();
+  /* verificador (P-012): sem armadura, a barba do anão entrava no peito da roupa. Grade de profundidade do peito (frente mais à frente
+     por célula de 2 cm, no espaço do corpo) feita com a roupa/corpo animados + peças rígidas do tronco; vale com e sem armadura. */
+  const rightW = new THREE.Vector3(1, 0, 0).transformDirection(root.matrixWorld).normalize(), upW = new THREE.Vector3(0, 1, 0).transformDirection(root.matrixWorld).normalize(), o0 = new THREE.Vector3().setFromMatrixPosition(root.matrixWorld);
+  const CELL = 0.02, grid = new Map(), key = (a, b) => Math.round(a / CELL) * 4096 + Math.round(b / CELL);
+  const addPt = p => { const d = p.sub(o0), a = d.dot(rightW), b = d.dot(upW), f = d.dot(fwd), k = key(a, b); if (!(grid.get(k) >= f)) grid.set(k, f); };
+  const nb = root.getObjectByName('neck_01'), neckH = nb ? nb.getWorldPosition(new THREE.Vector3()).sub(o0).dot(upW) + 0.01 : Infinity; // só peito e gola (o rosto fica de fora)
+  const bz = new THREE.Box3(); for (const b of beards) { b.skeleton.update(); const P = b.geometry.attributes.position; for (let i = 0; i < P.count; i += 3) { b.getVertexPosition(i, v); b.localToWorld(v); bz.expandByPoint(v); } }
+  bz.expandByScalar(0.04);
+  root.traverse(o => {
+    if (!o.isMesh || !o.visible || /Beard|Hair|Eyebrow|Eye|Head|Face/i.test(o.name) || !o.geometry || !o.geometry.attributes.position) return;
+    const rigidTorso = !o.isSkinnedMesh && o.parent && o.parent.parent && /^(spine_0[23]|neck_01)$/.test(o.parent.parent.name);
+    if (!o.isSkinnedMesh && !rigidTorso) return; if (o.isSkinnedMesh) o.skeleton.update();
+    const P = o.geometry.attributes.position, step = Math.max(1, (P.count / 9000) | 0);
+    for (let i = 0; i < P.count; i += step) { o.getVertexPosition(i, v); o.localToWorld(v); if (bz.containsPoint(v) && v.clone().sub(o0).dot(upW) < neckH) addPt(v.clone()); }
+  });
+  const frontAt = p => { const d = p.clone().sub(o0), a = d.dot(rightW), b = d.dot(upW); let best = -Infinity; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const g = grid.get(key(a + da * CELL, b + db * CELL)); if (g !== undefined && g > best) best = g; } return best === -Infinity ? null : best; };
   for (const b of beards) {
     b.skeleton.update(); b.geometry = b.geometry.clone();
     const pos = b.geometry.attributes.position, si = b.geometry.attributes.skinIndex, sw = b.geometry.attributes.skinWeight, bm = b.skeleton.boneMatrices; let moved = 0;
     for (let i = 0; i < pos.count; i++) {
       b.getVertexPosition(i, v); b.localToWorld(v);
-      _bR.set(v.clone().sub(fwd.clone().multiplyScalar(0.4)), fwd); _bR.far = 0.6; const hits = _bR.intersectObjects(plates, false); if (!hits.length) continue;
-      const front = hits[hits.length - 1].point, need = front.clone().sub(v).dot(fwd) + 0.011; if (need <= 0) continue; // já está por fora
+      let need = -1;
+      if (plates.length) { _bR.set(v.clone().sub(fwd.clone().multiplyScalar(0.4)), fwd); _bR.far = 0.6; const hits = _bR.intersectObjects(plates, false); if (hits.length) need = hits[hits.length - 1].point.clone().sub(v).dot(fwd) + 0.011; }
+      { const f = frontAt(v); if (f != null) need = Math.max(need, f - v.clone().sub(o0).dot(fwd) + 0.011); } // roupa sem armadura (e o que a armadura não cobre)
+      if (need <= 0) continue; // já está por fora
       // matriz linear da pele neste vértice: meshWorld · bindInverse · Σ w·boneMatrix · bind
       S.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (!w) continue; const e = M.fromArray(bm, si.getComponent(i, k) * 16).elements; for (let q = 0; q < 16; q++) S.elements[q] += e[q] * w; }
       M.copy(b.matrixWorld).multiply(b.bindMatrixInverse).multiply(S).multiply(b.bindMatrix); A3.setFromMatrix4(M); const det = A3.determinant(); if (Math.abs(det) < 1e-9) continue;

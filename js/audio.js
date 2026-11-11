@@ -248,6 +248,12 @@ const Sound = {
     const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f); f.connect(g); g.connect(dest); src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.02);
   },
+  // P-016: ruído com filtro que varre (base dos sons de habilidade — corte, vento, fogo, terra), com ataque suave
+  nsweep(t, dur, vol, f0, f1, type = 'bandpass', Q = 1, att = 0.02) {
+    const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = type; f.Q.value = Q;
+    f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.02);
+  },
   kick(t, dest = this.music) { this.sweep(140, 45, t, 0.18, 'sine', 0.7, dest); },
   arp(notes, t, gap, type, vol) { notes.forEach((n, i) => this.tone(mtof(noteToMidi(n)), t + i * gap, gap * 1.6, type, vol, this.sfx)); },
 
@@ -274,6 +280,28 @@ const Sound = {
         f.frequency.setValueAtTime(700, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.12); f.frequency.exponentialRampToValueAtTime(900, t + 0.24);
         g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.42, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.3); break; }
       case 'heavySwing': { const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 1.2; f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(1600, t + 0.2); f.frequency.exponentialRampToValueAtTime(400, t + 0.4); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5, t + 0.15); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.5); break; }
+      // P-016: sons das habilidades — sempre ruído moldado (nada de sino/garrafa); tons só em acordes suaves e graves
+      case 'sk_slash': this.nsweep(t, 0.16, 0.5, 1800, 6500, 'bandpass', 1.6, 0.03); this.noise(t + 0.06, 0.08, 0.25, 900, 'lowpass'); break;
+      case 'sk_heavy': this.nsweep(t, 0.3, 0.55, 300, 1800, 'bandpass', 1.1, 0.08); this.noise(t + 0.12, 0.18, 0.6, 180, 'lowpass'); break;
+      case 'sk_quake': this.nsweep(t, 1.0, 0.9, 260, 60, 'lowpass', 0.7, 0.01); for (let k = 0; k < 7; k++) this.noise(t + 0.05 + Math.random() * 0.4, 0.05, 0.25, 900 + Math.random() * 800, 'bandpass'); break;
+      case 'sk_rock': this.nsweep(t, 0.6, 0.8, 420, 90, 'lowpass', 0.8, 0.01); for (let k = 0; k < 6; k++) this.noise(t + Math.random() * 0.25, 0.04, 0.3, 1200 + Math.random() * 1500, 'bandpass'); break;
+      case 'sk_fireball': this.nsweep(t, 0.55, 0.45, 300, 1600, 'bandpass', 0.8, 0.12); this.nsweep(t, 0.55, 0.25, 120, 400, 'lowpass', 0.7, 0.1); break;
+      case 'sk_fireboom': this.nsweep(t, 0.7, 0.85, 900, 80, 'lowpass', 0.7, 0.005); for (let k = 0; k < 8; k++) this.noise(t + 0.03 + Math.random() * 0.35, 0.02, 0.18, 4000 + Math.random() * 3000, 'highpass'); break;
+      case 'sk_ice': this.nsweep(t, 0.4, 0.3, 2500, 7000, 'bandpass', 3, 0.05); for (let k = 0; k < 5; k++) this.noise(t + Math.random() * 0.3, 0.03, 0.12, 6000 + Math.random() * 3000, 'highpass'); break;
+      case 'sk_shatter': for (let k = 0; k < 10; k++) this.noise(t + Math.random() * 0.12, 0.04 + Math.random() * 0.04, 0.3, 3000 + Math.random() * 5000, 'bandpass'); this.noise(t, 0.1, 0.3, 600, 'lowpass'); break;
+      case 'sk_zap': this.nsweep(t, 0.18, 0.5, 6000, 1500, 'bandpass', 2, 0.005); for (let k = 0; k < 6; k++) this.noise(t + Math.random() * 0.15, 0.015, 0.3, 5000, 'highpass'); break;
+      case 'sk_thunder': this.noise(t, 0.06, 0.8, 3000, 'highpass'); this.nsweep(t + 0.04, 1.4, 0.8, 400, 50, 'lowpass', 0.6, 0.05); break;
+      case 'sk_wind': this.nsweep(t, 1.4, 0.4, 400, 1400, 'bandpass', 2.5, 0.4); this.nsweep(t + 0.3, 1.2, 0.3, 1600, 500, 'bandpass', 3, 0.3); break;
+      case 'sk_meteor': this.nsweep(t, 0.9, 0.5, 600, 2400, 'bandpass', 2, 0.6); break;
+      case 'sk_arrows': for (let k = 0; k < 8; k++) this.nsweep(t + k * 0.035, 0.25, 0.18, 3000, 1200, 'bandpass', 4, 0.02); break;
+      case 'sk_poison': for (let k = 0; k < 4; k++) this.nsweep(t + k * 0.05, 0.12, 0.3, 700, 300, 'bandpass', 2.5, 0.01); this.nsweep(t, 0.16, 0.3, 1800, 5000, 'bandpass', 1.6, 0.02); break;
+      case 'sk_shadow': this.nsweep(t, 0.35, 0.5, 2200, 300, 'lowpass', 0.8, 0.02); this.nsweep(t, 0.14, 0.3, 2400, 6000, 'bandpass', 1.6, 0.02); break;
+      case 'sk_blades': for (let k = 0; k < 4; k++) this.nsweep(t + k * 0.06, 0.13, 0.35, 2000, 6500, 'bandpass', 1.6, 0.02); break;
+      case 'sk_rune': this.tone(98, t, 0.8, 'sine', 0.18, this.sfx, 0.05, true); this.nsweep(t, 0.7, 0.25, 800, 3500, 'bandpass', 4, 0.2); break;
+      case 'sk_rage': this.nsweep(t, 0.6, 0.6, 200, 900, 'lowpass', 0.9, 0.05); this.nsweep(t + 0.1, 0.6, 0.3, 900, 2600, 'bandpass', 1.5, 0.1); break;
+      case 'sk_shield': this.nsweep(t, 0.9, 0.3, 1200, 4800, 'bandpass', 5, 0.25); for (const f of [196, 294, 392]) this.tone(f, t + 0.05, 0.9, 'sine', 0.06, this.sfx, 0.2, true); break;
+      case 'sk_holy': for (const f of [262, 330, 392, 523]) this.tone(f, t, 1.6, 'sine', 0.07, this.sfx, 0.35, true); this.nsweep(t, 1.5, 0.25, 2000, 6000, 'bandpass', 3, 0.5); break;
+      case 'sk_heal': for (const f of [392, 494, 587]) this.tone(f, t, 1.1, 'sine', 0.05, this.sfx, 0.3, true); this.nsweep(t, 1.0, 0.2, 1500, 5000, 'bandpass', 3, 0.4); break;
       // katar (inspirado no Algoz): nada de tom puro/sino — só ruído moldado: corte no ar, carne rasgando em grãos e faíscas secas de metal
       case 'katarSlash': { const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), d = 0.085 + Math.random() * 0.03; src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 2.2;
         f.frequency.setValueAtTime(2200 + Math.random() * 600, t); f.frequency.exponentialRampToValueAtTime(6800 + Math.random() * 1500, t + d * 0.7); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.55, t + d * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + d);

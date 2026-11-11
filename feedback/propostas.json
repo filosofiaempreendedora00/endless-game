@@ -263,8 +263,9 @@
       "S-313",
       "S-334"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Cada habilidade tem gesto, efeito e som próprios — luz dourada do Paladino, runas azuis do Cavaleiro, energia violeta do Arquimago, sombra discreta do Executor, o lobo do Caçador entrando na luta e as gemas do Sábio acendendo na cor do elemento — e os outros jogadores também veem os efeitos."
   },
   {
     "id": "P-017",
@@ -277,8 +278,9 @@
       "S-277",
       "S-307"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "A vila tem vida, com relógio próprio (um dia dura 24 minutos, a hora aparece embaixo do minimapa): o Dário trabalha na forja, a Flora arruma a banca, o Tobias faz a ronda, todos vão ao poço, almoçam na taverna e conversam em dupla; à noite os moradores entram em casa e os lojistas ficam de vigília perto do posto. Quando você chega perto, eles param, olham e cumprimentam."
   },
   {
     "id": "P-018",
@@ -290,7 +292,8 @@
     "evidencias": [
       "S-038"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Personagens novos ganham os 'Primeiros passos': câmera pela Vila de Alvorada e um balão discreto que ensina uma coisa por vez (andar, câmera, Teodoro, mapa, mochila, boneco, atalhos, missões, mascote), com setinha dourada; a missão do Teodoro ao Bento fecha com um presentinho. Dá para pular ou refazer nas Configurações; personagens antigos, como o Vidro, não veem."
   }
 ]

@@ -17,10 +17,12 @@ import { makePet } from './pets3d.js';
 import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
 import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
-import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js'; // P-014/P-011: golpes sob medida por arma e impacto no acerto
+import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
+import { initSkillFx, playSkillFx, skillProjectile, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
 import { faceSculpt, FACE_FEATS, softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
+import { initTutorial, startTutorial, updateTutorial, tutorialCamera, restartTutorial, tutorialActive } from './tutorial3d.js'; // P-018: primeiros passos do jogador novo
 import { initRoutines, updateRoutines, gameClock } from './routines3d.js'; // P-017: NPCs com rotina pela hora do jogo
 import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
@@ -2669,7 +2671,17 @@ function executeSkill(a) {
   if (!S.god) { p.sp -= sk.sp(lv); p.cds[a.id] = S.time + (sk.cd || 0) / 1000; }
   const anim = eff.dmg === 'magic' || eff.kind === 'heal' || eff.kind === 'buff' ? 'Spellcast_Shoot' : sk.target === 'selfAoe' ? '2H_Melee_Attack_Spin' : ATTACK_ANIM[me.look.style][0];
   if (p.d.sonic && (SONG_BUFFS.has(a.id) || sk.fx === 'sound')) { S.songPlay = S.time + 2.8; Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong'); later(0.5, () => Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong')); S.lockAnim = S.time + 0.6; } // S-324: canção = o bardo TOCA de verdade (sem pose de magia)
-  else { me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6; }
+  else { // P-016: gesto próprio da habilidade (golpe sob medida / mão erguida / mãos ao céu); sem gesto, o clipe antigo
+    const g = skillGesture(a.id), dur = g && startStrike(me, g.strike, { variant: g.variant });
+    if (dur) { S.lockAnim = S.time + Math.min(0.7, dur.dur * 0.8); me.root.userData.ovT = performance.now(); } else { me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6; }
+  }
+  { // P-016: efeito de lançamento (e o mesmo para os outros jogadores pelo online)
+    const tgt = a.m ? { x: a.m.x, y: a.m.obj.position.y, z: a.m.z } : a.pt ? { x: a.pt.x, y: groundAt(a.pt.x, a.pt.z), z: a.pt.z } : { x: S.pos.x, y: S.pos.y, z: S.pos.z };
+    playSkillFx(a.id, me.obj.position, tgt, { follow: () => me.obj.position });
+    S.skillFx = { n: ((S.skillFx && S.skillFx.n) || 0) + 1, id: a.id, ox: +S.pos.x.toFixed(2), oy: +S.pos.y.toFixed(2), oz: +S.pos.z.toFixed(2), tx: +tgt.x.toFixed(2), ty: +tgt.y.toFixed(2), tz: +tgt.z.toFixed(2) };
+    const ge = skillGemElement(a.id); if (ge) me.root.userData.gemTint = { el: ge, until: performance.now() + 1600 }; // Sábio: as gemas acendem na cor do elemento
+    if (p.cls === 'cacador') S.lastAtk = S.time; // o lobo gigante entra junto quando o Caçador usa habilidade
+  }
   hudDirty = true;
   if (eff.kind === 'warmount') { // S-203
     if (S.riding && S.riding.war) { dismount(); log('Trotavento dispensado.'); return; }
@@ -2678,8 +2690,8 @@ function executeSkill(a) {
     const R = makeMount('trotavento'); R.war = true; R.obj.position.set(S.pos.x, S.pos.y, S.pos.z); R.obj.rotation.y = S.pos.yaw; scene.add(R.obj);
     S.riding = R; S.sitting = false; ring(S.pos, 2, '#ffcf5a'); Sound.play('portal'); log('🐦 Montaria de Guerra: você monta no seu Trotavento e pode lutar montado.', 'lvl'); return;
   }
-  if (eff.kind === 'heal') { const v = eff.amount(lv, p); p.hp = Math.min(p.d.maxHp, p.hp + v); if (S.arena) S.arena.healSrc = 'habilidade'; floatAt(me.obj.position, '+' + v, '#5fe08a', 2.2); ring(me.obj.position, 1.6, '#7dff9a'); Sound.play('heal'); return; }
-  if (eff.kind === 'buff') { p.buffs[a.id] = { until: S.time + eff.dur / 1000, bonuses: eff.bonuses(lv) }; recalc(p); ring(me.obj.position, 1.8, sk.fxColor || '#ffd76a'); Sound.play('buff'); log(`${sk.name} ativada!`); return; }
+  if (eff.kind === 'heal') { const v = eff.amount(lv, p); p.hp = Math.min(p.d.maxHp, p.hp + v); if (S.arena) S.arena.healSrc = 'habilidade'; floatAt(me.obj.position, '+' + v, '#5fe08a', 2.2); return; }
+  if (eff.kind === 'buff') { p.buffs[a.id] = { until: S.time + eff.dur / 1000, bonuses: eff.bonuses(lv) }; recalc(p); if (a.id === 'montaria_de_guerra' || !SKILLS[a.id]) ring(me.obj.position, 1.8, sk.fxColor || '#ffd76a'); log(`${sk.name} ativada!`); return; }
   if (eff.kind === 'steal') {
     const m = a.m;
     if (m.stolen) floatAt(m.obj.position, 'Nada', '#cfd6e0', m.height + 0.4);
@@ -2706,17 +2718,16 @@ function executeSkill(a) {
   const from = () => me.obj.position.clone().add(new THREE.Vector3(0, 1.4, 0));
   const to = m => () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0));
   if (R > 0) {
-    for (let i = 0; i < hits; i++) later(0.15 + i * 0.25, () => { ring({ x: center.x, y: groundAt(center.x, center.z), z: center.z }, R, col); inRadius(center, R).forEach(hitOne); });
-    Sound.play(el === 'fogo' ? 'fire' : el === 'vento' ? 'zap' : el === 'terra' ? 'quake' : el === 'sagrado' ? 'holy' : 'swing');
+    const cy = groundAt(center.x, center.z);
+    for (let i = 0; i < hits; i++) later(0.15 + i * 0.25, () => { playSkillFx(a.id, me.obj.position, { x: center.x, y: cy, z: center.z }, { phase: 'wave', wave: i, radius: R }); inRadius(center, R).forEach(hitOne); });
   } else if (eff.splash) {
     const m = a.m;
-    shoot(from(), to(m), col, () => { ring({ x: m.x, y: groundAt(m.x, m.z), z: m.z }, eff.splash * TM, col); inRadius({ x: m.x, z: m.z }, eff.splash * TM).forEach(hitOne); Sound.play('fire'); }, true);
+    shoot(from(), to(m), col, () => { playSkillFx(a.id, me.obj.position, { x: m.x, y: m.obj.position.y, z: m.z }, { phase: 'hit' }); inRadius({ x: m.x, z: m.z }, eff.splash * TM).forEach(hitOne); }, true);
   } else if (eff.dmg === 'magic' || ['arrow', 'bolt', 'lightning', 'pillar'].includes(sk.fx)) {
-    Sound.play(el === 'fogo' ? 'fire' : el === 'agua' ? 'ice' : 'magic');
-    for (let i = 0; i < hits; i++) later(i * 0.14, () => shoot(from(), to(a.m), col, () => hitOne(a.m), sk.fx === 'arrow'));
+    if (sk.fx !== 'arrow' && skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m))) { for (let i = 1; i < hits; i++) later(i * 0.14, () => skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m))); } // P-016: o efeito da habilidade viaja até o alvo
+    else { if (sk.fx !== 'arrow') Sound.play(el === 'fogo' ? 'fire' : el === 'agua' ? 'ice' : 'magic'); for (let i = 0; i < hits; i++) later(i * 0.14, () => shoot(from(), to(a.m), col, () => { hitOne(a.m); playSkillFx(a.id, me.obj.position, { x: a.m.x, y: a.m.obj.position.y, z: a.m.z }, { phase: 'hit' }); }, sk.fx === 'arrow')); }
   } else {
-    Sound.play('swing');
-    for (let i = 0; i < hits; i++) later(0.25 + i * 0.14, () => hitOne(a.m));
+    for (let i = 0; i < hits; i++) later(0.25 + i * 0.14, () => { hitOne(a.m); if (!i) playSkillFx(a.id, me.obj.position, { x: a.m.x, y: a.m.obj.position.y, z: a.m.z }, { phase: 'hit', yaw: Math.atan2(a.m.x - S.pos.x, a.m.z - S.pos.z) }); });
   }
 }
 
@@ -3244,7 +3255,10 @@ function showSettings() {
     <label class="opt-sw"><input type="checkbox" id="o-son" ${Sound.sfxOn ? 'checked' : ''}><span>💥 Efeitos <small class="muted">(golpes, saltos, monstros, passos...)</small></span><input type="range" id="o-sv" min="0" max="100" value="${pct(Sound.sfxVol)}"><b id="o-sv-t">${pct(Sound.sfxVol)}%</b></label>
     <div class="opt-sec">🎯 Combate</div>
     <div class="opt-sw"><span>Peso da mira ao atacar <small class="muted">(quanto a câmera gira ao mexer o mouse segurando o ataque)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="opt-sec">📘 Tutorial</div>
+    <div class="opt-sw"><span>Primeiros passos <small class="muted">(as dicas de boas-vindas da vila)</small></span><button class="btn" id="o-tut">Refazer os primeiros passos</button></div>
     <div class="menu-btns" style="margin-top:14px"><button class="btn" id="o-test">▶ Testar efeito</button><button class="btn gold" id="o-back">← Voltar</button></div></div>`;
+  $('o-tut').onclick = () => { S.menuOpen = false; $('overlay').classList.remove('show'); restartTutorial(); }; // P-018
   $('o-all').onchange = e => { Sound.setEnabled(e.target.checked); try { localStorage.setItem('aethra_sound', e.target.checked ? '1' : '0'); } catch (er) { } if (e.target.checked && Sound.music) { Sound.songId = null; Sound.playSong(S.zone ? S.zone.music : 'vila'); } };
   $('o-mon').onchange = e => Sound.setMusicOn(e.target.checked);
   $('o-son').onchange = e => Sound.setSfxOn(e.target.checked);
@@ -3272,7 +3286,7 @@ function toggleMenu() {
   $('m-opts').onclick = () => showSettings();
   $('m-chars').onclick = () => { save3d(); location.reload(); };
 }
-const SAVE_FIELDS3 = ['charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'seen', 'hp', 'sp'];
+const SAVE_FIELDS3 = ['tutorial', 'charId', 'pet', 'mount', 'cosmetics', 'flights', 'name', 'look', 'cls', 'baseLv', 'jobLv', 'baseExp', 'jobExp', 'stats', 'statPoints', 'skillPoints', 'skills', 'zeny', 'inventory', 'equip', 'hotbar', 'hotPreset', 'hotRows', 'quests', 'seen', 'hp', 'sp'];
 function save3d() {
   if (!S.p || !HAS_SRV) return;
   const s = {}; for (const k of SAVE_FIELDS3) s[k] = S.p[k];
@@ -3310,7 +3324,7 @@ function step(dt) {
   ensureGallery();
   syncG();
   if (S.started && !S.paused && !S.menuOpen) {
-    initImpact(scene); dt = hitStopDt(dt); // P-011: micro-pausa de 40–60 ms no acerto
+    initImpact(scene); initSkillFx({ scene, camera, groundAt: (x, z) => groundAt(x, z), vlight, sound: n => Sound.play(n), makeArrow }); dt = hitStopDt(dt); // P-011: micro-pausa de 40–60 ms no acerto
     S.time += dt;
     for (let i = S.timers.length - 1; i >= 0; i--) if (S.timers[i].at <= S.time) { const t = S.timers.splice(i, 1)[0]; t.fn(); }
     if (S.flight) S.flight.update(dt); else updatePlayer(dt); // P-006: voando, o Pégaso conduz (sem controle do jogador)
@@ -3336,6 +3350,7 @@ function step(dt) {
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
     updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
+    updateTutorial(dt); // P-018: dicas dos primeiros passos (só personagens novos)
   }
 }
 function draw(dt) {
@@ -3371,8 +3386,9 @@ function draw(dt) {
         camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 12));
       }
     }
-    if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
-    else { updateImpact(dt); shakeCamera(camera, dt); } // P-011: recuo/piscada do alvo, partículas e tremidinha só em críticos/pesados
+    if (!S.flight && tutorialCamera(camera, dt)) { /* P-018: câmera de apresentação da vila */ }
+    else if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
+    else { updateImpact(dt); shakeCamera(camera, dt); } updateSkillFx(dt); // P-011: recuo/piscada do alvo, partículas e tremidinha só em críticos/pesados
     sun.position.set(P.x + 30, P.y + 60, P.z + 18); sun.target.position.set(P.x, P.y, P.z);
     sky.position.copy(camera.position);
     // névoa por região
@@ -3714,7 +3730,8 @@ function startWith(s) {
   buildPlayerModel(); buildPet();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
   S.started = true; hudDirty = true; syncG(); UI.refreshOpen(); aspdTool();
-  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
+  initTutorial({ S, UI, isAdmin, log, Sound, save3d, questState, countItem, addItem, banner, markDirty: () => { hudDirty = true; UI.markDirty(); }, toScreen, groundAt: (x, z) => groundAt(x, z), VILLAGE }); startTutorial(); // P-018
+  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
