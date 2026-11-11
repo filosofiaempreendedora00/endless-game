@@ -18,6 +18,7 @@ import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 import { sdfSkinnedGeometry, sdfRig, SDF_NOISE_GLSL } from './mounts3d.js'; // S-330: raposa no mesmo método do lobo (malha contínua com esqueleto)
+import { FUR_STRAND_GLSL } from './wolf3d.js'; // S-332: o mesmo fio de pelo suave do lobo (3 planos, borda macia, cobertura)
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, ...extra });
@@ -316,7 +317,7 @@ function foxMats(stage) {
   const base = new THREE.Color(['#c9581f', '#bf4a17', '#d06a1c'][stage]);
   const U = { uBase: base, uDark: base.clone().lerp(new THREE.Color('#3a1206'), 0.62), uLight: new THREE.Color('#f4ece0'), uSock: new THREE.Color('#1c1311'), uGold: new THREE.Color('#ffcf5a') };
   const mk = (kind, f) => {
-    const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: f ? 1 : 0.92 }), COAT = kind === 'body' ? 'fCoat' : 'tCoat', LEN = kind === 'body' ? 'fFurLen' : 'tFurLen', comb = kind === 'body' ? 'vec3(0.0, -0.5, -0.86)' : 'vec3(0.0, -0.15, -1.0)';
+    const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: f ? 1 : 0.92, alphaToCoverage: !!f }), COAT = kind === 'body' ? 'fCoat' : 'tCoat', LEN = kind === 'body' ? 'fFurLen' : 'tFurLen', comb = kind === 'body' ? 'vec3(0.0, -0.5, -0.86)' : 'vec3(0.0, -0.15, -1.0)';
     m.onBeforeCompile = sh => {
       for (const k in U) sh.uniforms[k] = { value: U[k] }; sh.uniforms.uGoldK = { value: stage === 2 ? 0.8 : 0 }; sh.uniforms.uEye = { value: new THREE.Vector3(...FOX_EYE) };
       if (!f) {
@@ -327,17 +328,18 @@ function foxMats(stage) {
         sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + FOX_GLSL + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
           vOP = position; vON = normal; float h = ${LEN}(position) * uF;
           transformed += normal * h + ${comb} * h * uF * 0.9;`);
-        sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + FOX_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + FOX_GLSL + FUR_STRAND_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
           float L = ${LEN}(vOP);
-          { // fios finos e redondos que afinam até a ponta (num plano escolhido pela normal: sem quadrados nem anéis)
-            vec3 an = abs(normalize(vON)); vec2 qq; float ax;
-            if (an.x > an.y && an.x > an.z) { qq = vOP.yz; ax = 1.0; } else if (an.y > an.z) { qq = vOP.zx; ax = 2.0; } else { qq = vOP.xy; ax = 3.0; }
-            qq = qq * 430.0 + vec2(0.37, 0.71) * ax; vec2 cc = floor(qq);
-            float hh = fract(sin(dot(cc, vec2(12.9898, 78.233)) + ax * 3.7) * 43758.5453);
-            vec2 fr = fract(qq) - 0.5 - (vec2(fract(hh * 91.7), fract(hh * 57.3)) - 0.5) * 0.45;
-            float th = (1.0 - uF * (0.78 + 0.18 * hh)) * (0.5 + 0.2 * hh);
-            if (L < 0.002 || length(fr) > th) discard;
-            diffuseColor.rgb *= ${COAT}(vOP, normalize(vON)) * mix(0.72, 1.08, uF) * (0.94 + 0.12 * hh);
+          { // S-332: fios redondos que afinam, em 3 planos misturados pela normal (sem emendas na cauda), borda suave e franja na silhueta
+            if (L < 0.002) discard;
+            float den = mix(430.0, 190.0, smoothstep(0.02, 0.07, L));
+            float a = furCover(vOP, vON, den, uF);
+            a = max(a, (1.0 - smoothstep(0.0, 0.32, uF)) * 0.85);
+            float ndv = abs(dot(normalize(vNormal), normalize(vViewPosition)));
+            a *= mix(1.0, smoothstep(0.04, 0.5, ndv), uF * 0.8);
+            if (a < 0.04) discard;
+            diffuseColor.a = a;
+            diffuseColor.rgb *= ${COAT}(vOP, normalize(vON)) * mix(0.72, 1.08, uF) * (0.95 + 0.08 * vn(vOP * 120.0));
           }`);
       }
     };

@@ -34,14 +34,21 @@ function stringFx(bow, pull, on) {
 }
 export function bowPose(me, o, ctx) {
   const r = me.root, bow = r.userData.items && r.userData.items.bow; if (!bow || !r.userData.bowState) return;
-  r.userData.bowState(o.w > 0.02 ? 'hand' : 'back');
+  // S-333: relógio da pose (dt do jogo quando quem chama passa; senão o relógio real) e molas criticamente amortecidas:
+  // começam devagar, aceleram e chegam sem tranco (a suavização exponencial antiga dava o "estalo" ao sair da mira)
+  const bdt = o.dt != null ? Math.min(0.1, o.dt) : Math.min(0.1, Math.max(0, performance.now() / 1000 - (me._bt ?? performance.now() / 1000))); me._bt = performance.now() / 1000;
+  const now = (me._clk = (me._clk ?? 0) + bdt);
+  const spring = (key, target, k) => { if (me[key] === undefined) { me[key] = target; me[key + 'V'] = 0; } const v = me[key + 'V'] + ((target - me[key]) * k - 2 * Math.sqrt(k) * me[key + 'V']) * bdt; me[key + 'V'] = v; me[key] += v * bdt; return me[key]; };
+  const Aeff = Math.max(0, Math.min(1, spring('_bpA', o.aim, o.aim > (me._bpA ?? 0) ? 90 : 26))); // entra na mira rápido, sai macio
+  const Weff = Math.max(0, Math.min(1, spring('_bpW', o.w < (me._bpW ?? 0) && Aeff > 0.18 ? (me._bpW ?? 1) : o.w, o.w > (me._bpW ?? 0) ? 70 : 18))); // só solta o braço depois de baixar a mira
+  r.userData.bowState(Weff > 0.02 ? 'hand' : 'back');
   const nock = me._nockObj || (me._nockObj = (() => { const a = ctx.makeArrow(); a.visible = false; ctx.scene.add(a); return a; })());
-  if (o.w < 0.02) { nock.visible = false; stringFx(bow, null, false); return; }
+  if (Weff < 0.02) { nock.visible = false; stringFx(bow, null, false); me._hpL = null; return; }
   const g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'), nk = g('neck_01'), s3 = g('spine_03');
   if (!sl || !el || !hl || !sr || !er || !hr || !hd) return;
   (me._gripL || (me._gripL = handGrip(r, 'l', 1)))(); // mão do arco fechada em volta da empunhadura
   (me._gripR || (me._gripR = handGrip(r, 'r', 0.55)))(); // dedos da corda em gancho
-  const W = o.w, A = o.aim, tw = o.twist || 0, fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
+  const W = Weff, A = Aeff, tw = o.twist || 0, fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
   r.updateWorldMatrix(true, true);
   // corpo de lado (twist no obj): o peito volta um pouco e a cabeça olha para o alvo
   yawBone(s3, -tw * 0.3 * W); yawBone(nk, -tw * 0.3 * W); yawBone(hd, -tw * 0.4 * W);
@@ -59,18 +66,58 @@ export function bowPose(me, o, ctx) {
     if (zw.lengthSq() > 1e-4) { zw.normalize(); const ang = Math.atan2(new THREE.Vector3().crossVectors(bz, zw).dot(by), bz.dot(zw)); hl.getWorldQuaternion(_q2); _q.setFromAxisAngle(by, ang * W); _q2.premultiply(_q); setWorldQuat(hl, _q2.clone()); }
   }
   bow.updateWorldMatrix(true, false);
-  const grip = new THREE.Vector3(0, 0, bow.userData.gripZ ?? -0.11).applyMatrix4(bow.matrixWorld), bz = new THREE.Vector3(0, 0, 1).transformDirection(bow.matrixWorld);
-  const rest = grip.clone().add(bz.clone().multiplyScalar(0.11)); // centro da corda solta
-  const anchor = head.clone().add(UP.clone().multiplyScalar(-0.085)).add(fwd.clone().multiplyScalar(0.06)).add(right.clone().multiplyScalar(0.03)); // canto da boca
-  const pull = rest.clone().lerp(anchor, Math.max(0, Math.min(1, o.draw)) * (0.2 + 0.8 * A)); // em guarda só encosta na corda
-  const adir = grip.clone().sub(pull); const alen = adir.length(); adir.normalize();
-  const handT = pull.clone().add(adir.clone().multiplyScalar(-0.07)).add(UP.clone().multiplyScalar(-0.015)); // o punho fica logo atrás dos dedos que puxam
-  const poleR = shR.clone().add(UP.clone().multiplyScalar(-0.45 + 0.8 * A)).add(fwd.clone().multiplyScalar(-0.2 - 0.5 * A)).add(right.clone().multiplyScalar(0.3)); // cotovelo alto e para trás mirando
+  // S-333: o relógio próprio da pose (quem chama não passa dt) — a mão que puxa é suavizada aqui, para nada "estalar"
+  const gz = bow.userData.gripZ ?? -0.11, sz = (bow.userData.strMesh && bow.userData.strMesh.position.z) ?? 0.097;
+  const grip = new THREE.Vector3(0, 0, gz).applyMatrix4(bow.matrixWorld), bz = new THREE.Vector3(0, 0, 1).transformDirection(bow.matrixWorld), by = new THREE.Vector3(0, 1, 0).transformDirection(bow.matrixWorld);
+  const rightA = new THREE.Vector3().crossVectors(fwd, UP).normalize(); // direita de quem mira (lado da bochecha que recebe a corda)
+  // a âncora: canto da boca, do lado direito do rosto (a corda passa rente à bochecha, nunca por dentro da cabeça)
+  const dwarf = !!r.userData.dwarf, faceSide = dwarf ? 0.115 : 0.09; // a bochecha fica a ~9 cm do eixo da cabeça (anão: cabeça e barba mais largas)
+  const anchor = head.clone().add(UP.clone().multiplyScalar(dwarf ? -0.05 : -0.07)).add(fwd.clone().multiplyScalar(0.06)).add(rightA.clone().multiplyScalar(faceSide));
+  // S-333: a flecha apoia EM CIMA do punho do arco (no indicador), não no meio da empunhadura: sobe o quanto for preciso para não
+  // passar por dentro da mão nem do antebraço (o anão tem antebraço bem mais grosso)
+  const elP = el.getWorldPosition(new THREE.Vector3()), hlP = hl.getWorldPosition(new THREE.Vector3()), armR = r.userData.dwarf ? 0.068 : 0.05;
+  const segDist = (p0, p1, q0, q1) => { // menor distância entre dois segmentos
+    const d1 = p1.clone().sub(p0), d2 = q1.clone().sub(q0), r0 = p0.clone().sub(q0), a = d1.dot(d1), e = d2.dot(d2), f = d2.dot(r0), c = d1.dot(r0), b = d1.dot(d2), den = a * e - b * b;
+    let s = den > 1e-8 ? Math.max(0, Math.min(1, (b * f - c * e) / den)) : 0, t = (b * s + f) / e; if (t < 0) { t = 0; s = Math.max(0, Math.min(1, -c / a)); } else if (t > 1) { t = 1; s = Math.max(0, Math.min(1, (b - c) / a)); }
+    return p0.clone().add(d1.multiplyScalar(s)).distanceTo(q0.clone().add(d2.multiplyScalar(t)));
+  };
+  const drawK0 = Math.max(0, Math.min(1, o.draw)) * (0.2 + 0.8 * A);
+  let restUp = 0.055;
+  for (let it = 0; it < 4; it++) { // confere a flecha encaixada na corda solta (guarda) E a flecha puxada: nenhuma passa pelo antebraço/pulso
+    const R = grip.clone().add(by.clone().multiplyScalar(restUp)), Sx = R.clone().add(bz.clone().multiplyScalar(sz - gz)), T = Sx.clone().lerp(anchor, drawK0);
+    const d = Math.min(segDist(R, Sx, elP, hlP), segDist(R, T, elP, hlP)), need = armR + 0.016; if (d >= need) break; restUp += need - d + 0.004; }
+  restUp = Math.min(restUp, 0.16);
+  const restPt = grip.clone().add(by.clone().multiplyScalar(restUp)); // onde a flecha encosta no arco
+  const strRest = restPt.clone().add(bz.clone().multiplyScalar(sz - gz)); // ponto de encaixe na corda solta, na mesma altura
+  const drawK = Math.max(0, Math.min(1, o.draw)) * (0.2 + 0.8 * A); // em guarda só encosta na corda
+  const tgt = strRest.clone().lerp(anchor, drawK);
+  // mão suavizada (no espaço do corpo): puxa firme, e na soltura faz o "follow-through" (segue um pouco para trás ao lado do rosto,
+  // dedos abrindo) e só então volta devagar para encaixar a próxima flecha — nada de salto de meio metro num quadro
+  const prev = me._lastDraw ?? o.draw; if (prev > 0.8 && o.draw < 0.12) me._relAt = now; // soltura = corda quase na âncora caindo a quase zero (voltar da meia-puxada para a guarda NÃO é soltura) me._lastDraw = o.draw;
+  const sinceRel = now - (me._relAt ?? -9);
+  // S-333: depois de soltar, a mão NÃO volta até o arco: fica ao lado do rosto e desce macio até a meia-puxada (nova flecha já encaixada)
+  const reNock = sinceRel < 0.7 && A > 0.3, handDrawK = reNock ? Math.max(drawK, 0.55 * (0.2 + 0.8 * A)) : drawK;
+  const SP = me.obj || r.parent || r; SP.updateWorldMatrix(true, false); // espaço do PERSONAGEM (a raiz do esqueleto é animada e "pula" ao trocar de animação)
+  const tgtL = SP.worldToLocal(strRest.clone().lerp(anchor, handDrawK));
+  if (!me._hpL) { me._hpL = tgtL.clone(); me._hpV = new THREE.Vector3(); }
+  let want = tgtL, k;
+  if (sinceRel < 0.16) { const back = anchor.clone().sub(restPt).normalize(); want = SP.worldToLocal(anchor.clone().add(back.multiplyScalar(0.07)).add(rightA.clone().multiplyScalar(0.035)).add(UP.clone().multiplyScalar(0.01))); k = 700; }
+  else k = !reNock && o.draw > (me._drawSm ?? 0) + 0.02 ? 420 : 55; // puxando: acompanha a corda; voltando para encaixar outra flecha: macio
+  me._drawSm = o.draw;
+  { const acc = want.clone().sub(me._hpL).multiplyScalar(k).sub(me._hpV.clone().multiplyScalar(2 * Math.sqrt(k))); me._hpV.add(acc.multiplyScalar(bdt)); me._hpL.add(me._hpV.clone().multiplyScalar(bdt)); }
+  const pull = SP.localToWorld(me._hpL.clone());
+  const holding = o.draw > 0.04 && sinceRel > 0.14; // dedos na corda (fora da janela da soltura)
+  const nockPt = holding ? pull : strRest, adir = restPt.clone().sub(nockPt); const alen = adir.length(); adir.normalize();
+  // punho atrás dos dedos MAS para fora do rosto (dorso da mão contra a mandíbula, não dentro dela)
+  const handT = pull.clone().add(adir.clone().multiplyScalar(-0.045)).add(rightA.clone().multiplyScalar(0.035)).add(UP.clone().multiplyScalar(-0.02));
+  const headC = head.clone().add(fwd.clone().multiplyScalar(0.03)); // centro da cabeça no plano (o osso fica na nuca)
+  { const headR = (r.userData.dwarf ? 0.135 : 0.115) + 0.04, v = handT.clone().sub(headC); const wY = Math.max(0, Math.min(1, (v.y + 0.24) / 0.1)) * Math.max(0, Math.min(1, (0.38 - v.y) / 0.1)); v.y = 0; const dh = v.length(); if (dh < headR) handT.add(rightA.clone().multiplyScalar((headR - dh) * wY)); } // entra gradual (sem "estalo" quando a mão passa pela altura do queixo) // nunca entra na cabeça/barba
+  const poleR = shR.clone().add(UP.clone().multiplyScalar(-0.45 + 0.8 * A)).add(fwd.clone().multiplyScalar(-0.2 - 0.5 * A)).add(rightA.clone().multiplyScalar(0.3)); // cotovelo alto e para trás mirando
   ik2(sr, er, hr, handT, poleR, W);
   { hr.updateWorldMatrix(true, false); const hy = new THREE.Vector3(0, 1, 0).transformDirection(hr.matrixWorld); rotBoneTo(hr, hy, hy.clone().lerp(adir, 0.6 * W).normalize()); } // dedos na direção da flecha
-  stringFx(bow, pull, W > 0.3 && o.draw > 0.04);
+  stringFx(bow, holding ? pull : null, W > 0.3 && holding);
   nock.visible = !!o.nock && W > 0.55 && alen > 0.05;
-  if (nock.visible) { nock.position.copy(pull).add(adir.clone().multiplyScalar(0.37)); nock.lookAt(nock.position.clone().add(adir)); }
+  if (nock.visible) { nock.position.copy(nockPt).add(adir.clone().multiplyScalar(0.37)); nock.lookAt(nock.position.clone().add(adir)); }
 }
 // atraso entre a puxada e a soltura, seguindo a velocidade de ataque (ASPD alto = puxa e solta rápido)
 export const bowRelease = aspdMs => Math.max(0.09, Math.min(0.25, aspdMs / 1000 * 0.55));

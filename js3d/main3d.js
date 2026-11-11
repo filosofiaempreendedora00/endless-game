@@ -583,7 +583,7 @@ function galleryAnim(n, dt = 1 / 30) {
     const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 10 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, rel = 0.3;
     const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.55, (since - rel - 0.1) * 3);
     n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -1.1 * A, 7);
-    bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12) }, BOW_CTX);
+    bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12), dt }, BOW_CTX);
   }
   if (n.root.userData.instrument) { // S-324: bardo com instrumento — nas costas parado, nas mãos pronto na pose de luta, tocando nos "golpes"
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
@@ -2027,7 +2027,7 @@ function archerPose(me, p, t, dt) {
   me._draw = since >= rel && since < rel + 0.1 ? draw : (me._draw ?? 0.1) + (draw - (me._draw ?? 0.1)) * Math.min(1, dt * 25); // a soltura é instantânea, a puxada é suave
   const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
   sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
-  bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12) }, BOW_CTX);
+  bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12), dt }, BOW_CTX);
 }
 /* S-324: Bardo com instrumento — fora de combate nas costas; em guarda nas mãos, pronto; tocando (ataque ou canção) dedilha
    no ritmo, com o corpo e a cabeça balançando. A pose dos braços fica em js3d/instrument3d.js (instrumentPose). */

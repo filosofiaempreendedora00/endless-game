@@ -2,11 +2,63 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (9)
 
-_Nenhuma._
+### S-337 · Área do mapa: Área da tela (363×528 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:48:02 · **Mapa:** Vila de Alvorada (tile [820, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** O Paladino melhorou bastante principalmente de frente porém de costas é bem claro que ainda falta um cuidado maior em relação a essa espécie de capa para que ela não fique entrando no corpo do personagem e também repare que existem várias falhas da armadura sobretudo na parte dos ombros por isso eu digo que o acabamento precisa ser feito de forma mais interessante Pois eu não posso permitir com que essa parte interna que tenha bolinhas se sobressaia de forma externa à própria armadura
+- ![print](img/S-337.png)
 
-## Feitas (331)
+### S-338 · Área do mapa: Área da tela (107×176 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:48:59 · **Mapa:** Vila de Alvorada (tile [818, -2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Repara que no braço que a parte interna está saindo para fora da armadura E isso não pode ocorrer jamais preciso que tome cuidado para você melhorar ainda mais o acabamento da armadura em todos os membros e também nas partes do tronco e o feedback que eu falei para o anão você deve também corrigir aqui nesta raça e nas demais e também quero dizer que o escudo ficou de fato bem melhor porém ainda existem alguns acabamentos que passaram batidos e que precisam ser feitos com certa urgência para finalizarmos a armadura de forma adequada
+- ![print](img/S-338.png)
+
+### S-339 · Área do mapa: Área da tela (122×39 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:50:35 · **Mapa:** Vila de Alvorada (tile [817, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A barba do anão também ficou penetrando parte da roupa e eu não sei qual a melhor forma de resolver isso mas digo para você que certamente pode ser melhorado e conto com a sua astúcia para tal aproveite e repare nas falhas dos braços com as vestes de bolinhas aparecendo e inclusive boa parte da armadura que era para estar preenchendo o peitoral acabou não preenchendo então eu realmente preciso que você complete a armadura para que não fiquem essas partes soltas e sim essa parte das bolinhas seja de fato algo que pode ser percebido apenas em alguns pedaços bem esporádicos da armadura e não assim então exposto Como está atualmente em resumo quero proteger os meus faladinhos mas com a armadura
+- ![print](img/S-339.png)
+
+### S-340 · Área do mapa: Área da tela (458×219 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:52:12 · **Mapa:** Vila de Alvorada (tile [811, 3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu não quero que fiquem esses cristais em volta do cavaleiro é em relação ao que eu disse sobre os cavaleiros eu gostaria que essa armadura fosse ainda um pouco diferente da do Paladino eu entendo que tem diferenças mas senti que esta saiotinha ficou um pouco mais parecido do que eu gostaria e as partes que preenchem a canela também poderiam ser levemente diferentes eu deixo muito claro que gostei bastante da cor que você escolheu porém as mesmas falhas que eu referi ao acabamento que persistem nos faladinhos Eu também notei que existem aqui nos cavaleiros
+- ![print](img/S-340.png)
+
+### S-341 · Área do mapa: Área da tela (259×355 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:53:42 · **Mapa:** Vila de Alvorada (tile [811, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Sinto que nos guerreiros Estamos bem próximo de acertar porém as únicas Pulgas que ficam atrás da minha orelha são de fato quanto ao acabamento que já falei em relação às evoluções dele ou seja paradinhos e Cavaleiros e também eu me questiono o quão comum é utilizar essa parte que não tem a armadura e sim só a parte das bolinhas dentro não sei se é tão comum assim deixar tudo isso tão exposto Mas apesar dos pesares fica esse meu feedback geral para que você possa ainda dar uma melhorada no quesito acabamento da armadura pois as armaduras bem feitas são muito importantes para mim
+- ![print](img/S-341.png)
+
+### S-342 · Área do mapa: Área da tela (135×191 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:54:17 · **Mapa:** Vila de Alvorada (tile [803, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Ué não entendi essa abertura Ué não entendi essa abertura de perna parecendo com um sapo ainda está presente e achei um pouco exagerada
+- ![print](img/S-342.png)
+
+### S-343 · Área do mapa: Área da tela (293×328 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:55:33 · **Mapa:** Vila de Alvorada (tile [795, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu achei essas roupas dos salteadores muito simples para uma classe que claramente é uma evolução Então eu preciso que você incremente com novos adereços essas vestes para torná-la mais sofisticada e mais profissional e claro eu quero que você não necessariamente inclua alguma armadura mas se torne essa roupa mais elegante e mais poderosa e mais imponente e também gostaria de trocar este nome de salteador pois ainda não estou satisfeito com este nome
+- ![print](img/S-343.png)
+
+### S-344 · Área do mapa: Área da tela (424×167 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:56:59 · **Mapa:** Vila de Alvorada (tile [786, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** E com esses novos incrementos nas roupas porém eu achei um pouco forçado parecendo que simplesmente Vestiu um boneco que já existia e não foi de fato uma roupa trocada Então eu preciso garantir que essa roupa seja mais completa nos bairros e não parecendo uma roupa em cima da outra reforço que essas roupas que você incluiu são sim uma evolução natural e um ponto bem positivo porém novamente eu não quero fazer parecer com que é simplesmente uma roupa em cima do modelo e outro ponto importante é que o arco e flecha é o instrumento se encaixam e não fiquem sobrepostos
+- ![print](img/S-344.png)
+
+### S-345 · Área do mapa: Área da tela (400×271 px) (sobre: Chat)
+- **Status:** pendente · **Quando:** 2026-11-10T23:58:03 · **Mapa:** Vila de Alvorada (tile [786, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver
+- ![print](img/S-345.png)
+
+## Feitas (336)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2334,3 +2386,38 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Está ocorrendo com essa classe em específico de o meu personagem começar a dar voltas em volta de si mesmo isso é claramente um bug o único ponto que eu gostaria que você investigasse é se este bug é exclusivo desta classe ou tem relação com as armas ou algum outro ponto pois reparei que isso tem sido recorrente este bug bastante esquisito
 - ![print](img/S-331.png)
 - **Resposta do Claude:** Achei a causa e ela não era só do Salteador: a animação de golpe de espada do pacote girava a bacia e o peito quase meia-volta a cada golpe, e como o Salteador ataca rápido parecia que ele rodava em volta de si mesmo — valia para todas as classes de espada, machado, maça e lança. Agora o golpe gira o tronco bem menos (o peito oscila uns 70° em vez de 180°) e o talho continua legível. Também corrigi a mira no cursor: com o cursor quase em cima do personagem ele dava meia-volta, agora mantém a direção.
+
+### S-332 · Área do mapa: Área da tela (366×331 px) (sobre: Chat)
+- **Status:** feito · **Quando:** 2026-11-10T23:39:05 · **Mapa:** Vila de Alvorada (tile [-49, 21])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Em relação ao formato do corpo e movimentos esse lobo foi um dos melhores monstros que você já criou até agora porém ele ainda tem muitas melhorias principalmente em relação a esse pelo repare na cauda dele que tem várias pedacinhos desconexos ou seja o gráfico que esse lobo foi criado ele aparentemente sua um pouco inacabado e diferente do gráfico que é o padrão deste jogo o problema dele é próximo ao problema dessa raposinha então eu preciso que você por gentileza investigue o que eu estou falando nesse acabamento da criatura e Garanta que seja mais suave e mais realista reforço que em termos de proporções e movimentos esse lobo foi muito melhor do que outras criaturas que você já fez porém como eu trouxe ainda existem melhorias como também nessa boca dele que ficou ainda um pouco esquisita mas o pelo é o principal
+- ![print](img/S-332.png)
+- **Resposta do Claude:** Refiz o acabamento do pelo do lobo (e do lobo gigante do Caçador e da raposa): cada fio agora é redondo e afina até a ponta, com borda suave, subpelo junto da pele e franja macia na silhueta; a cauda ficou volumosa e contínua, sem pedacinhos soltos. A boca ganhou linha fina de lábio preto e nariz menor e fosco. Corpo e movimento continuam iguais.
+
+### S-333 · Área do mapa: Área da tela (246×338 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:42:35 · **Mapa:** Vila de Alvorada (tile [793, -16])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu vi que você já corrigiu o bug no que tange aquela abertura de pernas esquisitas porém a posição dos braços principalmente durante a esticada da corda ainda estão bugadas e precisam ser investigadas e principalmente o momento em que a postura de puxar a corda é desfeita e o personagem volta ao normal sinto que está sendo de uma forma extremamente abrupta e preciso que seja feita de forma mais suave um outro ponto importante é que a flecha está passando por dentro do antebraço e da mão de alguns deles como o do anão e eu também preciso que o braço não a dentre o rosto da pessoa então reforço que estamos num excelente caminho principalmente no que tange a pose pronta porém ainda tem algumas melhorias sutis quando nós falamos de arco
+- ![print](img/S-333.png)
+- **Resposta do Claude:** Ao soltar a flecha a mão não pula mais: segue um pouco para trás ao lado do rosto e volta macia; mira, guarda e pose normal trocam suave. A flecha apoia em cima do punho do arco e passa por fora da mão e do antebraço (também no anão), e a mão que puxa ancora no canto da boca, sem entrar no rosto nem na barba.
+
+### S-334 · Área do mapa: Área da tela (233×71 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:43:36 · **Mapa:** Vila de Alvorada (tile [798, -17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostaria que todos esses quatro elementos por padrão fossem gemas ou melhor orbeez e orbes esses um pouco mais místicos no sentido de não serem orbes totalmente esféricos e monocromáticos e eu não gostaria de trabalhar com os quatro elementos por enquanto apenas depois que estivermos falando de habilidades Mas isso ainda vou criar
+- ![print](img/S-334.png)
+- **Resposta do Claude:** Deixei os elementos para depois: o Sábio tem 4 gemas místicas pequenas girando (gota, seixo, cristais), iridescentes, com núcleo de luz e cor passeando entre ametista, azul e verde-água.
+
+### S-335 · Área do mapa: Área da tela (114×100 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:45:45 · **Mapa:** Vila de Alvorada (tile [806, -16])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostei desse efeito Místico do cajado mas sinto que poderia ser melhor trabalhado de forma mais interessante e elaborada e sofisticada e de forma que saiam efeitos místicos e mágicos deste cajado e um ponto importante é garantir que ele seja posicionado de uma forma um Pouco Mais afastada em relação ao punho e ao corpo pois acho que o antebraço está muito colado no corpo para o arqui-mago e novamente é importante garantir que esteja segurando o cajado muito bem e também gostaria desse cajado a queimado ser um pouco mais imponente até um pouco mais grosso do que está atualmente
+- ![print](img/S-335.png)
+- **Resposta do Claude:** O cajado do Arquimago ficou 45% mais grosso e imponente, com garras torcidas, cristal violeta e lascas orbitando; a magia tem runas girando, fios de energia subindo em espiral e pulsos de luz, mais fortes ao conjurar. Ele segura o cajado mais afastado do corpo, com o cabo firme na mão.
+
+### S-336 · Área do mapa: Área da tela (56×63 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:46:19 · **Mapa:** Vila de Alvorada (tile [813, -11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Gostaria que essa bolinha aqui tivesse algumas cores um pouco brilhantes parecendo como um cristal porém não tão fodas e iradas quanto o do arquimago
+- ![print](img/S-336.png)
+- **Resposta do Claude:** A bolinha do Mago virou um cristal azul vivo e brilhante, menor e mais simples que o do Arquimago.
