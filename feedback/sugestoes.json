@@ -16329,8 +16329,9 @@
       "sp": "66/66"
     },
     "id": "S-331",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:04:58",
-    "imagem": "img/S-331.png"
+    "imagem": "img/S-331.png",
+    "resposta": "Achei a causa e ela não era só do Salteador: a animação de golpe de espada do pacote girava a bacia e o peito quase meia-volta a cada golpe, e como o Salteador ataca rápido parecia que ele rodava em volta de si mesmo — valia para todas as classes de espada, machado, maça e lança. Agora o golpe gira o tronco bem menos (o peito oscila uns 70° em vez de 180°) e o talho continua legível. Também corrigi a mira no cursor: com o cursor quase em cima do personagem ele dava meia-volta, agora mantém a direção."
   }
 ]

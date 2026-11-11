@@ -44,10 +44,28 @@ export function loadHumans(onEach) {
   if (loading) return loading;
   const L = new GLTFLoader();
   loading = Promise.all(Object.entries(FILES).map(([k, f]) => L.loadAsync(Q + f).then(g => { G[k] = g; if (onEach) onEach(k); })))
-    .then(() => { prepHeads(); prepMaterials(); for (const k of Object.keys(G)) if (k.startsWith('out_')) { if (k.startsWith('out_f_')) dropParts(G[k].scene, /Pauldron/); mergeOutfit(G[k].scene); } return G; });
+    .then(() => { tameClips(); prepHeads(); prepMaterials(); for (const k of Object.keys(G)) if (k.startsWith('out_')) { if (k.startsWith('out_f_')) dropParts(G[k].scene, /Pauldron/); mergeOutfit(G[k].scene); } return G; });
   return loading;
 }
 export const humanAnims = () => (G.anims ? G.anims.animations : []);
+/* S-331: o "Sword_Attack" do pacote gira a bacia 72° e o peito mais 78° por cima (quase meia-volta a cada golpe; os outros
+   golpes giram no máximo ~20°). Em sequência, o personagem parecia rodar em volta de si mesmo — em TODAS as classes de
+   espada/machado/maça/lança. Aqui, uma única vez ao carregar, cada osso listado é aproximado da pose do 1º quadro do clipe
+   (slerp com fator k: 1 = como veio, 0 = parado). Braços e pernas ficam intactos: o talho continua legível. */
+const TAME = { Sword_Attack: { pelvis: 0.32, spine_01: 0.5, spine_02: 0.55, spine_03: 0.42, neck_01: 0.45, Head: 0.5 } };
+let tamed = false;
+function tameClips() {
+  if (tamed || !G.anims) return; tamed = true;
+  const qa = new THREE.Quaternion(), qb = new THREE.Quaternion();
+  for (const clip of G.anims.animations) {
+    const T = TAME[clip.name]; if (!T) continue;
+    for (const tr of clip.tracks) {
+      const [bone, prop] = tr.name.split('.'); if (prop !== 'quaternion' || T[bone] === undefined) continue;
+      const v = tr.values, k = T[bone]; qa.fromArray(v, 0);
+      for (let i = 4; i < v.length; i += 4) { qb.fromArray(v, i); qb.copy(qa.clone().slerp(qb, k)); qb.toArray(v, i); }
+    }
+  }
+}
 /* S-127: as animações trazem a POSIÇÃO de todos os ossos (medidas do esqueleto masculino). No corpo feminino isso
    alarga ombros e quadris de homem. Para elas, usamos cópias das animações só com rotação (posição só na raiz/pélvis),
    e o esqueleto mantém as proporções femininas. */

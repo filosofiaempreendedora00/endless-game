@@ -39,7 +39,11 @@ const escH = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;'
 const HAS_SRV = location.protocol.startsWith('http');
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const rng = mulberry(4242);
-const angLerp = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI; if (d < -Math.PI) d += Math.PI * 2; return a + d * k; };
+const wrapAng = a => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
+const angLerp = (a, b, k) => { let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI; if (d < -Math.PI) d += Math.PI * 2; return wrapAng(a + d * k); }; // S-331: resultado sempre em −π..π (antes acumulava voltas inteiras)
+// S-331: mira no cursor — se o ponto mirado está quase em cima do personagem, a direção fica instável e ele dava meia-volta; ali o corpo mantém a direção
+const AIM_DEAD = 1.6;
+const aimYaw = (q, cur) => { const dx = q.x - S.pos.x, dz = q.z - S.pos.z; return !(Number.isFinite(dx) && Number.isFinite(dz)) || dx * dx + dz * dz < AIM_DEAD * AIM_DEAD ? cur : Math.atan2(dx, dz); };
 
 /* =========================== Cena =========================== */
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game3d'), antialias: true, preserveDrawingBuffer: true });
@@ -1345,7 +1349,7 @@ function actionFire() {
   const ranged = p.d.ranged || p.d.magicAuto, reach = ranged ? 32 : attackReach(p, null) + 0.3;
   const lk = fireLock();
   if (lk) { const d = Math.hypot(lk.x - S.pos.x, lk.z - S.pos.z); if (d > attackReach(p, lk)) return; } // travado e longe: vai até ele (S-305) sem golpear o vento
-  else if (!isAction()) { const q = aimPoint(30); S.pos.yaw = Math.atan2(q.x - S.pos.x, q.z - S.pos.z); } // vira para onde o cursor aponta
+  else if (!isAction()) { const q = aimPoint(30); S.pos.yaw = aimYaw(q, S.pos.yaw); } // vira para onde o cursor aponta
   let m = lk || aimTarget(reach); if (m && !ranged && Math.hypot(m.x - S.pos.x, m.z - S.pos.z) > attackReach(p, m)) m = null; // S-305: longe do corpo dele = golpe no vento
   S.nextAttack = t + p.d.aspd / 1000;
   vmAttack(ranged ? (p.d.magicAuto ? 'magic' : 'bow') : 'swing');
@@ -2141,7 +2145,7 @@ function updatePlayer(dt) {
   const mi = moveInput();
   if (!isAction()) updateAimCursor();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
-  else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, Math.atan2(q.x - P.x, q.z - P.z), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
+  else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, lk ? (Math.hypot(lk.x - P.x, lk.z - P.z) < 0.25 ? P.yaw : Math.atan2(lk.x - P.x, lk.z - P.z)) : aimYaw(q, P.yaw), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
   else {
     P.yaw += mi.turn * 2.6 * dt;
     if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));

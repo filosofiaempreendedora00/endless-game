@@ -2,7 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (2)
+## Pendentes (1)
 
 ### S-330 · Área do mapa: Área da tela (263×207 px) (sobre: Chat)
 - **Status:** pendente · **Quando:** 2026-11-10T22:59:23 · **Mapa:** Vila de Alvorada (tile [802, 8])
@@ -10,13 +10,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** Eu preciso que esse mascote de raposa ainda seja mais realista eu entendo que nosso já melhoramos muito até aqui porém repare que essas pernas não estão tão legais e o rosto também poderia ser mais realista e expressivo e principalmente essas orelhas ainda estão como se fossem um brinquedo e não orelhas reais então ainda há mais a melhorar aqui nesta raposinha e também os pelos estavam hiper esquisitos e vi que você deu uma melhorada para não ficar tão parecido como uma palha de aço ou Bombril porém acredito que ainda temos melhorias para fazer nesse sentido repare ainda que todas essas mudanças que sol icito neste monstrinho não devem refletir apenas a terceira evolução como também a primeira é a segunda
 - ![print](img/S-330.png)
 
-### S-331 · Área do mapa: Área da tela (250×338 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:04:58 · **Mapa:** Dunas de Sal-Rubro (tile [-43, 295])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Está ocorrendo com essa classe em específico de o meu personagem começar a dar voltas em volta de si mesmo isso é claramente um bug o único ponto que eu gostaria que você investigasse é se este bug é exclusivo desta classe ou tem relação com as armas ou algum outro ponto pois reparei que isso tem sido recorrente este bug bastante esquisito
-- ![print](img/S-331.png)
-
-## Feitas (329)
+## Feitas (330)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2330,3 +2324,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Em todas as animações de ataque com arco e flecha existe um bug bastante exacerbado em relação as pernas dos modelos eu preciso que você revisite essas animações para garantir que estejam realistas percebi que o início da animação é bem informidável porém ao longo dela começa um bug estratosférico
 - ![print](img/S-329.png)
 - **Resposta do Claude:** Achei a causa: nas animações de tiro as pernas ficam paradas e o motor deixava de reposicioná-las, então os ajustes de postura se somavam a cada quadro até as pernas abrirem e girarem. Agora cada osso volta à pose da animação antes de cada quadro — pernas firmes do primeiro ao último disparo, em todas as classes.
+
+### S-331 · Área do mapa: Área da tela (250×338 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:04:58 · **Mapa:** Dunas de Sal-Rubro (tile [-43, 295])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Está ocorrendo com essa classe em específico de o meu personagem começar a dar voltas em volta de si mesmo isso é claramente um bug o único ponto que eu gostaria que você investigasse é se este bug é exclusivo desta classe ou tem relação com as armas ou algum outro ponto pois reparei que isso tem sido recorrente este bug bastante esquisito
+- ![print](img/S-331.png)
+- **Resposta do Claude:** Achei a causa e ela não era só do Salteador: a animação de golpe de espada do pacote girava a bacia e o peito quase meia-volta a cada golpe, e como o Salteador ataca rápido parecia que ele rodava em volta de si mesmo — valia para todas as classes de espada, machado, maça e lança. Agora o golpe gira o tronco bem menos (o peito oscila uns 70° em vez de 180°) e o talho continua legível. Também corrigi a mira no cursor: com o cursor quase em cima do personagem ele dava meia-volta, agora mantém a direção.
