@@ -176,8 +176,9 @@
       "S-294",
       "S-292"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Cada acerto pesa: micro-pausa, o alvo recua e pisca, partículas conforme o que você atingiu (carne, osso, pedra, faíscas em metal, palha) e tremida de câmera só nos críticos e golpes pesados."
   },
   {
     "id": "P-012",
@@ -193,8 +194,9 @@
       "S-339",
       "S-342"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "No Painel do Mestre há o botão '🧍 Verificar personagens': veste as 13 classes nas 3 raças, passa por parado, guarda, golpe, andando e sentado e mede peça atravessando, malha aparecendo, arma fora da mão, pernas abertas, cabeça baixa e barba atravessando, com nota e botão para ver cada caso."
   },
   {
     "id": "P-013",
@@ -229,8 +231,9 @@
       "S-319",
       "S-331"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Cada arma tem golpes próprios: talho diagonal, horizontal e estocada na espada; golpe por cima e varredura no Cavaleiro; talho e empurrão de escudo no Paladino; estocadas e corte reverso na adaga; estocadas alternadas na katar e nas duas adagas; sabre e adaga no Gatuno-Mestre; gesto de conjurar nos magos — tronco acompanhando, pernas firmes, no ritmo da velocidade de ataque."
   },
   {
     "id": "P-015",
@@ -244,8 +247,9 @@
       "S-306",
       "S-307"
     ],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T09:42:31"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T09:42:31",
+    "resposta": "Rostos de verdade e todos diferentes: no criador há 5 tipos de rosto e barrinhas para formato, nariz, boca, olhos e sobrancelhas, com prévia ao vivo; mulheres com traços delicados e homens com traços fortes; NPCs com rostos variados que piscam e sorriem ao cumprimentar; seu personagem fica sério e bravo no combate."
   },
   {
     "id": "P-016",

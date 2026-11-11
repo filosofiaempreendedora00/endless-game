@@ -24,20 +24,33 @@ function ik2(a, b, c, T, pole, w) { // IK de 2 ossos (ombro → cotovelo → pun
 }
 function rotAround(b, axWorld, ang) { if (!b || Math.abs(ang) < 1e-4) return; b.parent.updateWorldMatrix(true, false); b.parent.getWorldQuaternion(_qb); _q2.setFromAxisAngle(axWorld, ang); b.quaternion.premultiply(_qb.clone().invert().multiply(_q2).multiply(_qb)); b.updateWorldMatrix(false, true); }
 
+// eixo comprido da arma presa na mão (no espaço do osso da mão), achado uma vez: do punho até a ponta mais distante
+function bladeAxis(ch, hand) {
+  const key = '_bax_' + hand.name; if (ch[key] !== undefined) return ch[key];
+  let best = null, bestD = 0.18; hand.updateWorldMatrix(true, true); const inv = new THREE.Matrix4().copy(hand.matrixWorld).invert(), v = new THREE.Vector3();
+  hand.traverse(o => { if (o === hand || !o.isMesh || o.isSkinnedMesh || !o.geometry) return; const P = o.geometry.attributes.position; if (!P) return; const step = Math.max(1, (P.count / 300) | 0);
+    for (let i = 0; i < P.count; i += step) { v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld).applyMatrix4(inv); const d = v.length(); if (d > bestD) { bestD = d; best = v.clone(); } } });
+  return (ch[key] = best ? best.normalize() : null);
+}
+function aimBlade(ch, hand, dirW, w) { // gira a mão para a lâmina apontar na direção pedida (mistura w)
+  const ax = bladeAxis(ch, hand); if (!ax || w <= 0.001) return;
+  hand.updateWorldMatrix(true, false); hand.getWorldQuaternion(_q2); const cur = ax.clone().applyQuaternion(_q2), want = cur.clone().lerp(dirW.clone().normalize(), w).normalize();
+  _q.setFromUnitVectors(cur, want); _q2.premultiply(_q); setWorldQuat(hand, _q2.clone());
+}
 /* ---------------- os golpes (mão direita = −x; esquerda = +x; valores em comprimentos de braço a partir do ombro) ---------------- */
 const G = (r, l) => ({ r, l });
 export const STRIKES = {
   espada: [ // uma mão: talho diagonal, talho horizontal, estocada
-    { dur: 0.62, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.5, 0.55], yaw: 0 }, { t: 0.32, r: [-0.62, 0.62, 0.05], yaw: -0.38, lean: -0.04, rp: [-0.4, 0.5, -0.6] }, { t: 0.55, r: [0.3, -0.55, 0.8], yaw: 0.42, lean: 0.18 }, { t: 0.78, r: [0.42, -0.8, 0.42], yaw: 0.34, lean: 0.12 }, { t: 1, r: [-0.25, -0.5, 0.55], yaw: 0 }] },
-    { dur: 0.6, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.5, 0.55] }, { t: 0.3, r: [-0.85, -0.05, 0.12], yaw: -0.48, rp: [-0.3, -0.7, -0.5] }, { t: 0.55, r: [-0.05, -0.1, 0.98], yaw: 0.05, lean: 0.12 }, { t: 0.78, r: [0.6, -0.12, 0.55], yaw: 0.5, lean: 0.08 }, { t: 1, r: [-0.25, -0.5, 0.55] }] },
+    { dur: 0.62, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.5, 0.55], yaw: 0 }, { t: 0.32, r: [-0.62, 0.62, 0.05], yaw: -0.38, lean: -0.04, rp: [-0.4, 0.5, -0.6], rb: [0.15, 0.75, -0.65] }, { t: 0.55, r: [0.3, -0.55, 0.8], yaw: 0.42, lean: 0.18, rb: [0.55, -0.45, 0.7] }, { t: 0.78, r: [0.42, -0.8, 0.42], yaw: 0.34, lean: 0.12, rb: [0.7, -0.6, 0.2] }, { t: 1, r: [-0.25, -0.5, 0.55], yaw: 0 }] },
+    { dur: 0.6, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.5, 0.55] }, { t: 0.3, r: [-0.85, -0.05, 0.12], yaw: -0.48, rp: [-0.3, -0.7, -0.5], rb: [-0.55, 0.1, -0.8] }, { t: 0.55, r: [-0.05, -0.1, 0.98], yaw: 0.05, lean: 0.12, rb: [0.9, 0.0, 0.4] }, { t: 0.78, r: [0.6, -0.12, 0.55], yaw: 0.5, lean: 0.08, rb: [0.8, -0.1, -0.45] }, { t: 1, r: [-0.25, -0.5, 0.55] }] },
     { dur: 0.55, hit: 0.48, lunge: 0.3, keys: [{ t: 0, r: [-0.25, -0.5, 0.55] }, { t: 0.32, r: [-0.38, -0.32, 0.02], yaw: -0.32, lean: -0.05, rp: [-0.6, -0.4, -0.6] }, { t: 0.52, r: [-0.06, -0.22, 1.0], yaw: 0.18, lean: 0.26 }, { t: 0.72, r: [-0.08, -0.25, 0.92], yaw: 0.12, lean: 0.2 }, { t: 1, r: [-0.25, -0.5, 0.55] }] },
   ],
   pesada: [ // Cavaleiro: golpe por cima (duas mãos) e varredura
-    { dur: 0.85, hit: 0.56, two: true, lunge: 0.35, heavy: true, keys: [{ t: 0, r: [-0.15, -0.35, 0.65] }, { t: 0.36, r: [-0.12, 0.95, -0.08], yaw: -0.1, lean: -0.12, rp: [-0.5, 0.3, -0.5] }, { t: 0.58, r: [0.0, -0.5, 0.88], yaw: 0.05, lean: 0.34 }, { t: 0.8, r: [0.08, -0.85, 0.6], lean: 0.28 }, { t: 1, r: [-0.15, -0.35, 0.65] }] },
-    { dur: 0.8, hit: 0.55, two: true, heavy: true, keys: [{ t: 0, r: [-0.15, -0.35, 0.65] }, { t: 0.34, r: [-0.85, 0.1, -0.1], yaw: -0.62, lean: 0.02, rp: [-0.3, -0.6, -0.6] }, { t: 0.58, r: [0.1, -0.2, 0.92], yaw: 0.25, lean: 0.14 }, { t: 0.8, r: [0.7, -0.25, 0.45], yaw: 0.62, lean: 0.1 }, { t: 1, r: [-0.15, -0.35, 0.65] }] },
+    { dur: 0.85, hit: 0.56, two: true, lunge: 0.35, heavy: true, keys: [{ t: 0, r: [-0.15, -0.35, 0.65] }, { t: 0.36, r: [-0.12, 0.95, -0.08], yaw: -0.1, lean: -0.12, rp: [-0.5, 0.3, -0.5], rb: [0.0, 0.35, -0.95] }, { t: 0.58, r: [0.0, -0.5, 0.88], yaw: 0.05, lean: 0.34, rb: [0.05, -0.55, 0.85] }, { t: 0.8, r: [0.08, -0.85, 0.6], lean: 0.28, rb: [0.05, -0.95, 0.25] }, { t: 1, r: [-0.15, -0.35, 0.65] }] },
+    { dur: 0.8, hit: 0.55, two: true, heavy: true, keys: [{ t: 0, r: [-0.15, -0.35, 0.65] }, { t: 0.34, r: [-0.85, 0.1, -0.1], yaw: -0.62, lean: 0.02, rp: [-0.3, -0.6, -0.6], rb: [-0.6, 0.15, -0.75] }, { t: 0.58, r: [0.1, -0.2, 0.92], yaw: 0.25, lean: 0.14, rb: [0.9, -0.1, 0.4] }, { t: 0.8, r: [0.7, -0.25, 0.45], yaw: 0.62, lean: 0.1, rb: [0.75, -0.2, -0.55] }, { t: 1, r: [-0.15, -0.35, 0.65] }] },
   ],
   paladino: [ // golpe curto e empurrão de escudo
-    { dur: 0.56, hit: 0.5, keys: [{ t: 0, r: [-0.3, -0.55, 0.45] }, { t: 0.3, r: [-0.5, 0.48, 0.15], yaw: -0.22, rp: [-0.4, 0.4, -0.6] }, { t: 0.55, r: [0.08, -0.38, 0.82], yaw: 0.2, lean: 0.16 }, { t: 0.78, r: [0.18, -0.6, 0.55], yaw: 0.15, lean: 0.1 }, { t: 1, r: [-0.3, -0.55, 0.45] }] },
+    { dur: 0.56, hit: 0.5, keys: [{ t: 0, r: [-0.3, -0.55, 0.45] }, { t: 0.3, r: [-0.5, 0.48, 0.15], yaw: -0.22, rp: [-0.4, 0.4, -0.6], rb: [0.1, 0.8, -0.6] }, { t: 0.55, r: [0.08, -0.38, 0.82], yaw: 0.2, lean: 0.16, rb: [0.45, -0.45, 0.75] }, { t: 0.78, r: [0.18, -0.6, 0.55], yaw: 0.15, lean: 0.1, rb: [0.55, -0.75, 0.3] }, { t: 1, r: [-0.3, -0.55, 0.45] }] },
     { dur: 0.6, hit: 0.5, lunge: 0.4, heavy: true, keys: [{ t: 0, l: [0.25, -0.3, 0.45] }, { t: 0.32, l: [0.32, -0.22, 0.12], yaw: 0.3, lean: -0.05, lp: [0.7, -0.4, -0.4] }, { t: 0.52, l: [0.05, -0.12, 0.98], yaw: -0.32, lean: 0.26 }, { t: 0.74, l: [0.06, -0.15, 0.9], yaw: -0.28, lean: 0.2 }, { t: 1, l: [0.25, -0.3, 0.45] }] },
   ],
   adaga: [ // estocadas rápidas e corte reverso
@@ -50,7 +63,7 @@ export const STRIKES = {
     { dur: 0.5, hit: 0.52, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.3, r: [-0.62, 0.05, 0.35], l: [0.62, 0.05, 0.35], lean: -0.04 }, { t: 0.55, r: [0.22, -0.3, 0.85], l: [-0.22, -0.3, 0.85], lean: 0.16 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] },
   ],
   sabre: [ // Gatuno-Mestre: corte de sabre e estocada da adaga (esquerda)
-    { dur: 0.52, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }, { t: 0.3, r: [-0.6, 0.5, 0.1], yaw: -0.32, rp: [-0.4, 0.4, -0.6] }, { t: 0.55, r: [0.28, -0.5, 0.78], yaw: 0.36, lean: 0.14 }, { t: 1, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }] },
+    { dur: 0.52, hit: 0.5, keys: [{ t: 0, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }, { t: 0.3, r: [-0.6, 0.5, 0.1], yaw: -0.32, rp: [-0.4, 0.4, -0.6], rb: [0.15, 0.75, -0.65] }, { t: 0.55, r: [0.28, -0.5, 0.78], yaw: 0.36, lean: 0.14, rb: [0.55, -0.45, 0.7] }, { t: 1, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }] },
     { dur: 0.46, hit: 0.48, lunge: 0.25, keys: [{ t: 0, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }, { t: 0.3, l: [0.28, -0.3, 0.15], r: [-0.4, -0.3, 0.3], yaw: 0.25, lp: [0.6, -0.4, -0.5] }, { t: 0.52, l: [0.04, -0.18, 1.0], r: [-0.45, -0.35, 0.25], yaw: -0.28, lean: 0.2 }, { t: 1, r: [-0.25, -0.45, 0.5], l: [0.2, -0.45, 0.35] }] },
   ],
   cajado: [ // o braço do cajado fica com o IK do holdStaff; a mão LIVRE (esquerda) conjura
@@ -84,7 +97,7 @@ function sampleAt(def, u) { // interpolação suave entre as chaves; mão sem ch
   const pick = (key, side) => { for (let j = K.indexOf(key); j >= 0; j--) if (K[j][side]) return K[j][side]; return null; };
   const r0 = A.r || pick(A, 'r'), r1 = B.r || r0, l0 = A.l || pick(A, 'l'), l1 = B.l || l0;
   return { r: r0 ? lerp3(r0, r1, k) : null, l: l0 ? lerp3(l0, l1, k) : null, yaw: (A.yaw || 0) + ((B.yaw || 0) - (A.yaw || 0)) * k, lean: (A.lean || 0) + ((B.lean || 0) - (A.lean || 0)) * k,
-    rp: lerp3(A.rp || POLE_R, B.rp || POLE_R, k), lp: lerp3(A.lp || POLE_L, B.lp || POLE_L, k) };
+    rp: lerp3(A.rp || POLE_R, B.rp || POLE_R, k), lp: lerp3(A.lp || POLE_L, B.lp || POLE_L, k), rbA: A.rb || null, rbB: B.rb || null, lbA: A.lb || null, lbB: B.lb || null, k };
 }
 function envelope(st, u) { const a = Math.min(1, u / 0.14), b = Math.min(1, (1 - u) / 0.24); const e = Math.max(0, Math.min(a, b)); return Math.max(e, st.w0 * Math.max(0, 1 - u / 0.14)); }
 function sampleNow(st) { const u = Math.min(1, st.t / st.dur), s = sampleAt(st.def, u); s.w = envelope(st, u); return s; }
@@ -119,6 +132,11 @@ export function updateStrike(ch, dt, opts = {}) {
     B.hand_r.getWorldPosition(_c); const T = _c.clone().add(toW([0.02, -0.11, -0.04])), P = new THREE.Vector3(); B.upperarm_l.getWorldPosition(P); P.add(toW([0.5, -0.5, -0.3]));
     ik2(B.upperarm_l, B.lowerarm_l, B.hand_l, T, P, w * 0.95);
   } else if (!opts.skipL) arm(B.upperarm_l, B.lowerarm_l, B.hand_l, lOff, s.lp);
+  // pulso: lâmina na direção pedida pela chave (ou seguindo o antebraço, como numa estocada)
+  const fore = (lo, ha) => { lo.getWorldPosition(_a); ha.getWorldPosition(_b); return _b.clone().sub(_a).normalize(); };
+  const blend = (lo, ha, a, b) => { const f = fore(lo, ha), da = a ? toW(a).normalize() : f, db = b ? toW(b).normalize() : f; return da.lerp(db, s.k ?? 0).normalize(); }; // chave sem direção = segue o antebraço
+  if (!opts.skipR && rOff && B.hand_r) aimBlade(ch, B.hand_r, blend(B.lowerarm_r, B.hand_r, s.rbA, s.rbB), w * 0.85);
+  if (!opts.skipL && lOff && !st.def.two && B.hand_l) aimBlade(ch, B.hand_l, blend(B.lowerarm_l, B.hand_l, s.lbA, s.lbB), w * 0.85);
   return true;
 }
 // qual conjunto de golpes cada classe/arma usa

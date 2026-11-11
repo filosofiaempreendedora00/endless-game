@@ -18,9 +18,10 @@ import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/band
 import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
 import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js'; // P-014/P-011: golpes sob medida por arma e impacto no acerto
-import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
+import { faceSculpt, FACE_FEATS, softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
+import { initRoutines, updateRoutines, gameClock } from './routines3d.js'; // P-017: NPCs com rotina pela hora do jogo
 import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
@@ -572,6 +573,7 @@ function ensureGallery() {
 }
 function galleryAnim(n, dt = 1 / 30) {
   const t = (S.time + n.gOff) % 8, ph = t < 3 ? 0 : t < 5.2 ? 1 : 2, ca = CLASS_ATTACK[n.cls] || CLASS_ATTACK.aprendiz;
+  if (n.face) n.face.set(ph === 0 ? 'sorriso' : ph === 1 ? 'serio' : 'bravo', ph === 0 ? 0.35 : 0.5); // P-015: expressão acompanha a fase
   { // S-316/S-319: a mesma postura própria da classe que o jogador usa (guarda → pose da classe; golpe → ênfase da classe)
     const g = (key, want, rate) => (n[key] = (n[key] || 0) + (want - (n[key] || 0)) * Math.min(1, dt * rate)), on = ph > 0, atk = ph === 2;
     levelHead(n, on ? 0.75 : 0.4, dt); // S-320: manequins olham em frente, não para o chão
@@ -1868,6 +1870,11 @@ const NPC3D = [
   { id: 'clara', name: 'Irmã Clara', title: 'Curandeira', model: 'Mage', show: ['Spellbook_open', 'Mage_Cape'], dx: -7, dz: 7, look: { race: 'humano', face: 'sereno', hair: { style: 'coque', color: 'loiro' } } },
   { id: 'tobias', name: 'Guarda Tobias', title: 'Guia da Vila', model: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], dx: 15, dz: 2, hat: true, look: { race: 'humano', face: 'valente', hair: { style: 'curto', color: 'castanho_escuro' } } },
   { id: 'bravo', name: 'Capitão Bravo', title: 'Mestre da Arena (PvP)', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], dx: 13, dz: -9, look: { race: 'humano', face: 'valente', hair: { style: 'espetado', color: 'preto' }, beard: true } },
+  // P-017: moradores com rotina (trabalham, conversam, almoçam e vão para casa à noite — routines3d.js)
+  { id: 'dario', name: 'Dário', title: 'Ferreiro de Alvorada', model: 'Barbarian', show: [], dx: 0, dz: -18.4, look: { race: 'humano', face: 'valente', hair: { style: 'raspado', color: 'castanho_escuro' }, beard: true },
+    lines: 'Ferro bom pede paciência: esquenta, bate, esfria, bate de novo.\nSe a sua lâmina cansar, traga até a forja — mas para refino de verdade, só o Mestre Brakar, lá em Pedrafunda.' },
+  { id: 'marta', name: 'Marta', title: 'Moradora', model: 'Mage', show: [], dx: 4.2, dz: 9.5, look: { race: 'humano', face: 'alegre', hair: { style: 'coque', color: 'castanho' } },
+    lines: 'Ah, um rosto novo! Aqui em Alvorada todo mundo se conhece: o Dário bate ferro desde cedinho, a Flora vende as frutas mais doces do vale e a Irmã Clara cuida de quem volta machucado.\nÀ noite a vila sossega — só o Tobias continua de ronda.' },
 ];
 function spawnNpcs() {
   for (const n of NPC3D) {
@@ -1907,12 +1914,16 @@ function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
   const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
   unsquashDwarf(h.root); // S-246: peças da roupa sem esticar nos ossos de anão
+  { // P-015: rosto esculpido pelos parâmetros do look (NPC sem rosto definido: variado e fixo pelo id) + expressões e piscar
+    let rig = null; try { rig = faceSculpt(h.root, look, extra.faceSeed ? { seed: extra.faceSeed, keepFace: extra.keepFace } : {}); } catch (e) { console.warn('rosto', e); }
+    if (rig) { const u = h.anim.update.bind(h.anim); h.anim.update = dt => { u(dt); rig.update(dt); }; h.face = rig; }
+  }
   return { ch: h, d: hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d };
 }
-const NPC_FEMALE = new Set(['ivra', 'clara', 'flora', 'rosa', 'neli', 'samira', 'isis', 'mirela']);
+const NPC_FEMALE = new Set(['ivra', 'clara', 'flora', 'rosa', 'neli', 'samira', 'isis', 'mirela', 'marta']);
 function makeNpcHero(n) {
   const look = normalizeLook({ ...(n.look || {}), sex: (n.look && n.look.sex) || (NPC_FEMALE.has(n.id) ? 'f' : 'm') });
-  const { ch } = makeHero(null, look, null, { outfit: /Knight|Barbarian|Rogue/.test(n.model) ? 'patrulheiro' : 'campones', hood: n.model === 'Rogue_Hooded' });
+  const { ch } = makeHero(null, look, null, { outfit: /Knight|Barbarian|Rogue/.test(n.model) ? 'patrulheiro' : 'campones', hood: n.model === 'Rogue_Hooded', faceSeed: n.id || n.name, keepFace: !!(n.look && n.look.face) });
   for (const it of n.show || []) if (!/_Cape$/.test(it)) humanBorrow(ch.root, MODELS, n.model, it);
   const rfx = dressNpcRole(ch, n.id, MODELS); if (rfx) ch.roleFx = rfx; // S-193/S-197: freira, guarda...
   unsquashDwarf(ch.root);
@@ -2291,6 +2302,7 @@ function updatePlayer(dt) {
   if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
   const fighting = !S.riding && inCombat(t); S._fighting = fighting;
+  if (me.face) { if (fighting) me.face.set(t < S.lockAnim ? 'bravo' : 'serio', t < S.lockAnim ? 0.55 : 0.5); else me.face.set('sorriso', 0.35); } // P-015: simpático em paz, sério/bravo lutando
   if (S.casting) { if (me.anim.name !== 'Spellcasting') me.anim.play('Spellcasting'); }
   else if (S.riding && t >= S.lockAnim) me.anim.play('Sit_Chair_Idle', { fade: 0.2 }); // montado: sempre sentado na sela (também no pulo)
   else if (t < S.lockAnim) { /* golpe / levar dano em andamento */ }
@@ -2809,7 +2821,7 @@ function npcNotice(n, dt) {
   B.hd.getWorldPosition(_nV); const hy = _nV.y, py = (S.me ? S.me.obj.position.y : P.y) + 1.5, pitchT = Math.max(-0.35, Math.min(0.3, Math.atan2(py - hy, Math.max(0.8, dist))));
   n._lp = (n._lp ?? 0) + (pitchT - (n._lp ?? 0)) * Math.min(1, dt * 4);
   // aceno de cabeça ao chegar perto + saudação
-  if (near && dist < 4.2 && S.time > (n._greetT ?? -99) + 40) { n._greetT = S.time; n._nod = S.time; npcSay(n, npcGreeting(n)); }
+  if (near && dist < 4.2 && S.time > (n._greetT ?? -99) + 40) { n._greetT = S.time; n._nod = S.time; npcSay(n, npcGreeting(n)); if (n.face) n.face.express('sorriso', 3.2, 0.9); } // P-015: sorri ao cumprimentar
   const nodK = n._nod != null && S.time - n._nod < 0.9 ? Math.sin((S.time - n._nod) / 0.9 * Math.PI) * 0.22 : 0;
   const k = n._lk, lift = seated ? 0.06 : 0.13; { // a animação parada deixa a cabeça caída (olhar de baixo para cima, "carrancudo"): ergue um pouco sempre
     const yaw = n._ly * k, spY = seated ? 0 : Math.max(-0.42, Math.min(0.42, yaw * 0.3)), rest = yaw - spY;
@@ -2883,7 +2895,7 @@ function pick(cx, cy) {
   const v = new THREE.Vector2(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
   raycaster.setFromCamera(v, camera);
   const hits = raycaster.intersectObjects(hitboxes, false);
-  for (const h of hits) { const r = h.object.userData.ref; if (r && !(r.dead && !r.isNpc)) return r; }
+  for (const h of hits) { const r = h.object.userData.ref; if (r && !r.rtHidden && !(r.dead && !r.isNpc)) return r; } // rtHidden: NPC dentro de casa (P-017)
   return null;
 }
 function setTarget(e) { S.target = e; if (!e) S.autoAttack = false; hudDirty = true; }
@@ -3311,7 +3323,8 @@ function step(dt) {
       m.obj.visible = true; updateMonster(m, dt);
     }
     separateBodies();
-    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (n.gallery) galleryAnim(n, dt); else if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
+    updateRoutines(dt); // P-017: rotina dos NPCs (antes de animar)
+    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95 && !n.rtHidden; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (n.gallery) galleryAnim(n, dt); else if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
     for (let i = S.projectiles.length - 1; i >= 0; i--) {
       const pr = S.projectiles[i], to = pr.toFn(), d = to.distanceTo(pr.mesh.position), st = pr.speed * dt;
       if (d <= st + 0.2) { scene.remove(pr.mesh); S.projectiles.splice(i, 1); pr.onHit(); }
@@ -3468,7 +3481,7 @@ function makeStage(cv) {
     setChar(obj) { if (cur) root.remove(cur.ch.obj); cur = obj; if (cur) { root.add(cur.ch.obj); cur.ch.obj.position.set(0, 0, 0); cur.ch.anim.update(0.3); } refit(); draw(0); },
     setPet(species) { if (pet) root.remove(pet.obj); pet = null; if (species && PETS[species]) { pet = makePet(species, 0); pet.obj.position.set(0.85, 0, 0.3); root.add(pet.obj); pet.animate(0, { speed: 0, turn: 0 }, 0.016); } refit(); draw(0); },
     draw: () => draw(0.016),
-    setZoom(z, now) { zoomAt = new THREE.Vector3(fit.cx, fit.face, 0); zoomT = z; if (now) { zoom = z; draw(0); } }, // botão "Ver rosto": aproxima do rosto get zoom() { return zoomT; }, get fit() { return fit; }, get cur() { return cur; },
+    setZoom(z, now) { zoomAt = new THREE.Vector3(fit.cx, fit.face, 0); zoomT = z; if (now) { zoom = z; draw(0); } }, /* botão "Ver rosto": aproxima do rosto */ get zoom() { return zoomT; }, get fit() { return fit; }, get cur() { return cur; },
     spin(d) { vel = d; idleT = 0; },
     setYaw(y) { yaw = y; vel = 0; idleT = 0; draw(0); },
     dispose() { if (!alive) return; alive = false; removeEventListener('keydown', kd); removeEventListener('keyup', ku); rr.dispose(); try { rr.forceContextLoss(); } catch (e) { } },
@@ -3584,6 +3597,8 @@ function randomLook() { const pick = a => a[Math.floor(Math.random() * a.length)
 function showCreate3d(list, opts = {}) {
   const o = $('overlay'), edit = !!opts.edit;
   const st = { ...normalizeLook(opts.look || DEFAULT_LOOK), pet: opts.pet || null, name: '', cls: opts.cls || 'aprendiz' };
+  st.feat = { ...(st.feat || {}) }; // P-015: ajustes do rosto (−2..2)
+  const FEAT_NAMES = { rosto: 'Rosto', nariz: 'Nariz', boca: 'Boca', olhos: 'Olhos', sobr: 'Sobrancelhas' };
   const PREV = ['aprendiz', 'guerreiro', 'mago', 'arqueiro', 'gatuno'].filter(k => CLASSES[k]);
   o.innerHTML = `<div class="cc">
     <div class="cc-stagewrap">
@@ -3596,18 +3611,22 @@ function showCreate3d(list, opts = {}) {
       <div class="cc-sub">${edit ? 'Mude a aparência de ' + escH(S.p.name) + ' — o resto continua igual.' : 'Monte seu aventureiro e veja ao lado como ele fica.'}</div>
       <div class="cc-sec"><h4><b>1</b> Raça</h4><div class="cc-races">${RACE_ORDER.map(k => `<div class="cc-race" data-race="${k}"><div class="i">${RACES[k].icon}</div><div class="n">${RACES[k].name}</div><div class="h">${RACES[k].hint}</div></div>`).join('')}</div><div class="cc-note" id="cc-race-d"></div></div>
       <div class="cc-sec"><h4><b>2</b> Corpo e pele</h4><div class="cc-faces" style="grid-template-columns:repeat(4,1fr)">${[['sex', 'm', '🧔', 'Homem'], ['sex', 'f', '👩', 'Mulher'], ['skin', 'clara', '🏻', 'Pele clara'], ['skin', 'escura', '🏾', 'Pele morena']].map(([f, v, i, n]) => `<button class="cc-face" data-${f}="${v}"><span class="i">${i}</span><b>${n}</b></button>`).join('')}</div></div>
-      <div class="cc-sec"><h4><b>3</b> Corte de cabelo</h4><div class="cc-styles">${HERO_STYLES.map(k => `<button class="cc-style" data-style="${k}"><span>${HAIR_STYLES[k].icon}</span>${HAIR_STYLES[k].name}</button>`).join('')}</div></div>
-      <div class="cc-sec"><h4><b>4</b> Cor do cabelo <span class="muted" id="cc-col-n"></span></h4><div class="cc-colors">${Object.entries(HAIR_COLORS).map(([k, c]) => `<button class="cc-col" data-color="${k}" title="${c.name}" style="--c:${c.hex}"></button>`).join('')}</div>
+      <div class="cc-sec"><h4><b>3</b> Rosto</h4><div class="cc-faces cc-ftypes">${Object.entries(FACE_TYPES).map(([k, f]) => `<button class="cc-face" data-ftype="${k}" title="${f.desc}">${f.name}</button>`).join('')}</div>
+        <div class="cc-feats">${Object.entries(FACE_FEATS).map(([k, [a, b]]) => `<div class="cc-feat"><b>${FEAT_NAMES[k]}</b><span class="lo">${a}</span><input type="range" min="-2" max="2" step="1" data-feat="${k}"><span class="hi">${b}</span></div>`).join('')}</div></div>
+      <div class="cc-sec"><h4><b>4</b> Corte de cabelo</h4><div class="cc-styles">${HERO_STYLES.map(k => `<button class="cc-style" data-style="${k}"><span>${HAIR_STYLES[k].icon}</span>${HAIR_STYLES[k].name}</button>`).join('')}</div></div>
+      <div class="cc-sec"><h4><b>5</b> Cor do cabelo <span class="muted" id="cc-col-n"></span></h4><div class="cc-colors">${Object.entries(HAIR_COLORS).map(([k, c]) => `<button class="cc-col" data-color="${k}" title="${c.name}" style="--c:${c.hex}"></button>`).join('')}</div>
         <label class="cc-check"><input type="checkbox" id="cc-beard"> Barba <span class="muted">(da mesma cor do cabelo)</span></label></div>
-      ${edit ? '' : `<div class="cc-sec"><h4><b>5</b> Companheiro</h4><div class="cc-pets">${Object.entries(PETS).map(([k, p]) => `<div class="cc-pet" data-pet="${k}" style="--pc:${p.color}"><div class="i">${p.stages[0].icon}</div><div class="n">${p.stages[0].name}</div><div class="h">${p.roleIcon} ${p.roleName}</div></div>`).join('')}</div><div class="cc-note" id="cc-pet-d"></div></div>
-      <div class="cc-sec"><h4><b>6</b> Nome</h4><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?"><div class="cw-err" id="cw-err"></div></div>`}
+      ${edit ? '' : `<div class="cc-sec"><h4><b>6</b> Companheiro</h4><div class="cc-pets">${Object.entries(PETS).map(([k, p]) => `<div class="cc-pet" data-pet="${k}" style="--pc:${p.color}"><div class="i">${p.stages[0].icon}</div><div class="n">${p.stages[0].name}</div><div class="h">${p.roleIcon} ${p.roleName}</div></div>`).join('')}</div><div class="cc-note" id="cc-pet-d"></div></div>
+      <div class="cc-sec"><h4><b>7</b> Nome</h4><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?"><div class="cw-err" id="cw-err"></div></div>`}
       <div class="cc-foot"><button class="btn" id="cc-back">← ${edit ? 'Cancelar' : list.length ? 'Meus personagens' : 'Voltar'}</button><button class="btn gold" id="cc-ok">${edit ? '✔ Salvar aparência' : '✨ Criar personagem'}</button></div>
     </div></div>`;
   o.classList.add('show'); if (!edit) accountBadge(o);
   const stage = makeStage($('cc-cv'));
   window.__ccStage = stage; // testes
   const refresh = () => {
-    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, sex: st.sex, skin: st.skin }, st.cls));
+    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, sex: st.sex, skin: st.skin, face: st.face, feat: st.feat }, st.cls));
+    o.querySelectorAll('[data-ftype]').forEach(el => el.classList.toggle('on', el.dataset.ftype === st.face));
+    o.querySelectorAll('[data-feat]').forEach(el => { el.value = String(st.feat[el.dataset.feat] || 0); });
     o.querySelectorAll('[data-sex]').forEach(el => el.classList.toggle('on', el.dataset.sex === st.sex));
     o.querySelectorAll('[data-skin]').forEach(el => el.classList.toggle('on', el.dataset.skin === st.skin));
     $('cc-beard').parentElement.style.display = st.sex === 'm' ? '' : 'none';
@@ -3631,14 +3650,18 @@ function showCreate3d(list, opts = {}) {
   $('cc-beard').onchange = e => { st.beard = e.target.checked; refresh(); };
   $('cc-l').onclick = () => stage.spin(-0.12); $('cc-r').onclick = () => stage.spin(0.12);
   $('cc-zoom').onclick = () => { const z = stage.zoom > 0.5 ? 0 : 1; stage.setZoom(z); $('cc-zoom').textContent = z ? '🧍 Corpo inteiro' : '🙂 Ver rosto'; };
-  $('cc-rand').onclick = () => { click(); Object.assign(st, randomLook()); refresh(); };
+  const faceZoom = () => { if (stage.zoom < 0.5) { stage.setZoom(1); $('cc-zoom').textContent = '🧍 Corpo inteiro'; } };
+  o.querySelectorAll('[data-ftype]').forEach(el => el.onclick = () => { click(); st.face = el.dataset.ftype; faceZoom(); refresh(); });
+  o.querySelectorAll('[data-feat]').forEach(el => { el.oninput = () => { st.feat[el.dataset.feat] = +el.value; faceZoom(); refresh(); }; el.onchange = () => el.blur(); });
+  $('cc-rand').onclick = () => { click(); Object.assign(st, randomLook()); const ft = Object.keys(FACE_TYPES); st.face = ft[Math.floor(Math.random() * ft.length)]; st.feat = {}; for (const k of Object.keys(FACE_FEATS)) st.feat[k] = Math.round(Math.random() * 2 - 1); refresh(); }; // aleatório: rosto bonito (ajustes leves, −1..1)
   $('cc-back').onclick = () => { click(); stage.dispose(); if (edit) { o.classList.remove('show'); o.innerHTML = ''; } else if (list.length) chooseCharacter(); else showCreate3d(list); };
   const err = m => { $('cw-err').textContent = m; Sound.play('error'); };
   $('cc-ok').onclick = async () => {
-    const look = { race: st.race, hair: { ...st.hair }, beard: !!st.beard && st.sex === 'm', sex: st.sex, skin: st.skin };
+    const look = { race: st.race, hair: { ...st.hair }, beard: !!st.beard && st.sex === 'm', sex: st.sex, skin: st.skin, face: st.face };
+    { const f = {}; for (const [k, v] of Object.entries(st.feat || {})) if (v) f[k] = v; if (Object.keys(f).length) look.feat = f; } // P-015: rosto salvo no look
     if (edit) { S.p.look = look; buildPlayerModel(); save3d(); stage.dispose(); o.classList.remove('show'); o.innerHTML = ''; log('💈 Aparência atualizada!', 'sys'); return; }
     const nameEl = $('c3-name'), name = nameEl.value.trim();
-    if (!st.pet) return err('Escolha um companheiro (passo 5).');
+    if (!st.pet) return err('Escolha um companheiro (passo 6).');
     if (name.length < 2) { nameEl.focus(); return err('Dê um nome ao seu personagem (pelo menos 2 letras).'); }
     if (list.some(c => (c.slug || saveSlug(c.name)) === saveSlug(name))) { nameEl.focus(); return err('Você já tem um personagem com esse nome. Escolha outro.'); }
     Sound.init();
@@ -3995,7 +4018,7 @@ function pumpSpawns() {
     await nextTask();
     await buildWorld();
     await worldYield('Terreno perto da vila'); terrainNear(VILLAGE.x, VILLAGE.z, 130); // detalhe em volta da vila (tela inicial e começo do jogo)
-    await worldYield('Moradores'); spawnNpcs();
+    await worldYield('Moradores'); spawnNpcs(); initRoutines({ S, VILLAGE, CITY2, colliders, placed, portals, groundAt, resolve, angLerp }); // P-017
     await worldYield('Monstros'); queueSpawns();
     for (const [dx, dz] of [[-5, 13], [-1.5, 14.5], [2, 13]]) spawnMonster('vila', 'boneco_treino', { x: VILLAGE.x + dx, z: VILLAGE.z + dz }); // bonecos de treino (S-090)
     worldYield('Pronto'); WB.done = S.worldDone = true; worldProgressUI(); window.__loadProfile = WB.prof;

@@ -559,6 +559,13 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .cc-face .i { font-size: 20px; }
 .cc-face b { font-size: 12px; }
 .cc-face small { font-size: 10px; color: var(--muted); line-height: 1.2; }
+/* P-015: ajustes do rosto no criador (tipo de rosto + 5 barrinhas com o nome dos dois extremos) */
+.cc-ftypes .cc-face { font-size: 12px; padding: 8px 4px; }
+.cc-feats { display: grid; gap: 6px; margin-top: 10px; }
+.cc-feat { display: grid; grid-template-columns: 92px 70px 1fr 70px; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.cc-feat b { color: #eee; font-size: 12px; }
+.cc-feat .lo { text-align: right; } .cc-feat .hi { text-align: left; }
+.cc-feat input[type=range] { width: 100%; accent-color: #e0b04a; }
 .cc-face:hover { background: rgba(255, 255, 255, 0.08); }
 .cc-face.on { border-color: var(--gold); background: rgba(255, 215, 106, 0.12); }
 @media (max-width: 900px) { .cc-faces { grid-template-columns: repeat(3, 1fr); } }

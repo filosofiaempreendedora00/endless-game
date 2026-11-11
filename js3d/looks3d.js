@@ -338,6 +338,166 @@ export function softenFace(root, o = {}) {
   });
   for (const b of brows) sculpt(b, (x, y, z) => [0, 0.0032 + 0.0028 * (1 - sm(0, 0.032, Math.abs(x))), 0.0004]); // sobrancelhas relaxadas, sem "V" no meio
 }
+/* ===================== ROSTOS 2.0 (P-015) =====================
+   A cabeça realista é a mesma malha para todos; aqui ela é esculpida por PARÂMETROS (formato do rosto, queixo, nariz,
+   boca, olhos, inclinação dos olhos, sobrancelhas) — um campo de deslocamento aplicado à cabeça, às sobrancelhas e à barba
+   (os três seguem juntos). Os pontos de referência (olhos, ponta do nariz, boca, queixo) são MEDIDOS na própria malha,
+   então vale para homem, mulher e anão. Cada combinação é esculpida uma vez (cache por geometria + parâmetros).
+   Expressões (sorriso, sério, surpreso, bravo) e o piscar são morphs relativos na mesma geometria; o "faceRig" anima. */
+export const FACE_FEATS = { rosto: ['Fino', 'Largo'], nariz: ['Pequeno', 'Grande'], boca: ['Lábios finos', 'Lábios cheios'], olhos: ['Puxados', 'Grandes'], sobr: ['Baixas', 'Arqueadas'] };
+const FACE_PRESET = { // tipos de rosto do criador → parâmetros (−1..1)
+  sereno: { faceW: 0, chin: 0, nose: 0, lips: 0.1, eyes: 0, tilt: 0.1, brows: 0.15 },
+  valente: { faceW: 0.65, chin: 0.5, nose: 0.45, lips: -0.25, eyes: -0.25, tilt: -0.15, brows: -0.35 },
+  alegre: { faceW: -0.1, chin: -0.25, nose: -0.45, lips: 0.55, eyes: 0.55, tilt: 0.1, brows: 0.5 },
+  astuto: { faceW: -0.5, chin: 0.3, nose: 0.25, lips: -0.2, eyes: -0.45, tilt: 0.75, brows: 0.25 },
+  gentil: { faceW: 0.15, chin: -0.4, nose: -0.1, lips: 0.45, eyes: 0.3, tilt: -0.35, brows: 0.35 },
+};
+const FEAT_MAP = { rosto: 'faceW', nariz: 'nose', boca: 'lips', olhos: 'eyes', sobr: 'brows' };
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+// rosto variado e bonito para um NPC sem rosto definido (sempre o mesmo para o mesmo id)
+export function npcFaceLook(id, sex) {
+  let h = hashStr(String(id)); const r = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; h ^= h >>> 13; return (h % 10000) / 10000; };
+  const ids = Object.keys(FACE_PRESET), face = ids[Math.floor(r() * ids.length)], feat = {};
+  for (const k of Object.keys(FEAT_MAP)) feat[k] = Math.round((r() * 2 - 1) * 1.4); // −1..1 (às vezes 0): variação sem caricatura
+  if (sex === 'f') { feat.rosto = Math.min(feat.rosto, 0); feat.nariz = Math.min(feat.nariz, 0); } // mulheres: rosto e nariz delicados
+  return { face, feat };
+}
+function faceParams(look, opt = {}) {
+  const P = { ...(FACE_PRESET[look.face] || FACE_PRESET.sereno) }, f = look.feat || {};
+  for (const [k, p] of Object.entries(FEAT_MAP)) if (typeof f[k] === 'number') P[p] += Math.max(-2, Math.min(2, f[k])) * 0.45;
+  if (look.sex === 'f') { P.faceW -= 0.35; P.chin -= 0.25; P.nose -= 0.35; P.lips += 0.35; P.eyes += 0.25; P.brows += 0.25; } // traços delicados
+  else { P.faceW += 0.15; P.chin += 0.15; P.brows -= 0.1; }                                                                  // traços fortes
+  P.faceW *= 1.3; P.nose *= 1.6; P.lips *= 1.6; P.eyes *= 1.4; P.brows *= 1.4; P.chin *= 1.3; // efeito visível nas barrinhas
+  const k = look.race === 'anao' ? 0.6 : 1; // o anão já tem rosto esculpido (grosseiro): só nuances por cima
+  for (const key of Object.keys(P)) P[key] = Math.max(-1.6, Math.min(1.6, P[key] * k));
+  return P;
+}
+function faceLandmarks(head, eyes) {
+  eyes.geometry.computeBoundingBox(); const eb = eyes.geometry.boundingBox, r = (eb.max.z - eb.min.z) / 2;
+  const L = { ey: (eb.min.y + eb.max.y) / 2, r, xe: eb.max.x - r, zc: eb.max.z - r, eyeZ: eb.max.z };
+  const P = head.geometry.attributes.position, idx = head.geometry.index ? head.geometry.index.array : null, used = idx ? new Set(idx) : null;
+  const col = []; const n = P.count;
+  for (let i = 0; i < n; i++) { if (used && !used.has(i)) continue; const x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (Math.abs(x) < 0.007 && y < L.ey + 0.005 && y > L.ey - 0.14 && z > 0.02) col.push([y, z]); }
+  let nose = [L.ey - 0.044, L.eyeZ + 0.03]; for (const [y, z] of col) if (y < L.ey - 0.02 && y > L.ey - 0.075 && z > nose[1] - 1e-6) nose = [y, z];
+  // boca: dois lábios (máximos de z) abaixo do nariz com o vão (mínimo) entre eles
+  const band = col.filter(([y]) => y < nose[0] - 0.008 && y > nose[0] - 0.06).sort((a, b) => b[0] - a[0]);
+  let mouth = [nose[0] - 0.024, nose[1] - 0.02]; if (band.length > 6) { let up = band[0]; for (const p of band) if (p[0] > nose[0] - 0.03 && p[1] > up[1]) up = p; let slit = up; for (const p of band) if (p[0] < up[0] && p[0] > up[0] - 0.014 && p[1] < slit[1]) slit = p; mouth = slit; }
+  let chin = [mouth[0] - 0.035, mouth[1] - 0.008]; for (const [y, z] of col) if (y < mouth[0] - 0.02 && y > mouth[0] - 0.06 && z > chin[1]) chin = [y, z];
+  Object.assign(L, { noseY: nose[0], noseZ: nose[1], mouthY: mouth[0], mouthZ: mouth[1], chinY: chin[0], chinZ: chin[1] });
+  return L;
+}
+const _g = u => Math.exp(-u * u), _sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// campo de forma (parâmetros) — deslocamento em metros no espaço de repouso da cabeça
+function shapeField(L, P) {
+  return (x, y, z) => {
+    if (y < L.chinY - 0.03 || y > L.ey + 0.05 || z < -0.035) return null;
+    const ax = Math.abs(x), s = x < 0 ? -1 : 1, front = _sm(-0.03, 0.03, z);
+    let dx = 0, dy = 0, dz = 0;
+    // rosto: maçãs e mandíbula (largo/quadrado ↔ fino/oval)
+    dx += s * 0.0055 * P.faceW * _g((y - (L.ey - 0.03)) / 0.026) * _g((ax - 0.062) / 0.03) * front;
+    const jaw = _g((y - (L.chinY + 0.012)) / 0.022) * _sm(0.012, 0.05, ax) * _sm(-0.04, 0.02, z);
+    dx += s * 0.0075 * P.faceW * jaw;
+    if (P.faceW > 0) dy -= 0.0028 * P.faceW * _g((y - (L.chinY + 0.012)) / 0.012) * _g((ax - 0.05) / 0.016) * front; // canto da mandíbula mais marcado
+    else dy += 0.0025 * P.faceW * _g((y - L.chinY) / 0.014) * _g(ax / 0.022) * front;                                // queixo afinando (oval)
+    // queixo à frente
+    dz += 0.0035 * P.chin * _g((y - L.chinY) / 0.013) * _g(ax / 0.022) * front; dy -= 0.0015 * P.chin * _g((y - L.chinY) / 0.013) * _g(ax / 0.022) * front;
+    // nariz: tamanho/projeção, ponta (arrebitada ↔ caída) e asas
+    const wN = _g((y - (L.noseY + 0.012)) / 0.022) * _g(ax / 0.015) * _sm(L.noseZ - 0.034, L.noseZ - 0.018, z);
+    dz += 0.0055 * P.nose * wN * Math.max(0, (z - (L.noseZ - 0.03)) / 0.03);
+    dy -= 0.0028 * P.nose * _g((y - L.noseY) / 0.008) * _g(ax / 0.012) * _sm(L.noseZ - 0.02, L.noseZ - 0.008, z);
+    dx += s * 0.0028 * P.nose * _g((y - (L.noseY - 0.008)) / 0.007) * _g((ax - 0.013) / 0.008) * _sm(L.noseZ - 0.04, L.noseZ - 0.02, z);
+    // boca: lábios cheios (para fora e afastados do vão) e largura
+    const lipZ = _sm(L.mouthZ - 0.016, L.mouthZ - 0.004, z), wU = _g((y - (L.mouthY + 0.005)) / 0.005) * _g(ax / 0.019) * lipZ, wL = _g((y - (L.mouthY - 0.0065)) / 0.006) * _g(ax / 0.019) * lipZ;
+    dz += 0.0022 * P.lips * (wU + wL); dy += 0.0012 * P.lips * (wU - wL);
+    dx += s * 0.0032 * P.lips * _g((y - L.mouthY) / 0.008) * _g((ax - 0.024) / 0.011) * lipZ;
+    // olhos: abertura das pálpebras e inclinação (canto de fora sobe = "puxado")
+    for (const e of [-1, 1]) {
+      if (e !== s) continue;
+      const nearEye = z > L.eyeZ - 0.028;
+      const ru = Math.hypot((x - e * L.xe) / 0.021, (y - (L.ey + 0.008)) / 0.0085); if (ru < 1 && nearEye) dy += 0.0014 * P.eyes * (1 - ru * ru) ** 2;
+      const rl = Math.hypot((x - e * L.xe) / 0.019, (y - (L.ey - 0.009)) / 0.0075); if (rl < 1 && nearEye) dy -= 0.0011 * P.eyes * (1 - rl * rl) ** 2;
+      const t = P.tilt * _g((y - L.ey) / 0.012) * (nearEye ? 1 : 0); dy += t * (0.0019 * _g((ax - (L.xe + 0.018)) / 0.009) - 0.0007 * _g((ax - (L.xe - 0.016)) / 0.007));
+    }
+    // sobrancelhas: altura e arco
+    const wB = _g((y - (L.ey + 0.02)) / 0.011) * _g((ax - L.xe) / 0.03) * front;
+    dy += 0.0024 * P.brows * wB + 0.0011 * P.brows * _g((y - (L.ey + 0.02)) / 0.011) * _g((ax - (L.xe + 0.012)) / 0.01) * front;
+    return dx || dy || dz ? [dx, dy, dz] : null;
+  };
+}
+// expressões (morphs relativos): sorriso, sério, surpreso, bravo, piscar
+const FACE_EXPR = ['sorriso', 'serio', 'surpreso', 'bravo', 'piscar'];
+function exprField(L, name) {
+  const lid = (x, y, z, s) => { // pálpebra de cima desce sobre o olho (e é empurrada para fora da superfície do olho)
+    const ru = Math.hypot((x - s * L.xe) / 0.023, (y - (L.ey + 0.007)) / 0.016); if (ru >= 1 || z < L.zc - 0.004 || y < L.ey - 0.004) return null;
+    const w = (1 - ru * ru) ** 1.5, drop = (0.0105 + 0.002 * (y - L.ey) / 0.01) * w, ny = y - drop;
+    const ddx = x - s * L.xe, ddy = ny - L.ey, R = L.r + 0.0014; let dz = 0;
+    if (ddx * ddx + ddy * ddy < R * R) { const zs = L.zc + Math.sqrt(R * R - ddx * ddx - ddy * ddy); if (z < zs) dz = zs - z; }
+    return [0, -drop, dz];
+  };
+  return (x, y, z) => {
+    if (y < L.chinY - 0.02 || y > L.ey + 0.05 || z < -0.01) return null;
+    const ax = Math.abs(x), s = x < 0 ? -1 : 1, front = _sm(0.0, 0.04, z); let dx = 0, dy = 0, dz = 0;
+    const corner = Math.max(0, 1 - Math.hypot((ax - 0.022) / 0.019, (y - L.mouthY) / 0.014) ** 2) ** 2 * front;
+    const cheek = _g((ax - 0.036) / 0.018) * _g((y - (L.mouthY + 0.032)) / 0.014) * front;
+    const browY = _g((y - (L.ey + 0.02)) / 0.012) * front, browIn = browY * _g((ax - 0.013) / 0.012), browAll = browY * _g((ax - L.xe) / 0.03);
+    const upLid = Math.max(0, 1 - Math.hypot((ax - L.xe) / 0.021, (y - (L.ey + 0.008)) / 0.0085) ** 2) ** 2 * (z > L.eyeZ - 0.028 ? 1 : 0);
+    const loLid = Math.max(0, 1 - Math.hypot((ax - L.xe) / 0.019, (y - (L.ey - 0.009)) / 0.0075) ** 2) ** 2 * (z > L.eyeZ - 0.028 ? 1 : 0);
+    const lowerLip = _g((y - (L.mouthY - 0.008)) / 0.008) * _g(ax / 0.02) * front;
+    if (name === 'sorriso') { dy += 0.0092 * corner + 0.0036 * cheek + 0.0016 * loLid; dx += s * 0.0032 * corner; dz -= 0.0024 * corner; dy -= 0.0008 * lowerLip; dz += 0.0009 * cheek; }
+    else if (name === 'serio') { dy -= 0.0016 * browIn + 0.0007 * upLid + 0.0007 * corner; dx -= s * 0.0006 * browIn; }
+    else if (name === 'surpreso') { dy += 0.0038 * browAll + 0.0017 * upLid - 0.0007 * loLid - 0.0018 * lowerLip; }
+    else if (name === 'bravo') { dy -= 0.0032 * browIn + 0.0012 * upLid + 0.0016 * corner - 0.0009 * browY * _g((ax - (L.xe + 0.014)) / 0.01); dx -= s * 0.0016 * browIn; dx += s * 0.0006 * _g((y - (L.noseY - 0.008)) / 0.007) * _g((ax - 0.013) / 0.008) * front; }
+    else if (name === 'piscar') { const d = lid(x, y, z, s); if (d) { dx += d[0]; dy += d[1]; dz += d[2]; } dy += 0.0018 * loLid; }
+    return dx || dy || dz ? [dx, dy, dz] : null;
+  };
+}
+const _faceCache = new Map();
+function faceMeshes(root) { let head = null, eyes = null; const rest = []; root.traverse(m => { if (!m.isSkinnedMesh) return; if (/^Super[Hh]ero_/.test(m.name)) head = m; else if (m.name === 'Eyes') eyes = m; else if (/^Eyebrows|Hair_Beard/.test(m.name)) rest.push(m); }); return { head, eyes, rest }; }
+/* aplica o rosto do "look" (face + feat; NPC sem rosto definido usa opt.seed) e liga as expressões; devolve o rig */
+export function faceSculpt(root, look, opt = {}) {
+  const { head, eyes, rest } = faceMeshes(root); if (!head || !eyes) return null;
+  let lk = look || {};
+  if (opt.seed) { const g = npcFaceLook(opt.seed, lk.sex); lk = { ...lk, face: opt.keepFace ? lk.face : g.face, feat: lk.feat || g.feat }; } // NPC: rosto variado e fixo por id
+  const P = faceParams(lk), key = Object.values(P).map(v => v.toFixed(2)).join(',');
+  const L0 = faceLandmarks(head, eyes), shape = shapeField(L0, P);
+  const build = mesh => {
+    const ck = mesh.geometry.uuid + '|' + key; let g = _faceCache.get(ck);
+    if (!g) {
+      g = mesh.geometry.clone(); const A = g.attributes.position;
+      for (let i = 0; i < A.count; i++) { const x = A.getX(i), y = A.getY(i), z = A.getZ(i), d = shape(x, y, z); if (d) A.setXYZ(i, x + d[0], y + d[1], z + d[2]); }
+      A.needsUpdate = true;
+      // expressões como morphs relativos (mesmo campo para cabeça, sobrancelhas e barba: tudo se move junto)
+      g.morphTargetsRelative = true; g.morphAttributes.position = [];
+      for (const nm of FACE_EXPR) {
+        const f = exprField(L0, nm), arr = new Float32Array(A.count * 3);
+        for (let i = 0; i < A.count; i++) { const d = f(A.getX(i), A.getY(i), A.getZ(i)); if (d) { arr[i * 3] = d[0]; arr[i * 3 + 1] = d[1]; arr[i * 3 + 2] = d[2]; } }
+        g.morphAttributes.position.push(new THREE.Float32BufferAttribute(arr, 3));
+      }
+      g.computeBoundingSphere(); _faceCache.set(ck, g);
+    }
+    mesh.geometry = g; mesh.updateMorphTargets();
+  };
+  build(head); for (const m of rest) build(m);
+  // olhos com brilho úmido (material compartilhado: ajusta uma vez)
+  if (eyes.material && !eyes.material.userData.wet) { eyes.material.roughness = 0.12; eyes.material.metalness = 0; eyes.material.userData.wet = true; eyes.material.needsUpdate = true; }
+  const meshes = [head, ...rest].filter(m => m.morphTargetInfluences);
+  const rig = {
+    mood: opt.mood || 'sorriso', moodW: opt.moodW ?? 0.35, w: { sorriso: 0, serio: 0, surpreso: 0, bravo: 0 }, flash: null, flashT: 0, nextBlink: 1 + Math.random() * 3, blinkT: -1,
+    set(m, w = 0.6) { this.mood = m; this.moodW = w; },
+    express(m, dur = 2.5, w = 0.85) { this.flash = m; this.flashW = w; this.flashT = dur; },
+    update(dt) {
+      if (!(dt > 0)) dt = 1 / 60;
+      if (this.flashT > 0) this.flashT -= dt;
+      for (const k of Object.keys(this.w)) { const want = this.flashT > 0 && this.flash === k ? this.flashW : this.mood === k ? this.moodW : 0; this.w[k] += (want - this.w[k]) * Math.min(1, dt * 5); }
+      this.nextBlink -= dt; if (this.nextBlink <= 0) { this.blinkT = 0; this.nextBlink = 2.2 + Math.random() * 4; if (Math.random() < 0.12) this.nextBlink = 0.25; } // às vezes pisca duas vezes
+      let b = 0; if (this.blinkT >= 0) { this.blinkT += dt; const u = this.blinkT / 0.15; b = u < 0.45 ? u / 0.45 : u < 1 ? 1 - (u - 0.45) / 0.55 : 0; if (u >= 1) this.blinkT = -1; }
+      const vals = [this.w.sorriso, this.w.serio, this.w.surpreso, this.w.bravo, b];
+      for (const m of meshes) for (let i = 0; i < vals.length; i++) m.morphTargetInfluences[i] = vals[i];
+    },
+  };
+  root.userData.face = rig;
+  return rig;
+}
 /* S-306: cabelo aparecendo sob o véu (risca no meio e duas mechas emoldurando a testa), feito em código sobre a cabeça */
 function veilFringe(root) {
   // usa o próprio cabelo da personagem, "encolhido" para caber sob o véu: tudo que sairia do véu é puxado para perto da cabeça
@@ -787,6 +947,7 @@ const OLD_HEAD_LOOK = { Knight: { style: 'espetado', color: 'loiro' }, Mage: { s
 export function normalizeLook(look) {
   look = look || {};
   const out = { race: RACES[look.race] ? look.race : 'humano', beard: !!look.beard, face: FACE_TYPES[look.face] ? look.face : 'sereno', sex: look.sex === 'f' ? 'f' : 'm', skin: look.skin === 'escura' ? 'escura' : 'clara' };
+  if (look.feat && typeof look.feat === 'object') { const f = {}; for (const k of Object.keys(FACE_FEATS)) { const v = +look.feat[k]; if (Number.isFinite(v) && v) f[k] = Math.max(-2, Math.min(2, Math.round(v))); } if (Object.keys(f).length) out.feat = f; } // P-015: ajustes do rosto (ausente = padrão)
   const h = look.hair && typeof look.hair === 'object' ? look.hair : null;
   if (h && (HAIR_STYLES[h.style] || HAIR_COLORS[h.color])) out.hair = { style: HAIR_STYLES[h.style] ? h.style : 'curto', color: HAIR_COLORS[h.color] ? h.color : 'castanho' };
   else { const o = OLD_HEAD_LOOK[look.head] || DEFAULT_LOOK.hair; out.hair = { style: o.style, color: o.color }; if (o.beard) out.beard = true; }

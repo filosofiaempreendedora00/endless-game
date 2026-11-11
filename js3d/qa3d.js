@@ -201,15 +201,15 @@ function gripOffset(root, w) { // distância do centro do punho fechado ao eixo 
   const dir = far.clone().sub(c).normalize(); // eixo principal (do centro à ponta mais longe)
   let tmin = 1e9, tmax = -1e9; for (const p of vs) { const t = CQ.v.subVectors(p, c).dot(dir); tmin = Math.min(tmin, t); tmax = Math.max(tmax, t); }
   const a = c.clone().addScaledVector(dir, tmin), b = c.clone().addScaledVector(dir, tmax);
-  return segDist(fist, a, b, new THREE.Vector3());
+  let near = 1e9; for (const p of vs) near = Math.min(near, p.distanceTo(fist)); // arco/besta são curvos: o eixo médio passa fora da empunhadura — vale o mais perto dos dois
+  return Math.min(segDist(fist, a, b, new THREE.Vector3()), near);
 }
-function legsInfo(root, fwd) { // abertura LATERAL das coxas (no plano de frente do corpo): avançar uma perna (estocada) não conta, "perereca" conta
+function legsInfo(root, fwd) { // abertura LATERAL ("perereca"): quanto os joelhos se afastam para os lados além da largura do quadril — avançar uma perna (estocada/passo) não conta
   const g = n => { const b = boneOf(root, n); return b ? b.getWorldPosition(new THREE.Vector3()) : null; };
   const tl = g('thigh_l'), cl = g('calf_l'), tr = g('thigh_r'), cr = g('calf_r'), pv = g('pelvis'); if (!tl || !cl || !tr || !cr || !pv) return null;
-  const dl = cl.clone().sub(tl), dr = cr.clone().sub(tr), L0 = Math.min(dl.length(), dr.length()); if (fwd) { dl.addScaledVector(fwd, -dl.dot(fwd)); dr.addScaledVector(fwd, -dr.dot(fwd)); }
-  if (Math.min(dl.length(), dr.length()) < L0 * 0.45) return { spread: 0, pelvisY: pv.y, lunge: true }; // coxa apontando para a frente (avanço/estocada): não é abertura lateral
-  dl.normalize(); dr.normalize();
-  return { spread: THREE.MathUtils.radToDeg(dl.angleTo(dr)), pelvisY: pv.y };
+  const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), fwd || new THREE.Vector3(0, 0, 1)).normalize(), thigh = (tl.distanceTo(cl) + tr.distanceTo(cr)) / 2 || 0.45;
+  const hip = Math.abs(CQ.v.subVectors(tl, tr).dot(right)), knee = Math.abs(CQ.v.subVectors(cl, cr).dot(right));
+  return { spread: THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(0, knee - hip) / 2 / thigh)), pelvisY: pv.y };
 }
 function headAxis(root, fwd) { // eixo local da cabeça que mais aponta para a frente do personagem (escolhido na pose parada)
   const h = boneOf(root, 'Head'); if (!h) return null; const q = h.getWorldQuaternion(new THREE.Quaternion()); let best = null, bd = -2;
@@ -252,8 +252,8 @@ function measure(ctx, n, pose, ref, out, label) {
   // (c) arma fora da mão
   for (const w of weaponsOf(root)) { const d = gripOffset(root, w); if (d != null && d > 0.065) push('arma fora da mão', d > 0.1 ? 'alta' : 'media', `${w.name}: cabo a ${(d * 100).toFixed(0)} cm do centro do punho (${w.hand})`, d); }
   // (d) pernas abertas / agachadas (no golpe a tolerância é maior)
-  const L = pose === 'montado' ? null : legsInfo(root, ref.fwd); if (L && ref.legs) { /* sentado/montado: as pernas abrem de propósito */ const sp = L.spread, drop = (ref.legs.pelvisY - L.pelvisY) / (n.height || 1.8), lim = Math.max(atk ? 40 : 26, ref.legs.spread + (atk ? 18 : 10));
-    if (sp > lim) push('pernas abertas', sp > lim + 12 ? 'alta' : 'media', `${sp.toFixed(0)}° entre as coxas (em pé: ${ref.legs.spread.toFixed(0)}°)`, sp);
+  const L = pose === 'montado' ? null : legsInfo(root, ref.fwd); if (L && ref.legs) { /* sentado/montado: as pernas abrem de propósito */ const sp = L.spread, drop = (ref.legs.pelvisY - L.pelvisY) / (n.height || 1.8), lim = Math.max(atk ? 30 : 20, ref.legs.spread + (atk ? 15 : 10));
+    if (sp > lim) push('pernas abertas', sp > lim + 12 ? 'alta' : 'media', `joelhos abertos para os lados: ${sp.toFixed(0)}° (em pé: ${ref.legs.spread.toFixed(0)}°)`, sp);
     if (drop > (atk ? 0.16 : 0.08)) push('agachado demais', drop > (atk ? 0.24 : 0.14) ? 'alta' : 'media', `quadril ${(drop * 100).toFixed(0)}% mais baixo que em pé`, drop); }
   // (e) cabeça olhando para baixo
   const pt = headPitch(root, ref.headAx); if (pt - (ref.pitch0 || 0) > (atk ? 32 : 22)) push('cabeça para baixo', pt - ref.pitch0 > 38 ? 'alta' : 'media', `cabeça ${pt.toFixed(0)}° para baixo (em pé: ${(ref.pitch0 || 0).toFixed(0)}°)`, pt);
