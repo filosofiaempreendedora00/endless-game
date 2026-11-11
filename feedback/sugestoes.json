@@ -16747,9 +16747,10 @@
       "sp": "172/172"
     },
     "id": "S-340",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:52:12",
-    "imagem": "img/S-340.png"
+    "imagem": "img/S-340.png",
+    "resposta": "Tirei os cristais em volta do Cavaleiro e diferenciei mais a armadura dele da do Paladino: saia de couro reforçado com tassets longos de aço escuro, grevas de couro com placa frontal de aço e joelheiras em ponta. A cor de aço enegrecido foi mantida, com o mesmo acabamento do Paladino."
   },
   {
     "texto": "Sinto que nos guerreiros Estamos bem próximo de acertar porém as únicas Pulgas que ficam atrás da minha orelha são de fato quanto ao acabamento que já falei em relação às evoluções dele ou seja paradinhos e Cavaleiros e também eu me questiono o quão comum é utilizar essa parte que não tem a armadura e sim só a parte das bolinhas dentro não sei se é tão comum assim deixar tudo isso tão exposto Mas apesar dos pesares fica esse meu feedback geral para que você possa ainda dar uma melhorada no quesito acabamento da armadura pois as armaduras bem feitas são muito importantes para mim",
@@ -16794,9 +16795,10 @@
       "sp": "172/172"
     },
     "id": "S-341",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:53:42",
-    "imagem": "img/S-341.png"
+    "imagem": "img/S-341.png",
+    "resposta": "O Guerreiro não tem mais cota de malha exposta no tronco e nos braços: usa um gibão acolchoado costurado em gomos por baixo do peitoral; a malha ficou só na gola e na fralda com barra de couro. Mantive o ombro de ferro e o de couro, as luvas e o peitoral rebitado."
   },
   {
     "texto": "Ué não entendi essa abertura Ué não entendi essa abertura de perna parecendo com um sapo ainda está presente e achei um pouco exagerada",
@@ -16840,9 +16842,10 @@
       "sp": "172/172"
     },
     "id": "S-342",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:54:17",
-    "imagem": "img/S-342.png"
+    "imagem": "img/S-342.png",
+    "resposta": "Achei a causa: a própria animação de guarda do pacote é agachada e de pernas abertas. Agora, em combate, as pernas ficam na pose em pé natural e só o tronco e os braços entram em guarda — vale para todas as classes, no seu personagem e na galeria."
   },
   {
     "texto": "Eu achei essas roupas dos salteadores muito simples para uma classe que claramente é uma evolução Então eu preciso que você incremente com novos adereços essas vestes para torná-la mais sofisticada e mais profissional e claro eu quero que você não necessariamente inclua alguma armadura mas se torne essa roupa mais elegante e mais poderosa e mais imponente e também gostaria de trocar este nome de salteador pois ainda não estou satisfeito com este nome",
@@ -16929,9 +16932,10 @@
       "sp": "172/172"
     },
     "id": "S-343",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:55:33",
-    "imagem": "img/S-343.png"
+    "imagem": "img/S-343.png",
+    "resposta": "A classe agora se chama Gatuno-Mestre e ganhou um traje completo e imponente, sem armadura pesada: casaco longo de couro com abas até o joelho e fendas, gola alta, ombreira de couro trabalhado, botas altas de cano dobrado, capuz caído, faixa vermelha e cintos cruzados — por baixo, a roupa foi trocada de verdade."
   },
   {
     "texto": "E com esses novos incrementos nas roupas porém eu achei um pouco forçado parecendo que simplesmente Vestiu um boneco que já existia e não foi de fato uma roupa trocada Então eu preciso garantir que essa roupa seja mais completa nos bairros e não parecendo uma roupa em cima da outra reforço que essas roupas que você incluiu são sim uma evolução natural e um ponto bem positivo porém novamente eu não quero fazer parecer com que é simplesmente uma roupa em cima do modelo e outro ponto importante é que o arco e flecha é o instrumento se encaixam e não fiquem sobrepostos",
@@ -16977,9 +16981,10 @@
       "sp": "172/172"
     },
     "id": "S-344",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:56:59",
-    "imagem": "img/S-344.png"
+    "imagem": "img/S-344.png",
+    "resposta": "O Bardo veste um traje inteiro, não roupa sobre roupa: camisa de linho, mangas de veludo vinho até o punho, meias-calças escuras e botas altas de camurça, com gibão e capa por cima. O arco nas costas fica por fora da capa, e com instrumento equipado aparece só o instrumento, sem sobreposição."
   },
   {
     "texto": "Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver",
@@ -17026,8 +17031,9 @@
       "sp": "172/172"
     },
     "id": "S-345",
-    "status": "pendente",
+    "status": "feito",
     "criadoEm": "2026-11-10T23:58:03",
-    "imagem": "img/S-345.png"
+    "imagem": "img/S-345.png",
+    "resposta": "O Caçador virou caçador de couro de verdade, bem diferente da roupa verde padrão: camurça e couro curtido em tons de terra, gibão com cordão, túnica com abas, cinto largo, braçadeiras de arqueiro e botas altas de rastreio, com o manto de pele moldado nos ombros e o arco por fora dele."
   }
 ]

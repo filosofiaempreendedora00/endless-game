@@ -22,13 +22,13 @@ export const ACCESSORIES = {
 export const CLASS_LOOKS = {
   aprendiz: { outfit: 'Rogue', show: [], dagger: {}, tint: { body: '#a99572', legs: '#4f5a42' }, style: '1h', extras: ['belt'] }, // S-320: aprendiz começa com adaga (não espada); linho cru e calça verde-musgo, cores próprias do Aethra
   guerreiro: { outfit: 'Knight', show: ['1H_Sword'], itemScale: { '1H_Sword': 1.12 }, armor: 'leve', tint: { body: '#9aa2b0', legs: '#5a4a3a', cape: '#b8332a' }, style: '1h', extras: ['belt'] },
-  cavaleiro_runico: { outfit: 'Knight', show: ['2H_Sword'], armor: 'placas', tint: { body: '#3a4258', legs: '#262c3c', cape: '#7a1020' }, glow: { '2H_Sword': '#4ad0ff' }, style: '2h', extras: ['runes'] },
+  cavaleiro_runico: { outfit: 'Knight', show: ['2H_Sword'], armor: 'placas', tint: { body: '#3a4258', legs: '#262c3c', cape: '#7a1020' }, glow: { '2H_Sword': '#4ad0ff' }, style: '2h', extras: [] }, // S-340: sem os cristais (runas) girando em volta
   guardiao_sagrado: { outfit: 'Knight', show: ['1H_Sword'], armor: 'paladino', tint: { body: '#fff6dc', legs: '#8a7a5a' }, glow: { '1H_Sword': '#ffd76a' }, style: '1h' }, // S-204: armadura de placas de verdade, tabardo e capa de pano com física (sem asas de fada)
   mago: { outfit: 'Mage', show: [], staff: { wood: '#5a3a22', gem: '#8ab8ff', crystal: 'mago', out: 0.03 }, tint: { body: '#3a5ad8', legs: '#2a3470', cape: '#1e2a78' }, style: 'cast' },
   arquimago: { outfit: 'Mage', show: [], staff: { wood: '#3a2a3e', gem: '#c07aff', crystal: 'arqui', thick: 1.45, h: 1.62, head: 1.3, prongs: 5, twist: 0.9, knots: true, out: 0.13, fwd: 0.06 }, tint: { body: '#4a2a7a', legs: '#2a1446', cape: '#24103c' }, glow: { '2H_Staff': '#c07aff' }, style: 'cast', extras: ['arcaneEnergy'] }, // S-220: sem os anéis · S-315: energia arcana em filetes (no lugar das bolinhas)
   sabio_elemental: { outfit: 'Mage', show: ['Mage_Cape'], book: true, tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, style: 'cast', extras: ['elementOrbs'] }, // S-314: livro de verdade na mão (sem varinha/livro do pacote) · S-313: orbes elementais
   arqueiro: { outfit: 'Rogue', show: [], bow: { wood: '#7a4a22' }, tint: { body: '#4f8a45', legs: '#5a4430', cape: '#2f5a2a' }, style: 'ranged', extras: ['quiver'] },
-  cacador: { outfit: 'Barbarian', show: [], bow: { wood: '#4a2c14', tip: '#d8c8a0', h: 1.4 }, tint: { body: '#6b5236', legs: '#43352a', cape: '#4a3020' }, style: 'ranged', extras: ['quiver'], hunter: true }, // S-325: tons de terra; o falcão empoleirado saiu (o parceiro agora é o lobo gigante)
+  cacador: { outfit: 'Barbarian', show: [], bow: { wood: '#4a2c14', tip: '#d8c8a0', h: 1.4 }, tint: { body: '#6b5236', legs: '#43352a', cape: '#4a3020' }, style: 'ranged', extras: ['bowOut', 'quiver'], hunter: true }, // S-325: tons de terra; o falcão empoleirado saiu (o parceiro agora é o lobo gigante)
   menestrel: { outfit: 'Rogue', show: [], bow: { wood: '#8a3a2a', h: 1.1 }, instrument: true, tint: { body: '#5a1a28', legs: '#2a2232', cape: '#1f4a34' }, style: 'ranged', extras: ['bardGear'] }, // S-324: arco OU instrumento (pela arma equipada) e roupa de bardo de verdade // S-108: as notas só aparecem com a Canção de Batalha ativa (songAura em main3d)
   ladino: { outfit: 'Rogue', show: [], dagger: {}, tint: { body: '#3b3a30', legs: '#2c2620', cape: '#2a2a33' }, style: 'dual', rogue: 'gatuno' }, // S-323: gatuno (colete, lenço, bolsinhas, botas macias) com UMA adaga
   lamina_sombria: { outfit: 'Rogue', show: [], dagger: {}, dual: true, katar: {}, tint: { body: '#1d1b22', legs: '#15131a', cape: '#2a1440' }, style: 'dual', rogue: 'algoz' }, // S-322: sem orbes; katar OU duas adagas (pela arma equipada)
@@ -1488,7 +1488,7 @@ function holdBow(root, bow) {
   else { const kn = bone(root, 'middle_01_l'), at = kn ? rootPos(root, kn).lerp(rootPos(root, hand), 0.4) : rootPos(root, hand); fitToBone(root, hand, inHand, new THREE.Quaternion().setFromEuler(new THREE.Euler(0.12, -Math.PI / 2 + 0.2, 0.05)), at); }
   const onBack = new THREE.Group(); (sp || root).add(onBack);
   if (sp) { const c = rootPos(root, sp), shR = bone(root, 'upperarm_r'), shL = bone(root, 'upperarm_l'), w = shR && shL ? rootPos(root, shL).distanceTo(rootPos(root, shR)) : 0.34;
-    fitToBone(root, sp, onBack, basis(new THREE.Vector3(-0.55, 1, 0), new THREE.Vector3(0, 0, 1)), c.add(new THREE.Vector3(0.0, -0.06, -0.25 - w * 0.03))); } // corda encostada nas costas (a corda fica 11 cm à frente da empunhadura), ventre para fora
+    fitToBone(root, sp, onBack, basis(new THREE.Vector3(-0.55, 1, 0), new THREE.Vector3(0, 0, 1)), c.add(new THREE.Vector3(0.0, -0.06, -0.25 - w * 0.03 - (root.userData.bowBackExtra || 0)))); } // corda encostada nas costas (bowBackExtra: por fora de capa/manto da classe, S-344) (a corda fica 11 cm à frente da empunhadura), ventre para fora
   bow.position.z = -bow.userData.gripZ; bow.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   root.userData.items = root.userData.items || {}; root.userData.items.bow = bow;
   root.userData.bowState = s => { const tgt = s === 'hand' ? inHand : onBack; if (bow.parent !== tgt) { tgt.add(bow); root.userData.bowAt = s; } };
@@ -1590,6 +1590,17 @@ function hunterGear(root) {
   const furTip = new THREE.MeshStandardMaterial({ color: '#d8d0c4', map: furTex(), alphaMap: furTex(), alphaTest: 0.45, transparent: false, roughness: 1, side: THREE.DoubleSide });
   const hide = new THREE.MeshStandardMaterial({ color: '#5a4430', map: metalTex('couro'), roughness: 0.92, side: THREE.DoubleSide });
   const leather = new THREE.MeshStandardMaterial({ color: '#3e2a1a', map: metalTex('couro'), roughness: 0.85 }), steel = new THREE.MeshStandardMaterial({ color: '#a7adb3', metalness: 0.85, roughness: 0.3 });
+  // S-345: traje INTEIRO de caçador (nada do verde da roupa padrão): camisa e mangas de camurça, calça de couro curtido, botas macias;
+  // por cima, gibão de couro com cordão na frente e túnica com abas até o meio da coxa, cinto largo e braçadeiras de arqueiro
+  costumeBase(root, { body: { color: '#6a5238', tex: 'camurca' }, arms: { color: '#5e4832', tex: 'camurca' }, legs: { color: '#3e3226', tex: 'camurca' }, feet: { color: '#2e2218', tex: 'camurca', rough: 0.75 } });
+  { const jerk = AM.leather('#4e3622'), dk = AM.leather('#2e2016'), brass = AM.gold('#8a7448');
+    vestOn(root, 'hunterJerkin', jerk, { off: 0.016, low: -0.1 });
+    { const s2 = bonePos(root, 'spine_02'); if (s2) for (let k = 0; k < 4; k++) { const y = s2.y + 0.13 - k * 0.075, z = bodySurf(root, ['spine_02', 'spine_03', 'spine_01'], s2.x, y, 1); if (z === null) continue; // cordão de couro cruzado fechando o gibão
+      const t = new THREE.Mesh(new THREE.CapsuleGeometry(0.0045, 0.05, 4, 8), dk); t.position.set(s2.x, y, z + 0.022); t.rotation.z = k % 2 ? 0.9 : -0.9; pinToBone(root, k < 2 ? 'spine_03' : 'spine_02', t); } }
+    coatPanels(root, AM.leatherCloth('#4a3420'), AM.leatherCloth('#2e2016'), [[-0.62, 1.24], [0.78, 1.0], [2.5, 1.28], [3.94, 1.0]], { len: 0.26, gap: 0.04, top: 0.04, pleats: 2, pleatAmp: 0.006 });
+    beltSet(root, dk, brass, 'simples');
+    for (const s of ['l', 'r']) { bracerOn(root, s === 'l' ? AM.leather('#3a2616') : dk, s); bootShaft(root, 'hunterBoot', s, AM.leather('#3a2a1c'), { cuff: 0.1, straps: true }); }
+  }
   // manto de pele: casca grossa sobre ombros e alto do peito/costas, com franja irregular de pelo embaixo
   const sp3 = bonePos(root, 'spine_03'), nk = bonePos(root, 'neck_01');
   if (sp3 && nk) {
@@ -1619,8 +1630,8 @@ function hunterGear(root) {
     const pouch = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 10), hide); pouch.scale.set(0.8, 1, 0.55); pouch.position.set(tl.x + (tl.x > pv.x ? 0.1 : -0.1), pv.y - 0.03, pv.z + 0.03); pinToBone(root, 'pelvis', pouch);
     const flap = new THREE.Mesh(new THREE.SphereGeometry(0.072, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), leather); flap.scale.set(0.82, 0.7, 0.6); flap.position.copy(pouch.position).add(new THREE.Vector3(0, 0.02, 0.005)); pinToBone(root, 'pelvis', flap);
   }
-  // tiras de couro cruzadas nas canelas (botas de rastreio)
-  for (const s of ['l', 'r']) { const cf = bonePos(root, 'calf_' + s), ft = bonePos(root, 'foot_' + s); if (!cf || !ft) continue;
+  // (S-345: as tiras soltas nas canelas viraram as botas altas de rastreio com tiras, acima)
+  for (const s of []) { const cf = bonePos(root, 'calf_' + s), ft = bonePos(root, 'foot_' + s); if (!cf || !ft) continue;
     const g = wrapCached(root, 'hunterWrap' + s, () => wrapShell(sampleBody(root, ['calf_' + s]), cf, ft, { t0: 0.35, t1: 0.92, bins: 10, sec: 22, off: 0.006, th: 0.006, smooth: 3, uvRep: 3, ridge: (t, a) => (Math.sin((t * 6 + a / Math.PI) * Math.PI * 2) > 0.55 ? 0.006 : 0) }));
     pinToBone(root, 'calf_' + s, new THREE.Mesh(g, leather)); }
 }
@@ -1714,9 +1725,13 @@ function bardSlashTex() { // tecido do gibão: vinho com cortes verticais mostra
   x.fillStyle = '#c9a24a'; x.fillRect(0, 0, 256, 10); x.fillRect(0, 246, 256, 10);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_bardTex = t);
 }
+EXTRAS.bowOut = function (root) { root.userData.bowBackExtra = 0.05; }; // S-345: arco nas costas por fora do manto de pele do Caçador
 EXTRAS.bardGear = function (root) {
   if (!root.userData.human) return;
   root.userData.outfitKey = root.userData.outfitKey || outfitKey(root);
+  // S-344: traje INTEIRO — camisa de linho cru, mangas de veludo vinho até o punho (o braço todo vestido), meias-calças escuras e botas de camurça
+  costumeBase(root, { body: { color: '#e2d6bc', tex: 'linho' }, arms: { color: '#5a1826', tex: 'veludo', rough: 0.95 }, legs: { color: '#2b2433', tex: 'linho' }, feet: { color: '#3a2416', tex: 'camurca', rough: 0.72 } });
+  root.userData.bowBackExtra = 0.06; // o arco nas costas fica por fora da capa curta (nada atravessando)
   const doublet = new THREE.MeshStandardMaterial({ map: bardSlashTex(), roughness: 0.85 }), velvet = new THREE.MeshStandardMaterial({ color: '#1f4a34', map: metalTex('couro'), roughness: 0.95, side: THREE.DoubleSide });
   const gold = std('#d8b45a', { metalness: 0.8, roughness: 0.3 }), leather = armorMat('#4a2a16', 'couro');
   // gibão justo no tronco (cortes verticais), com a barra um pouco abaixo da cintura
@@ -1748,6 +1763,13 @@ EXTRAS.bardGear = function (root) {
   { const buckle = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 8, 4), gold); buckle.rotation.z = Math.PI / 4; const fz = sampleBody(root, ['pelvis'], /_(Body|Legs)/).reduce((m, p) => Math.max(m, p.z), 0); buckle.position.set(pv.x, pv.y + 0.05, fz + 0.035); pinToBone(root, 'pelvis', buckle); }
   for (const [dx, dz, sc] of [[0.14, 0.05, 1], [-0.15, 0.03, 0.85], [0.1, -0.1, 0.8]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 * sc, 16, 12), leather); b.scale.set(1, 1.15, 0.6); b.position.set(pv.x + dx, pv.y - 0.02, pv.z + dz); pinToBone(root, 'pelvis', b);
     const flap = new THREE.Mesh(new THREE.SphereGeometry(0.052 * sc, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.4), std('#3a1e0e', { roughness: 0.8 })); flap.scale.set(1, 0.7, 0.66); flap.position.set(pv.x + dx, pv.y + 0.012, pv.z + dz); pinToBone(root, 'pelvis', flap); }
+  // S-344: punhos de linho saindo da manga de veludo e botas altas de camurça com a boca dobrada — braços e pernas vestidos de verdade
+  const linen = clothMat('#ece2cc', 0.9);
+  for (const s of ['l', 'r']) {
+    const la = bonePos(root, 'lowerarm_' + s), hd = bonePos(root, 'hand_' + s);
+    if (la && hd) shellOn(root, 'bardCuff' + s, ['lowerarm_' + s], /_(Body|Arms)/, la, hd, { t0: 0.74, t1: 0.9, bins: 4, off: 0.012, th: 0.004, flare: t => t * 0.016, ridge: (t, a) => Math.max(0, Math.sin(a * 9)) * 0.004 * t }, linen, 'lowerarm_' + s);
+    bootShaft(root, 'bardBoot', s, AM.leather('#3a2416'), { cuff: 0.22, t0: 0.08 });
+  }
 };
 /* S-334/S-335/S-336: cristais místicos — gema de pontas arredondadas (perfil girado com muitos segmentos: sem facetas duras),
    levemente irregular, brilho iridescente com núcleo de luz e cor que passeia devagar por uma paleta */
@@ -1976,6 +1998,56 @@ function neckScarf(root, key, mat, o = {}) {
   if (o.tip) { const z = bodySurf(root, ['spine_03', 'neck_01'], nk.x, nk.y - 0.08, 1) ?? nk.z + 0.08; const sh = new THREE.Shape(); sh.moveTo(-0.07, 0); sh.quadraticCurveTo(0, 0.01, 0.07, 0); sh.quadraticCurveTo(0.02, -0.07, 0, -0.13); sh.quadraticCurveTo(-0.02, -0.07, -0.07, 0);
     const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 2 }), mat); m.position.set(nk.x, nk.y - 0.045, z + 0.018); m.rotation.x = -0.25; pinToBone(root, 'spine_03', m); }
 }
+/* ===== S-343/S-344/S-345: ROUPA COMPLETA (não "acessórios grudados por cima do boneco") =====
+   costumeBase: a roupa base vira o FORRO do traje — a mesma malha (as dobras e pregas ficam, pela luminância do mapa original),
+   mas com o tecido/couro e a cor do traje; cinto/ombreira/braçadeira da roupa base somem; as mãos continuam de pele.
+   As peças principais (gibão, casaco, túnica, botas) vêm por cima, moldadas no corpo e presas aos ossos. */
+const _fab = {};
+function fabricTex(kind) {
+  if (_fab[kind]) return _fab[kind];
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); let s = 13; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#b4b4b4'; x.fillRect(0, 0, 256, 256);
+  if (kind === 'linho' || kind === 'veludo') { // trama de fios (veludo: trama fechada + manchas macias de pelo deitado)
+    for (let k = 0; k < 256; k += 2) { x.fillStyle = `rgba(255,255,255,${0.05 + r() * 0.07})`; x.fillRect(0, k, 256, 1); x.fillStyle = `rgba(0,0,0,${0.05 + r() * 0.07})`; x.fillRect(k, 0, 1, 256); }
+    if (kind === 'veludo') for (let k = 0; k < 70; k++) { const cx = r() * 256, cy = r() * 256, rr = 8 + r() * 26, g = x.createRadialGradient(cx, cy, 0, cx, cy, rr); g.addColorStop(0, `rgba(255,255,255,${0.05 + r() * 0.06})`); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(cx - rr, cy - rr, rr * 2, rr * 2); }
+  } else { // camurça/couro curtido: poros e manchas suaves
+    for (let k = 0; k < 3200; k++) { const v = r() < 0.5 ? 255 : 0; x.fillStyle = `rgba(${v},${v},${v},0.05)`; x.fillRect(r() * 256, r() * 256, 1 + r() * 3, 1 + r() * 3); }
+    for (let k = 0; k < 45; k++) { const cx = r() * 256, cy = r() * 256, rr = 10 + r() * 34, g = x.createRadialGradient(cx, cy, 0, cx, cy, rr); g.addColorStop(0, `rgba(0,0,0,${0.05 + r() * 0.06})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(cx - rr, cy - rr, rr * 2, rr * 2); }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return (_fab[kind] = t);
+}
+function costumeBase(root, spec) {
+  root.traverse(o => { if (o.isSkinnedMesh && /Acc_|_Bracer|_Belt|Pauldron/.test(o.name)) o.visible = false; });
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !o.visible || !/_(Body|Arms|Legs|Feet)/.test(o.name) || /Acc_/.test(o.name)) return;
+    const part = /_Arms/.test(o.name) ? 'arms' : /_Legs/.test(o.name) ? 'legs' : /_Feet/.test(o.name) ? 'feet' : 'body', sp = spec[part]; if (!sp) return;
+    const hands = part === 'arms' && !!o.skeleton; if (hands) handMask(o);
+    const m = o.material = o.material.clone(); m.roughness = sp.rough ?? 0.86; m.metalness = 0;
+    if (!m.map) { m.color = new THREE.Color(sp.color); return; }
+    m.color.set('#ffffff'); const tint = new THREE.Color(sp.color), det = fabricTex(sp.tex || 'linho'), rep = (sp.rep ?? 9).toFixed(1);
+    m.onBeforeCompile = sh => {
+      sh.uniforms.uTint = { value: tint }; sh.uniforms.uDet = { value: det };
+      if (hands) sh.vertexShader = 'attribute float aHand;\nvarying float vHand;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvHand = aHand;');
+      sh.fragmentShader = 'uniform vec3 uTint;\nuniform sampler2D uDet;\n' + (hands ? 'varying float vHand;\n' : '') + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+{ float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); float dd = texture2D(uDet, vMapUv * ${rep}).g;
+  vec3 cc = uTint * (0.55 + lum * 0.95) * (0.8 + dd * 0.32);
+  ${hands ? 'diffuseColor.rgb = mix(cc, diffuseColor.rgb, vHand);' : 'diffuseColor.rgb = cc;'} }`);
+    };
+    m.customProgramCacheKey = () => 'cos' + part + sp.color + (sp.tex || '') + rep + (hands ? 'h' : '');
+  });
+}
+// cano de bota macia: do joelho ao tornozelo, com dobra na boca (cuff) e, opcional, tiras cruzadas (botas de rastreio)
+function bootShaft(root, key, s, mat, o = {}) {
+  const kn = bonePos(root, 'calf_' + s), an = bonePos(root, 'foot_' + s); if (!kn || !an) return;
+  shellOn(root, key + s, ['calf_' + s], /_(Legs|Feet)/, kn, an, { t0: o.t0 ?? 0.06, t1: 1.02, bins: 10, sec: 26, off: o.off ?? 0.012, th: 0.008, smooth: 4, uvRep: 2,
+    flare: t => (t < 0.12 ? (0.12 - t) * (o.cuff ?? 0.16) : 0) + (t > 0.9 ? (t - 0.9) * 0.05 : 0), ridge: o.straps ? (t, a) => (t > 0.25 && t < 0.88 && Math.sin((t * 5 + a / Math.PI) * Math.PI * 2) > 0.72 ? 0.004 : 0) : undefined }, mat, 'calf_' + s);
+}
+// abas de casaco/túnica que seguem as pernas: painéis em volta do quadril (ângulo 0 = frente), com fendas entre eles
+function coatPanels(root, mat, hem, panels, o = {}) {
+  const pv = bonePos(root, 'pelvis'), knee = bonePos(root, 'calf_l'), hs = hipSize(root, pv.y + 0.04);
+  const bot = o.toKnee ? knee.y + (o.kneeOff ?? 0.04) : Math.max(knee.y + 0.06, pv.y - (o.len ?? 0.3));
+  for (const [a0, al] of panels) clothSkirt(root, gownGeo(root, { top: pv.y + (o.top ?? 0.05), bot, r0: hs.rx + (o.gap ?? 0.05), r1: o.r1 ?? 0.06, arc: [a0, al], seg: 18, pleats: o.pleats ?? 3, pleatAmp: o.pleatAmp ?? 0.008, sz: Math.min(1, Math.max(0.75, (hs.rz + 0.05) / (hs.rx + 0.05))), seed: a0 + 3, hemRows: 1 }), hem ? [mat, hem] : mat, 0.05);
+}
 const ROGUE_BUILD = {
   gatuno(root) {
     rogueRecolor(root, '#3b3a30', '#2c2620', '#4a3a2a');
@@ -1999,9 +2071,14 @@ const ROGUE_BUILD = {
     void fx;
   },
   salteador(root, fx) {
-    rogueRecolor(root, '#4a3424', '#2e2a24', '#3a2a1e');
+    // S-343: traje inteiro (não acessórios sobre o boneco): camisa e mangas de linho escuro, calça e botas de camurça, por cima um CASACO LONGO de couro
+    costumeBase(root, { body: { color: '#3a2c22', tex: 'camurca' }, arms: { color: '#2c2824', tex: 'linho' }, legs: { color: '#24201c', tex: 'linho' }, feet: { color: '#241a12', tex: 'camurca', rough: 0.72 } });
     const coat = AM.leather('#5e4028'), dark = AM.leather('#2e2018'), hood = clothMat('#3a3a32'), sash = clothMat('#8a2420'), brass = AM.gold('#a8884a');
-    vestOn(root, 'vestS', coat, { off: 0.016, low: -0.12 });               // gibão de couro que desce até o quadril
+    vestOn(root, 'vestS', coat, { off: 0.016, low: -0.12, open: 0.2 });   // casaco de couro justo no tronco, fechado quase até a gola
+    // abas do casaco até o joelho (frente aberta, fendas dos lados e atrás para montar e lutar) — acompanham as pernas
+    coatPanels(root, AM.leatherCloth('#5a3c26'), AM.leatherCloth('#2a1c12'), [[0.24, 1.22], [1.6, 1.42], [3.26, 1.42], [4.82, 1.22]], { toKnee: true, kneeOff: 0.02, gap: 0.045, top: 0.03, pleats: 2, pleatAmp: 0.006 });
+    neckScarf(root, 'collarS', coat, { high: 0.62, puff: 0.03, off: 0.02 }); // gola alta de couro
+    pauldronSet(root, AM.leather('#4a3020'), 'l', { size: 0.92, n: 2, k: 'wr' }); // ombreira de couro trabalhado num ombro só
     const pv = bonePos(root, 'pelvis');                                    // faixa vermelha na cintura (Assassin's Creed) por baixo do cinto
     shellOn(root, 'sash', ['pelvis', 'spine_01'], /_(Body|Legs)/, AV3(pv, 0, 0.02, 0), AV3(pv, 0, 0.17, 0), { bins: 3, sec: 40, off: 0.028, th: 0.01, smooth: 5 }, sash, 'pelvis');
     beltSet(root, dark, brass);
@@ -2016,7 +2093,7 @@ const ROGUE_BUILD = {
     chestStrap(root, dark, [sh.x + 0.03, sh.y - 0.02], [hip.x - 0.13, hip.y + 0.1], 1); chestStrap(root, dark, [shr.x - 0.03, shr.y - 0.02], [hip.x + 0.13, hip.y + 0.1], 1);
     chestStrap(root, dark, [sh.x + 0.03, sh.y - 0.02], [hip.x - 0.13, hip.y + 0.1], -1); chestStrap(root, dark, [shr.x - 0.03, shr.y - 0.02], [hip.x + 0.13, hip.y + 0.1], -1);
     beltPouches(root, dark, [[0.13, 1, 0.065, 0.07], [-0.15, -1, 0.07, 0.07]]);
-    for (const s of ['l', 'r']) bracerOn(root, dark, s);
+    for (const s of ['l', 'r']) { bracerOn(root, dark, s); bootShaft(root, 'salBoot', s, AM.leather('#2a1c12'), { cuff: 0.2 }); } // braçadeiras e botas altas de cano dobrado
     void fx; // sem capa: o capuz caído nas costas fica à mostra (Assassin's Creed / mercenários do Skyrim)
   },
 };
@@ -2157,6 +2234,12 @@ function breastplate(root, mat, o = {}) {
 // FRALDA (saia de lâminas) na cintura + TASSETS que acompanham as coxas
 function fauldTassets(root, mat, o = {}) {
   const pv = bonePos(root, 'pelvis'), sp = bonePos(root, 'spine_01');
+  if (o.long) { // S-340: Cavaleiro — uma faixa só na cintura e TASSETS LONGOS de aço escuro (duas placas grandes por coxa, até o meio da coxa), diferente da fralda curta do Paladino
+    lames(root, 'fauldK1' + (o.k || ''), ['pelvis', 'spine_01'], /_(Body|Legs)/, AV3(pv, 0, 0.075, 0), AV3(pv, 0, -0.06, 0), 0, 0.42, 1, { sec: 40, off: 0.05, step: -0.006, smooth: 6, flare: (t) => t * 0.01 }, mat, 'pelvis', o.trim);
+    for (const s of ['l', 'r']) { const th = bonePos(root, 'thigh_' + s), ca = bonePos(root, 'calf_' + s);
+      lames(root, 'tasK' + s + (o.k || ''), ['thigh_' + s], /_Legs/, th, ca, -0.02, 0.56, 2, { sec: 26, off: 0.05, step: -0.005, smooth: 6, arc: [-1.15, 1.15], ridge: (t, a) => Math.max(0, Math.cos(a)) ** 8 * 0.006 }, mat, 'thigh_' + s, o.trim); }
+    return;
+  }
   if (o.short) { // S-326: fralda CURTA e limpa (da cintura ao alto do quadril), por cima da fralda de malha — não invade o resto da armadura
     lames(root, 'fauldS' + (o.k || ''), ['pelvis', 'spine_01'], /_(Body|Legs)/, AV3(pv, 0, 0.075, 0), AV3(pv, 0, -0.06, 0), 0, 0.72, o.n || 2, { sec: 40, off: 0.05, step: -0.006, smooth: 6, flare: (t) => t * 0.012 }, mat, 'pelvis', o.trim);
     if (o.tassets) for (const s of ['l', 'r']) { const th = bonePos(root, 'thigh_' + s), ca = bonePos(root, 'calf_' + s); // escarcelas presas à coxa, só de frente/lado
@@ -2199,7 +2282,7 @@ function armSet(root, mat, side, o = {}) {
 // S-326: JOELHEIRA/COTOVELEIRA moldada (lâminas em volta da junta + asa lateral em leque) — no lugar da calota de esfera
 function jointCop(root, mat, trim, upper, lower, side, front, o = {}) {
   const a = bonePos(root, upper), j = bonePos(root, lower), u = j.clone().sub(a).normalize(), A = j.clone().sub(u.clone().multiplyScalar(o.up ?? 0.075)), B = j.clone().add(u.clone().multiplyScalar(o.down ?? 0.075));
-  lames(root, (o.k || 'jc') + side, [upper, lower], o.meshRe || /_(Legs|Arms|Body)/, A, B, 0.0, 1.0, o.n || 3, { sec: 28, off: o.off ?? 0.02, step: 0.003, front, arc: o.arc || [-1.5, 1.5], th: 0.009, ridge: (t, an) => Math.max(0, Math.cos(an)) ** 6 * 0.01 * Math.sin(t * Math.PI) }, mat, lower, trim);
+  lames(root, (o.k || 'jc') + side, [upper, lower], o.meshRe || /_(Legs|Arms|Body)/, A, B, 0.0, 1.0, o.n || 3, { sec: 28, off: o.off ?? 0.02, step: 0.003, front, arc: o.arc || [-1.5, 1.5], th: 0.009, ridge: (t, an) => Math.max(0, Math.cos(an)) ** (o.ridgeExp || 6) * 0.01 * (o.ridgeK || 1) * Math.sin(t * Math.PI) }, mat, lower, trim); // S-340: ridgeK > 1 = joelheira em ponta (Cavaleiro)
   if (o.wing !== false) { // asa lateral em leque, levemente côncava, de fora
     const sh = new THREE.Shape(), R = o.wingR ?? 0.05; sh.moveTo(0, R); sh.bezierCurveTo(R * 1.1, R * 0.9, R * 1.05, -R * 0.6, 0, -R); sh.bezierCurveTo(-R * 0.45, -R * 0.4, -R * 0.45, R * 0.4, 0, R);
     const g = new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.004, bevelSegments: 3, curveSegments: 14 }); const P = g.attributes.position; for (let k = 0; k < P.count; k++) P.setZ(k, P.getZ(k) - (P.getX(k) ** 2 + P.getY(k) ** 2) * 2.2); g.computeVertexNormals();
@@ -2218,7 +2301,11 @@ function sabatonSet(root, mat, side, trim) {
 function legSet(root, mat, side, o = {}) {
   const th = bonePos(root, 'thigh_' + side), ca = bonePos(root, 'calf_' + side), ft = bonePos(root, 'foot_' + side);
   if (o.cuisse !== false) shellOn(root, 'cuis' + side, ['thigh_' + side], /_Legs/, th, ca, { t0: 0.16, t1: 0.82, off: 0.016, th: 0.01, arc: o.cuisseArc || [-1.9, 1.9], ridge: (t, a) => Math.max(0, Math.cos(a)) ** 8 * 0.007 + (t > 0.94 ? (t - 0.94) * 0.12 : 0) }, mat, 'thigh_' + side);
-  if (o.poleyn !== false) jointCop(root, mat, o.trim, 'thigh_' + side, 'calf_' + side, side, new THREE.Vector3(0, 0, 1), { k: 'pol', meshRe: /_Legs/, off: 0.022, wingR: 0.048 });
+  if (o.poleyn !== false) jointCop(root, mat, o.trim, 'thigh_' + side, 'calf_' + side, side, new THREE.Vector3(0, 0, 1), o.poleynPoint ? { k: 'polK', meshRe: /_Legs/, off: 0.022, wingR: 0.056, ridgeK: 3.2, ridgeExp: 14, arc: [-1.35, 1.35] } : { k: 'pol', meshRe: /_Legs/, off: 0.022, wingR: 0.048 });
+  if (o.greaveFront) { // S-340: Cavaleiro — greva de COURO em volta da canela e uma PLACA FRONTAL de aço com quilha por cima (diferente da greva inteira do Paladino)
+    shellOn(root, 'grevL' + side, ['calf_' + side], /_(Legs|Feet)/, ca, ft, { t0: 0.1, t1: 0.9, off: 0.012, th: 0.009, flare: (t) => (t > 0.85 ? (t - 0.85) * 0.08 : 0) }, o.greaveFront, 'calf_' + side);
+    shellOn(root, 'grevF' + side, ['calf_' + side], /_(Legs|Feet)/, ca, ft, { t0: 0.08, t1: 0.9, off: 0.022, th: 0.01, arc: [-1.25, 1.25], ridge: (t, a) => Math.max(0, Math.cos(a)) ** 12 * 0.011 + (t < 0.05 ? (0.05 - t) * 0.15 : 0), flare: (t) => (t > 0.85 ? (t - 0.85) * 0.1 : 0) }, mat, 'calf_' + side);
+  } else
   shellOn(root, 'grev' + side, ['calf_' + side], /_(Legs|Feet)/, ca, ft, { t0: 0.12, t1: 0.92, off: 0.014, th: 0.01, ridge: (t, a) => Math.max(0, Math.cos(a)) ** 10 * 0.008 + (t < 0.05 ? (0.05 - t) * 0.15 : 0), flare: (t) => (t > 0.85 ? (t - 0.85) * 0.1 : 0) }, o.greave || mat, 'calf_' + side);
   if (o.sabaton) sabatonSet(root, o.sabaton, side, o.trim);
 }
@@ -2299,12 +2386,28 @@ function shrinkUnder(mat, amt, handAware) {
   };
   mat.customProgramCacheKey = () => prevKey + 'shr' + amt + (handAware ? 'h' : '');
 }
-function underLayer(root, top, legs, glove = '#3a2618', shrink = { body: 0.014, arms: 0.012, legs: 0.008 }) {
+// S-341: GIBÃO ACOLCHOADO (gambeson) — tecido grosso costurado em gomos verticais, com a trama e sombras dos pespontos (no lugar da malha exposta)
+let _gamb = null;
+function gambesonTex() {
+  if (_gamb) return _gamb;
+  const W = 256, c = document.createElement('canvas'); c.width = c.height = W; const x = c.getContext('2d');
+  x.fillStyle = '#c8c8c8'; x.fillRect(0, 0, W, W);
+  for (let k = 0; k < 9000; k++) { const v = 170 + Math.random() * 70 | 0; x.fillStyle = `rgba(${v},${v},${v},0.35)`; x.fillRect(Math.random() * W, Math.random() * W, 1 + Math.random() * 2, 1); } // trama do tecido
+  const n = 8, w = W / n;
+  for (let i = 0; i < n; i++) { // gomos: claro no meio, sombra junto às costuras
+    const g = x.createLinearGradient(i * w, 0, (i + 1) * w, 0); g.addColorStop(0, 'rgba(0,0,0,0.38)'); g.addColorStop(0.18, 'rgba(0,0,0,0.05)'); g.addColorStop(0.5, 'rgba(255,255,255,0.12)'); g.addColorStop(0.82, 'rgba(0,0,0,0.05)'); g.addColorStop(1, 'rgba(0,0,0,0.38)');
+    x.fillStyle = g; x.fillRect(i * w, 0, w, W);
+    x.strokeStyle = 'rgba(40,30,20,0.55)'; x.setLineDash([3, 3]); x.lineWidth = 1; x.beginPath(); x.moveTo(i * w + 0.5, 0); x.lineTo(i * w + 0.5, W); x.stroke(); }
+  x.setLineDash([3, 3]); for (let j = 1; j < 4; j++) { x.strokeStyle = 'rgba(40,30,20,0.35)'; x.beginPath(); x.moveTo(0, j * W / 4); x.lineTo(W, j * W / 4); x.stroke(); }
+  _gamb = new THREE.CanvasTexture(c); _gamb.wrapS = _gamb.wrapT = THREE.RepeatWrapping; _gamb.colorSpace = THREE.SRGBColorSpace; return _gamb;
+}
+function underLayer(root, top, legs, glove = '#3a2618', shrink = { body: 0.014, arms: 0.012, legs: 0.008 }, kind = 'malha') {
   root.traverse(o => { if (o.isSkinnedMesh && /Acc_|_Bracer/.test(o.name)) o.visible = false; }); // S-328: cinto/ombreira da roupa base sobram sob a armadura (abas atravessando a fralda) — a armadura tem os seus · S-338: a braçadeira de couro da roupa base também sai (aparecia entre as placas do antebraço)
   root.traverse(o => { if (!o.isSkinnedMesh || !/_(Arms|Legs|Body)/.test(o.name) || /Acc_/.test(o.name)) return;
     if (/_Arms/.test(o.name) && o.skeleton) { const hm = handMask(o).array; let s = 0; for (let i = 0; i < hm.length; i++) s += hm[i]; if (s / hm.length > 0.85) { o.material = o.material.clone(); o.material.color = new THREE.Color(glove); o.material.roughness = 0.72; o.material.metalness = 0.03; o.material.map = metalTex('couro'); return; } } // a mão em si: luva de couro inteira
     o.material = o.material.clone(); if (/_Arms/.test(o.name) && o.skeleton) gloveOver(o.material, glove);
     if (/_Legs/.test(o.name)) { o.material.color = new THREE.Color(legs); o.material.map = metalTex('couro'); o.material.metalness = 0.05; o.material.roughness = 0.8; }
+    else if (kind === 'acolchoado') { o.material.color = new THREE.Color(top); o.material.map = gambesonTex(); o.material.bumpMap = gambesonTex(); o.material.bumpScale = 2.2; o.material.metalness = 0.02; o.material.roughness = 0.9; o.material.envMap = null; } // S-341: gibão acolchoado (sem malha exposta)
     else { o.material.color = new THREE.Color(top); o.material.map = metalTex('malha'); o.material.bumpMap = metalTex('malha'); o.material.bumpScale = 1.2; o.material.metalness = 0.75; o.material.roughness = 0.5; o.material.envMap = armorEnv(); o.material.envMapIntensity = 0.6; }
     const amt = /_Legs/.test(o.name) ? shrink.legs : /_Arms/.test(o.name) ? shrink.arms : shrink.body; if (amt > 0) shrinkUnder(o.material, amt, /_Arms/.test(o.name) && !!o.skeleton); });
 }
@@ -2314,7 +2417,8 @@ const ARMOR_BUILD = {
   // braçadeiras e luvas de COURO (nada de malha nas mãos), FRALDA DE MALHA com barra de couro no lugar das abas de "papelão", grevas de couro e botas
   leve(root) {
     const iron = AM.steel('#9a9ea4', { rivets: true, metal: 0.82, rough: 0.55 }), leather = AM.leather('#6a4a30'), dark = AM.leather('#3e2a1c'), brass = AM.gold('#a8884a');
-    underLayer(root, '#8a8e94', '#4a3a2a', '#3e2a1c', { body: 0.006, arms: 0.006, legs: 0.006 }); // o gibão de malha do Guerreiro aparece de propósito: encolhe pouco
+    underLayer(root, '#8a6c4a', '#4a3a2a', '#3e2a1c', { body: 0.006, arms: 0.006, legs: 0.006 }, 'acolchoado'); // S-341: gibão ACOLCHOADO (tecido grosso em gomos) no tronco e braços — a malha não fica mais exposta
+    gorgetSet(root, AM.mail('#8a8e94'), { k: 'wm', mantle: false }); // malha só na gola (camal curto)
     breastplate(root, iron, { k: 'w', backOpen: true });
     mailSkirt(root, AM.mailCloth('#7e8288'), AM.leatherCloth('#3e2a1c'), { len: 0.27, off: 0.026 });
     pauldronSet(root, iron, 'l', { size: 1.05, n: 2, k: 'w' }); pauldronSet(root, leather, 'r', { size: 0.9, n: 2, k: 'wr' });
@@ -2326,10 +2430,10 @@ const ARMOR_BUILD = {
     const steel = AM.steel('#64625e', { rivets: true, metal: 0.88, rough: 0.44, env: 1.0 }), edge = AM.steel('#8c8a86', { metal: 0.92, rough: 0.3 }), leather = AM.leather('#3a2618'), iron = AM.steel('#3a3936', { metal: 0.85, rough: 0.45 }), brass = AM.gold('#a8844a');
     underLayer(root, '#5e6064', '#262422', '#2e2018');
     breastplate(root, steel, { k: 'k' }); gorgetSet(root, steel, { k: 'k' });
-    mailSkirt(root, AM.mailCloth('#5c5e62'), AM.leatherCloth('#2e2018'), { len: 0.25 });
-    fauldTassets(root, steel, { k: 'k', n: 2, tassets: true, trim: edge, short: true });
+    mailSkirt(root, AM.leatherCloth('#2a1d15'), AM.leatherCloth('#18110c'), { len: 0.27 }); // S-340: saia de COURO reforçado (não malha como o Paladino)
+    fauldTassets(root, steel, { k: 'k', trim: edge, long: true }); // S-340: tassets longos em duas placas grandes por coxa
     pauldronSet(root, steel, 'l', { size: 1.25, n: 4, k: 'k', trim: edge }); pauldronSet(root, steel, 'r', { size: 0.95, n: 2, k: 'k', trim: edge });
-    for (const s of ['l', 'r']) { armSet(root, steel, s, { gauntlet: steel, trim: edge }); legSet(root, steel, s, { sabaton: steel, trim: edge }); }
+    for (const s of ['l', 'r']) { armSet(root, steel, s, { gauntlet: steel, trim: edge }); legSet(root, steel, s, { sabaton: steel, trim: edge, poleynPoint: true, greaveFront: leather }); } // S-340: joelheira em ponta e greva de couro com placa frontal
     beltSet(root, leather, iron, 'quadrada', brass); surcoatFlaps(root, '#6a1a1e', '#b8923e', 'espadas', 0.4); chestEmblem(root, brass, 'escudete', 0.1);
   },
   // S-326: Paladino — mesma linha (prata + ouro, malha por dentro), acabamento refinado: fralda curta limpa sobre a fralda de malha, coxotes/joelheiras/grevas/escarpes de verdade

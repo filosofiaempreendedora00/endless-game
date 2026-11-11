@@ -566,7 +566,8 @@ function galleryAnim(n, dt = 1 / 30) {
   if (n.dress && n.dress.update) n.dress.update(S.time);
   const stance = n.sonic ? 'Idle' : ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
   if (ph === 0 && n.gPh !== 0) n.anim.play('Idle', { fade: 0.3 });
-  else if (ph === 1 && n.gPh !== 1) n.anim.play(stance, { fade: 0.3 });
+  else if (ph === 1 && n.gPh !== 1) n.anim.play('Idle', { fade: 0.3 }); // S-342: pernas em pé; a guarda vem só no tronco
+  if (n.anim.layer) n.anim.layer(ph === 1 ? stance : null, 2.2, dt);
   else if (ph === 2 && !n.sonic) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: (ca.speed || 1) * (((CLASS_POSE[n.cls] || {}).atk || [0, 0, 1])[2]) }); n.gHit = hit; } }
   if (ph !== 2) n.gHit = -1; n.gPh = ph;
   if (n._wolf) { n._wolf.root.visible = n.obj.visible; if (n.obj.visible) n._wolf.animate(S.time, false, dt); }
@@ -2242,8 +2243,8 @@ function updatePlayer(dt) {
   else if (coast > 0.8 && S.onIce) me.anim.play('Idle', { fade: 0.35 }); // S-273: deslizando no gelo sem andar: o corpo vai parado, só escorregando
   else if (coast > 0.8) me.anim.play('Running_A', { speed: Math.max(0.45, coast / base) });
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
-  else me.anim.play(fighting ? stanceOf(p) : 'Idle', { fade: 0.25 }); // em combate: postura de luta parado, nada de voltar "à paisana" entre os golpes
-  { const moving = Math.hypot(S.vel.x, S.vel.z) > 0.3, fullAtk = t < S.lockAnim && !S.overlayAtk; me.anim.layer && me.anim.layer(fighting && moving && P.ground && !S.riding && !S.casting && !S.sitting && !fullAtk ? stanceOf(p) : null, 2.2, dt); }
+  else me.anim.play('Idle', { fade: 0.25 }); // S-342: pernas sempre na pose em pé (a guarda do pacote é agachada e de pernas abertas); a postura de luta vem só no tronco pela camada abaixo
+  { const moving = Math.hypot(S.vel.x, S.vel.z) > 0.3, fullAtk = t < S.lockAnim && !S.overlayAtk; me.anim.layer && me.anim.layer(fighting && P.ground && !S.riding && !S.casting && !S.sitting && !fullAtk ? stanceOf(p) : null, 2.2, dt); void moving; } // em combate (parado ou andando): guarda só no tronco e braços
   // conjuração
   if (S.casting && t >= S.casting.end) { const c = S.casting; S.casting = null; $('castbar3d').classList.add('hidden'); executeSkill(c); }
   // ataque automático

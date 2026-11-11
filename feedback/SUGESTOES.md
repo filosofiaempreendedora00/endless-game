@@ -2,45 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (6)
+## Pendentes (0)
 
-### S-340 · Área do mapa: Área da tela (458×219 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:52:12 · **Mapa:** Vila de Alvorada (tile [811, 3])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu não quero que fiquem esses cristais em volta do cavaleiro é em relação ao que eu disse sobre os cavaleiros eu gostaria que essa armadura fosse ainda um pouco diferente da do Paladino eu entendo que tem diferenças mas senti que esta saiotinha ficou um pouco mais parecido do que eu gostaria e as partes que preenchem a canela também poderiam ser levemente diferentes eu deixo muito claro que gostei bastante da cor que você escolheu porém as mesmas falhas que eu referi ao acabamento que persistem nos faladinhos Eu também notei que existem aqui nos cavaleiros
-- ![print](img/S-340.png)
+_Nenhuma._
 
-### S-341 · Área do mapa: Área da tela (259×355 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:53:42 · **Mapa:** Vila de Alvorada (tile [811, 13])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Sinto que nos guerreiros Estamos bem próximo de acertar porém as únicas Pulgas que ficam atrás da minha orelha são de fato quanto ao acabamento que já falei em relação às evoluções dele ou seja paradinhos e Cavaleiros e também eu me questiono o quão comum é utilizar essa parte que não tem a armadura e sim só a parte das bolinhas dentro não sei se é tão comum assim deixar tudo isso tão exposto Mas apesar dos pesares fica esse meu feedback geral para que você possa ainda dar uma melhorada no quesito acabamento da armadura pois as armaduras bem feitas são muito importantes para mim
-- ![print](img/S-341.png)
-
-### S-342 · Área do mapa: Área da tela (135×191 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:54:17 · **Mapa:** Vila de Alvorada (tile [803, 17])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Ué não entendi essa abertura Ué não entendi essa abertura de perna parecendo com um sapo ainda está presente e achei um pouco exagerada
-- ![print](img/S-342.png)
-
-### S-343 · Área do mapa: Área da tela (293×328 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:55:33 · **Mapa:** Vila de Alvorada (tile [795, 17])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu achei essas roupas dos salteadores muito simples para uma classe que claramente é uma evolução Então eu preciso que você incremente com novos adereços essas vestes para torná-la mais sofisticada e mais profissional e claro eu quero que você não necessariamente inclua alguma armadura mas se torne essa roupa mais elegante e mais poderosa e mais imponente e também gostaria de trocar este nome de salteador pois ainda não estou satisfeito com este nome
-- ![print](img/S-343.png)
-
-### S-344 · Área do mapa: Área da tela (424×167 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:56:59 · **Mapa:** Vila de Alvorada (tile [786, 4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** E com esses novos incrementos nas roupas porém eu achei um pouco forçado parecendo que simplesmente Vestiu um boneco que já existia e não foi de fato uma roupa trocada Então eu preciso garantir que essa roupa seja mais completa nos bairros e não parecendo uma roupa em cima da outra reforço que essas roupas que você incluiu são sim uma evolução natural e um ponto bem positivo porém novamente eu não quero fazer parecer com que é simplesmente uma roupa em cima do modelo e outro ponto importante é que o arco e flecha é o instrumento se encaixam e não fiquem sobrepostos
-- ![print](img/S-344.png)
-
-### S-345 · Área do mapa: Área da tela (400×271 px) (sobre: Chat)
-- **Status:** pendente · **Quando:** 2026-11-10T23:58:03 · **Mapa:** Vila de Alvorada (tile [786, -5])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver
-- ![print](img/S-345.png)
-
-## Feitas (339)
+## Feitas (345)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2424,3 +2390,45 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** A barba do anão também ficou penetrando parte da roupa e eu não sei qual a melhor forma de resolver isso mas digo para você que certamente pode ser melhorado e conto com a sua astúcia para tal aproveite e repare nas falhas dos braços com as vestes de bolinhas aparecendo e inclusive boa parte da armadura que era para estar preenchendo o peitoral acabou não preenchendo então eu realmente preciso que você complete a armadura para que não fiquem essas partes soltas e sim essa parte das bolinhas seja de fato algo que pode ser percebido apenas em alguns pedaços bem esporádicos da armadura e não assim então exposto Como está atualmente em resumo quero proteger os meus faladinhos mas com a armadura
 - ![print](img/S-339.png)
 - **Resposta do Claude:** A barba do anão repousa por cima da gola e do peitoral sem atravessar a armadura; peitoral e placa dos ombros preenchem o tronco inteiro e os braços ficaram fechados em aço.
+
+### S-340 · Área do mapa: Área da tela (458×219 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:52:12 · **Mapa:** Vila de Alvorada (tile [811, 3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu não quero que fiquem esses cristais em volta do cavaleiro é em relação ao que eu disse sobre os cavaleiros eu gostaria que essa armadura fosse ainda um pouco diferente da do Paladino eu entendo que tem diferenças mas senti que esta saiotinha ficou um pouco mais parecido do que eu gostaria e as partes que preenchem a canela também poderiam ser levemente diferentes eu deixo muito claro que gostei bastante da cor que você escolheu porém as mesmas falhas que eu referi ao acabamento que persistem nos faladinhos Eu também notei que existem aqui nos cavaleiros
+- ![print](img/S-340.png)
+- **Resposta do Claude:** Tirei os cristais em volta do Cavaleiro e diferenciei mais a armadura dele da do Paladino: saia de couro reforçado com tassets longos de aço escuro, grevas de couro com placa frontal de aço e joelheiras em ponta. A cor de aço enegrecido foi mantida, com o mesmo acabamento do Paladino.
+
+### S-341 · Área do mapa: Área da tela (259×355 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:53:42 · **Mapa:** Vila de Alvorada (tile [811, 13])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Sinto que nos guerreiros Estamos bem próximo de acertar porém as únicas Pulgas que ficam atrás da minha orelha são de fato quanto ao acabamento que já falei em relação às evoluções dele ou seja paradinhos e Cavaleiros e também eu me questiono o quão comum é utilizar essa parte que não tem a armadura e sim só a parte das bolinhas dentro não sei se é tão comum assim deixar tudo isso tão exposto Mas apesar dos pesares fica esse meu feedback geral para que você possa ainda dar uma melhorada no quesito acabamento da armadura pois as armaduras bem feitas são muito importantes para mim
+- ![print](img/S-341.png)
+- **Resposta do Claude:** O Guerreiro não tem mais cota de malha exposta no tronco e nos braços: usa um gibão acolchoado costurado em gomos por baixo do peitoral; a malha ficou só na gola e na fralda com barra de couro. Mantive o ombro de ferro e o de couro, as luvas e o peitoral rebitado.
+
+### S-342 · Área do mapa: Área da tela (135×191 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:54:17 · **Mapa:** Vila de Alvorada (tile [803, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Ué não entendi essa abertura Ué não entendi essa abertura de perna parecendo com um sapo ainda está presente e achei um pouco exagerada
+- ![print](img/S-342.png)
+- **Resposta do Claude:** Achei a causa: a própria animação de guarda do pacote é agachada e de pernas abertas. Agora, em combate, as pernas ficam na pose em pé natural e só o tronco e os braços entram em guarda — vale para todas as classes, no seu personagem e na galeria.
+
+### S-343 · Área do mapa: Área da tela (293×328 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:55:33 · **Mapa:** Vila de Alvorada (tile [795, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu achei essas roupas dos salteadores muito simples para uma classe que claramente é uma evolução Então eu preciso que você incremente com novos adereços essas vestes para torná-la mais sofisticada e mais profissional e claro eu quero que você não necessariamente inclua alguma armadura mas se torne essa roupa mais elegante e mais poderosa e mais imponente e também gostaria de trocar este nome de salteador pois ainda não estou satisfeito com este nome
+- ![print](img/S-343.png)
+- **Resposta do Claude:** A classe agora se chama Gatuno-Mestre e ganhou um traje completo e imponente, sem armadura pesada: casaco longo de couro com abas até o joelho e fendas, gola alta, ombreira de couro trabalhado, botas altas de cano dobrado, capuz caído, faixa vermelha e cintos cruzados — por baixo, a roupa foi trocada de verdade.
+
+### S-344 · Área do mapa: Área da tela (424×167 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:56:59 · **Mapa:** Vila de Alvorada (tile [786, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** E com esses novos incrementos nas roupas porém eu achei um pouco forçado parecendo que simplesmente Vestiu um boneco que já existia e não foi de fato uma roupa trocada Então eu preciso garantir que essa roupa seja mais completa nos bairros e não parecendo uma roupa em cima da outra reforço que essas roupas que você incluiu são sim uma evolução natural e um ponto bem positivo porém novamente eu não quero fazer parecer com que é simplesmente uma roupa em cima do modelo e outro ponto importante é que o arco e flecha é o instrumento se encaixam e não fiquem sobrepostos
+- ![print](img/S-344.png)
+- **Resposta do Claude:** O Bardo veste um traje inteiro, não roupa sobre roupa: camisa de linho, mangas de veludo vinho até o punho, meias-calças escuras e botas altas de camurça, com gibão e capa por cima. O arco nas costas fica por fora da capa, e com instrumento equipado aparece só o instrumento, sem sobreposição.
+
+### S-345 · Área do mapa: Área da tela (400×271 px) (sobre: Chat)
+- **Status:** feito · **Quando:** 2026-11-10T23:58:03 · **Mapa:** Vila de Alvorada (tile [786, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver
+- ![print](img/S-345.png)
+- **Resposta do Claude:** O Caçador virou caçador de couro de verdade, bem diferente da roupa verde padrão: camurça e couro curtido em tons de terra, gibão com cordão, túnica com abas, cinto largo, braçadeiras de arqueiro e botas altas de rastreio, com o manto de pele moldado nos ombros e o arco por fora dele.

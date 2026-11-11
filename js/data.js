@@ -143,7 +143,7 @@ const CLASSES = {
     desc: 'Assassino das sombras. Críticos garantidos e uma dança de lâminas mortal.',
   },
   saqueador: {
-    name: 'Salteador', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#c8302a', hat: 'hood', // S-321: era "Arruaceiro" (o id saqueador continua)
+    name: 'Gatuno-Mestre', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#c8302a', hat: 'hood', // S-321: era "Arruaceiro" (o id saqueador continua)
     hpMod: 1.5, spMod: 1.0, skills: ['roubar', 'golpe_traicoeiro'], next: [], gift: [['espada_curta', 1], ['adaga_afiada', 1]],
     desc: 'Mercenário das estradas: sabre numa mão e adaga na outra, capuz caído nas costas. Rouba dos monstros e golpeia com traição baseada em Agilidade.',
   },
