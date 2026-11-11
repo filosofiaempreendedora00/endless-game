@@ -7,7 +7,7 @@ Projeto pessoal de longo prazo do Roberto: um RPG de mundo aberto 3D no navegado
 - **Interface e textos em português (pt-BR).**
 - **Sem build**: JS puro. O 2D (`2d.html`) usa scripts globais (data → audio → rules → actions → world → render → ui → game → feedback → admin) e funciona até por file://. O 3D (`index.html`) usa ES modules + import map e precisa do `server.py`.
 - **Conteúdo é guiado por dados**: classes, habilidades, itens, monstros e mapas ficam em `js/data.js`. Prefira adicionar dados a escrever casos especiais na lógica.
-- Saves: `saves/<slug do nome>.json` via `server.py` (fonte principal, fora do git) + `localStorage` (`SAVE_KEY`) como reserva. Ao abrir o jogo, um save local mais novo é enviado ao projeto. Se mudar o formato, mantenha compatibilidade. Nunca apague `saves/`; o personagem do Roberto se chama Vidro.
+- Saves: fonte principal = banco `db/aethra.db` (SQLite, fora do git; fase 2 do online), com espelho escrito a cada gravação em `saves/<slug do nome>.json` (mesmo formato). Ao subir, o servidor importa (só lendo) `saves/*.json` novos ou mais recentes que o banco — editar um .json à mão e reiniciar o servidor continua funcionando. `localStorage` (`SAVE_KEY`) segue como reserva. Ao abrir o jogo, um save local mais novo é enviado ao projeto. Se mudar o formato, mantenha compatibilidade. Nunca apague `saves/`; o personagem do Roberto se chama Vidro.
 - Em testes, não carregue o personagem dele: uma sessão aberta salva por cima (o mais recente vence).
 
 ## Sugestões do Roberto (tecla Q no jogo)
@@ -23,7 +23,7 @@ Quando ele pedir para aplicar as sugestões:
 ## Online (objetivo do jogo: multiplayer completo)
 - O Roberto quer o jogo **totalmente multiplayer** num servidor na internet. Plano em fases e regras em `docs/ONLINE.md` — leia antes de criar sistemas novos.
 - Regras de desenvolvimento: regra de jogo nova em `js/rules.js`/`js/data.js` (funções puras, reaproveitáveis por um servidor Node.js); nada de progresso guardado só no navegador; mudanças de valor (zeny, item, XP, dano) por um único ponto do código; ferramentas de mestre só para `isAdmin()`; pense em "2 jogadores vendo ao mesmo tempo".
-- Saves têm dono (token) no modo online; o Vidro só é alterável a partir de localhost.
+- Contas (fase 2): `server.py` (`init_db`, `/api/auth/register|login|logout|me|admin-password`, sessão no cabeçalho `X-Aethra-Session`, posto pelo fetch de `js3d/net3d.js`) + tela `js3d/account3d.js` (`ensureLogin`/`accountBadge`). Localhost = conta do administrador `robertofpj` sem login (dona do Vidro); de fora só vê/grava os próprios personagens. Senha por linha de comando: `python3 server.py --set-password <usuario>` (nunca escreva senhas em arquivos). Backup diário em `backups/`.
 
 ## Modo Mestre
 - `js/admin.js` = Painel do Mestre (⌘/Ctrl+Z); `toggleGod`/`godTeleport`/`isAdmin` em `js/game.js`. Só ativo na conta de administrador (hoje: jogo rodando localmente). Novas ferramentas de admin pedidas pelo Roberto entram no painel.

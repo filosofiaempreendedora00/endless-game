@@ -623,3 +623,22 @@ body.fb-picking canvas { cursor: crosshair !important; }
 .bs-360 { margin-top: 4px; }
 #menubar .mb-ic { width: 26px; height: 26px; display: block; margin: 0 auto; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)); pointer-events: none; }
 .mb-coin { width: 16px; height: 16px; vertical-align: -3px; }
+/* ---- online fase 2: tela de conta (Entrar / Criar conta), no estilo da vitrine ---- */
+.acc { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 16px; box-sizing: border-box; background: radial-gradient(ellipse at 50% 30%, #2a2140, #0d0b16 70%); overflow-y: auto; }
+.acc .cs-head { padding: 0; }
+.acc-card { width: min(380px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 22px 22px 18px; border-radius: 14px; background: rgba(14, 12, 24, 0.86); border: 1px solid rgba(255, 215, 106, 0.3); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55); box-sizing: border-box; }
+.acc-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+.acc-tab { padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); color: #b9b2c8; font-family: Cinzel, serif; font-weight: 700; cursor: pointer; }
+.acc-tab.on { color: var(--gold); border-color: rgba(255, 215, 106, 0.55); background: rgba(255, 215, 106, 0.1); }
+.acc-card label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #c9c2d8; }
+.acc-card input[type=text], .acc-card input:not([type]), .acc-card input[type=password] { padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(0, 0, 0, 0.35); color: #fff; font-size: 15px; outline: none; }
+.acc-card input:focus { border-color: rgba(255, 215, 106, 0.6); box-shadow: 0 0 0 3px rgba(255, 215, 106, 0.12); }
+.acc-card .acc-check { flex-direction: row; align-items: center; gap: 8px; color: #a9a2b8; }
+.acc-err { min-height: 16px; color: #ff9a8a; font-size: 12.5px; }
+.acc-go { width: 100%; padding: 12px; font-size: 16px; font-family: Cinzel, serif; background: linear-gradient(#b8892e, #7a5a1e); border-color: rgba(255, 215, 106, 0.6); color: #fff6dc; }
+.acc-go:disabled { opacity: 0.6; cursor: wait; }
+.acc-foot { text-align: center; font-size: 12px; color: #a9a2b8; } .acc-foot a { color: var(--gold); }
+.acc .ver { font-size: 11px; color: #8d86a0; text-align: center; max-width: 380px; }
+.acc-badge { position: fixed; top: 12px; left: 14px; z-index: 70; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: rgba(14, 12, 24, 0.82); border: 1px solid rgba(255, 215, 106, 0.28); color: #e8e2d2; font-size: 12.5px; }
+.acc-badge .acc-out { background: rgba(140, 40, 40, 0.45); border: 1px solid rgba(255, 140, 120, 0.4); color: #ffd9d0; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 11.5px; }
+.adm-pw { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; } .adm-pw input { flex: 1; min-width: 140px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border-soft); background: rgba(0, 0, 0, 0.3); color: var(--text); }

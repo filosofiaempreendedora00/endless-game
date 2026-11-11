@@ -10,13 +10,21 @@ Este é o plano para o Aethra virar um jogo **multiplayer de verdade**, com vár
 python3 server.py --online
 ```
 
-2. O terminal mostra um endereço como `http://192.168.x.x:5577`. Quem estiver no mesmo Wi-Fi abre esse endereço no navegador, cria o próprio personagem e entra.
-3. Você continua abrindo `http://localhost:5577`. Só você, neste computador, é o administrador: Painel do Mestre, God Mode, comandos de teste e barrinha de ASPD.
+2. O terminal mostra um endereço como `http://192.168.x.x:5577`. Quem estiver no mesmo Wi-Fi abre esse endereço no navegador, **cria uma conta** (usuário e senha), cria o próprio personagem e entra.
+3. Você continua abrindo `http://localhost:5577` e entra direto, sem senha, na sua conta de administrador (`robertofpj`). Só você, neste computador, é o administrador: Painel do Mestre, God Mode, comandos de teste e barrinha de ASPD.
 4. Para fechar a porta para a rede, pare o servidor (Ctrl+C) e rode `python3 server.py` de novo, sem `--online`.
+
+**Senha da sua conta** (para entrar de outro computador quando o jogo estiver na internet). Rode no terminal; a senha é pedida sem aparecer na tela:
+
+```bash
+python3 server.py --set-password robertofpj
+```
+
+Também dá para trocá-la no Painel do Mestre (⌘+Z) → "Conta do administrador".
 
 ## Como o jogo funciona hoje
 - **O seu navegador faz quase tudo.** Desenha o mundo, move os monstros, calcula o dano, sorteia os drops, controla zeny, inventário, loja e refino.
-- **O servidor (`server.py`) faz pouco.** Entrega os arquivos do jogo, guarda os saves (`saves/`) e as sugestões, e cuida da Arena, onde ele já é o juiz do HP.
+- **O servidor (`server.py`) faz pouco.** Entrega os arquivos do jogo, cuida das contas e dos personagens (no banco `db/aethra.db`, com espelho em `saves/`), guarda as sugestões e cuida da Arena, onde ele já é o juiz do HP.
 
 Para jogar sozinho isso basta. Num jogo online é perigoso: quem decide as coisas no próprio navegador pode trapacear (aumentar zeny, dano, itens), e cada jogador veria monstros diferentes.
 
@@ -34,11 +42,23 @@ Para jogar sozinho isso basta. Num jogo online é perigoso: quem decide as coisa
 - **Modo online opcional** (`python3 server.py --online`): amigos na mesma rede Wi-Fi já conseguem entrar.
 - O **Painel do Mestre** e o **God Mode** continuam só no seu computador.
 
-### Fase 2: contas de verdade
-- Login com e-mail/usuário e senha (a senha guardada embaralhada, nunca em texto).
-- Os saves saem dos arquivos soltos e vão para um banco de dados (SQLite, que já vem no Python), com cópia de segurança automática.
-- Conexão segura (HTTPS), obrigatória na internet.
-- Conexão contínua com o servidor (WebSocket) no lugar de "perguntar a cada 0,2 s". Isso deixa tudo mais rápido e leve. Para isso talvez seja preciso instalar uma biblioteca, e vou pedir a sua permissão antes.
+### Fase 2: contas de verdade *(feita em 2026-11-10)*
+- **Contas:** quem vem de fora vê a tela "Entrar / Criar conta" antes dos personagens.
+  - Usuário de 3 a 20 caracteres e senha de pelo menos 6.
+  - "Lembrar de mim" mantém a pessoa conectada por 30 dias; sem marcar, 12 horas.
+  - Na tela dos personagens há "Sair da conta".
+  - Personagens criados na fase 1 naquele mesmo navegador passam para a conta ao entrar.
+- **Senhas seguras:** no banco fica só uma versão embaralhada da senha (PBKDF2, 200 mil voltas), e a sessão também é guardada embaralhada. Quem errar a senha 5 vezes espera 10 minutos.
+- **Banco de dados** (`db/aethra.db`, SQLite, que já vem no Python): é onde ficam contas e personagens agora.
+  - Na primeira vez que o servidor sobe, ele **lê** os `saves/*.json` (sem mexer neles) e coloca os seus na sua conta `robertofpj`: Vidro, Gertrudes, Paulico e os outros.
+  - A cada gravação, o personagem também é escrito em `saves/<nome>.json` do mesmo jeito de antes: é a cópia de segurança "à moda antiga".
+- **Cópia do banco** todo dia em `backups/` (guarda as últimas 14).
+- **Nomes únicos:** nomes de personagem são únicos no mundo inteiro, e ninguém de fora vê, grava ou apaga personagem de outra conta.
+
+**Ainda falta (próximas fases):**
+- **Conexão segura (HTTPS):** obrigatória quando for para a internet; vem junto com a hospedagem (fase 5).
+- **Conexão contínua (WebSocket):** substitui o "perguntar a cada 0,2 s" e deixa tudo mais rápido e leve. Fica para a fase 3; talvez precise de uma biblioteca, e vou pedir a sua permissão antes.
+- **Recuperar senha por e-mail:** hoje, quem esquecer a senha precisa que você defina uma nova pelo comando `--set-password`.
 
 ### Fase 3: o servidor manda no mundo
 - **Monstros:** nascem, andam e atacam no servidor, então todos veem o mesmo lobo no mesmo lugar e podem caçá-lo juntos.

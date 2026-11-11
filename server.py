@@ -5,8 +5,9 @@ Uso:
     python3 server.py            # abre em http://localhost:5577
     python3 server.py 9000       # outra porta
     python3 server.py --relatorio  # só regenera feedback/SUGESTOES.md
-    python3 server.py --online     # abre para a rede (outras pessoas jogam junto; veja ONLINE.md)
+    python3 server.py --online     # abre para a rede (outras pessoas jogam junto; veja docs/ONLINE.md)
     python3 server.py --online 9000
+    python3 server.py --set-password robertofpj   # define a senha de uma conta (pede no teclado, sem mostrar)
 
 As sugestões feitas no jogo (tecla Q) ficam em:
     feedback/sugestoes.json   (dados completos, lidos pelo Claude)
@@ -115,7 +116,7 @@ SAVE_LOCK = threading.Lock()
 # ---------------- Online (fase 1): dono de cada save, presença no mundo e chat ----------------
 import hashlib
 LOCAL_ADDRS = ('127.0.0.1', '::1', '::ffff:127.0.0.1')
-PRIVATE_PREFIXES = ('/saves', '/feedback', '/.git', '/.claude', '/server.py', '/ONLINE.md')  # quem vem de fora não lê arquivos internos
+PRIVATE_PREFIXES = ('/saves', '/feedback', '/.git', '/.claude', '/server.py', '/ONLINE.md', '/db', '/backups', '/docs')  # quem vem de fora não lê arquivos internos
 
 
 def owner_hash(token):
@@ -161,6 +162,279 @@ def world_view(pid, since):
 
 def now_age(v):
     return time.time() - v['seen']
+
+
+# ---------------- Online (fase 2): contas, sessões e banco SQLite ----------------
+# O banco (db/aethra.db) é a fonte principal dos personagens. saves/<slug>.json continua sendo
+# escrito a cada gravação como ESPELHO de segurança (mesmo formato de antes). Na subida do servidor,
+# os saves/*.json são lidos (nunca alterados) e importados: os antigos vão para a conta do administrador ("robertofpj").
+# Senha de uma conta pela linha de comando (sem subir o servidor): python3 server.py --set-password <usuario>
+import hmac
+import secrets
+import sqlite3
+DB_DIR = os.path.join(ROOT, 'db')
+ADB_FILE = os.path.join(DB_DIR, 'aethra.db')
+BACKUP_DIR = os.path.join(ROOT, 'backups')
+BACKUP_KEEP = 14
+PBKDF2_ITER = 200_000
+SESSION_LONG = 30 * 86400    # "lembrar de mim": 30 dias
+SESSION_SHORT = 12 * 3600    # sem lembrar: 12 horas
+ADMIN_USER = 'robertofpj'   # conta do administrador (dona dos personagens importados de saves/, inclusive o Vidro)
+OLD_ADMIN_USERS = ('roberto',)  # nome antigo: um banco que já o tenha é renomeado
+USER_RE = re.compile(r'[A-Za-z0-9_.-]{3,20}')
+RESERVED_USERS = {'admin', 'administrador', 'mestre', 'root', 'sistema', 'aethra', 'roberto'}
+FAIL_WINDOW, FAIL_MAX_USER, FAIL_MAX_IP = 600, 5, 20   # 5 erros por conta / 20 por IP em 10 min = espera
+REG_MAX_IP = 8  # no máximo 8 contas novas por endereço a cada 10 min
+ADB_LOCK = threading.RLock()
+LOGIN_FAILS = {}
+_adb = None
+
+
+def adb():
+    global _adb
+    if _adb is None:
+        os.makedirs(DB_DIR, exist_ok=True)
+        _adb = sqlite3.connect(ADB_FILE, check_same_thread=False, isolation_level=None)  # transações explícitas (BEGIN/COMMIT)
+        _adb.row_factory = sqlite3.Row
+        _adb.execute('PRAGMA journal_mode=WAL')
+        _adb.execute('PRAGMA foreign_keys=ON')
+    return _adb
+
+
+class Tx:
+    """with Tx() as c: ... — trava + transação (tudo ou nada)."""
+    def __enter__(self):
+        ADB_LOCK.acquire()
+        self.c = adb()
+        self.c.execute('BEGIN IMMEDIATE')
+        return self.c
+
+    def __exit__(self, et, ev, tb):
+        try:
+            self.c.execute('ROLLBACK' if et else 'COMMIT')
+        finally:
+            ADB_LOCK.release()
+        return False
+
+
+def init_db():
+    with ADB_LOCK:
+        adb().executescript('''
+        CREATE TABLE IF NOT EXISTS contas (
+            id INTEGER PRIMARY KEY, usuario TEXT NOT NULL UNIQUE COLLATE NOCASE, senha TEXT,
+            admin INTEGER NOT NULL DEFAULT 0, criada REAL NOT NULL);
+        CREATE TABLE IF NOT EXISTS sessoes (
+            token TEXT PRIMARY KEY, conta INTEGER NOT NULL REFERENCES contas(id) ON DELETE CASCADE,
+            criada REAL NOT NULL, expira REAL NOT NULL, ip TEXT);
+        CREATE TABLE IF NOT EXISTS personagens (
+            slug TEXT PRIMARY KEY, nome TEXT NOT NULL, conta INTEGER REFERENCES contas(id),
+            dono_antigo TEXT, dados TEXT NOT NULL, salvo REAL NOT NULL DEFAULT 0, atualizado REAL NOT NULL);
+        CREATE INDEX IF NOT EXISTS personagens_conta ON personagens(conta);
+        CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);''')
+    with Tx() as c:
+        if not c.execute('SELECT 1 FROM contas WHERE usuario=?', (ADMIN_USER,)).fetchone():
+            old = None
+            for o in OLD_ADMIN_USERS:  # banco criado com o nome antigo da conta do administrador: renomeia (mantém personagens e senha)
+                old = c.execute('SELECT id FROM contas WHERE usuario=? AND admin=1', (o,)).fetchone()
+                if old:
+                    c.execute('UPDATE contas SET usuario=? WHERE id=?', (ADMIN_USER, old['id']))
+                    break
+            if not old:
+                c.execute('INSERT INTO contas(usuario, senha, admin, criada) VALUES (?, NULL, 1, ?)', (ADMIN_USER, time.time()))
+    n = import_saves()
+    if n:
+        print(f'📦 {n} personagem(ns) de saves/ importado(s) para o banco.', flush=True)
+
+
+def admin_id(c=None):
+    r = (c or adb()).execute('SELECT id FROM contas WHERE usuario=?', (ADMIN_USER,)).fetchone()
+    return r['id'] if r else None
+
+
+def import_saves():
+    """Lê saves/*.json (sem alterar nada) e traz para o banco o que for novo ou mais recente que o banco.
+    Saves sem dono = do Roberto (conta do administrador, ADMIN_USER); saves da fase 1 com dono (_owner) ficam esperando o dono entrar numa conta."""
+    if not os.path.isdir(SAVES_DIR):
+        return 0
+    n = 0
+    with Tx() as c:
+        aid = admin_id(c)
+        for fn in sorted(os.listdir(SAVES_DIR)):
+            if not fn.endswith('.json'):
+                continue
+            try:
+                with open(os.path.join(SAVES_DIR, fn), encoding='utf-8') as f:
+                    data = json.load(f)
+            except (OSError, ValueError):
+                continue
+            if not isinstance(data, dict) or not data.get('name') or 'cls' not in data:
+                continue
+            sl, legacy, conta_nome = fn[:-5], data.pop('_owner', None), data.pop('_conta', None)
+            saved = float(data.get('savedAt') or 0)
+            row = c.execute('SELECT salvo FROM personagens WHERE slug=?', (sl,)).fetchone()
+            if row is None:
+                dono = aid if not legacy else None
+                if conta_nome:  # espelho de um personagem de outra conta (ex.: banco restaurado): volta para a conta dele
+                    r2 = c.execute('SELECT id FROM contas WHERE usuario=?', (conta_nome,)).fetchone()
+                    dono = r2['id'] if r2 else None
+                    legacy = legacy if r2 else (legacy or 'conta:' + str(conta_nome))
+                c.execute('INSERT INTO personagens(slug, nome, conta, dono_antigo, dados, salvo, atualizado) VALUES (?,?,?,?,?,?,?)',
+                          (sl, str(data['name'])[:40], dono, legacy, json.dumps(data, ensure_ascii=False), saved, time.time()))
+                n += 1
+            elif saved > (row['salvo'] or 0):  # alguém mexeu no arquivo depois: o mais novo vale
+                c.execute('UPDATE personagens SET dados=?, salvo=?, nome=?, atualizado=? WHERE slug=?',
+                          (json.dumps(data, ensure_ascii=False), saved, str(data['name'])[:40], time.time(), sl))
+                n += 1
+    return n
+
+
+def hash_pw(pw, salt=None, it=PBKDF2_ITER):
+    salt = salt or secrets.token_bytes(16)
+    h = hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), salt, it)
+    return f'pbkdf2_sha256${it}${salt.hex()}${h.hex()}'
+
+
+def check_pw(pw, stored):
+    try:
+        _, it, s, h = str(stored).split('$')
+        calc = hashlib.pbkdf2_hmac('sha256', pw.encode('utf-8'), bytes.fromhex(s), int(it)).hex()
+    except (ValueError, TypeError):
+        return False
+    return hmac.compare_digest(calc, h)
+
+
+DUMMY_HASH = 'pbkdf2_sha256$%d$%s$%s' % (PBKDF2_ITER, '00' * 16, '00' * 32)
+
+
+def sess_key(tok):
+    return hashlib.sha256(('sessao:' + str(tok)).encode()).hexdigest()  # no banco fica só o hash (vazou o banco, não vaza a sessão)
+
+
+def new_session(conta, ip, remember):
+    tok, now = secrets.token_urlsafe(32), time.time()
+    exp = now + (SESSION_LONG if remember else SESSION_SHORT)
+    with Tx() as c:
+        c.execute('INSERT INTO sessoes(token, conta, criada, expira, ip) VALUES (?,?,?,?,?)', (sess_key(tok), conta, now, exp, ip))
+    return tok, exp
+
+
+def session_account(tok):
+    t = str(tok or '').strip()
+    if not re.fullmatch(r'[A-Za-z0-9_-]{20,100}', t):
+        return None
+    with ADB_LOCK:
+        r = adb().execute('SELECT c.id, c.usuario, c.admin FROM sessoes s JOIN contas c ON c.id = s.conta WHERE s.token=? AND s.expira > ?',
+                          (sess_key(t), time.time())).fetchone()
+    return dict(r) if r else None
+
+
+def admin_account():
+    with ADB_LOCK:
+        r = adb().execute('SELECT id, usuario, admin FROM contas WHERE usuario=?', (ADMIN_USER,)).fetchone()
+    return dict(r) if r else None
+
+
+def login_blocked(ip, user):
+    now = time.time()
+    for k in list(LOGIN_FAILS):
+        LOGIN_FAILS[k] = [t for t in LOGIN_FAILS[k] if now - t < FAIL_WINDOW]
+        if not LOGIN_FAILS[k]:
+            del LOGIN_FAILS[k]
+    return len(LOGIN_FAILS.get('ip:' + ip, [])) >= FAIL_MAX_IP or len(LOGIN_FAILS.get('u:' + user.lower(), [])) >= FAIL_MAX_USER
+
+
+def login_failed(ip, user):
+    for k in ('ip:' + ip, 'u:' + user.lower()):
+        LOGIN_FAILS.setdefault(k, []).append(time.time())
+
+
+def claim_legacy(conta, legacy_owner):
+    """Personagens criados na fase 1 (dono = chave do navegador) passam para a conta de quem entrou nesse navegador."""
+    if not legacy_owner:
+        return 0
+    with Tx() as c:
+        return c.execute('UPDATE personagens SET conta=?, dono_antigo=NULL WHERE conta IS NULL AND dono_antigo=?', (conta, legacy_owner)).rowcount
+
+
+def set_password(user, pw):
+    """Grava só o hash PBKDF2 da senha (cria a conta se não existir) e derruba as sessões antigas dessa conta."""
+    with Tx() as c:
+        r = c.execute('SELECT id FROM contas WHERE usuario=?', (user,)).fetchone()
+        if r:
+            cid = r['id']
+            c.execute('UPDATE contas SET senha=? WHERE id=?', (hash_pw(pw), cid))
+        else:
+            cid = c.execute('INSERT INTO contas(usuario, senha, admin, criada) VALUES (?,?,?,?)',
+                            (user, hash_pw(pw), 1 if user.lower() == ADMIN_USER else 0, time.time())).lastrowid
+        c.execute('DELETE FROM sessoes WHERE conta=?', (cid,))
+    return cid
+
+
+def cli_set_password(user):
+    """python3 server.py --set-password <usuario>: lê a senha do teclado (sem mostrar) ou da entrada padrão; não sobe o servidor."""
+    import getpass
+    user = str(user or '').strip()
+    if not USER_RE.fullmatch(user):
+        sys.exit('Usuário inválido: use de 3 a 20 letras, números, ponto, hífen ou _.')
+    if sys.stdin.isatty():
+        pw = getpass.getpass(f'Nova senha para "{user}": ')
+        if pw != getpass.getpass('Repita a senha: '):
+            sys.exit('As duas senhas não são iguais. Nada foi alterado.')
+    else:
+        pw = sys.stdin.readline().rstrip('\r\n')
+    if len(pw) < 6 or len(pw) > 128:
+        sys.exit('A senha precisa ter de 6 a 128 caracteres. Nada foi alterado.')
+    init_db()
+    set_password(user, pw)
+    print(f'🔐 Senha da conta "{user}" definida (no banco fica só o hash).', flush=True)
+
+
+def mirror_write(sl, data, user=None):
+    """Espelho de segurança: saves/<slug>.json no mesmo formato de antes (o anterior vira .bak)."""
+    os.makedirs(SAVES_DIR, exist_ok=True)
+    p = save_path(sl)
+    out = dict(data)
+    if user and user != ADMIN_USER:
+        out['_conta'] = user  # só informativo; quem manda é o banco
+    try:
+        if os.path.exists(p):
+            os.replace(p, p + '.bak')
+    except OSError:
+        pass
+    tmp = p + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(out, f, ensure_ascii=False)
+    os.replace(tmp, p)
+
+
+def backup_db(force=False):
+    """Cópia do banco por dia em backups/aethra-AAAA-MM-DD.db (mantém as 14 mais recentes)."""
+    try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        dst = os.path.join(BACKUP_DIR, f'aethra-{datetime.date.today().isoformat()}.db')
+        if os.path.exists(dst) and not force:
+            return None
+        tmp = dst + '.tmp'
+        out = sqlite3.connect(tmp)
+        with ADB_LOCK:
+            adb().backup(out)
+        out.close()
+        os.replace(tmp, dst)
+        olds = sorted(f for f in os.listdir(BACKUP_DIR) if f.startswith('aethra-') and f.endswith('.db'))
+        for f in olds[:-BACKUP_KEEP]:
+            os.remove(os.path.join(BACKUP_DIR, f))
+        with ADB_LOCK:
+            adb().execute('DELETE FROM sessoes WHERE expira < ?', (time.time(),))  # limpa sessões vencidas
+        return dst
+    except (OSError, sqlite3.Error) as e:
+        print(f'⚠️ Backup do banco falhou: {e}', flush=True)
+        return None
+
+
+def backup_loop():
+    while True:
+        time.sleep(3600)  # confere de hora em hora; cria uma cópia por dia
+        backup_db()
 
 
 def slug(name):
@@ -294,18 +568,40 @@ class Handler(SimpleHTTPRequestHandler):
     def owner(self):
         return owner_hash(self.headers.get('X-Aethra-Token'))
 
+    # conta de quem pede: a sessão (cabeçalho X-Aethra-Session); no computador do Roberto, sem sessão = conta do administrador
+    def account(self):
+        if not hasattr(self, '_acct'):
+            a = session_account(self.headers.get('X-Aethra-Session'))
+            if not a and self.is_local():
+                a = admin_account()
+            self._acct = a
+        return self._acct
+
+    def who(self):
+        """Chave de dono para sugestões: a conta (de fora) ou a chave do navegador."""
+        a = self.account()
+        return ('a:%d' % a['id']) if a and not self.is_local() else self.owner()
+
+    def need_login(self):
+        return self.send_json(401, {'erro': 'login', 'msg': 'Entre na sua conta para jogar.'})
+
+    def ip(self):
+        return str(self.client_address[0])
+
     def do_GET(self):
         path = self.path.split('?')[0]
         local = self.is_local()
         if not local and any(path == p or path.startswith(p + '/') or path.startswith(p + '.') for p in PRIVATE_PREFIXES):
             return self.send_json(403, {'erro': 'acesso negado'})
-        if path == '/api/me':
-            return self.send_json(200, {'admin': local})
+        if path in ('/api/me', '/api/auth/me'):
+            a = self.account()
+            return self.send_json(200, {'admin': local, 'user': a['usuario'] if a else None, 'logged': bool(a),
+                                        'session': bool(session_account(self.headers.get('X-Aethra-Session')))})
         if path == '/api/feedback':
             with LOCK:
                 items = load()
             if not local:  # de fora: só as próprias sugestões
-                own = self.owner()
+                own = self.who()
                 items = [i for i in items if own and i.get('_owner') == own]
             return self.send_json(200, [{k: v for k, v in i.items() if k != '_owner'} for i in items])
         if path == '/api/propostas':
@@ -313,19 +609,33 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(200, [])
             with LOCK:
                 return self.send_json(200, load_props())
-        if path == '/api/saves':
-            with SAVE_LOCK:
-                return self.send_json(200, list_saves(self.owner(), local))
+        if path == '/api/saves':  # personagens da conta (fase 2: vem do banco)
+            a = self.account()
+            if not a:
+                return self.need_login()
+            with ADB_LOCK:
+                rows = adb().execute('SELECT slug, dados, salvo FROM personagens WHERE conta=? ORDER BY salvo DESC', (a['id'],)).fetchall()
+            out = []
+            for r in rows:
+                try:
+                    s = json.loads(r['dados'])
+                except ValueError:
+                    continue
+                out.append({'slug': r['slug'], 'name': s.get('name'), 'cls': s.get('cls'), 'baseLv': s.get('baseLv'),
+                            'jobLv': s.get('jobLv'), 'mapId': s.get('mapId'), 'savedAt': s.get('savedAt', 0)})
+            return self.send_json(200, out)
         if path.startswith('/api/save/'):
+            a = self.account()
+            if not a:
+                return self.need_login()
+            with ADB_LOCK:
+                r = adb().execute('SELECT conta, dados FROM personagens WHERE slug=?', (slug(path[len('/api/save/'):]),)).fetchone()
+            if not r or (r['conta'] != a['id'] and not local):
+                return self.send_json(404, {'erro': 'personagem não encontrado'})
             try:
-                with SAVE_LOCK, open(save_path(path[len('/api/save/'):]), encoding='utf-8') as f:
-                    s = json.load(f)
-            except (OSError, ValueError):
+                return self.send_json(200, json.loads(r['dados']))
+            except ValueError:
                 return self.send_json(404, {'erro': 'personagem não encontrado'})
-            if not local and (not self.owner() or s.get('_owner') != self.owner()):
-                return self.send_json(404, {'erro': 'personagem não encontrado'})
-            s.pop('_owner', None)
-            return self.send_json(200, s)
         return super().do_GET()
 
     def read_json(self, limit):
@@ -342,46 +652,43 @@ class Handler(SimpleHTTPRequestHandler):
         data = self.read_json(2 * 1024 * 1024)
         if not isinstance(data, dict) or not str(data.get('name', '')).strip() or 'cls' not in data:
             return self.send_json(400, {'erro': 'save inválido'})
-        p = save_path(data['name'])
-        local, own = self.is_local(), self.owner()
-        data.pop('_owner', None)  # o dono quem decide é o servidor, nunca o que vem no pedido
-        if not local and not own:
-            return self.send_json(403, {'erro': 'sem_token', 'msg': 'Seu navegador não mandou a chave do jogador. Recarregue a página.'})
-        with SAVE_LOCK:
-            # online: alguém de fora só grava personagem que é dele; nome de personagem de outro jogador (ou antigo, sem dono) é recusado
-            try:
-                with open(p, encoding='utf-8') as f:
-                    prev_owner = json.load(f).get('_owner')
-                exists = True
-            except (OSError, ValueError):
-                prev_owner, exists = None, False
-            if not local and exists and prev_owner != own:
+        local, a = self.is_local(), self.account()
+        for k in ('_owner', '_conta'):
+            data.pop(k, None)  # o dono quem decide é o servidor, nunca o que vem no pedido
+        if not a:
+            return self.need_login()
+        sl = slug(data['name'])
+        with Tx() as c:
+            row = c.execute('SELECT conta, dados, salvo FROM personagens WHERE slug=?', (sl,)).fetchone()
+            # nomes são únicos no mundo: de fora só se grava personagem da própria conta
+            if row and row['conta'] != a['id'] and not local:
                 return self.send_json(403, {'erro': 'nome_ocupado', 'msg': 'Esse nome já pertence a outro jogador. Escolha outro.'})
-            if prev_owner:
-                data['_owner'] = prev_owner  # gravado de qualquer lugar, continua do mesmo dono
-            elif not local:
-                data['_owner'] = own
             # personagem apagado nunca volta: nem por cópia do navegador, nem por uma aba que ficou aberta
             cid = data.get('charId')
             dead = deleted_ids(data['name'])
-            if dead and (cid in dead or (cid is None and not os.path.exists(p))):
+            if dead and (cid in dead or (cid is None and not row)):
                 return self.send_json(200, {'ok': True, 'apagado': True})
-            os.makedirs(SAVES_DIR, exist_ok=True)
-            try:
-                with open(p, encoding='utf-8') as f:
-                    old = json.load(f)
-                # mesmo nome, outro personagem: não sobrescreve
-                if old.get('charId') and cid and old['charId'] != cid:
+            if row:
+                try:
+                    old = json.loads(row['dados'])
+                except ValueError:
+                    old = {}
+                if old.get('charId') and cid and old['charId'] != cid:  # mesmo nome, outro personagem: não sobrescreve
                     return self.send_json(200, {'ok': True, 'apagado': True})
                 if (old.get('savedAt') or 0) > (data.get('savedAt') or 0):
                     return self.send_json(200, {'ok': True, 'ignorado': 'save do projeto é mais recente'})
-                os.replace(p, p + '.bak')
-            except (OSError, ValueError):
-                pass
-            tmp = p + '.tmp'
-            with open(tmp, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False)
-            os.replace(tmp, p)
+                conta = row['conta'] if row['conta'] is not None else a['id']
+                c.execute('UPDATE personagens SET nome=?, conta=?, dono_antigo=NULL, dados=?, salvo=?, atualizado=? WHERE slug=?',
+                          (str(data['name'])[:40], conta, json.dumps(data, ensure_ascii=False), float(data.get('savedAt') or 0), time.time(), sl))
+            else:
+                conta = a['id']
+                c.execute('INSERT INTO personagens(slug, nome, conta, dono_antigo, dados, salvo, atualizado) VALUES (?,?,?,NULL,?,?,?)',
+                          (sl, str(data['name'])[:40], conta, json.dumps(data, ensure_ascii=False), float(data.get('savedAt') or 0), time.time()))
+            owner = c.execute('SELECT usuario FROM contas WHERE id=?', (conta,)).fetchone()
+            try:
+                mirror_write(sl, data, owner['usuario'] if owner else None)  # espelho de segurança em saves/
+            except OSError as e:
+                print(f'⚠️ Espelho do save {sl} não foi escrito: {e}', flush=True)
         return self.send_json(200, {'ok': True})
 
     # apagar personagem: vai para saves/lixeira (recuperável)
@@ -389,21 +696,25 @@ class Handler(SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if not path.startswith('/api/save/'):
             return self.send_json(404, {'erro': 'rota desconhecida'})
-        p = save_path(path[len('/api/save/'):])
-        with SAVE_LOCK:
-            if not os.path.exists(p):
+        a = self.account()
+        if not a:
+            return self.need_login()
+        sl = slug(path[len('/api/save/'):])
+        p = save_path(sl)
+        with Tx() as c:
+            row = c.execute('SELECT conta, dados FROM personagens WHERE slug=?', (sl,)).fetchone()
+            if not row or (row['conta'] != a['id'] and not self.is_local()):  # online: só apaga o próprio personagem
                 return self.send_json(404, {'erro': 'personagem não encontrado'})
-            if not self.is_local():  # online: só apaga o próprio personagem
-                try:
-                    with open(p, encoding='utf-8') as f:
-                        mine = json.load(f).get('_owner')
-                except (OSError, ValueError):
-                    mine = None
-                if not self.owner() or mine != self.owner():
-                    return self.send_json(404, {'erro': 'personagem não encontrado'})
+            c.execute('DELETE FROM personagens WHERE slug=?', (sl,))
+            # vai para saves/lixeira (recuperável); a lixeira também impede que ele "volte" por uma aba aberta
             os.makedirs(TRASH_DIR, exist_ok=True)
             stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-            os.replace(p, os.path.join(TRASH_DIR, f'{os.path.basename(p)[:-5]}-{stamp}.json'))
+            dst = os.path.join(TRASH_DIR, f'{sl}-{stamp}.json')
+            if os.path.exists(p):
+                os.replace(p, dst)
+            else:
+                with open(dst, 'w', encoding='utf-8') as f:
+                    f.write(row['dados'])
         return self.send_json(200, {'ok': True})
 
     # o Roberto aprova/recusa uma proposta do Claude pela janela L
@@ -481,6 +792,66 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(200, {'ok': True})
         return self.send_json(404, {'erro': 'rota desconhecida'})
 
+    # contas (fase 2): cadastro, entrada, saída e senha do administrador
+    def auth(self, path):
+        data = self.read_json(16 * 1024) or {}
+        if not isinstance(data, dict):
+            data = {}
+        ip = self.ip()
+        if path == '/api/auth/logout':
+            tok = self.headers.get('X-Aethra-Session')
+            if tok:
+                with Tx() as c:
+                    c.execute('DELETE FROM sessoes WHERE token=?', (sess_key(tok),))
+            return self.send_json(200, {'ok': True})
+        if path == '/api/auth/admin-password':  # só no computador do Roberto: define/troca a senha da conta do administrador
+            if not self.is_local():
+                return self.send_json(403, {'erro': 'só o administrador'})
+            pw, pw2 = str(data.get('senha') or ''), str(data.get('confirmar') or '')
+            if len(pw) < 6 or len(pw) > 128:
+                return self.send_json(400, {'erro': 'senha', 'msg': 'A senha precisa ter pelo menos 6 caracteres.'})
+            if pw != pw2:
+                return self.send_json(400, {'erro': 'senha', 'msg': 'As duas senhas não são iguais.'})
+            set_password(ADMIN_USER, pw)
+            return self.send_json(200, {'ok': True, 'msg': f'Senha da conta "{ADMIN_USER}" definida.'})
+        user = str(data.get('usuario') or '').strip()
+        pw = str(data.get('senha') or '')
+        remember = bool(data.get('lembrar'))
+        if path == '/api/auth/register':
+            if not USER_RE.fullmatch(user):
+                return self.send_json(400, {'erro': 'usuario', 'msg': 'O usuário precisa ter de 3 a 20 letras, números, ponto, hífen ou _.'})
+            if user.lower() in RESERVED_USERS or user.lower() == ADMIN_USER:
+                return self.send_json(409, {'erro': 'usuario', 'msg': 'Esse nome de usuário não está disponível.'})
+            if len(pw) < 6 or len(pw) > 128:
+                return self.send_json(400, {'erro': 'senha', 'msg': 'A senha precisa ter pelo menos 6 caracteres.'})
+            login_blocked(ip, '')  # limpa marcas velhas
+            if len(LOGIN_FAILS.get('reg:' + ip, [])) >= REG_MAX_IP:  # contra criação de contas em massa (por endereço)
+                return self.send_json(429, {'erro': 'espera', 'msg': 'Muitas contas criadas daqui agora. Espere alguns minutos.'})
+            LOGIN_FAILS.setdefault('reg:' + ip, []).append(time.time())
+            try:
+                with Tx() as c:
+                    cid = c.execute('INSERT INTO contas(usuario, senha, admin, criada) VALUES (?,?,0,?)', (user, hash_pw(pw), time.time())).lastrowid
+            except sqlite3.IntegrityError:
+                return self.send_json(409, {'erro': 'usuario', 'msg': 'Esse nome de usuário já existe. Escolha outro ou entre.'})
+        elif path == '/api/auth/login':
+            if login_blocked(ip, user):
+                return self.send_json(429, {'erro': 'espera', 'msg': 'Muitas tentativas erradas. Espere 10 minutos e tente de novo.'})
+            with ADB_LOCK:
+                r = adb().execute('SELECT id, senha FROM contas WHERE usuario=?', (user,)).fetchone()
+            if not r or not r['senha'] or not check_pw(pw, r['senha']):
+                login_failed(ip, user)
+                if r is None:
+                    check_pw(pw, DUMMY_HASH)  # mesmo tempo de resposta com ou sem conta (não revela quem existe)
+                return self.send_json(401, {'erro': 'login', 'msg': 'Usuário ou senha incorretos.'})
+            cid = r['id']
+        else:
+            return self.send_json(404, {'erro': 'rota desconhecida'})
+        tok, exp = new_session(cid, ip, remember)
+        claimed = claim_legacy(cid, self.owner())  # personagens da fase 1 criados neste navegador passam para a conta
+        with ADB_LOCK:
+            name = adb().execute('SELECT usuario FROM contas WHERE id=?', (cid,)).fetchone()['usuario']
+        return self.send_json(200, {'ok': True, 'user': name, 'session': tok, 'expira': exp, 'reivindicados': claimed})
+
     # presença no mundo e chat entre jogadores (fase 1 do online: o servidor só repassa)
     def world(self, path):
         data = self.read_json(64 * 1024)
@@ -488,6 +859,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'erro': 'dados inválidos'})
         pid = str(data['id'])[:64]
         now = time.time()
+        if not self.is_local() and not self.account():  # fase 2: no mundo online só entra quem está numa conta
+            return self.need_login()
         with WORLD_LOCK:
             world_tick()
             P = WORLD['players']
@@ -526,6 +899,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if self.path.split('?')[0] == '/api/save':
             return self.save_character()
+        if self.path.split('?')[0].startswith('/api/auth/'):
+            return self.auth(self.path.split('?')[0])
         if self.path.split('?')[0].startswith('/api/world/'):
             return self.world(self.path.split('?')[0])
         if self.path.split('?')[0] == '/api/propostas':
@@ -557,8 +932,11 @@ class Handler(SimpleHTTPRequestHandler):
             if not self.is_local():  # online: sugestão de outro jogador entra marcada, com o nome dele
                 rec['remoto'] = True
                 rec['autor'] = str(((data.get('jogador') or {}) if isinstance(data.get('jogador'), dict) else {}).get('nome') or 'jogador de fora')[:24]
-                if self.owner():
-                    rec['_owner'] = self.owner()
+                a = self.account()
+                if a:
+                    rec['autor'] = a['usuario'] + ' · ' + rec['autor']
+                if self.who():
+                    rec['_owner'] = self.who()
             if isinstance(shot, str) and shot.startswith('data:image/png;base64,'):
                 try:
                     raw = base64.b64decode(shot.split(',', 1)[1], validate=True)
@@ -579,10 +957,18 @@ def main():
         write_md(load())
         print('feedback/SUGESTOES.md atualizado.')
         return
+    if '--set-password' in sys.argv:  # senha de uma conta pela linha de comando, sem subir o servidor
+        i = sys.argv.index('--set-password')
+        cli_set_password(sys.argv[i + 1] if i + 1 < len(sys.argv) else '')
+        return
     args = [a for a in sys.argv[1:] if not a.startswith('-')]
     wanted = int(args[0]) if args else int(os.environ.get('PORT', DEFAULT_PORT))
-    online = '--online' in sys.argv  # abre para a rede: outras pessoas jogam junto (veja ONLINE.md)
+    online = '--online' in sys.argv  # abre para a rede: outras pessoas jogam junto (veja docs/ONLINE.md)
     host = '0.0.0.0' if online else '127.0.0.1'
+    init_db()  # contas e personagens no banco (db/aethra.db); importa saves/*.json só lendo
+    if backup_db():
+        print('💾 Cópia de segurança do banco feita em backups/.', flush=True)
+    threading.Thread(target=backup_loop, daemon=True).start()
     srv = None
     for port in range(wanted, wanted + 20):  # se a porta estiver ocupada, tenta as próximas
         try:

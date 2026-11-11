@@ -18,6 +18,7 @@ import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRa
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
 import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
+import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { runQA, showQA } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
@@ -3256,6 +3257,7 @@ function charThumb(s) {
 let csStage = null;
 async function chooseCharacter() {
   const o = $('overlay');
+  if (!(await ensureLogin(o, () => chooseCharacter()))) return; // fase 2: quem vem de fora entra numa conta antes da vitrine
   let list = [];
   try { list = await (await fetch('/api/saves')).json(); } catch (e) { }
   list = list.filter(c => c && c.name && CLASSES[c.cls]);
@@ -3274,7 +3276,7 @@ async function chooseCharacter() {
       <div class="cs-card cs-new" id="cs-new"><div class="cs-plus">＋</div><b>Novo personagem</b><span>criar do zero</span></div></div>
     <div class="ver">Personagens: Quaternius (quaternius.com) • Cenário e monstros: KayKit, por Kay Lousberg (kaylousberg.com) • CC0 · clique para ativar o som</div>
   </div>`;
-  o.classList.add('show');
+  o.classList.add('show'); accountBadge(o);
   if (csStage) csStage.dispose();
   csStage = makeStage($('cs-cv'));
   // miniaturas aos poucos (não trava a tela)
@@ -3348,7 +3350,7 @@ function showCreate3d(list, opts = {}) {
       <div class="cc-sec"><h4><b>6</b> Nome</h4><input type="text" id="c3-name" maxlength="16" placeholder="Como seu aventureiro vai se chamar?"><div class="cw-err" id="cw-err"></div></div>`}
       <div class="cc-foot"><button class="btn" id="cc-back">← ${edit ? 'Cancelar' : list.length ? 'Meus personagens' : 'Voltar'}</button><button class="btn gold" id="cc-ok">${edit ? '✔ Salvar aparência' : '✨ Criar personagem'}</button></div>
     </div></div>`;
-  o.classList.add('show');
+  o.classList.add('show'); if (!edit) accountBadge(o);
   const stage = makeStage($('cc-cv'));
   window.__ccStage = stage; // testes
   const refresh = () => {
@@ -3613,6 +3615,10 @@ function adminRender() {
     <div class="adm-card"><div class="adm-card-h">🐾 Mascote <span class="muted" style="font-weight:400">— troque de bicho ou de evolução na hora</span></div>
       ${Object.entries(PETS).map(([k, pe]) => `<div class="adm-tier"><span class="adm-tier-n">${pe.roleIcon} ${pe.roleName}</span><div class="adm-classgrid">${pe.stages.map((sg, si) => { const on = p.pet && p.pet.species === k && petInfo(p.pet).stage === si; return `<button class="adm-class ${on ? 'on' : ''}" data-petset="${k}" data-st="${si}" title="${escH(sg.name)} — Nv. ${PET_EVOLVE[si]}"><span>${sg.icon}</span>${escH(sg.name)}</button>`; }).join('')}</div></div>`).join('')}
     </div>
+    <div class="adm-card"><div class="adm-card-h">🔐 Conta do administrador <span class="muted" style="font-weight:400">— senha da conta "robertofpj", para entrar de outro computador quando o jogo estiver na internet</span></div>
+      <div class="adm-pw"><input type="password" id="adm-pw1" placeholder="nova senha (mín. 6)" autocomplete="new-password"><input type="password" id="adm-pw2" placeholder="repita a senha" autocomplete="new-password"><button class="btn small" id="adm-pw-go">Definir senha</button></div>
+      <div class="muted" id="adm-pw-msg">Aqui no seu computador você entra sem senha. Ela só vale para entrar de fora.</div>
+    </div>
     <div class="adm-card"><div class="adm-card-h">🛠️ Atalhos de mestre</div>
       <div class="adm-chips">
         <button class="adm-chip" data-cmd="cura">❤️ Curar tudo</button><button class="adm-chip" data-cmd="lv1">⭐ +1 Nível Base</button><button class="adm-chip" data-cmd="lv5">⭐ +5 Níveis Base</button>
@@ -3621,6 +3627,11 @@ function adminRender() {
         ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-qa="1">🔍 Verificar o mundo</button><button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
     </div>`;
   body.querySelector('#adm-god').onclick = () => toggleGod();
+  body.querySelector('#adm-pw-go').onclick = async () => { // fase 2 do online: senha da conta do administrador "robertofpj" (o servidor só aceita isso do computador local)
+    const m = body.querySelector('#adm-pw-msg'), a = body.querySelector('#adm-pw1'), b = body.querySelector('#adm-pw2');
+    let r = null; try { r = await (await fetch('/api/auth/admin-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: a.value, confirmar: b.value }) })).json(); } catch (e) { r = { msg: 'Sem conexão com o servidor.' }; }
+    m.textContent = (r && r.msg) || (r && r.ok ? 'Senha definida.' : 'Não deu certo.'); m.style.color = r && r.ok ? '#8fe08f' : '#ff9a8a'; if (r && r.ok) { a.value = ''; b.value = ''; }
+  };
   body.querySelectorAll('[data-cls]').forEach(el => el.onclick = () => ADMIN.setClass(el.dataset.cls));
   body.querySelectorAll('[data-cmd]').forEach(el => el.onclick = () => ADMIN.cmd(el.dataset.cmd));
   body.querySelectorAll('[data-race]').forEach(el => el.onclick = () => { p.look = { ...(p.look || {}), race: el.dataset.race }; buildPlayerModel(); save3d(); log(`🧬 Raça trocada: ${RACES[el.dataset.race].name}.`, 'sys'); adminRender(); });

@@ -33,7 +33,8 @@ export function playerToken() {
       const url = typeof input === 'string' ? input : (input && input.url) || '';
       if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
         const h = init.headers instanceof Headers ? Object.fromEntries(init.headers.entries()) : (init.headers || {});
-        init = { ...init, headers: { ...h, 'X-Aethra-Token': tok } };
+        let ses = null; try { ses = localStorage.getItem('aethra_session') || sessionStorage.getItem('aethra_session'); } catch (e) { } // fase 2: sessão da conta (lembrar-me = localStorage)
+        init = { ...init, headers: { ...h, 'X-Aethra-Token': tok, ...(ses ? { 'X-Aethra-Session': ses } : {}) } };
       }
     } catch (e) { }
     return orig(input, init);
