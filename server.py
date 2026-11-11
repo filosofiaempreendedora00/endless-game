@@ -154,6 +154,7 @@ def world_tick():
 
 
 # ---------------- P-026: grupo (party) ----------------
+PARTY_ENABLED = False  # pausado pelo Roberto (2026-11-11): não avançar no online por enquanto; o código fica pronto para religar depois (falta revisar a validação de identidade)
 # O servidor guarda os grupos em memória (somem se o servidor reiniciar; os jogadores refazem com um convite).
 # Quem age é sempre o dono do jogador (pmeta.own = chave da conta/navegador, conferida a cada pedido).
 PARTY_MAX = 6
@@ -263,7 +264,7 @@ def world_view(pid, since):
             continue
         out.append({'id': k, **{f: v.get(f) for f in WORLD_FIELDS}, 'age': round(now_age(v), 3)})
     chat = [{k: v for k, v in c.items() if k != 'to'} for c in WORLD['chat'] if c['seq'] > since and (not c.get('to') or pid in c['to'])]  # grupo/sussurro/avisos: só para quem é
-    view = {'players': out, 'chat': chat, 'seq': WORLD['seq'], 't': time.time(), 'party': party_view(pid)}
+    view = {'players': out, 'chat': chat, 'seq': WORLD['seq'], 't': time.time(), 'party': party_view(pid) if PARTY_ENABLED else None}
     inv = WORLD['invites'].get(pid)
     if inv:
         view['invite'] = {'from': (WORLD['pmeta'].get(inv['from']) or {}).get('name'), 'size': len(party_of(inv['from'])['members']) if party_of(inv['from']) else 1, 'left': round(inv['exp'] - time.time(), 1)}
@@ -981,6 +982,7 @@ class Handler(SimpleHTTPRequestHandler):
             if pid in P and P[pid].get('own') and P[pid]['own'] != own:  # P-026: só o dono age pelo seu personagem
                 return self.send_json(403, {'erro': 'jogador de outra pessoa'})
             if path.startswith('/api/party/'):
+                if not PARTY_ENABLED: return self.send_json(404, {'ok': False, 'erro': 'Grupo desligado por enquanto.'})
                 return self.party_action(path[len('/api/party/'):], pid, data, now)
             if path == '/api/world/sync':
                 p = P.get(pid)

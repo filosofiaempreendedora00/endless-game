@@ -440,3 +440,113 @@ const Sound = {
   },
 };
 Sound.loadPrefs(); // lembra som ligado/desligado e volumes entre sessões
+
+/* ======================= P-025: SONS DE AMBIENTE + PASSOS =======================
+   Camada separada da música e dos efeitos, com volume próprio ("🌿 Ambiente" nas Configurações).
+   Tudo sintetizado: "camas" contínuas (vento, água, mar, burburinho, uivo, areia, caverna, fogo) que só
+   mudam de volume, e "eventos" curtos e esparsos (pássaros, grilos, coruja, martelo da forja, gotas,
+   estalos do fogo). Uma instância por tipo, criada uma vez e reutilizada; cada evento cria poucos nós
+   que se desligam sozinhos ao terminar (onended → disconnect). Nada toca com o jogo em segundo plano
+   (o Sound já suspende o contexto) nem nas cópias de teste (Sound.testCopy). */
+const AmbSynth = {
+  // ruído longo (4 s, ponta casada) para as camas não "repetirem" de forma perceptível
+  bed(c) { const n = c.sampleRate * 4, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); let last = 0; for (let i = 0; i < n; i++) { last = last * 0.4 + (Math.random() * 2 - 1) * 0.6; d[i] = last; } const f = 2048; for (let i = 0; i < f; i++) { const k = i / f; d[n - f + i] = d[n - f + i] * (1 - k) + d[i] * k; } return b; },
+  _end(nodes, src) { src.onended = () => { for (const n of nodes) try { n.disconnect(); } catch (e) { } }; },
+  _n(c, buf, t, dur, off = Math.random() * 3) { const s = c.createBufferSource(); s.buffer = buf; s.start(t, off % Math.max(0.01, buf.duration - dur - 0.02)); s.stop(t + dur + 0.02); return s; },
+  // ---- eventos ----
+  bird(c, dest, t, buf, v = 1) { // canto curto: 2–5 notas com glissando e FM leve, como um passarinho distante (nada de apito puro contínuo)
+    const notes = 2 + Math.floor(Math.random() * 4), base = 2600 + Math.random() * 1800; let tt = t; const all = [];
+    for (let k = 0; k < notes; k++) { const o = c.createOscillator(), m = c.createOscillator(), mg = c.createGain(), g = c.createGain(), d = 0.05 + Math.random() * 0.09;
+      const f0 = base * (0.85 + Math.random() * 0.4), f1 = f0 * (Math.random() < 0.5 ? 1.35 : 0.72);
+      o.type = 'sine'; o.frequency.setValueAtTime(f0, tt); o.frequency.exponentialRampToValueAtTime(f1, tt + d);
+      m.frequency.value = 35 + Math.random() * 40; mg.gain.value = f0 * 0.04; m.connect(mg); mg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.05 * v, tt + d * 0.25); g.gain.exponentialRampToValueAtTime(0.0001, tt + d);
+      o.connect(g); g.connect(dest); o.start(tt); m.start(tt); o.stop(tt + d + 0.02); m.stop(tt + d + 0.02); this._end([o, m, mg, g], o); all.push(o); tt += d + 0.03 + Math.random() * 0.07; }
+    return tt - t;
+  },
+  crickets(c, dest, t, buf, v = 1) { // trinado de grilo: pulsos rápidos agudos com envelope (3 a 6 pulsos)
+    const f = 4300 + Math.random() * 900, n = 3 + Math.floor(Math.random() * 4);
+    for (let k = 0; k < n; k++) { const tt = t + k * 0.045, o = c.createOscillator(), g = c.createGain(); o.frequency.value = f + Math.random() * 60;
+      g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.018 * v, tt + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.03);
+      o.connect(g); g.connect(dest); o.start(tt); o.stop(tt + 0.04); this._end([o, g], o); }
+  },
+  owl(c, dest, t, buf, v = 1) { // "hu… hu-hu" grave e soprado, com vibrato e ar
+    const hoots = [[0, 0.32], [0.55, 0.16], [0.78, 0.38]];
+    for (const [dt, d] of hoots) { const tt = t + dt, o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), vib = c.createOscillator(), vg = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(390, tt); o.frequency.linearRampToValueAtTime(360, tt + d); vib.frequency.value = 6; vg.gain.value = 5; vib.connect(vg); vg.connect(o.frequency);
+      lp.type = 'lowpass'; lp.frequency.value = 900; g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.06 * v, tt + d * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, tt + d);
+      o.connect(lp); lp.connect(g); g.connect(dest); o.start(tt); vib.start(tt); o.stop(tt + d + 0.02); vib.stop(tt + d + 0.02); this._end([o, vib, vg, lp, g], o);
+      const s = this._n(c, buf, tt, d), bp = c.createBiquadFilter(), ng = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 2; ng.gain.setValueAtTime(0.0001, tt); ng.gain.linearRampToValueAtTime(0.02 * v, tt + d * 0.3); ng.gain.exponentialRampToValueAtTime(0.0001, tt + d);
+      s.connect(bp); bp.connect(ng); ng.connect(dest); this._end([s, bp, ng], s); }
+  },
+  anvil(c, dest, t, buf, v = 1) { // martelo na bigorna: estalo seco + "tin" metálico curto e inarmônico (decai rápido, sem sino)
+    const s = this._n(c, buf, t, 0.05), bp = c.createBiquadFilter(), g = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 1.2;
+    g.gain.setValueAtTime(0.16 * v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); s.connect(bp); bp.connect(g); g.connect(dest); this._end([s, bp, g], s);
+    for (const [f, a, d] of [[1830, 0.035, 0.16], [2970, 0.02, 0.11], [4410, 0.012, 0.07]]) { const o = c.createOscillator(), og = c.createGain(); o.frequency.value = f * (0.98 + Math.random() * 0.04);
+      og.gain.setValueAtTime(a * v, t); og.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(og); og.connect(dest); o.start(t); o.stop(t + d + 0.02); this._end([o, og], o); }
+  },
+  drip(c, dest, t, buf, v = 1) { // gota na caverna: "plic" com queda de tom + eco
+    const o = c.createOscillator(), g = c.createGain(), dl = c.createDelay(), fb = c.createGain(), wet = c.createGain(); const f = 900 + Math.random() * 700;
+    o.frequency.setValueAtTime(f * 1.6, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05 * v, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    dl.delayTime.value = 0.21; fb.gain.value = 0.38; wet.gain.value = 0.5; o.connect(g); g.connect(dest); g.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(dest);
+    o.start(t); o.stop(t + 0.12); o.onended = () => setTimeout(() => { for (const n of [o, g, dl, fb, wet]) try { n.disconnect(); } catch (e) { } }, 1600);
+  },
+  crackle(c, dest, t, buf, v = 1) { // estalos do fogo: 1–4 cliques secos
+    const n = 1 + Math.floor(Math.random() * 4);
+    for (let k = 0; k < n; k++) { const tt = t + Math.random() * 0.25, s = this._n(c, buf, tt, 0.012), hp = c.createBiquadFilter(), g = c.createGain(); hp.type = 'highpass'; hp.frequency.value = 2500 + Math.random() * 2000;
+      g.gain.setValueAtTime(0.06 * v * (0.5 + Math.random()), tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.012); s.connect(hp); hp.connect(g); g.connect(dest); this._end([s, hp, g], s); }
+  },
+  // ---- passos por tipo de chão (eventos curtos, ruído moldado) ----
+  step(c, dest, t, buf, surf, v = 1) {
+    const S = { grama: [[2600, 'bandpass', 0.8, 0.07, 0.10], [5000, 'highpass', 0, 0.04, 0.03]], terra: [[420, 'lowpass', 0, 0.06, 0.20], [1600, 'bandpass', 1, 0.03, 0.05]],
+      pedra: [[1700, 'bandpass', 1.4, 0.03, 0.12], [180, 'lowpass', 0, 0.05, 0.18]], madeira: [[320, 'bandpass', 3, 0.07, 0.22], [1300, 'bandpass', 1.5, 0.025, 0.06]],
+      neve: [[1300, 'bandpass', 0.9, 0.11, 0.12], [3200, 'bandpass', 1, 0.07, 0.05]], areia: [[3200, 'highpass', 0, 0.09, 0.07], [600, 'lowpass', 0, 0.06, 0.06]],
+      agua: [[900, 'bandpass', 1.2, 0.12, 0.16], [2400, 'bandpass', 2, 0.08, 0.06]], cascos: [[800, 'bandpass', 2, 0.035, 0.22], [160, 'lowpass', 0, 0.06, 0.24]] }[surf] || null;
+    if (!S) return; const jit = 0.9 + Math.random() * 0.2; v *= surf === 'madeira' || surf === 'pedra' ? 3.6 : 2.4; // passos discretos, mas audíveis sob a música
+    for (const [f, type, q, d, a] of S) { const s = this._n(c, buf, t, d), fl = c.createBiquadFilter(), g = c.createGain(); fl.type = type; fl.frequency.value = f * jit; if (q) fl.Q.value = q;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(a * v, t + Math.min(0.012, d * 0.3)); g.gain.exponentialRampToValueAtTime(0.0001, t + d); s.connect(fl); fl.connect(g); g.connect(dest); this._end([s, fl, g], s); }
+    if (surf === 'neve') for (let k = 0; k < 3; k++) { const tt = t + 0.01 + k * 0.022, s = this._n(c, buf, tt, 0.015), hp = c.createBiquadFilter(), g = c.createGain(); hp.type = 'highpass'; hp.frequency.value = 2800; g.gain.setValueAtTime(0.05 * v, tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.015); s.connect(hp); hp.connect(g); g.connect(dest); this._end([s, hp, g], s); } // crec-crec da neve
+    if (surf === 'cascos') this.step(c, dest, t + 0.085, buf, 'pedra', v * 0.18); // cavalo: "clop" duplo (v já vem multiplicado)
+  },
+};
+// camas contínuas: [filtro, freq, Q, ganho máx, modulação lenta]
+const AMB_BEDS = { vento: ['bandpass', 520, 0.6, 0.11, 0.35], agua: ['bandpass', 1100, 0.5, 0.07, 0.2], mar: ['lowpass', 520, 0, 0.16, 0.9], vila: ['bandpass', 600, 0.9, 0.05, 0.5],
+  uivo: ['bandpass', 700, 6, 0.06, 0.7], areia: ['highpass', 3200, 0, 0.05, 0.6], caverna: ['lowpass', 220, 0, 0.08, 0.15], fogo: ['lowpass', 380, 0, 0.05, 0.3] };
+const Ambience = {
+  out: null, beds: {}, next: {}, buf: null, vol: 0.8, on: true, level: {}, ok: false,
+  load() { try { const v = JSON.parse(localStorage.getItem('aethra_amb') || 'null'); if (v) { this.vol = +v.v; this.on = v.on !== false; } } catch (e) { } },
+  save() { try { localStorage.setItem('aethra_amb', JSON.stringify({ v: this.vol, on: this.on })); } catch (e) { } },
+  setVolume(v) { if (v != null) this.vol = v; this.apply(); this.save(); },
+  setOn(on) { this.on = !!on; this.apply(); this.save(); },
+  eff() { return this.on ? this.vol : 0; },
+  apply() { if (this.out) this.out.gain.setTargetAtTime(0.9 * this.eff(), Sound.ctx.currentTime, 0.2); },
+  ensure() {
+    if (this.ok) return true; const c = Sound.ctx; if (!c || Sound.testCopy || !Sound.master) return false;
+    this.buf = AmbSynth.bed(c); this.out = c.createGain(); this.out.gain.value = 0.9 * this.eff(); this.out.connect(Sound.master);
+    for (const [k, [type, f, q]] of Object.entries(AMB_BEDS)) { // uma instância por tipo, criada uma vez (só o volume muda)
+      const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = this.buf; s.loop = true; fl.type = type; fl.frequency.value = f; if (q) fl.Q.value = q; g.gain.value = 0;
+      s.connect(fl); fl.connect(g); g.connect(this.out); s.start(c.currentTime, Math.random() * 3.5); this.beds[k] = { s, fl, g, f, cur: 0 };
+    }
+    this.ok = true; return true;
+  },
+  // levels = { vento, agua, mar, vila, uivo, areia, caverna, fogo, passaros, grilos, coruja, forja, gotas } de 0 a 1 — chamado ~4×/s
+  update(levels) {
+    if (!Sound.enabled || document.hidden || !this.ensure()) return;
+    const c = Sound.ctx, t = c.currentTime; this.level = levels;
+    for (const [k, b] of Object.entries(this.beds)) {
+      const [, , , max, mod] = AMB_BEDS[k], want = Math.max(0, Math.min(1, levels[k] || 0)) * max * (1 - mod * 0.5 + mod * Math.random()); // rajadas/ondas: variação lenta do volume
+      b.g.gain.setTargetAtTime(want, t, k === 'mar' ? 1.2 : 0.9);
+      if (k === 'vento' || k === 'uivo') b.fl.frequency.setTargetAtTime(b.f * (0.75 + Math.random() * 0.6), t, 1.5); // o vento "respira"
+    }
+    const ev = [['passaros', 'bird', 2.5, 7], ['grilos', 'crickets', 0.35, 1.4], ['coruja', 'owl', 18, 40], ['forja', 'anvil', 0.9, 1.6], ['gotas', 'drip', 1.2, 4.5], ['fogo', 'crackle', 0.3, 1.2]];
+    for (const [k, fn, a, b] of ev) {
+      const lv = levels[k] || 0; if (lv < 0.05) { this.next[k] = 0; continue; }
+      if (!this.next[k]) this.next[k] = t + Math.random() * a;
+      if (t >= this.next[k]) { AmbSynth[fn](c, this.out, t + 0.02, this.buf, Math.min(1, lv)); this.next[k] = t + a + Math.random() * (b - a) / Math.max(0.35, lv); if (k === 'forja' && Math.random() < 0.18) this.next[k] += 2.5 + Math.random() * 3; } // a forja às vezes para (resfriar a peça)
+    }
+  },
+  silence() { if (!this.ok) return; const t = Sound.ctx.currentTime; for (const b of Object.values(this.beds)) b.g.gain.setTargetAtTime(0, t, 0.3); this.next = {}; },
+  // passos: vão no canal de EFEITOS (respeita o volume de efeitos)
+  step(surf, v = 1) { const c = Sound.ctx; if (!c || !Sound.enabled || Sound.testCopy || document.hidden || !Sound.sfx) return; if (!this.buf) this.buf = AmbSynth.bed(c); AmbSynth.step(c, Sound.sfx, c.currentTime + 0.005, this.buf, surf, v); },
+};
+Ambience.load();

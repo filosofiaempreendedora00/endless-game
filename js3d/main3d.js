@@ -22,12 +22,14 @@ import { initSkillFx, playSkillFx, playSkillFxRemote, skillProjectile, skillHitD
 import { faceSculpt, FACE_FEATS, softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather, setWeatherLight } from './weather3d.js';
+import { initFauna, updateFauna, faunaEnabled, setFaunaEnabled, faunaStats } from './fauna3d.js'; // P-024: vida ambiente sutil (pássaros, borboletas, vaga-lumes, peixes)
 import { initBossFight, bossTick, updateBossFights, bossOnDeath, bossActive, BOSS_SCRIPT } from './bossfight3d.js'; // P-022: chefes com fases, avisos no chão, lacaios, barra e música
 import { initDayNight, updateDayNight, tintFog, isNight, dayNightHours } from './daynight3d.js'; // P-020: dia e noite pelo relógio do jogo
 import { initTutorial, startTutorial, updateTutorial, tutorialCamera, restartTutorial, tutorialActive } from './tutorial3d.js'; // P-018: primeiros passos do jogador novo
-import { initRoutines, updateRoutines, gameClock } from './routines3d.js'; // P-017: NPCs com rotina pela hora do jogo
+import { initRoutines, updateRoutines, gameClock, gameMinutes, routineNow } from './routines3d.js';
+import { biome as ambBiome, seaDist as ambSeaDist } from './world3d.js'; // P-025: sons de ambiente (zona/chão) // P-017: NPCs com rotina pela hora do jogo
 import { initNet, updateNet, onNetView, netId, netOthers } from './net3d.js';
-import { initParty, updateParty } from './party3d.js'; // P-026: grupo online (quadro, convites, chat de grupo, EXP dividida) // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
+import { initParty, updateParty } from './party3d.js'; const PARTY_ENABLED = false; // pausado pelo Roberto (2026-11-11): grupo online desligado por enquanto // P-026: grupo online (quadro, convites, chat de grupo, EXP dividida) // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { runQA, showQA, checkCharsDeep, showQAChars } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música · P-012: dos personagens
@@ -68,6 +70,7 @@ const FOG_DAY = new THREE.Color('#cfe7ff'), FOG_RUINS = new THREE.Color('#6a6680
 const FOG_SNOW = new THREE.Color('#e3edf4'), FOG_SAND = new THREE.Color('#ecd9b0'), FOG_PLAIN = new THREE.Color('#a9a79e');
 scene.fog = new THREE.Fog(FOG_DAY.clone(), 90, 420);
 initWeather(scene); // P-007: neve na Geada, areia nas Dunas, névoa baixa nos Colossos
+initFauna(scene); // P-024: vida ambiente
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 1700);
 const lightPool = makeLightPool(scene, 3); // poucas luzes reais, levadas às fontes mais próximas
 const hemi = new THREE.HemisphereLight('#d8ecff', '#5a6b3a', 1.1); hemi.layers.enable(1); scene.add(hemi);
@@ -2179,6 +2182,63 @@ function freeSpot(x, z, dir = 0) {
   }
   return null;
 }
+/* P-025: sons de ambiente e passos. O chão e a zona viram níveis de 0 a 1 para a camada Ambience (js/audio.js). */
+const CITY_CENTERS = [[VILLAGE.x, VILLAGE.z, 40], [CITY2.x, CITY2.z, 34], [PORT.x, PORT.z, 44], [DWARF.x, DWARF.z, 36], [ELF.x, ELF.z, 40]];
+function groundSurface(x, z) {
+  if (S.riding) return 'cascos';
+  if (S.interior) { const I = S.interior; return I.dungeon || I.stone || I.round || I.castle ? 'pedra' : 'madeira'; }
+  if (deckAt(x, z) !== null) return 'madeira';
+  if (lakeDist(x, z) < LAKE.r + 0.3 || ambSeaDist(x, z) < 1) return 'agua';
+  const b = ambBiome(x, z);
+  if ((b.geada || 0) > 0.5) return 'neve';
+  if ((b.dunas || 0) > 0.5) return 'areia';
+  if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 15 || Math.hypot(x - CITY2.x, z - CITY2.z) < 21) return 'pedra'; // praças calçadas
+  for (const [cx, cz, r] of CITY_CENTERS.slice(2)) if (Math.hypot(x - cx, z - cz) < r * 0.6) return 'pedra';
+  if (roadDist(x, z) < 2.6) return 'terra';
+  return 'grama';
+}
+let ambT = 0, ambDario = null;
+function ambienceTick(dt) {
+  if (typeof Ambience === 'undefined' || !S.started || !S.pos) return;
+  if ((ambT -= dt) > 0) return; ambT = 0.25;
+  const P = S.pos, I = S.interior, L = {};
+  if (I && !I.round) {
+    if (I.dungeon) { L.caverna = 1; L.gotas = 1; }
+    else { L.vento = 0.05; if (/taverna|castelo|torre/i.test(I.id || I.name || '')) L.fogo = 0.55; }
+  } else {
+    const h = gameMinutes() / 60, night = h >= 20.5 || h < 5.5, dawn = h >= 5 && h < 8.5 ? 1 : 0, day = night ? 0 : 1;
+    const b = I ? {} : ambBiome(P.x, P.z), snow = b.geada || 0, sand = b.dunas || 0, ruin = (b.colossos || 0) + (b.ruinas || 0) * 0.6, open = Math.max(0, 1 - snow - sand);
+    L.vento = Math.min(1, 0.25 + Math.max(0, P.y - 8) / 60 + snow * 0.45 + ruin * 0.25 + sand * 0.2);
+    if (!I) {
+      const dw = Math.abs(P.x - FROST.wallX); L.uivo = dw < 90 && Math.abs(P.z - FROST.z) < 170 ? (1 - dw / 90) * Math.max(0.3, snow) : 0;
+      L.areia = sand * 0.9;
+      L.agua = Math.max(0, 1 - (lakeDist(P.x, P.z) - LAKE.r) / 22);
+      L.mar = Math.max(0, 1 - Math.max(0, ambSeaDist(P.x, P.z)) / 80);
+      let city = 0; for (const [cx, cz, r] of CITY_CENTERS) city = Math.max(city, 1 - Math.hypot(P.x - cx, P.z - cz) / r); L.vila = day * Math.max(0, city) * (h >= 7 && h < 21 ? 1 : 0.3);
+      if (!ambDario) ambDario = S.npcs.find(n => n.id === 'dario') || null;
+      if (ambDario && !ambDario.rtHidden && routineNow(ambDario) === 'trabalhando') L.forja = Math.max(0, 1 - Math.hypot(P.x - ambDario.x, P.z - ambDario.z) / 26);
+      for (const c of Object.values(CAMPS)) L.fogo = Math.max(L.fogo || 0, 1 - Math.hypot(P.x - c.x, P.z - c.z) / 18);
+      L.passaros = day * open * (1 - Math.min(1, ruin) * 0.7) * (0.7 + dawn * 0.5) * (1 - Math.max(0, city) * 0.5);
+      L.grilos = night ? open * 0.8 : 0; L.coruja = night ? open * 0.7 * (1 - Math.max(0, city)) : 0;
+    }
+  }
+  Ambience.update(L);
+}
+// passos: o pé que encosta no chão (altura do osso do pé relativa ao corpo) dispara o som; montado = cascos no ritmo da montaria
+const _fv = new THREE.Vector3(); let feet = null;
+function playerFootsteps(dt) {
+  if (typeof Ambience === 'undefined' || !S.me || !S.pos) return;
+  const P = S.pos, spd = Math.hypot(S.vel ? S.vel.x : 0, S.vel ? S.vel.z : 0);
+  if (!P.ground || spd < 0.4 || S.flying) { if (feet) for (const f of feet) f.up = false; return; }
+  if (S.riding) { S.hoofT = (S.hoofT || 0) + dt * spd / 1.5; if (S.hoofT >= 1) { S.hoofT -= 1; Ambience.step('cascos', Math.min(1, 0.5 + spd / 14)); } return; }
+  if (!feet || feet.me !== S.me) { const r = S.me.root; feet = [r.getObjectByName('foot_l'), r.getObjectByName('foot_r')].filter(Boolean).map(b => ({ b, min: 1, up: false })); feet.me = S.me; if (!feet.length) return; }
+  const oy = S.me.obj.position.y, surf = groundSurface(P.x, P.z), back = S.moveRel != null ? Math.abs(S.moveRel) > 2 : (moveInput().fwd < 0);
+  for (const f of feet) {
+    f.b.getWorldPosition(_fv); const h = _fv.y - oy; f.min = Math.min(f.min + dt * 0.03, h);
+    if (h > f.min + 0.06) f.up = true;
+    else if (f.up && h < f.min + 0.025) { f.up = false; Ambience.step(surf, (back ? 0.55 : spd > 3.2 ? 1 : 0.75) * (S.chasing ? 1 : 0.95)); }
+  }
+}
 /* Barrinha de velocidade de ataque (teste do mestre): ASPD no estilo do RO — atraso entre golpes = (200 − ASPD) × 20 ms
    (ASPD 190 = 0,20 s = 5 golpes por segundo). "Real" volta a usar a velocidade calculada pelos atributos. */
 function aspdTool() {
@@ -2329,6 +2389,7 @@ function updatePlayer(dt) {
   else if (mi.turn) me.anim.play('Walking_B', { speed: 0.8 });
   else me.anim.play('Idle', { fade: 0.25 }); // S-342: pernas sempre na pose em pé (a guarda do pacote é agachada e de pernas abertas); a postura de luta vem só no tronco pela camada abaixo
   { const moving = Math.hypot(S.vel.x, S.vel.z) > 0.3, fullAtk = t < S.lockAnim && !S.overlayAtk; me.anim.layer && me.anim.layer(fighting && P.ground && !S.riding && !S.casting && !S.sitting && !fullAtk ? stanceOf(p) : null, 2.2, dt); void moving; } // em combate (parado ou andando): guarda só no tronco e braços
+  playerFootsteps(dt); // P-025: passos por tipo de chão, no ritmo dos pés
   // conjuração
   if (S.casting && t >= S.casting.end) { const c = S.casting; S.casting = null; $('castbar3d').classList.add('hidden'); executeSkill(c); }
   // ataque automático
@@ -3263,6 +3324,9 @@ function showSettings() {
     <label class="opt-sw"><input type="checkbox" id="o-all" ${Sound.enabled ? 'checked' : ''}><span>Som do jogo (tudo)</span></label>
     <label class="opt-sw"><input type="checkbox" id="o-mon" ${Sound.musicOn ? 'checked' : ''}><span>🎵 Música</span><input type="range" id="o-mv" min="0" max="100" value="${pct(Sound.musicVol)}"><b id="o-mv-t">${pct(Sound.musicVol)}%</b></label>
     <label class="opt-sw"><input type="checkbox" id="o-son" ${Sound.sfxOn ? 'checked' : ''}><span>💥 Efeitos <small class="muted">(golpes, saltos, monstros, passos...)</small></span><input type="range" id="o-sv" min="0" max="100" value="${pct(Sound.sfxVol)}"><b id="o-sv-t">${pct(Sound.sfxVol)}%</b></label>
+    <label class="opt-sw"><input type="checkbox" id="o-aon" ${typeof Ambience === 'undefined' || Ambience.on ? 'checked' : ''}><span>🌿 Ambiente <small class="muted">(vento, pássaros, rio, vila, forja...)</small></span><input type="range" id="o-av" min="0" max="100" value="${typeof Ambience === 'undefined' ? 80 : pct(Ambience.vol)}"><b id="o-av-t">${typeof Ambience === 'undefined' ? 80 : pct(Ambience.vol)}%</b></label>
+    <div class="opt-sec">🌿 Mundo</div>
+    <label class="opt-sw"><input type="checkbox" id="o-fauna" ${faunaEnabled() ? 'checked' : ''}><span>🦋 Vida ambiente <small class="muted">(pássaros, borboletas, vaga-lumes, peixes — desligue se o computador for fraco)</small></span></label>
     <div class="opt-sec">🎯 Combate</div>
     <div class="opt-sw"><span>Peso da mira ao atacar <small class="muted">(quanto a câmera gira ao mexer o mouse segurando o ataque)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     <div class="opt-sec">📘 Tutorial</div>
@@ -3272,9 +3336,11 @@ function showSettings() {
   $('o-all').onchange = e => { Sound.setEnabled(e.target.checked); try { localStorage.setItem('aethra_sound', e.target.checked ? '1' : '0'); } catch (er) { } if (e.target.checked && Sound.music) { Sound.songId = null; Sound.playSong(S.zone ? S.zone.music : 'vila'); } };
   $('o-mon').onchange = e => Sound.setMusicOn(e.target.checked);
   $('o-son').onchange = e => Sound.setSfxOn(e.target.checked);
+  if ($('o-fauna')) $('o-fauna').onchange = e => setFaunaEnabled(e.target.checked); // P-024
   $('o-mv').oninput = e => { Sound.setVolumes(e.target.value / 100, null); $('o-mv-t').textContent = e.target.value + '%'; };
   $('o-sv').oninput = e => { Sound.setVolumes(null, e.target.value / 100); $('o-sv-t').textContent = e.target.value + '%'; };
   $('o-test').onclick = () => Sound.play('levelup');
+  if (typeof Ambience !== 'undefined') { $('o-aon').onchange = e => Ambience.setOn(e.target.checked); $('o-av').oninput = e => { Ambience.setVolume(e.target.value / 100); $('o-av-t').textContent = e.target.value + '%'; }; } // P-025
   $('o-aimw').onchange = e => { S.aimWeight = e.target.value; try { localStorage.setItem('aethra_aimw', S.aimWeight); } catch (er) { } };
   $('o-back').onclick = () => { S.menuOpen = false; toggleMenu(); };
 }
@@ -3358,7 +3424,7 @@ function step(dt) {
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     updateCloudInstances();
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); updateBossFights(dt); updateParty(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateFauna(dt, camera, S.pos, !!S.interior || !!S.arena); ambienceTick(dt); updateNet(dt); updateBossFights(dt); if (PARTY_ENABLED) updateParty(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
     updateTutorial(dt); // P-018: dicas dos primeiros passos (só personagens novos)
   }
@@ -3750,7 +3816,7 @@ function startWith(s) {
     restoreMusic: () => { const I = S.interior, id = I && I.music ? I.music : (S.zone && S.zone.music); if (id && Sound.ctx) Sound.playSong(id); } }); } // P-022
   initTutorial({ S, UI, isAdmin, log, Sound, save3d, questState, countItem, addItem, banner, markDirty: () => { hudDirty = true; UI.markDirty(); }, toScreen, groundAt: (x, z) => groundAt(x, z), VILLAGE }); startTutorial(); // P-018
   initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx: playSkillFxRemote, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
-  initParty({ S, H3, log, gainExp, camera, renderer, THREE, CLASSES, net: { onNetView, netId, netOthers } }); // P-026
+  if (PARTY_ENABLED) initParty({ S, H3, log, gainExp, camera, renderer, THREE, CLASSES, net: { onNetView, netId, netOthers } }); // P-026
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }

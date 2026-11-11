@@ -322,8 +322,9 @@
     "detalhe": "Conferir todas as habilidades uma a uma, reforçar o meteoro e a estocada do Executor.",
     "principios": [],
     "evidencias": [],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T14:37:37"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "Revisei todas as habilidades: o meteoro agora é uma rocha em brasa que cai em diagonal com sombra de aviso, onda de choque, cratera e brasas (o dano entra no impacto), a estocada do Executor vai mais longe na altura do peito, e curas, golpes e flechas ficaram mais legíveis, inclusive para os outros jogadores online."
   },
   {
     "id": "P-022",
@@ -349,8 +350,9 @@
     "detalhe": "Pássaros, peixes, borboletas e vaga-lumes pequenos e sutis, sem lag e sem parecer monstros.",
     "principios": [],
     "evidencias": [],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T14:37:37"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "O mundo ganhou vida bem discreta: bandos de passarinhos ao longe que pousam e levantam voo quando você chega, gaivotas no porto, borboletas pequenas na grama de dia, peixinhos e anéis na água e vaga-lumes à noite — tudo pequeno, sem lag (menos de 0,1 ms por quadro) e com opção para desligar em Configurações."
   },
   {
     "id": "P-025",
@@ -358,8 +360,9 @@
     "detalhe": "Vento, rio, vila, forja e passos por tipo de chão, sem bugs.",
     "principios": [],
     "evidencias": [],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T14:37:37"
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "O mundo tem som de verdade, baixinho e sem repetir: vento, pássaros de dia, grilos e coruja à noite, rio, mar no porto, burburinho da vila, a forja do Dário, fogueiras, gotas nas Catacumbas e o uivo da Muralha; os passos mudam conforme o chão, e há volume próprio de 🌿 Ambiente em Esc → Configurações."
   },
   {
     "id": "P-026",
@@ -367,8 +370,9 @@
     "detalhe": "Convidar amigos, vida do grupo, dividir EXP e itens, chat de grupo e marcador no mapa.",
     "principios": [],
     "evidencias": [],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T14:37:37"
+    "status": "proposta",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "motivo": "Pausado pelo Roberto em 2026-11-11: não avançar no online/IP por enquanto."
   },
   {
     "id": "P-027",
@@ -384,7 +388,8 @@
     "detalhe": "Monstros e combate decididos pelo servidor: todos veem o mesmo mundo, sem trapaça.",
     "principios": [],
     "evidencias": [],
-    "status": "aprovada",
-    "respondidoEm": "2026-11-11T14:37:37"
+    "status": "proposta",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "motivo": "Pausado pelo Roberto em 2026-11-11: não avançar no online/IP por enquanto."
   }
 ]
