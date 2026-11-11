@@ -121,3 +121,81 @@ for (const id of ['mandacaru', 'escorpiao_rubro', 'formiga_ceifadora', 'lagarto_
   if (m.card) ITEMS['carta_' + id] = { name: 'Carta ' + m.name, type: 'carta', icon: '🃏', price: 20, equip: m.card.equip, bonuses: m.card.bonuses, monster: id, desc: `Encaixe em: ${SLOT_NAMES[m.card.equip]}. Uma vez inserida, não pode ser removida.` };
 }
 for (const id in ITEMS) ITEMS[id].id = id;
+
+/* =========================================================================
+   P-022: ROTEIROS DE LUTA DOS CHEFES (dados puros — usados por js3d/bossfight3d.js e, no futuro, pelo servidor).
+   Fases pela % de vida (phases), enraivecer (enrage), lacaios (adds) e ataques avisados no chão por fase:
+   circle {r, at:'self'|'target'} · donut {r0, r1} · cone {len, half} · line {len, w, charge?} · rain {n, r, spread}
+   wind = segundos de aviso; mul = multiplicador do golpe médio; cd = espera até o próximo ataque.
+   ========================================================================= */
+var BOSS_SCRIPT = (() => { const P = (o) => o; return {
+  kharzul: {
+    color: '#ff6a2a', phases: [0.7, 0.35], enrage: 0.15,
+    lines: ['As areias se lembram do meu nome!', 'Queimem, vermes!', 'O SOBERANO NÃO CAI!'],
+    adds: { phase: 1, type: 'brasinha', n: 3 },
+    attacks: [
+      [P({ kind: 'circle', at: 'self', r: 6, wind: 1.4, mul: 1.6, cd: 6, name: 'Pisada Flamejante', sfx: 'quake' }), P({ kind: 'cone', len: 9, half: 0.6, wind: 1.1, mul: 1.4, cd: 5.5, name: 'Golpe Rubro', sfx: 'slam' })],
+      [P({ kind: 'line', len: 15, w: 3, wind: 1.2, mul: 1.8, cd: 5, name: 'Investida', charge: true, sfx: 'demonRoar' }), P({ kind: 'circle', at: 'self', r: 7, wind: 1.3, mul: 1.6, cd: 5, name: 'Pisada Flamejante', sfx: 'quake' }), P({ kind: 'cone', len: 10, half: 0.7, wind: 1.0, mul: 1.5, cd: 4.5, name: 'Golpe Rubro', sfx: 'slam' })],
+      [P({ kind: 'rain', n: 6, r: 2.6, spread: 7, wind: 1.6, mul: 1.4, cd: 4.5, name: 'Chuva de Brasas', sfx: 'quake' }), P({ kind: 'line', len: 16, w: 3.2, wind: 1.0, mul: 2.0, cd: 4, name: 'Investida', charge: true, sfx: 'demonRoar' }), P({ kind: 'donut', r0: 4, r1: 12, wind: 1.8, mul: 1.8, cd: 5, name: 'Coração Vulcânico', sfx: 'quake' })],
+    ],
+  },
+  maldoran: {
+    color: '#9a5cff', phases: [0.7, 0.35], enrage: 0.15,
+    lines: ['Seus nomes já estão escritos no livro dos mortos.', 'Levantem-se, servos!', 'A escuridão não tem fim!'],
+    adds: { phase: 1, type: 'esqueleto_vigia', n: 4 },
+    attacks: [
+      [P({ kind: 'circle', at: 'target', r: 3.6, wind: 1.3, mul: 1.5, cd: 5, name: 'Selo Sombrio', sfx: 'goatChant' }), P({ kind: 'cone', len: 11, half: 0.45, wind: 1.2, mul: 1.4, cd: 5.5, name: 'Lamento do Chifre', sfx: 'magic' })],
+      [P({ kind: 'donut', r0: 4, r1: 11, wind: 1.6, mul: 1.6, cd: 5, name: 'Círculo Profano', sfx: 'goatChant' }), P({ kind: 'circle', at: 'target', r: 4, wind: 1.2, mul: 1.6, cd: 4.5, name: 'Selo Sombrio', sfx: 'magic' })],
+      [P({ kind: 'rain', n: 7, r: 3, spread: 8, wind: 1.5, mul: 1.5, cd: 4, name: 'Chuva de Selos', sfx: 'goatChant' }), P({ kind: 'donut', r0: 3.5, r1: 12, wind: 1.4, mul: 1.8, cd: 4.5, name: 'Círculo Profano', sfx: 'magic' })],
+    ],
+  },
+  vharnyr: {
+    color: '#9fdcff', phases: [0.7, 0.35], enrage: 0.15,
+    lines: ['O inverno não tem pressa.', 'Congelem onde estão!', 'EU SOU O FIM DO VERÃO!'],
+    adds: { phase: 1, type: 'geadinha', n: 4 },
+    attacks: [
+      [P({ kind: 'cone', len: 15, half: 0.55, wind: 1.4, mul: 1.6, cd: 6, name: 'Sopro Invernal', sfx: 'dragonBreath' }), P({ kind: 'circle', at: 'self', r: 7, wind: 1.3, mul: 1.5, cd: 5.5, name: 'Pisada do Glaciar', sfx: 'quake' })],
+      [P({ kind: 'rain', n: 6, r: 3, spread: 9, wind: 1.6, mul: 1.4, cd: 5, name: 'Chuva de Gelo', sfx: 'dragonBreath' }), P({ kind: 'cone', len: 16, half: 0.6, wind: 1.2, mul: 1.7, cd: 4.5, name: 'Sopro Invernal', sfx: 'dragonBreath' })],
+      [P({ kind: 'circle', at: 'self', r: 11, wind: 2.3, mul: 2.4, cd: 6, name: 'Tempestade Branca', sfx: 'dragonRoar' }), P({ kind: 'rain', n: 8, r: 3, spread: 10, wind: 1.5, mul: 1.5, cd: 4, name: 'Chuva de Gelo', sfx: 'dragonBreath' })],
+    ],
+  },
+  selvara: {
+    color: '#5fffd0', phases: [0.7, 0.35], enrage: 0.15,
+    lines: ['Vocês vieram visitar o meu túmulo?', 'Venham, meus mortos!', 'Não há descanso para ninguém!'],
+    adds: { phase: 1, type: 'espectro', n: 3 },
+    attacks: [
+      [P({ kind: 'circle', at: 'target', r: 3.4, wind: 1.3, mul: 1.5, cd: 5, name: 'Toque Sepulcral', sfx: 'lichWail' }), P({ kind: 'line', len: 14, w: 2.6, wind: 1.2, mul: 1.4, cd: 5.5, name: 'Lamento', sfx: 'lichWail' })],
+      [P({ kind: 'donut', r0: 4, r1: 11, wind: 1.6, mul: 1.6, cd: 5, name: 'Véu da Morte', sfx: 'lichWail' }), P({ kind: 'circle', at: 'target', r: 3.8, wind: 1.1, mul: 1.6, cd: 4.5, name: 'Toque Sepulcral', sfx: 'lichWail' })],
+      [P({ kind: 'rain', n: 7, r: 2.8, spread: 8, wind: 1.5, mul: 1.5, cd: 4, name: 'Lágrimas Sepulcrais', sfx: 'lichWail' }), P({ kind: 'line', len: 16, w: 3, wind: 1.0, mul: 1.8, cd: 4, name: 'Lamento', sfx: 'lichWail' })],
+    ],
+  },
+  sentinela_silente: {
+    color: '#b7b4ff', phases: [0.6, 0.3], enrage: 0.15,
+    lines: ['...', 'Ninguém passa da Sentinela.', 'O SILÊNCIO SERÁ ETERNO.'],
+    adds: { phase: 1, type: 'esqueleto_vigia', n: 3 },
+    attacks: [
+      [P({ kind: 'cone', len: 7, half: 0.7, wind: 1.1, mul: 1.5, cd: 5, name: 'Talho Silente', sfx: 'knightSwing', anim: '2H_Melee_Attack_Spin' })],
+      [P({ kind: 'line', len: 12, w: 2.6, wind: 1.1, mul: 1.7, cd: 5, name: 'Avanço do Vigia', charge: true, sfx: 'knightVoice', anim: '2H_Melee_Attack_Chop' }), P({ kind: 'cone', len: 8, half: 0.75, wind: 1.0, mul: 1.6, cd: 4.5, name: 'Talho Silente', sfx: 'knightSwing', anim: '2H_Melee_Attack_Spin' })],
+      [P({ kind: 'circle', at: 'self', r: 6.5, wind: 1.5, mul: 1.9, cd: 4.5, name: 'Giro da Sentinela', sfx: 'knightSwing', anim: '2H_Melee_Attack_Spin' }), P({ kind: 'line', len: 13, w: 2.8, wind: 0.9, mul: 1.8, cd: 4, name: 'Avanço do Vigia', charge: true, sfx: 'knightVoice', anim: '2H_Melee_Attack_Chop' })],
+    ],
+  },
+  guardiao_ancestral: {
+    color: '#a8e070', phases: [0.65, 0.3], enrage: 0.15,
+    lines: ['Quem pisa nas raízes do vale?', 'A floresta responde!', 'Voltem para a terra!'],
+    adds: { phase: 1, type: 'musguinho', n: 4 },
+    attacks: [
+      [P({ kind: 'circle', at: 'self', r: 5.5, wind: 1.4, mul: 1.5, cd: 5.5, name: 'Raízes Erguidas', sfx: 'quake' }), P({ kind: 'cone', len: 8, half: 0.55, wind: 1.1, mul: 1.4, cd: 5, name: 'Golpe de Bronze', sfx: 'heavySwing' })],
+      [P({ kind: 'rain', n: 5, r: 2.8, spread: 7, wind: 1.6, mul: 1.4, cd: 5, name: 'Espinhos do Bosque', sfx: 'quake' }), P({ kind: 'cone', len: 9, half: 0.6, wind: 1.0, mul: 1.5, cd: 4.5, name: 'Golpe de Bronze', sfx: 'heavySwing' })],
+      [P({ kind: 'donut', r0: 3.5, r1: 10, wind: 1.6, mul: 1.7, cd: 4.5, name: 'Fúria da Floresta', sfx: 'quake' }), P({ kind: 'circle', at: 'self', r: 6.5, wind: 1.2, mul: 1.6, cd: 4.5, name: 'Raízes Erguidas', sfx: 'quake' })],
+    ],
+  },
+  gosmao: { // mini-chefe do vale: simples, para ensinar a ler o chão
+    color: '#6ab8ff', phases: [0.5], enrage: 0.2, mini: true,
+    lines: ['Blub!', 'BLUB BLUB!'],
+    adds: { phase: 1, type: 'gotinha', n: 4 },
+    attacks: [
+      [P({ kind: 'circle', at: 'target', r: 3, wind: 1.5, mul: 1.6, cd: 6, name: 'Salto Pegajoso', leap: true, sfx: 'slimeStep' })],
+      [P({ kind: 'circle', at: 'target', r: 3.4, wind: 1.3, mul: 1.7, cd: 5, name: 'Salto Pegajoso', leap: true, sfx: 'slimeStep' }), P({ kind: 'circle', at: 'self', r: 4.5, wind: 1.2, mul: 1.4, cd: 5, name: 'Onda de Geleia', sfx: 'slimeStep' })],
+    ],
+  },
+}; })();

@@ -128,8 +128,10 @@ def owner_hash(token):
 
 
 WORLD_LOCK = threading.Lock()
-WORLD = {'players': {}, 'chat': [], 'seq': 0}
-WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed', 'comp', 'sfx')  # comp: companheiro (S-325, lobo gigante do Caçador)
+WORLD = {'players': {}, 'chat': [], 'seq': 0,
+         # P-026 (grupo): grupos em memória — parties[id] = {id, leader, members[pid], mode}; pmeta[pid] = {own, name, party, gone}
+         'parties': {}, 'pmeta': {}, 'invites': {}, 'credits': {}, 'kills': {}, 'pseq': 0}
+WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'sp', 'maxSp', 'jobLv', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed', 'comp', 'sfx')  # comp: companheiro (S-325, lobo gigante do Caçador)
 WORLD_NEAR = 150.0   # vê quem está a até 150 m (ou na mesma sala)
 WORLD_TTL = 8.0      # sem notícia há 8 s = saiu
 
@@ -139,6 +141,110 @@ def world_tick():
     for pid, p in list(WORLD['players'].items()):
         if now - p['seen'] > WORLD_TTL:
             del WORLD['players'][pid]
+            m = WORLD['pmeta'].get(pid)
+            if m and not m.get('gone'):
+                m['gone'] = now  # caiu: continua no grupo por 5 min (volta sozinho ao reconectar)
+    for pid, m in list(WORLD['pmeta'].items()):
+        if m.get('gone') and now - m['gone'] > PARTY_OFFLINE:
+            party_remove(pid, 'saiu (desconectado)')
+            WORLD['pmeta'].pop(pid, None)
+    for t, inv in list(WORLD['invites'].items()):
+        if inv['exp'] < now:
+            WORLD['invites'].pop(t, None)
+
+
+# ---------------- P-026: grupo (party) ----------------
+# O servidor guarda os grupos em memória (somem se o servidor reiniciar; os jogadores refazem com um convite).
+# Quem age é sempre o dono do jogador (pmeta.own = chave da conta/navegador, conferida a cada pedido).
+PARTY_MAX = 6
+PARTY_OFFLINE = 300.0     # desconectado há mais de 5 min sai do grupo
+PARTY_NEAR = 60.0         # divisão de EXP só para quem está a até 60 m (na mesma sala)
+INVITE_TTL = 30.0
+
+
+def party_note(pids, text):
+    """Aviso do sistema para alguns jogadores (aparece no chat deles)."""
+    WORLD['seq'] += 1
+    WORLD['chat'].append({'seq': WORLD['seq'], 'id': '', 'name': '', 'text': text, 't': time.time(), 'ch': 'sys', 'to': list(pids)})
+    WORLD['chat'] = WORLD['chat'][-150:]
+
+
+def party_of(pid):
+    m = WORLD['pmeta'].get(pid)
+    return WORLD['parties'].get(m.get('party')) if m and m.get('party') else None
+
+
+def party_remove(pid, why='saiu do grupo'):
+    pt = party_of(pid)
+    if not pt:
+        return
+    name = (WORLD['pmeta'].get(pid) or {}).get('name') or '?'
+    pt['members'] = [x for x in pt['members'] if x != pid]
+    WORLD['pmeta'].get(pid, {})['party'] = None
+    if len(pt['members']) <= 1:  # sobrou um só: o grupo acaba
+        for x in pt['members']:
+            WORLD['pmeta'].get(x, {})['party'] = None
+            party_note([x], f'{name} {why}. O grupo foi desfeito.')
+        WORLD['parties'].pop(pt['id'], None)
+        return
+    if pt['leader'] == pid:
+        pt['leader'] = pt['members'][0]
+        party_note(pt['members'], f"{name} {why}. {WORLD['pmeta'][pt['leader']]['name']} agora lidera o grupo.")
+    else:
+        party_note(pt['members'], f'{name} {why}.')
+
+
+def party_rejoin(pid, own, name):
+    """Reconectou (recarregou a página): o jogador volta ao grupo no lugar da sessão antiga."""
+    for old, m in list(WORLD['pmeta'].items()):
+        if old != pid and m.get('own') == own and m.get('name') == name and m.get('party') and old not in WORLD['players']:
+            pt = WORLD['parties'].get(m['party'])
+            if not pt:
+                continue
+            pt['members'] = [pid if x == old else x for x in pt['members']]
+            if pt['leader'] == old:
+                pt['leader'] = pid
+            WORLD['pmeta'][pid]['party'] = pt['id']
+            WORLD['pmeta'].pop(old, None)
+            return
+
+
+def party_find(key):
+    """Acha um jogador conectado pelo id ou pelo nome (sem diferenciar maiúsculas)."""
+    if key in WORLD['players']:
+        return key
+    k = str(key or '').strip().lower()
+    for pid, p in WORLD['players'].items():
+        if str(p.get('name') or '').lower() == k:
+            return pid
+    return None
+
+
+def party_share_split(total, n, mode):
+    """Igual à partyShare de js/rules.js: cada um recebe a parte com bônus de grupo (+10% por membro a mais)."""
+    if mode != 'igual' or n <= 1:
+        return total
+    return int(total * (1 + 0.1 * (n - 1)) // n)
+
+
+def party_view(pid):
+    pt = party_of(pid)
+    if not pt:
+        return None
+    me = WORLD['players'].get(pid) or {}
+    out = []
+    for x in pt['members']:
+        p = WORLD['players'].get(x)
+        m = WORLD['pmeta'].get(x) or {}
+        row = {'id': x, 'name': m.get('name'), 'leader': x == pt['leader'], 'online': bool(p), 'me': x == pid}
+        if p:
+            row.update({f: p.get(f) for f in ('cls', 'baseLv', 'jobLv', 'hp', 'maxHp', 'sp', 'maxSp', 'x', 'z', 'room', 'dead')})
+            try:
+                row['dist'] = round(math.hypot(float(p.get('x') or 0) - float(me.get('x') or 0), float(p.get('z') or 0) - float(me.get('z') or 0)), 1)
+            except (TypeError, ValueError):
+                row['dist'] = None
+        out.append(row)
+    return {'id': pt['id'], 'mode': pt['mode'], 'members': out, 'leaderMe': pt['leader'] == pid}
 
 
 def world_view(pid, since):
@@ -156,8 +262,15 @@ def world_view(pid, since):
         except (TypeError, ValueError):
             continue
         out.append({'id': k, **{f: v.get(f) for f in WORLD_FIELDS}, 'age': round(now_age(v), 3)})
-    chat = [c for c in WORLD['chat'] if c['seq'] > since]
-    return {'players': out, 'chat': chat, 'seq': WORLD['seq'], 't': time.time()}
+    chat = [{k: v for k, v in c.items() if k != 'to'} for c in WORLD['chat'] if c['seq'] > since and (not c.get('to') or pid in c['to'])]  # grupo/sussurro/avisos: só para quem é
+    view = {'players': out, 'chat': chat, 'seq': WORLD['seq'], 't': time.time(), 'party': party_view(pid)}
+    inv = WORLD['invites'].get(pid)
+    if inv:
+        view['invite'] = {'from': (WORLD['pmeta'].get(inv['from']) or {}).get('name'), 'size': len(party_of(inv['from'])['members']) if party_of(inv['from']) else 1, 'left': round(inv['exp'] - time.time(), 1)}
+    cr = WORLD['credits'].pop(pid, None)
+    if cr:
+        view['credits'] = cr
+    return view
 
 
 def now_age(v):
@@ -864,10 +977,20 @@ class Handler(SimpleHTTPRequestHandler):
         with WORLD_LOCK:
             world_tick()
             P = WORLD['players']
+            own = self.who()
+            if pid in P and P[pid].get('own') and P[pid]['own'] != own:  # P-026: só o dono age pelo seu personagem
+                return self.send_json(403, {'erro': 'jogador de outra pessoa'})
+            if path.startswith('/api/party/'):
+                return self.party_action(path[len('/api/party/'):], pid, data, now)
             if path == '/api/world/sync':
                 p = P.get(pid)
                 if not p:
-                    p = P[pid] = {'seen': now, 'last': 0}
+                    p = P[pid] = {'seen': now, 'last': 0, 'own': own}
+                    nm = str(data.get('name') or 'Aventureiro')[:24]
+                    WORLD['pmeta'][pid] = {'own': own, 'name': nm, 'party': None, 'gone': None}
+                    party_rejoin(pid, own, nm)
+                if pid in WORLD['pmeta']:
+                    WORLD['pmeta'][pid]['gone'] = None
                 if now - p['last'] >= 0.08:  # limite simples: no máximo ~12 atualizações por segundo
                     for f in WORLD_FIELDS:
                         if f in data:
@@ -893,15 +1016,135 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(200, {'ok': True, 'seq': WORLD['seq']})
             if path == '/api/world/leave':
                 P.pop(pid, None)
+                m = WORLD['pmeta'].get(pid)
+                if m:
+                    m['gone'] = now
                 return self.send_json(200, {'ok': True})
         return self.send_json(404, {'erro': 'rota desconhecida'})
+
+    # P-026: grupo — chamado já dentro do WORLD_LOCK, com o dono conferido
+    def party_action(self, act, pid, data, now):
+        P, M = WORLD['players'], WORLD['pmeta']
+        me = P.get(pid)
+        if not me or pid not in M:
+            return self.send_json(200, {'ok': False, 'msg': 'Você ainda não está no mundo.'})
+        myname = M[pid]['name']
+        pt = party_of(pid)
+        bad = lambda msg: self.send_json(200, {'ok': False, 'msg': msg})
+        if act == 'invite':
+            tid = party_find(data.get('target'))
+            if not tid or tid == pid:
+                return bad('Jogador não encontrado por perto.')
+            if party_of(tid):
+                return bad(f"{M[tid]['name']} já está num grupo.")
+            if pt and pt['leader'] != pid:
+                return bad('Só o líder do grupo pode convidar.')
+            if pt and len(pt['members']) >= PARTY_MAX:
+                return bad(f'O grupo já tem {PARTY_MAX} membros.')
+            WORLD['invites'][tid] = {'from': pid, 'exp': now + INVITE_TTL}
+            party_note([tid], f'{myname} convidou você para o grupo.')
+            return self.send_json(200, {'ok': True, 'msg': f"Convite enviado para {M[tid]['name']}."})
+        if act in ('accept', 'decline'):
+            inv = WORLD['invites'].pop(pid, None)
+            if not inv or inv['exp'] < now or inv['from'] not in P:
+                return bad('O convite expirou.')
+            fr = inv['from']
+            if act == 'decline':
+                party_note([fr], f'{myname} recusou o convite.')
+                return self.send_json(200, {'ok': True})
+            if pt:
+                party_remove(pid)
+            gp = party_of(fr)
+            if not gp:
+                WORLD['pseq'] += 1
+                gp = {'id': 'g%d' % WORLD['pseq'], 'leader': fr, 'members': [fr], 'mode': 'igual'}
+                WORLD['parties'][gp['id']] = gp
+                M[fr]['party'] = gp['id']
+            if len(gp['members']) >= PARTY_MAX:
+                return bad('O grupo está cheio.')
+            gp['members'].append(pid)
+            M[pid]['party'] = gp['id']
+            party_note(gp['members'], f'{myname} entrou no grupo.')
+            return self.send_json(200, {'ok': True})
+        if not pt:
+            if act in ('chat',) and data.get('ch') == 'w':
+                pass
+            else:
+                return bad('Você não está num grupo.')
+        if act == 'leave':
+            party_remove(pid)
+            return self.send_json(200, {'ok': True, 'msg': 'Você saiu do grupo.'})
+        if act in ('kick', 'lead'):
+            if pt['leader'] != pid:
+                return bad('Só o líder pode fazer isso.')
+            tid = party_find(data.get('target'))
+            if not tid:  # pode ser alguém desconectado: procura pelo nome entre os membros
+                k = str(data.get('target') or '').lower()
+                tid = next((x for x in pt['members'] if (M.get(x) or {}).get('name', '').lower() == k), None)
+            if not tid or tid not in pt['members'] or tid == pid:
+                return bad('Essa pessoa não está no seu grupo.')
+            if act == 'kick':
+                party_remove(tid, 'foi removido do grupo')
+                party_note([tid], 'Você foi removido do grupo.')
+            else:
+                pt['leader'] = tid
+                party_note(pt['members'], f"{M[tid]['name']} agora lidera o grupo.")
+            return self.send_json(200, {'ok': True})
+        if act == 'mode':
+            if pt['leader'] != pid:
+                return bad('Só o líder pode mudar a divisão de EXP.')
+            pt['mode'] = 'igual' if data.get('mode') == 'igual' else 'quem_matou'
+            party_note(pt['members'], 'EXP do grupo: ' + ('dividida igualmente (com bônus de grupo).' if pt['mode'] == 'igual' else 'fica com quem derrotar o monstro.'))
+            return self.send_json(200, {'ok': True})
+        if act == 'chat':
+            text = re.sub(r'\s+', ' ', str(data.get('text') or '')).strip()[:200]
+            if not text:
+                return bad('')
+            if now - me.get('lastChat', 0) < 0.7:
+                return bad('Devagar no chat.')
+            me['lastChat'] = now
+            WORLD['seq'] += 1
+            if data.get('ch') == 'w':  # sussurro: só quem manda e quem recebe
+                tid = party_find(data.get('to'))
+                if not tid:
+                    return bad('Esse jogador não está conectado.')
+                WORLD['chat'].append({'seq': WORLD['seq'], 'id': pid, 'name': myname, 'text': text, 't': now, 'ch': 'w', 'toName': M[tid]['name'], 'to': [pid, tid]})
+            else:
+                WORLD['chat'].append({'seq': WORLD['seq'], 'id': pid, 'name': myname, 'text': text, 't': now, 'ch': 'g', 'to': list(pt['members'])})
+            WORLD['chat'] = WORLD['chat'][-150:]
+            return self.send_json(200, {'ok': True})
+        if act == 'share':
+            # Divisão de EXP/zeny ao derrotar um monstro. Hoje o combate é decidido no navegador (a fase 3 do online
+            # vai calcular a recompensa no próprio servidor); por isso aqui o servidor só valida limites e ritmo.
+            try:
+                exp, jexp, zeny = (max(0, min(100000, int(data.get(k) or 0))) for k in ('exp', 'jexp', 'zeny'))
+            except (TypeError, ValueError):
+                return bad('dados inválidos')
+            ks = [t for t in WORLD['kills'].get(pid, []) if now - t < 60]
+            if len([t for t in ks if now - t < 1]) >= 4 or len(ks) >= 150:  # ritmo impossível: nada é dividido
+                WORLD['kills'][pid] = ks
+                return self.send_json(200, {'ok': True, 'mine': {'exp': exp, 'jexp': jexp, 'zeny': zeny}, 'shared': 0})
+            ks.append(now)
+            WORLD['kills'][pid] = ks
+            near = [x for x in pt['members'] if x != pid and x in P and not P[x].get('dead') and (P[x].get('room') or None) == (me.get('room') or None)
+                    and math.hypot(float(P[x].get('x') or 0) - float(me.get('x') or 0), float(P[x].get('z') or 0) - float(me.get('z') or 0)) <= PARTY_NEAR]
+            n = 1 + len(near)
+            if pt['mode'] != 'igual' or n == 1:
+                return self.send_json(200, {'ok': True, 'mine': {'exp': exp, 'jexp': jexp, 'zeny': zeny}, 'shared': 0})
+            sh = {'exp': party_share_split(exp, n, 'igual'), 'jexp': party_share_split(jexp, n, 'igual'), 'zeny': zeny // n}
+            mon = str(data.get('mon') or '')[:40]
+            for x in near:
+                WORLD['credits'].setdefault(x, []).append({**sh, 'from': myname, 'mon': mon})
+                WORLD['credits'][x] = WORLD['credits'][x][-30:]
+            return self.send_json(200, {'ok': True, 'mine': {**sh, 'zeny': zeny - sh['zeny'] * len(near)}, 'shared': len(near)})
+        return self.send_json(404, {'erro': 'ação desconhecida'})
 
     def do_POST(self):
         if self.path.split('?')[0] == '/api/save':
             return self.save_character()
         if self.path.split('?')[0].startswith('/api/auth/'):
             return self.auth(self.path.split('?')[0])
-        if self.path.split('?')[0].startswith('/api/world/'):
+        if self.path.split('?')[0].startswith(('/api/world/', '/api/party/')):  # P-026: grupo passa pelo mesmo caminho (dono conferido)
             return self.world(self.path.split('?')[0])
         if self.path.split('?')[0] == '/api/propostas':
             if not self.is_local():

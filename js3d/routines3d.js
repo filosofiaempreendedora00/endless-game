@@ -20,7 +20,7 @@
    ========================================================================= */
 
 const DAY_MIN = 1440;
-export function gameMinutes() { return Math.floor(Date.now() / 1000) % DAY_MIN; } // 0..1439
+export function gameMinutes() { const o = globalThis.__aethraClock; if (o != null) return ((Math.floor(o) % DAY_MIN) + DAY_MIN) % DAY_MIN; return Math.floor(Date.now() / 1000) % DAY_MIN; } // 0..1439 · P-020: o mestre pode fixar a hora (só na tela dele)
 export function gameClock() { const m = gameMinutes(), h = Math.floor(m / 60), mm = m % 60; return { h, m: mm, total: m, label: `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, night: h >= 21 || h < 5 }; }
 const hash = (s, n) => { let x = 2166136261; for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 16777619); x = Math.imul(x ^ n, 2246822519); x ^= x >>> 13; return (x >>> 0) / 4294967296; };
 

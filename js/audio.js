@@ -60,6 +60,18 @@ const SONGS = {
     melody: `A5 - C6 - F6 - | E6 - - D6 C6 - | D6 - - A5 F5 - | G5 - - - - . |
              A5 - C6 - A5 - | F5 - G5 - A5 - | Bb5 - A5 - G5 - | F5 - - - - . |`,
   },
+  chefe: { // P-022: luta de chefe — marcha épica e urgente em Ré menor (original)
+    bpm: 150, stepsPerBar: 8, style: 'march', lead: 'square', leadVol: 0.2,
+    chords: 'Dm Bb C A Dm Bb Gm A',
+    melody: `D5 - - D5 F5 - A5 - | G5 - F5 - D5 - - - | E5 - - E5 G5 - C6 - | A5 - - - - - . . |
+             D6 - C6 - A5 - F5 - | D5 - F5 - G5 - A#5 - | A5 - G5 - E5 - C#5 - | D5 - - - - - . . |`,
+  },
+  noite: { // P-020: noturno calmo em Lá menor — notas longas e espaçadas, como uma caixinha de música ao luar
+    bpm: 58, stepsPerBar: 6, style: 'mystic', lead: 'sine', leadVol: 0.38,
+    chords: 'Am F C G Am Dm E Am',
+    melody: `E5 - - - C5 - | A4 - - - . . | F5 - - E5 C5 - | G4 - - - . . |
+             E5 - - - A5 - | F5 - - D5 - - | B4 - - - G#4 - | A4 - - - . . |`,
+  },
   catacumbas: { // escura e lenta em Dó menor
     bpm: 60, stepsPerBar: 8, style: 'dark', lead: 'sine', leadVol: 0.5,
     chords: 'Cm Ab Fm G Cm Ab Bb G',

@@ -59,9 +59,10 @@ function handleChat(v) {
   const [cmd, ...args] = v.slice(1).split(/\s+/);
   const n = parseInt(args[0]);
   const dev = t => UI.log('[dev] ' + t, 'dev');
+  if (H3.chatCmd && H3.chatCmd(cmd.toLowerCase(), args, v)) return; // P-026: comandos de grupo (/convidar, /g, /s...) valem para todos
   if (!isAdmin() && !['ajuda', 'salvar'].includes(cmd.toLowerCase())) { UI.log('Comandos de teste só para o administrador. Digite /ajuda.', 'warn'); return; } // online: jogador de fora não trapaceia
   switch (cmd.toLowerCase()) {
-    case 'ajuda': UI.log('Comandos: /salvar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /carta monstro', 'sys'); break;
+    case 'ajuda': UI.log('Grupo: /convidar nome • /g mensagem • /s nome mensagem • /sairgrupo • /expulsar nome • /lider nome • /expgrupo igual|matou (ou clique com o botão direito em outro jogador)', 'sys'); UI.log('Comandos: /salvar • Teste (dev): /taxa N, /nivel N, /classe N, /zeny N, /item id [qtd], /cura, /carta monstro', 'sys'); break;
     case 'salvar': saveGame(); UI.log('Jogo salvo.', 'sys'); break;
     case 'taxa': if (n > 0) { CONFIG.EXP_RATE = n; dev(`Taxa de EXP ${n}x.`); } break;
     case 'nivel': if (n > 0) { while (p.baseLv < Math.min(n, CONFIG.MAX_BASE_LV)) { p.baseLv++; p.statPoints += Math.floor(p.baseLv / 5) + 3; } recalc(p); p.hp = p.d.maxHp; dev(`Nível de Base ${p.baseLv}.`); UI.markDirty(); } break;

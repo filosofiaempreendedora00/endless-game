@@ -57,6 +57,11 @@ export function initWeather(scene) {
   return W;
 }
 
+// P-020: a luz do dia/noite tinge neve, areia, poeira e névoa (à noite não ficam brilhando no escuro)
+export function setWeatherLight(c) {
+  if (!W) return;
+  for (const m of [W.snowFar.p.material, W.snowNear.p.material, W.sand.p.material, W.dust.mat, W.mist.mat]) { if (!m.userData.dnBase) m.userData.dnBase = m.color.clone(); m.color.copy(m.userData.dnBase).multiply(c); }
+}
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _v = new THREE.Vector3(), _e = new THREE.Euler();
 // move uma camada de partículas: "dá a volta" na caixa em volta da câmera para nunca acabar
 function stepParticles(L, cam, dt, vel, fn) {

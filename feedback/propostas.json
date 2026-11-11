@@ -295,5 +295,96 @@
     "status": "feita",
     "respondidoEm": "2026-11-11T09:42:31",
     "resposta": "Personagens novos ganham os 'Primeiros passos': câmera pela Vila de Alvorada e um balão discreto que ensina uma coisa por vez (andar, câmera, Teodoro, mapa, mochila, boneco, atalhos, missões, mascote), com setinha dourada; a missão do Teodoro ao Bento fecha com um presentinho. Dá para pular ou refazer nas Configurações; personagens antigos, como o Vidro, não veem."
+  },
+  {
+    "id": "P-019",
+    "titulo": "Equipamento visível na cabeça, olhos e boca",
+    "detalhe": "Itens equipados nos espaços de cabeça, rosto (olhos) e boca aparecem no personagem, como os chapéus/acessórios do RO. Só esses espaços por enquanto.",
+    "principios": [],
+    "evidencias": [],
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "Tudo o que você equipa na cabeça, nos olhos e na boca aparece no personagem, moldado na cabeça de humano, elfo e anão, com o cabelo por baixo do chapéu. Criei 9 itens novos (cachimbo, monóculo, máscara de baile, coroa de bronze…), alguns na loja do Bento e outros nos drops."
+  },
+  {
+    "id": "P-020",
+    "titulo": "Dia e noite de verdade",
+    "detalhe": "Luz e céu seguindo o relógio do jogo: pôr do sol, estrelas, tochas e janelas acendendo, música de noite.",
+    "principios": [],
+    "evidencias": [],
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "O dia passa de verdade: amanhecer rosado, dia azul, pôr do sol laranja e noite estrelada com lua; luz e sombras seguem o sol, janelas, tochas e lampiões acendem à noite e toca uma música calma. Dentro das casas e masmorras nada muda, e no Painel do Mestre dá para escolher a hora."
+  },
+  {
+    "id": "P-021",
+    "titulo": "Revisão das habilidades",
+    "detalhe": "Conferir todas as habilidades uma a uma, reforçar o meteoro e a estocada do Executor.",
+    "principios": [],
+    "evidencias": [],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T14:37:37"
+  },
+  {
+    "id": "P-022",
+    "titulo": "Chefes com mecânicas",
+    "detalhe": "Fases, ataques avisados no chão, ajudantes e música de chefe.",
+    "principios": [],
+    "evidencias": [],
+    "status": "feita",
+    "respondidoEm": "2026-11-11T14:37:37",
+    "resposta": "Os chefes lutam de verdade: mudam de fase com a vida, avisam os golpes no chão (dá para desviar), chamam lacaios, ficam enfurecidos no fim, têm barra no topo e música de luta, e deixam um baú ao cair."
+  },
+  {
+    "id": "P-023",
+    "titulo": "Monstros no padrão do lobo (Fungolino, Coelho, Abelha, Gotinhas, esqueletos, Espectro, Morcego)",
+    "detalhe": "Aguardando: o Roberto pediu para segurar por enquanto.",
+    "principios": [],
+    "evidencias": [],
+    "status": "proposta"
+  },
+  {
+    "id": "P-024",
+    "titulo": "Natureza viva sutil",
+    "detalhe": "Pássaros, peixes, borboletas e vaga-lumes pequenos e sutis, sem lag e sem parecer monstros.",
+    "principios": [],
+    "evidencias": [],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T14:37:37"
+  },
+  {
+    "id": "P-025",
+    "titulo": "Sons de ambiente",
+    "detalhe": "Vento, rio, vila, forja e passos por tipo de chão, sem bugs.",
+    "principios": [],
+    "evidencias": [],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T14:37:37"
+  },
+  {
+    "id": "P-026",
+    "titulo": "Grupo (party) online",
+    "detalhe": "Convidar amigos, vida do grupo, dividir EXP e itens, chat de grupo e marcador no mapa.",
+    "principios": [],
+    "evidencias": [],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T14:37:37"
+  },
+  {
+    "id": "P-027",
+    "titulo": "Mascotes no padrão novo",
+    "detalhe": "Aguardando: o Roberto quer ver a raposa nova antes.",
+    "principios": [],
+    "evidencias": [],
+    "status": "proposta"
+  },
+  {
+    "id": "P-028",
+    "titulo": "Online fase 3",
+    "detalhe": "Monstros e combate decididos pelo servidor: todos veem o mesmo mundo, sem trapaça.",
+    "principios": [],
+    "evidencias": [],
+    "status": "aprovada",
+    "respondidoEm": "2026-11-11T14:37:37"
   }
 ]

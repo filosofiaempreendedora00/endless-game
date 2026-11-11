@@ -58,8 +58,8 @@ export const STRIKES = {
     { dur: 0.48, hit: 0.5, keys: [{ t: 0, r: [-0.2, -0.45, 0.5] }, { t: 0.3, r: [0.28, -0.05, 0.42], yaw: 0.32, rp: [-0.2, -0.7, -0.5] }, { t: 0.55, r: [-0.62, -0.25, 0.62], yaw: -0.28, lean: 0.12 }, { t: 0.78, r: [-0.72, -0.35, 0.42], yaw: -0.32 }, { t: 1, r: [-0.2, -0.45, 0.5] }] },
   ],
   duas: [ // katar / duas adagas: estocadas alternadas, elegantes ("dança" do Algoz), sem abrir as pernas
-    { dur: 0.42, hit: 0.48, lunge: 0.15, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.28, r: [-0.24, -0.28, 0.2], l: [0.15, -0.3, 0.62], yaw: -0.2, rp: [-0.6, -0.45, -0.5] }, { t: 0.5, r: [-0.02, -0.16, 1.0], l: [0.24, -0.36, 0.3], yaw: 0.26, lean: 0.18 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] },
-    { dur: 0.42, hit: 0.48, lunge: 0.15, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.28, l: [0.24, -0.28, 0.2], r: [-0.15, -0.3, 0.62], yaw: 0.2, lp: [0.6, -0.45, -0.5] }, { t: 0.5, l: [0.02, -0.16, 1.0], r: [-0.24, -0.36, 0.3], yaw: -0.26, lean: 0.18 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] },
+    { dur: 0.42, hit: 0.46, lunge: 0.24, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.24, r: [-0.24, -0.26, 0.22], l: [0.15, -0.3, 0.62], yaw: -0.22, rp: [-0.6, -0.45, -0.5] }, { t: 0.44, r: [-0.01, -0.06, 1.08], l: [0.26, -0.36, 0.28], yaw: 0.34, lean: 0.24 }, { t: 0.62, r: [-0.02, -0.08, 1.04], l: [0.26, -0.36, 0.3], yaw: 0.3, lean: 0.2 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] }, // P-021: braço quase reto à frente na altura do peito, ombro acompanhando, segura um instante
+    { dur: 0.42, hit: 0.46, lunge: 0.24, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.24, l: [0.24, -0.26, 0.22], r: [-0.15, -0.3, 0.62], yaw: 0.22, lp: [0.6, -0.45, -0.5] }, { t: 0.44, l: [0.01, -0.06, 1.08], r: [-0.26, -0.36, 0.28], yaw: -0.34, lean: 0.24 }, { t: 0.62, l: [0.02, -0.08, 1.04], r: [-0.26, -0.36, 0.3], yaw: -0.3, lean: 0.2 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] },
     { dur: 0.5, hit: 0.52, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.3, r: [-0.62, 0.05, 0.35], l: [0.62, 0.05, 0.35], lean: -0.04 }, { t: 0.55, r: [0.22, -0.3, 0.85], l: [-0.22, -0.3, 0.85], lean: 0.16 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] },
   ],
   sabre: [ // Gatuno-Mestre: corte de sabre e estocada da adaga (esquerda)
@@ -194,6 +194,7 @@ export function impact(m, dir, o = {}) {
   if (o.crit || o.heavy) { shake = Math.max(shake, o.crit && o.heavy ? 0.09 : 0.05); shakeT = 0; }
 }
 // micro-pausa: o laço do jogo passa o dt por aqui (fica ~10% por 40–60 ms depois de um acerto)
+export function addShake(a) { shake = Math.max(shake, a); shakeT = 0; } // P-021: tremida leve pedida pelos efeitos de habilidade (meteoro)
 export function hitStopDt(dt) { if (stop <= 0) return dt; stop -= dt; return dt * 0.12; }
 export function updateImpact(dt) {
   const now = performance.now();

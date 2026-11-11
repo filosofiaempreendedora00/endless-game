@@ -24,6 +24,11 @@ function baseExpNext(lv) { return Math.floor(15 * lv * lv + 20 * lv + 10); }
 
 function jobExpNext(lv, tier) { return Math.floor((10 * lv * lv + 20 * lv + 10) * [0.15, 0.45, 0.8][tier]); }
 
+// P-026: divisão da recompensa no grupo. mode 'igual' = cada um dos n membros próximos recebe a mesma parte,
+// com bônus de grupo de +10% por membro a mais (2 juntos = 55% cada); 'quem_matou' = tudo com quem derrotou.
+// O servidor (server.py, party_share_split) usa a mesma conta para os outros membros.
+function partyShare(total, n, mode) { return mode !== 'igual' || n <= 1 ? total : Math.floor(total * (1 + 0.1 * (n - 1)) / n); }
+
 function statCost(v) { return Math.floor((v - 1) / 10) + 2; }
 
 function canChangeClass(p) {

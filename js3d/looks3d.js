@@ -1229,8 +1229,23 @@ export const HATS = {
   tiara_arcana: { extra: 'circlet', covers: false, dy: -0.07 },
   faixa_de_penas: { extra: 'featherBand', covers: false, dy: -0.08 },
 };
-export function hatCovers(hatId) { return !!(HATS[hatId] && HATS[hatId].covers); }
+/* P-019: a "chave" do equipamento de cabeça é 'topo|rosto|boca' (hatOf em main3d) — cada parte é opcional;
+   uma chave antiga com só o id do chapéu continua valendo (vira o topo). */
+const gearParts = key => { const s = String(key || '').split('|'); return { top: s[0] || null, face: s[1] || null, mouth: s[2] || null }; };
+export function hatCovers(hatId) { const t = gearParts(hatId).top; return !!((HEAD_GEAR[t] && HEAD_GEAR[t].covers) || (HATS[t] && HATS[t].covers)); }
 export function applyHat(ch, hatId, MODELS, customHead = true) {
+  const G = gearParts(hatId);
+  if (ch.root.userData.human) { // corpo realista: peças feitas em código e moldadas na cabeça real
+    const fx = [];
+    let cut = null; { const H0 = headInfo(ch.root), T0 = G.top && HEAD_GEAR[G.top]; if (H0) H0.covered = !!(T0 && T0.covers); }
+    for (const id of [G.top, G.face, G.mouth]) if (id && HEAD_GEAR[id]) { try { const r = buildHeadGear(ch.root, id); if (r && r.fx) fx.push(r.fx); if (r && r.cut && id === G.top) cut = r.cut; } catch (e) { console.warn('acessório de cabeça', id, e); } }
+    const T = G.top && HEAD_GEAR[G.top];
+    if (T && T.covers) { if (T.tight || !cut) hairUnderHat(ch.root, !!T.tight); else try { squashHair(ch.root, cut); } catch (e) { console.warn('cabelo sob o chapéu', e); hairUnderHat(ch.root); } }
+    if (fx.length || (G.top && HEAD_GEAR[G.top])) return fx.length ? t => fx.forEach(f => f(t)) : null;
+  }
+  return applyHatOld(ch, G.top, MODELS, customHead);
+}
+function applyHatOld(ch, hatId, MODELS, customHead = true) {
   const H = HATS[hatId]; if (!H) return null;
   const fx = [];
   const hb = bone(ch.root, 'head'), before = hb ? new Set(hb.children) : null;
@@ -1239,6 +1254,354 @@ export function applyHat(ch, hatId, MODELS, customHead = true) {
   if (H.borrow) { const [model, item] = H.borrow; borrow(ch.root, MODELS, model, item); if (H.scale) { const o = ch.root.getObjectByName(item); if (o) o.scale.multiplyScalar(H.scale); } }
   if (ch.root.userData.human && H.covers) hairUnderHat(ch.root, !!H.tight);
   return fx.length ? t => fx.forEach(f => f(t)) : null;
+}
+
+/* =========================================================================
+   P-019 — ACESSÓRIOS DE CABEÇA (topo, meio/olhos e baixo/boca, como no Ragnarok), feitos em código e
+   MOLDADOS NA CABEÇA REAL de cada personagem: na pose parada medimos o crânio (com e sem cabelo), os olhos,
+   o nariz, a boca, o queixo e as orelhas; cada peça é construída no espaço do personagem e presa ao osso da
+   cabeça (pinToBone) — encaixa em humano, elfo e anão, homem e mulher, com qualquer rosto do criador.
+   Para criar um acessório novo: uma entrada em HEAD_GEAR { slot, covers, tight, build(H, mk) } + o item em data.js.
+   ========================================================================= */
+const _hv = new THREE.Vector3();
+const HG_SEC = 48;
+function headInfo(root) {
+  if (root.userData._headInfo) return root.userData._headInfo;
+  humanIdlePose(root); root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), head = [], hair = [], beard = [];
+  let emn = null, emx = null;
+  root.traverse(o => {
+    if (!o.isSkinnedMesh) return;
+    const isHead = o.name === 'PlayerHead' || /^SuperHero/i.test(o.name) || /_Head(_Hooded)?$/.test(o.name), isBeard = /Beard/.test(o.name), isHair = /^Hair_/.test(o.name) && !isBeard, isEye = /^Eyes/.test(o.name);
+    if (!(isHead || isHair || isBeard || isEye) || (!o.visible && !isHair)) return;
+    const g = o.geometry, n = g.attributes.position.count; let used = null; if (g.index) { used = new Uint8Array(n); const ix = g.index.array; for (let k = 0; k < ix.length; k++) used[ix[k]] = 1; }
+    const db = isHead ? (o.userData._dom || (o.userData._dom = domBones(o))) : null, step = isHead ? 1 : 2;
+    for (let v = 0; v < n; v += step) {
+      if (used && !used[v]) continue; if (db && db[v] !== 'Head') continue;
+      o.getVertexPosition(v, _hv); _hv.applyMatrix4(o.matrixWorld).applyMatrix4(inv);
+      if (isEye) { emn = emn ? emn.min(_hv) : _hv.clone(); emx = emx ? emx.max(_hv) : _hv.clone(); }
+      else (isHead ? head : isHair ? hair : beard).push(_hv.clone());
+    }
+  });
+  if (!head.length) return null;
+  const hb = new THREE.Box3().setFromPoints(head);
+  const E = emn ? emn.clone().add(emx).multiplyScalar(0.5) : new THREE.Vector3((hb.min.x + hb.max.x) / 2, hb.min.y + (hb.max.y - hb.min.y) * 0.55, hb.max.z - 0.03);
+  const eyeHalf = emn ? Math.max(0.02, (emx.x - emn.x) / 2 - 0.012) : 0.032, eyeZ = emn ? emx.z : hb.max.z - 0.02;
+  // eixo do crânio (centro em x/z) na altura dos olhos para cima
+  const sk = head.filter(p => p.y > E.y - 0.01 && p.y < E.y + 0.07), skb = new THREE.Box3().setFromPoints(sk.length ? sk : head);
+  const cx = E.x, cz = (skb.min.z + skb.max.z) / 2;
+  const top = hb.max.y, hairTop = hair.length ? Math.max(top, new THREE.Box3().setFromPoints(hair).max.y) : top;
+  const y0 = E.y - 0.17, dy = 0.006, rows = Math.ceil((hairTop + 0.02 - y0) / dy) + 1;
+  const table = pts => { const T = Array.from({ length: rows }, () => new Float32Array(HG_SEC)); for (const p of pts) { const i = Math.round((p.y - y0) / dy); if (i < 0 || i >= rows) continue; const a = Math.atan2(p.x - cx, p.z - cz), j = ((Math.round(a / (Math.PI * 2) * HG_SEC) % HG_SEC) + HG_SEC) % HG_SEC, r = Math.hypot(p.x - cx, p.z - cz); if (r > T[i][j]) T[i][j] = r; }
+    for (let i = 0; i < rows; i++) { const row = T[i]; if (!row.some(r => r > 0)) continue; for (let j = 0; j < HG_SEC; j++) if (!row[j]) { let a = 1; while (!row[(j - a + HG_SEC) % HG_SEC] && a < HG_SEC) a++; let c = 1; while (!row[(j + c) % HG_SEC] && c < HG_SEC) c++; row[j] = (row[(j - a + HG_SEC) % HG_SEC] * c + row[(j + c) % HG_SEC] * a) / (a + c); } }
+    let last = -1; for (let i = 0; i < rows; i++) if (T[i].some(r => r > 0)) last = i;
+    for (let i = 0; i < rows; i++) if (!T[i].some(r => r > 0)) { let a = i; while (a >= 0 && !T[a].some(r => r > 0)) a--; if (a >= 0 && i < last) { let c = i; while (c < rows && !T[c].some(r => r > 0)) c++; for (let j = 0; j < HG_SEC; j++) T[i][j] = (T[a][j] + T[c][j]) / 2; } }
+    // cada fatia vira uma curva suave (série de Fourier até a 5ª harmônica: some o calombo de orelha/vértice solto) e as fatias se suavizam na vertical
+    for (let i = 0; i < rows; i++) { const r = T[i]; if (!r.some(v => v > 0)) continue; const c = [], d = []; for (let k = 0; k <= 5; k++) { let ck = 0, dk = 0; for (let j = 0; j < HG_SEC; j++) { const a = j / HG_SEC * Math.PI * 2; ck += r[j] * Math.cos(k * a); dk += r[j] * Math.sin(k * a); } c.push(ck / HG_SEC * (k ? 2 : 1)); d.push(dk / HG_SEC * (k ? 2 : 1)); }
+      for (let j = 0; j < HG_SEC; j++) { const a = j / HG_SEC * Math.PI * 2; let v = 0; for (let k = 0; k <= 5; k++) v += c[k] * Math.cos(k * a) + d[k] * Math.sin(k * a); r[j] = Math.max(v, r[j] * 0.995); } }
+    for (let pass = 0; pass < 2; pass++) { const C = T.map(r => r.slice()); for (let i = 1; i < last; i++) if (C[i - 1].some(v => v > 0) && C[i + 1].some(v => v > 0)) for (let j = 0; j < HG_SEC; j++) T[i][j] = Math.max(C[i][j] * 0.995, (C[i - 1][j] + C[i][j] * 2 + C[i + 1][j]) / 4); }
+    return { T, last }; };
+  const S = table(head), SH = table(hair.length ? head.concat(hair) : head), SB = table(beard.length ? head.concat(beard) : head);
+  const rad = (tab, y, a) => { const f = (y - y0) / dy, i0 = Math.max(0, Math.min(tab.last, Math.floor(f))), i1 = Math.min(tab.last, i0 + 1), w = Math.max(0, Math.min(1, f - i0)), g = ((a / (Math.PI * 2)) * HG_SEC % HG_SEC + HG_SEC) % HG_SEC, j0 = Math.floor(g), j1 = (j0 + 1) % HG_SEC, wj = g - j0;
+    const r = (i, j) => tab.T[i][j]; return (r(i0, j0) * (1 - wj) + r(i0, j1) * wj) * (1 - w) + (r(i1, j0) * (1 - wj) + r(i1, j1) * wj) * w; };
+  // nariz, boca, queixo e orelhas
+  let N = new THREE.Vector3(cx, E.y - 0.045, eyeZ + 0.02); for (const p of head) if (Math.abs(p.x - cx) < 0.012 && p.y < E.y - 0.012 && p.y > E.y - 0.085 && p.z > N.z) N = p.clone();
+  let chinY = N.y - 0.075; for (const p of head) if (Math.abs(p.x - cx) < 0.025 && p.z > cz + 0.025 && p.y < chinY && p.y > N.y - 0.13) chinY = p.y;
+  const mouthY = N.y - (N.y - chinY) * 0.42, frontZ = y => cz + rad(S, y, 0);
+  const H = { root, cx, cz, E, eyeHalf, eyeZ, N, chinY, mouthY, mouthZ: frontZ(mouthY), top, hairTop, beard: beard.length > 0,
+    R: (y, a) => rad(S, y, a), RH: (y, a) => rad(SH, y, a), RB: (y, a) => rad(SB, y, a),
+    at: (y, a, r) => new THREE.Vector3(cx + Math.sin(a) * r, y, cz + Math.cos(a) * r),
+    earY: E.y - 0.012, earR: rad(S, E.y - 0.012, Math.PI / 2) };
+  root.userData._headInfo = H; return H;
+}
+// superfície a partir de anéis (cada anel = mesma quantidade de pontos); fechada em volta, com tampa opcional no fim
+function hgSweep(rings, o = {}) {
+  const n = rings[0].length, closed = o.closed !== false, cols = closed ? n + 1 : n, pos = [], uv = [], idx = [];
+  rings.forEach((ring, i) => { for (let j = 0; j < cols; j++) { const p = ring[j % n]; pos.push(p.x, p.y, p.z); uv.push(j / (cols - 1) * (o.uRep || 1), i / (rings.length - 1) * (o.vRep || 1)); } });
+  for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < cols - 1; j++) { const a = i * cols + j, b = a + 1, c = a + cols, d = c + 1; if (o.flip) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d); }
+  if (o.capEnd) { const ci = pos.length / 3; pos.push(o.capEnd.x, o.capEnd.y, o.capEnd.z); uv.push(0.5, o.vRep || 1); const base = (rings.length - 1) * cols; for (let j = 0; j < cols - 1; j++) o.flip ? idx.push(base + j, base + j + 1, ci) : idx.push(base + j, ci, base + j + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+// anel em volta da cabeça na altura y(a) (pode inclinar), com folga; tab = 'R' (crânio), 'RH' (com cabelo) ou 'RB' (com barba)
+const hgRing = (H, yOf, off, tab = 'R', n = HG_SEC, a0 = -Math.PI, a1 = Math.PI, closed = true) => { const out = []; for (let k = 0; k < (closed ? n : n + 1); k++) { const a = a0 + (a1 - a0) * k / n, y = typeof yOf === 'function' ? yOf(a) : yOf; out.push(H.at(y, a, H[tab](y, a) + (typeof off === 'function' ? off(a, y) : off))); } return out; };
+// casca sobre o crânio: de y0(a) até o topo (fecha numa tampa), folga off e espessura th (camada de dentro + barra na borda)
+function hgShell(H, y0, off, o = {}) {
+  const tab = o.tab || 'R', topY = (tab === 'RH' ? H.hairTop : H.top), rows = o.rows || 14, th = o.th ?? 0;
+  const mk = (extra) => { const rings = []; for (let i = 0; i < rows; i++) { const v = i / (rows - 1); rings.push(hgRing(H, a => { const b = y0(a); return b + (topY - 0.004 - b) * (1 - Math.pow(1 - v, 1.15)); }, (a, y) => off + extra + (o.bulge ? o.bulge(a, y, v) : 0), tab)); }
+    return hgSweep(rings, { capEnd: new THREE.Vector3(H.cx, topY + off + extra + (o.capLift || 0), H.cz), uRep: o.uRep || 3, vRep: o.vRep || 1.5, flip: extra === th }); }; // camada de fora vira para fora; a de dentro, para dentro
+  const geos = [mk(th)]; if (th > 0) geos.push(mk(0));
+  return geos;
+}
+// cúpula lisa (elmo): base no anel y0(a), raio de cada direção = o maior do crânio dali para cima (cobre tudo, sem calombo),
+// subindo como uma elipse até o topo; th = espessura (casca de dentro)
+function hgDome(H, y0, off, th = 0) {
+  const n = HG_SEC, rows = 18, base = [], yTop = H.top + off;
+  for (let k = 0; k < n; k++) { const a = -Math.PI + 2 * Math.PI * k / n, yb = y0(a); let rb = 0; for (let y = yb; y < H.top - 0.02; y += 0.006) rb = Math.max(rb, H.R(y, a)); base.push({ a, yb, rb }); }
+  for (let pass = 0; pass < 3; pass++) { const c = base.map(b => b.rb); base.forEach((b, k) => { b.rb = (c[(k + n - 1) % n] + 2 * c[k] + c[(k + 1) % n]) / 4; }); }
+  const mk = (extra, flip) => { const rings = []; for (let i = 0; i < rows; i++) { const th0 = i / (rows - 1) * Math.PI / 2 * 0.985; rings.push(base.map(({ a, yb, rb }) => { const y = yb + (yTop + extra - yb) * Math.sin(th0), r = Math.max((rb + off + extra) * Math.cos(th0), Math.cos(th0) > 0.2 ? H.R(y, a) + off * 0.6 + extra : 0); return H.at(y, a, r); })); }
+    return hgSweep(rings, { capEnd: new THREE.Vector3(H.cx, yTop + extra, H.cz), uRep: 3, flip }); };
+  return th > 0 ? [mk(th, true), mk(0, false)] : [mk(0, true)];
+}
+// tubo afinado (raio r0 → r1) ao longo de uma curva
+function taperTube(curve, r0, r1, seg = 24, radial = 8, closed = false) {
+  const g = new THREE.TubeGeometry(curve, seg, 1, radial, closed), P = g.attributes.position, nrm = g.attributes.normal;
+  for (let i = 0; i <= seg; i++) { const t = i / seg, r = r0 + (r1 - r0) * t, c = curve.getPointAt(Math.min(1, t)); for (let j = 0; j <= radial; j++) { const k = i * (radial + 1) + j; P.setXYZ(k, c.x + nrm.getX(k) * r, c.y + nrm.getY(k) * r, c.z + nrm.getZ(k) * r); } }
+  g.computeVertexNormals(); return g;
+}
+// aba (chapéu): coroa interna seguindo o anel da cabeça, abrindo w para fora; lift(a, t) levanta/abaixa a aba; espessura th
+function hgBrim(H, y, off, w, lift, th = 0.006, tab = 'R') {
+  const n = 64, ringsTop = [], ringsBot = [], seg = 6;
+  for (let s = 0; s <= seg; s++) { const t = s / seg, top = [], bot = []; for (let k = 0; k < n; k++) { const a = -Math.PI + Math.PI * 2 * k / n, r = H[tab](y, a) + off + (typeof w === 'function' ? w(a) : w) * t, yy = y + lift(a, t); top.push(H.at(yy + th / 2, a, r)); bot.push(H.at(yy - th / 2, a, r)); } ringsTop.push(top); ringsBot.push(bot); }
+  const edge = [ringsTop[seg], ringsBot[seg]];
+  return [hgSweep(ringsTop, { uRep: 4 }), hgSweep(ringsBot, { flip: true, uRep: 4 }), hgSweep(edge, { uRep: 4 })];
+}
+// fita (tira plana) ao longo de uma curva, com largura w e normal "para fora" da cabeça
+function hgRibbon(H, pts, w, closed = false) {
+  const n = pts.length, top = [], bot = [];
+  for (let i = 0; i < n; i++) { const p = pts[i], out = new THREE.Vector3(p.x - H.cx, 0, p.z - H.cz).normalize(); top.push(p.clone().add(new THREE.Vector3(0, w / 2, 0)).addScaledVector(out, 0.0015)); bot.push(p.clone().add(new THREE.Vector3(0, -w / 2, 0)).addScaledVector(out, 0.0015)); }
+  return hgSweep([top, bot], { closed, uRep: 6 });
+}
+// pena de verdade: haste fina + duas lâminas de barbas (textura com transparência), curvada
+function hgFeather(len, w, col, tip = '#f2efe6') {
+  const N = 14, pts = []; for (let i = 0; i <= N; i++) { const t = i / N; pts.push(new THREE.Vector3(0, t * len, -Math.pow(t, 2) * len * 0.18)); }
+  const spine = new THREE.CatmullRomCurve3(pts), g = new THREE.Group();
+  g.add(new THREE.Mesh(taperTube(spine, 0.0022, 0.0006, 16, 5), std('#f4eee0', { roughness: 0.5 })));
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= N; i++) { const t = i / N, p = spine.getPointAt(t), hw = w * Math.pow(Math.sin(Math.min(1, t * 1.1) * Math.PI * 0.95), 0.7) * (t < 0.12 ? t / 0.12 : 1); for (const s of [-1, 1]) { pos.push(p.x + s * hw, p.y - hw * 0.25, p.z - hw * 0.12); uv.push(s < 0 ? 0 : 1, t); } pos.push(p.x, p.y, p.z); uv.push(0.5, t); }
+  for (let i = 0; i < N; i++) { const a = i * 3, b = a + 3; idx.push(a, b, a + 2, a + 2, b, b + 2, a + 2, b + 2, a + 1, a + 1, b + 2, b + 1); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: featherTex(col, tip), alphaTest: 0.35, transparent: false, side: THREE.DoubleSide, roughness: 0.75 })));
+  return g;
+}
+const _hgTex = {};
+function featherTex(col, tip) {
+  const k = col + tip; if (_hgTex[k]) return _hgTex[k];
+  const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'); let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let y = 0; y < 256; y += 2) { const t = y / 256; x.strokeStyle = t > 0.82 ? tip : col; x.globalAlpha = 0.75 + r() * 0.25; x.lineWidth = 1.6; for (const side of [-1, 1]) { const len = 30 * (0.75 + r() * 0.3) - (r() < 0.06 ? 14 : 0); x.beginPath(); x.moveTo(32, 256 - y); x.quadraticCurveTo(32 + side * len * 0.6, 256 - y - 6, 32 + side * len, 256 - y - 12); x.stroke(); } }
+  x.globalAlpha = 1; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (_hgTex[k] = t);
+}
+// texturas: palha trançada, tricô e folha (com transparência)
+function strawTex() { if (_hgTex.straw) return _hgTex.straw; const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); let s = 5; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#c9a85a'; x.fillRect(0, 0, 256, 256); for (let row = 0; row < 32; row++) for (let col = 0; col < 16; col++) { const y = row * 8, x0 = col * 16 + (row % 2) * 8, l = 120 + r() * 50; x.fillStyle = `rgb(${l + 70},${l + 45},${l - 20})`; x.beginPath(); x.ellipse(x0 + 8, y + 4, 7.5, 3.4, 0, 0, 7); x.fill(); x.fillStyle = 'rgba(80,55,20,0.35)'; x.fillRect(x0, y + 7, 16, 1); }
+  for (let k = 0; k < 300; k++) { x.strokeStyle = `rgba(250,230,170,${r() * 0.25})`; x.beginPath(); const a = r() * 256, b = r() * 256; x.moveTo(a, b); x.lineTo(a + 6 + r() * 8, b + (r() - 0.5) * 2); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_hgTex.straw = t); }
+function knitTex() { if (_hgTex.knit) return _hgTex.knit; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#9a9a9a'; x.fillRect(0, 0, 128, 128);
+  for (let col = 0; col < 16; col++) for (let row = 0; row < 16; row++) { const cx = col * 8 + 4, cy = row * 8 + 4; const g = x.createLinearGradient(cx - 4, 0, cx + 4, 0); g.addColorStop(0, '#6a6a6a'); g.addColorStop(0.5, '#e6e6e6'); g.addColorStop(1, '#6a6a6a'); x.fillStyle = g; x.beginPath(); x.moveTo(cx - 3.5, cy - 4); x.quadraticCurveTo(cx, cy + 2, cx, cy + 4); x.quadraticCurveTo(cx, cy + 2, cx + 3.5, cy - 4); x.quadraticCurveTo(cx, cy - 1, cx - 3.5, cy - 4); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return (_hgTex.knit = t); }
+function leafTex(kind) { if (_hgTex['leaf' + kind]) return _hgTex['leaf' + kind]; const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  const leaf = (cx, cy, len, wid, ang, c1, c2) => { x.save(); x.translate(cx, cy); x.rotate(ang); const g = x.createLinearGradient(0, -wid, 0, wid); g.addColorStop(0, c2); g.addColorStop(0.5, c1); g.addColorStop(1, c2); x.fillStyle = g; x.beginPath(); x.moveTo(-len / 2, 0); x.bezierCurveTo(-len / 4, -wid, len / 4, -wid, len / 2, 0); x.bezierCurveTo(len / 4, wid, -len / 4, wid, -len / 2, 0); x.fill();
+    x.strokeStyle = 'rgba(220,240,180,0.55)'; x.lineWidth = 2; x.beginPath(); x.moveTo(-len / 2, 0); x.lineTo(len / 2, 0); x.stroke(); x.lineWidth = 1; for (let k = -4; k <= 4; k++) { if (!k) continue; const px = k * len / 10; x.beginPath(); x.moveTo(px, 0); x.lineTo(px + len / 14, -wid * 0.7 * Math.sign(k) * 0 - wid * 0.6); x.moveTo(px, 0); x.lineTo(px + len / 14, wid * 0.6); x.stroke(); } x.restore(); };
+  if (kind === 'mask') { leaf(72, 128, 160, 120, -0.22, '#4f8f34', '#2c5a1c'); leaf(184, 128, 160, 120, 0.22, '#4f8f34', '#2c5a1c'); leaf(128, 104, 70, 36, 0, '#5a9a3c', '#2c5a1c'); x.globalCompositeOperation = 'destination-out'; for (const ex of [80, 176]) { x.beginPath(); x.ellipse(ex, 134, 24, 15, 0, 0, 7); x.fill(); } }
+  else leaf(128, 128, 220, 70, 0, '#5cb048', '#2f6a24');
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (_hgTex['leaf' + kind] = t); }
+function maskTex() { if (_hgTex.mask) return _hgTex.mask; const c = document.createElement('canvas'); c.width = 512; c.height = 160; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, '#3a1640'); g.addColorStop(1, '#1e0a24'); x.fillStyle = g; x.beginPath(); x.moveTo(10, 70); x.bezierCurveTo(60, 0, 190, 10, 256, 52); x.bezierCurveTo(322, 10, 452, 0, 502, 70); x.bezierCurveTo(470, 140, 330, 150, 256, 110); x.bezierCurveTo(182, 150, 42, 140, 10, 70); x.fill();
+  x.strokeStyle = '#d8b25a'; x.lineWidth = 6; x.stroke(); x.lineWidth = 2; for (let k = 0; k < 18; k++) { x.beginPath(); x.arc(60 + k * 22, 40 + Math.sin(k) * 6, 4, 0, 7); x.stroke(); }
+  x.globalCompositeOperation = 'destination-out'; for (const ex of [168, 344]) { x.beginPath(); x.ellipse(ex, 82, 54, 30, ex < 256 ? 0.12 : -0.12, 0, 7); x.fill(); }
+  x.globalCompositeOperation = 'source-over'; x.strokeStyle = '#e8c86a'; x.lineWidth = 4; for (const ex of [168, 344]) { x.beginPath(); x.ellipse(ex, 82, 56, 32, ex < 256 ? 0.12 : -0.12, 0, 7); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_hgTex.mask = t); }
+function starCloth(base) { const k = 'star' + base; if (_hgTex[k]) return _hgTex[k]; const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); let s = 9; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = base; x.fillRect(0, 0, 256, 256); for (let k = 0; k < 2400; k++) { x.fillStyle = `rgba(255,255,255,${r() * 0.04})`; x.fillRect(r() * 256, r() * 256, 1, 2); }
+  x.fillStyle = '#e6c46a'; for (let k = 0; k < 14; k++) { const cx = r() * 256, cy = r() * 256, R = 4 + r() * 4; x.beginPath(); for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5, rr = i % 2 ? R * 0.42 : R; x.lineTo(cx + Math.sin(a) * rr, cy - Math.cos(a) * rr); } x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_hgTex[k] = t); }
+const HGM = {
+  cloth: (col, kind = 'linho', rough = 0.88) => new THREE.MeshStandardMaterial({ color: col, map: fabricTex(kind), roughness: rough, side: THREE.DoubleSide }),
+  felt: (col) => new THREE.MeshStandardMaterial({ color: col, map: fabricTex('camurca'), roughness: 0.92, side: THREE.DoubleSide }),
+  straw: () => new THREE.MeshStandardMaterial({ map: strawTex(), roughness: 0.9, side: THREE.DoubleSide }),
+  knit: (col) => new THREE.MeshStandardMaterial({ color: col, map: knitTex(), bumpMap: knitTex(), bumpScale: 1.2, roughness: 0.95, side: THREE.DoubleSide }),
+  wood: (col = '#5a3620') => new THREE.MeshStandardMaterial({ color: col, map: metalTex('couro'), roughness: 0.55, metalness: 0.02 }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: '#dfeaf2', roughness: 0.04, metalness: 0, transmission: 0.0, transparent: true, opacity: 0.28, envMap: armorEnv(), envMapIntensity: 1.2, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false }),
+  gem: (col) => new THREE.MeshPhysicalMaterial({ color: col, emissive: col, emissiveIntensity: 0.25, roughness: 0.05, metalness: 0.1, clearcoat: 1, envMap: armorEnv(), envMapIntensity: 1.4 }),
+};
+// cabeça → peças: cada builder devolve [objetos (no espaço do personagem)] e, se quiser, uma animação (fx)
+const HEAD_GEAR = {
+  /* -------- TOPO -------- */
+  bandana: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.cloth('#a32a24'), y0 = a => H.E.y + 0.042 - 0.075 * (1 - Math.cos(a)) / 2;
+    const out = hgShell(H, y0, 0.009, { th: 0.002, rows: 12 }).map(g => new THREE.Mesh(g, mat));
+    const kn = H.at(y0(Math.PI) + 0.012, Math.PI, H.R(y0(Math.PI), Math.PI) + 0.014), knot = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.008, 10, 20), mat); knot.position.copy(kn); knot.scale.set(1, 0.7, 0.9); out.push(knot);
+    for (const s of [-1, 1]) { const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push(kn.clone().add(new THREE.Vector3(s * (0.008 + t * 0.03), -t * 0.13, -0.012 - t * 0.03))); } const w = []; for (const p of pts) w.push(p); const top = w.map(p => p.clone().add(new THREE.Vector3(0.012, 0, 0))), bot = w.map(p => p.clone().add(new THREE.Vector3(-0.012, 0, 0))); out.push(new THREE.Mesh(hgSweep([top, bot], { closed: false }), mat)); }
+    return { objs: out, cut: a => y0(a) + 0.004 }; } },
+  chapeu_de_palha: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.straw(), yb = H.E.y + 0.058, out = [];
+    out.push(...hgBrim(H, yb, 0.016, 0.15, (a, t) => -0.018 * t * t * (0.6 + 0.4 * Math.cos(a) ** 2) + 0.006 * t, 0.007).map(g => new THREE.Mesh(g, mat)));
+    const rings = []; for (let i = 0; i <= 10; i++) { const v = i / 10, yy = yb + v * 0.105, sc = 1 - Math.pow(v, 3) * 0.55; rings.push(hgRing(H, yb, 0, 'R').map((p, j) => { const d = new THREE.Vector3(p.x - H.cx, 0, p.z - H.cz); return new THREE.Vector3(H.cx + d.x * sc * 1.06 + 0, yy, H.cz + d.z * sc * 1.06); })); }
+    out.push(new THREE.Mesh(hgSweep(rings, { capEnd: new THREE.Vector3(H.cx, yb + 0.115, H.cz), uRep: 4 }), mat));
+    const band = []; for (let k = 0; k < HG_SEC; k++) { const a = -Math.PI + 2 * Math.PI * k / HG_SEC, p = hgRing(H, yb, 0, 'R')[k]; const d = new THREE.Vector3(p.x - H.cx, 0, p.z - H.cz).multiplyScalar(1.072); band.push(new THREE.Vector3(H.cx + d.x, yb + 0.018, H.cz + d.z)); } out.push(new THREE.Mesh(hgRibbon(H, band, 0.026, true), HGM.cloth('#7a2a1e')));
+    return { objs: out, cut: () => yb + 0.002 }; } },
+  coroa_de_flores: { slot: 'top', covers: false, build(H) {
+    const out = [], yOf = a => H.E.y + 0.07 + 0.03 * (1 - Math.cos(a)) / 2, vineMat = std('#4a6a2a', { roughness: 0.8 });
+    for (const ph of [0, Math.PI]) { const pts = []; for (let k = 0; k < 64; k++) { const a = -Math.PI + 2 * Math.PI * k / 64; pts.push(H.at(yOf(a) + Math.sin(a * 9 + ph) * 0.004, a, H.RH(yOf(a), a) + 0.008 + Math.cos(a * 9 + ph) * 0.003)); } out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, 0.0035, 6, true), vineMat)); }
+    const cols = ['#f2f0ea', '#f4c6d6', '#f6e27a', '#c9b2f0', '#f2f0ea', '#f7a8b8', '#f6e27a', '#f2f0ea', '#c9b2f0'];
+    cols.forEach((col, i) => { const a = -1.9 + i * (3.8 / (cols.length - 1)), y = yOf(a), p = H.at(y + 0.004, a, H.RH(y, a) + 0.016), f = flowerMesh(0.017 + (i % 3) * 0.003, col); f.position.copy(p); f.lookAt(H.at(y + 0.06, a, H.RH(y, a) + 0.3)); out.push(f); });
+    for (let i = 0; i < 8; i++) { const a = -2.2 + i * 0.62, y = yOf(a), p = H.at(y - 0.004, a, H.RH(y, a) + 0.012), lf = new THREE.Mesh(new THREE.PlaneGeometry(0.03, 0.013), new THREE.MeshStandardMaterial({ map: leafTex('one'), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7 })); lf.position.copy(p); lf.lookAt(H.at(y, a, H.RH(y, a) + 0.3)); lf.rotateZ(0.6 * (i % 2 ? 1 : -1)); out.push(lf); }
+    return { objs: out }; } },
+  elmo_de_ferro: { slot: 'top', covers: true, build(H) {
+    const mat = new THREE.MeshStandardMaterial({ color: '#7a8088', metalness: 0.85, roughness: 0.36, envMap: armorEnv(), envMapIntensity: 0.55 }), y0 = a => H.E.y + 0.026 - 0.11 * (1 - Math.cos(a)) / 2 - 0.02 * Math.pow(Math.abs(Math.sin(a)), 4);
+    const out = hgDome(H, y0, 0.016, 0.008).map(g => new THREE.Mesh(g, mat));
+    const brow = hgRing(H, a => y0(a) + 0.008, 0.026, 'R', 64); out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(brow, true), 96, 0.0065, 8, true), mat));
+    const crest = []; for (let k = 0; k <= 20; k++) { const t = k / 20, a = t < 0.5 ? 0 : Math.PI, f = t < 0.5 ? t * 2 : (1 - t) * 2, y = y0(a) + 0.02 + (H.top - y0(a) - 0.02) * Math.sin(f * Math.PI / 2); crest.push(H.at(y, a, H.R(y, a) + 0.027)); } crest.splice(10, 1, new THREE.Vector3(H.cx, H.top + 0.026, H.cz)); out.push(new THREE.Mesh(taperTube(new THREE.CatmullRomCurve3(crest), 0.006, 0.006, 40, 8), mat));
+    const nas = []; for (let k = 0; k <= 6; k++) { const y = y0(0) + 0.01 - k * ((y0(0) + 0.01 - (H.N.y + 0.012)) / 6); nas.push(new THREE.Vector3(H.cx, y, H.cz + H.R(y, 0) + 0.02 - k * 0.0005)); } out.push(new THREE.Mesh(hgRibbon(H, nas.map(p => p), 0.001), mat)); { const g = new THREE.Group(); const strip = new THREE.Mesh(new THREE.BoxGeometry(0.018, (y0(0) - H.N.y), 0.006, 1, 6, 1), mat); strip.position.set(H.cx, (y0(0) + 0.01 + H.N.y + 0.012) / 2, H.cz + H.R(H.E.y, 0) + 0.024); g.add(strip); out.push(g); }
+    for (let k = 0; k < 12; k++) { const a = -Math.PI + 2 * Math.PI * k / 12, y = y0(a) + 0.008, rv = new THREE.Mesh(new THREE.SphereGeometry(0.004, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), mat); rv.position.copy(H.at(y, a, H.R(y, a) + 0.033)); rv.lookAt(H.at(y, a, 2)); rv.rotateX(Math.PI / 2); out.push(rv); }
+    return { objs: out, cut: a => y0(a) + 0.006 }; } },
+  chapeu_de_mago: { slot: 'top', covers: true, build(H) {
+    const mat = new THREE.MeshStandardMaterial({ map: starCloth('#2a2468'), roughness: 0.85, side: THREE.DoubleSide }), yb = H.E.y + 0.055, out = [];
+    out.push(...hgBrim(H, yb, 0.014, a => 0.09 + 0.012 * Math.sin(a * 5), (a, t) => -0.012 * t * t + 0.004 * Math.sin(a * 3) * t, 0.006).map(g => new THREE.Mesh(g, mat)));
+    const base = hgRing(H, yb, 0.014, 'R'), rings = [], Hh = 0.4, sp = []; for (let i = 0; i <= 18; i++) { const v = i / 18; sp.push(new THREE.Vector3(H.cx, yb + v * Hh - Math.pow(v, 3) * 0.08, H.cz - Math.pow(v, 2) * 0.13)); }
+    for (let i = 0; i <= 18; i++) { const v = i / 18, sc = Math.pow(1 - v, 1.25) * (1 + 0.04 * Math.sin(v * 9)), c = sp[i]; rings.push(base.map(p => new THREE.Vector3(c.x + (p.x - H.cx) * sc, c.y, c.z + (p.z - H.cz) * sc))); }
+    out.push(new THREE.Mesh(hgSweep(rings, { capEnd: sp[18], uRep: 3, vRep: 2 }), mat));
+    const band = base.map(p => { const d = new THREE.Vector3(p.x - H.cx, 0, p.z - H.cz).multiplyScalar(0.97); return new THREE.Vector3(H.cx + d.x, yb + 0.016, H.cz + d.z); }); out.push(new THREE.Mesh(hgRibbon(H, band, 0.022, true), AM.gold('#c9a24a')));
+    return { objs: out, cut: () => yb + 0.002 }; } },
+  chapeu_de_bardo: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.cloth('#5e1838', 'veludo', 0.8), yb = H.E.y + 0.06, out = [];
+    out.push(...hgBrim(H, yb, 0.012, a => 0.05 + 0.025 * Math.max(0, Math.sin(a)), (a, t) => 0.05 * t * Math.max(0, -Math.sin(a)) - 0.008 * t * t, 0.006).map(g => new THREE.Mesh(g, mat)));
+    const rings = []; for (let i = 0; i <= 10; i++) { const v = i / 10, sc = 1.08 + 0.12 * Math.sin(v * Math.PI * 0.9) - Math.pow(v, 4) * 0.7, yy = yb + v * 0.075, sh = new THREE.Vector3(0.025 * v, 0, -0.01 * v); rings.push(hgRing(H, yb, 0, 'R').map(p => new THREE.Vector3(H.cx + (p.x - H.cx) * sc + sh.x, yy, H.cz + (p.z - H.cz) * sc + sh.z))); }
+    out.push(new THREE.Mesh(hgSweep(rings, { capEnd: new THREE.Vector3(H.cx + 0.025, yb + 0.08, H.cz - 0.01), uRep: 4 }), mat));
+    const fp = new THREE.Group(), anchor = H.at(yb + 0.03, -1.9, H.R(yb, -1.9) + 0.03); fp.position.copy(anchor); const fe = hgFeather(0.26, 0.022, '#d8364e', '#f7efe2'); fe.rotation.set(-1.0, -0.4, 0.5); fp.add(fe); out.push(fp);
+    return { objs: out, cut: () => yb + 0.002, fx: t => { fe.rotation.x = -1.0 + Math.sin(t * 1.7) * 0.05; fe.rotation.z = 0.5 + Math.sin(t * 2.3 + 1) * 0.04; } }; } },
+  tricornio: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.felt('#221c1a'), yb = H.E.y + 0.056, out = [];
+    const up = a => Math.pow(1 - (Math.cos(3 * a) + 1) / 2, 0.7), lift = (a, t) => 0.075 * up(a) * Math.pow(t, 1.15) + 0.004 * t, bw = a => 0.05 + 0.04 * Math.pow(Math.max(0, Math.cos(3 * a)), 2) - 0.012 * up(a);
+    out.push(...hgBrim(H, yb, 0.012, bw, lift, 0.006).map(g => new THREE.Mesh(g, mat)));
+    const rings = []; for (let i = 0; i <= 8; i++) { const v = i / 8, sc = 1.07 - Math.pow(v, 3) * 0.6, yy = yb + v * 0.07; rings.push(hgRing(H, yb, 0, 'R').map(p => new THREE.Vector3(H.cx + (p.x - H.cx) * sc, yy, H.cz + (p.z - H.cz) * sc))); } out.push(new THREE.Mesh(hgSweep(rings, { capEnd: new THREE.Vector3(H.cx, yb + 0.074, H.cz), uRep: 4 }), mat));
+    const edge = []; for (let k = 0; k < 96; k++) { const a = -Math.PI + 2 * Math.PI * k / 96, r = H.R(yb, a) + 0.012 + bw(a); edge.push(H.at(yb + lift(a, 1), a, r)); } out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edge, true), 160, 0.0035, 6, true), AM.gold('#c8a24a')));
+    return { objs: out, cut: () => yb + 0.002 }; } },
+  capuz_sombrio: { slot: 'top', covers: true, tight: true, build(H) {
+    const mat = HGM.cloth('#262033', 'veludo', 0.92), out = [], yTop = H.E.y + 0.05;
+    out.push(...hgShell(H, a => yTop - 0.04 * (1 - Math.cos(a)) / 2, 0.03, { th: 0.004, rows: 12, tab: 'RH', bulge: (a, y, v) => 0.012 * Math.max(0, -Math.cos(a)) * (1 - v) }).map(g => new THREE.Mesh(g, mat)));
+    const rings = [], open = 1.0; for (let i = 0; i <= 10; i++) { const v = i / 10, y = yTop - v * 0.3, flare = v * v * 0.17; rings.push(hgRing(H, a => y - 0.04 * (1 - Math.cos(a)) / 2 * (1 - v), (a, yy) => 0.03 + flare + 0.012 * Math.max(0, -Math.cos(a)), 'RH', 40, open - (v > 0.6 ? (v - 0.6) * 1.6 : 0), Math.PI * 2 - open + (v > 0.6 ? (v - 0.6) * 1.6 : 0), false).map(p => (p.y < H.E.y - 0.18 ? p.setY(p.y) : p))); }
+    out.push(new THREE.Mesh(hgSweep(rings, { closed: false, uRep: 3 }), mat));
+    return { objs: out }; } },
+  tiara_arcana: { slot: 'top', covers: false, build(H) {
+    const silver = AM.steel('#dfe4ea'), out = [], yOf = a => H.E.y + 0.058 + 0.035 * (1 - Math.cos(a)) / 2;
+    const pts = []; for (let k = 0; k < 64; k++) { const a = -Math.PI + 2 * Math.PI * k / 64; pts.push(H.at(yOf(a), a, H.RH(yOf(a), a) + 0.004)); } out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 96, 0.0028, 6, true), silver));
+    for (const s of [-1, 1]) { const arc = []; for (let k = 0; k <= 10; k++) { const t = k / 10, a = s * (0.05 + t * 0.6), y = yOf(a) + 0.012 * Math.sin(t * Math.PI); arc.push(H.at(y, a, H.RH(y, a) + 0.006)); } out.push(new THREE.Mesh(taperTube(new THREE.CatmullRomCurve3(arc), 0.0025, 0.001, 20, 6), silver)); }
+    const gp = H.at(yOf(0) + 0.008, 0, H.RH(yOf(0) + 0.008, 0) + 0.01), gem = new THREE.Mesh(new THREE.SphereGeometry(0.011, 20, 14), HGM.gem('#9a6aff')); gem.scale.set(1, 1.35, 0.6); gem.position.copy(gp); out.push(gem);
+    const set = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.002, 8, 24), silver); set.position.copy(gp); set.scale.set(1, 1.35, 1); out.push(set);
+    return { objs: out, fx: t => { gem.material.emissiveIntensity = 0.25 + Math.sin(t * 2) * 0.1; } }; } },
+  faixa_de_penas: { slot: 'top', covers: false, build(H) {
+    const out = [], yOf = a => H.E.y + 0.05 + 0.025 * (1 - Math.cos(a)) / 2, pts = []; for (let k = 0; k < 64; k++) { const a = -Math.PI + 2 * Math.PI * k / 64; pts.push(H.at(yOf(a), a, H.RH(yOf(a), a) + 0.006)); }
+    out.push(new THREE.Mesh(hgRibbon(H, pts, 0.018, true), AM.leatherCloth('#6a4026')));
+    const cols = [['#8a5a2a', '#f2e8d6'], ['#2a4a6a', '#f4f0e6'], ['#a83a2a', '#1a1a1a']]; const fs = [];
+    cols.forEach(([c1, c2], i) => { const a = 1.9 + i * 0.22, y = yOf(a), g = new THREE.Group(); g.position.copy(H.at(y, a, H.RH(y, a) + 0.012)); const f = hgFeather(0.12 - i * 0.012, 0.012, c1, c2); f.rotation.set(-0.7 - i * 0.15, a + Math.PI, 0.25); g.add(f); out.push(g); fs.push(f); });
+    return { objs: out, fx: t => fs.forEach((f, i) => { f.rotation.z = 0.25 + Math.sin(t * 2 + i) * 0.04; }) }; } },
+  gorro_de_la: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.knit('#b8862a'), y0 = a => H.E.y + 0.035 - 0.05 * (1 - Math.cos(a)) / 2, out = [];
+    out.push(...hgShell(H, y0, 0.012, { th: 0.004, rows: 14, bulge: (a, y, v) => 0.018 * Math.sin(v * Math.PI * 0.9) * (0.6 + 0.4 * Math.max(0, -Math.cos(a))), capLift: 0.02, uRep: 8, vRep: 4 }).map(g => new THREE.Mesh(g, mat)));
+    const cuff = []; for (let i = 0; i <= 4; i++) { const v = i / 4; cuff.push(hgRing(H, a => y0(a) - 0.002 + v * 0.036, 0.021 + 0.003 * Math.sin(v * Math.PI), 'R')); } out.push(new THREE.Mesh(hgSweep(cuff, { uRep: 10, vRep: 1 }), HGM.knit('#9a6e20')));
+    return { objs: out, cut: a => y0(a) + 0.004 }; } },
+  chapeu_de_viajante: { slot: 'top', covers: true, build(H) {
+    const mat = HGM.felt('#5a4230'), yb = H.E.y + 0.058, out = [];
+    out.push(...hgBrim(H, yb, 0.015, 0.135, (a, t) => 0.03 * t * t * Math.pow(Math.abs(Math.sin(a)), 2) - 0.012 * t * t * Math.cos(a) ** 2, 0.006).map(g => new THREE.Mesh(g, mat)));
+    const rings = []; for (let i = 0; i <= 10; i++) { const v = i / 10, sc = 1.06 - Math.pow(v, 4) * 0.25, yy = yb + v * 0.1; rings.push(hgRing(H, yb, 0, 'R').map((p, j) => { const a = -Math.PI + 2 * Math.PI * j / HG_SEC, dent = v > 0.75 ? -0.03 * (v - 0.75) * 4 * Math.pow(Math.cos(a), 2) * 0 : 0; return new THREE.Vector3(H.cx + (p.x - H.cx) * sc, yy + dent, H.cz + (p.z - H.cz) * sc); })); }
+    const ctr = rings[10]; const pinch = rings.map((r, i) => r.map((p, j) => { const a = -Math.PI + 2 * Math.PI * j / HG_SEC, v = i / 10; return v > 0.7 ? p.clone().add(new THREE.Vector3(0, -(v - 0.7) * 0.06 * Math.abs(Math.cos(a)) + 0, 0)) : p; })); void ctr;
+    out.push(new THREE.Mesh(hgSweep(pinch, { capEnd: new THREE.Vector3(H.cx, yb + 0.085, H.cz), uRep: 4 }), mat));
+    const band = hgRing(H, yb, 0, 'R').map(p => { const d = new THREE.Vector3(p.x - H.cx, 0, p.z - H.cz).multiplyScalar(1.062); return new THREE.Vector3(H.cx + d.x, yb + 0.014, H.cz + d.z); }); out.push(new THREE.Mesh(hgRibbon(H, band, 0.02, true), AM.leatherCloth('#2a1a10')));
+    return { objs: out, cut: () => yb + 0.002 }; } },
+  coroa_de_bronze: { slot: 'top', covers: false, build(H) {
+    const mat = AM.gold('#b07a3a'), out = [], yOf = a => H.E.y + 0.07 + 0.01 * (1 - Math.cos(a)) / 2;
+    const base = []; for (let k = 0; k < 64; k++) { const a = -Math.PI + 2 * Math.PI * k / 64; base.push(H.at(yOf(a), a, H.RH(yOf(a), a) + 0.006)); } out.push(new THREE.Mesh(hgRibbon(H, base, 0.022, true), mat));
+    const rimT = base.map(p => p.clone().add(new THREE.Vector3(0, 0.011, 0))), rimB = base.map(p => p.clone().add(new THREE.Vector3(0, -0.011, 0)));
+    for (const r of [rimT, rimB]) out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(r, true), 96, 0.0022, 6, true), mat));
+    for (let k = 0; k < 9; k++) { const a = -Math.PI + 2 * Math.PI * k / 9 + Math.PI / 9, y = yOf(a) + 0.011, sh = new THREE.Shape(); sh.moveTo(-0.012, 0); sh.quadraticCurveTo(-0.004, 0.012, 0, 0.032); sh.quadraticCurveTo(0.004, 0.012, 0.012, 0); sh.lineTo(-0.012, 0); const sp = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.002, bevelEnabled: true, bevelSize: 0.0008, bevelThickness: 0.0008, bevelSegments: 2, curveSegments: 8 }), mat); sp.position.copy(H.at(y, a, H.RH(y, a) + 0.006)); sp.lookAt(H.at(y, a, 2)); out.push(sp); }
+    for (const a of [0, Math.PI / 2, -Math.PI / 2]) { const y = yOf(a), g = new THREE.Mesh(new THREE.SphereGeometry(0.006, 16, 12), HGM.gem(a === 0 ? '#b8302a' : '#2a6ab8')); g.scale.set(1, 1, 0.6); g.position.copy(H.at(y, a, H.RH(y, a) + 0.012)); g.lookAt(H.at(y, a, 2)); out.push(g); }
+    return { objs: out }; } },
+  /* -------- MEIO (OLHOS) -------- */
+  oculos_redondos: { slot: 'face', build(H) {
+    const wire = AM.gold('#8a6a3a'), out = [], z = H.eyeZ + 0.016, rr = 0.021;
+    const C = s => new THREE.Vector3(H.cx + s * H.eyeHalf, H.E.y, z);
+    for (const s of [-1, 1]) { const rim = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.0016, 8, 40), wire); rim.position.copy(C(s)); out.push(rim); const lens = new THREE.Mesh(new THREE.CircleGeometry(rr, 32), HGM.glass()); lens.position.copy(C(s)); out.push(lens);
+      const ear = H.at(H.earY + 0.008, s * Math.PI / 2 * 1.02, H.R(H.earY, s * Math.PI / 2) + 0.004), side = C(s).add(new THREE.Vector3(s * rr, 0.004, 0)); const sideBack = H.at(H.E.y + 0.006, s * 1.05, H.R(H.E.y, s * 1.05) + 0.006); const behind = ear.clone().add(new THREE.Vector3(0, -0.02, -0.018));
+      out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([side, sideBack, ear, behind]), 24, 0.0012, 6), wire)); }
+    const br = [C(-1).add(new THREE.Vector3(rr * 0.85, 0.004, 0)), new THREE.Vector3(H.cx, H.E.y + 0.009, z + 0.004), C(1).add(new THREE.Vector3(-rr * 0.85, 0.004, 0))]; out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(br), 12, 0.0013, 6), wire));
+    return { objs: out }; } },
+  mascara_folha: { slot: 'face', build(H) {
+    const mat = new THREE.MeshStandardMaterial({ map: leafTex('mask'), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7 }), rings = [];
+    for (let i = 0; i <= 8; i++) { const v = i / 8, y = H.E.y - 0.032 + v * 0.07; rings.push(hgRing(H, y, 0.009 + 0.004 * Math.sin(v * Math.PI), 'R', 24, -1.25, 1.25, false)); }
+    return { objs: [new THREE.Mesh(hgSweep(rings, { closed: false }), mat)] }; } },
+  monoculo: { slot: 'face', build(H) {
+    const gold = AM.gold('#c9a24a'), out = [], s = 1, c = new THREE.Vector3(H.cx + s * H.eyeHalf, H.E.y - 0.002, H.eyeZ + 0.012), rr = 0.019;
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.0022, 10, 40), gold); rim.position.copy(c); out.push(rim); const lens = new THREE.Mesh(new THREE.CircleGeometry(rr, 32), HGM.glass()); lens.position.copy(c); out.push(lens);
+    const ch = []; const a = c.clone().add(new THREE.Vector3(s * rr * 0.7, -rr * 0.7, 0)); for (let k = 0; k <= 10; k++) { const t = k / 10; ch.push(a.clone().add(new THREE.Vector3(s * (0.01 + t * 0.035), -t * 0.11 - Math.sin(t * Math.PI) * 0.012, -t * 0.05))); }
+    out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ch), 30, 0.0009, 5), gold));
+    return { objs: out }; } },
+  venda_de_pirata: { slot: 'face', build(H) {
+    const leather = AM.leatherCloth('#1c1612'), out = [], s = 1, aE = Math.atan2(s * H.eyeHalf, H.eyeZ - H.cz);
+    const rows = []; for (let i = 0; i <= 6; i++) { const v = i / 6 * 2 - 1, y = H.E.y + v * 0.022, hw = Math.sqrt(Math.max(0, 1 - v * v)) * 0.26 + 0.02; rows.push(hgRing(H, y, 0.006 + 0.003 * (1 - v * v), 'R', 12, aE - hw, aE + hw, false)); }
+    out.push(new THREE.Mesh(hgSweep(rows, { closed: false }), leather));
+    const yOf = a => H.E.y + 0.012 + 0.05 * (1 - Math.cos(a - aE)) / 2 * (Math.cos(a) < 0 ? 1 : 0.6), st = [], tb = H.covered ? 'R' : 'RH'; for (let k = 0; k < 64; k++) { const a = -Math.PI + 2 * Math.PI * k / 64; st.push(H.at(yOf(a), a, H[tb](yOf(a), a) + 0.006)); }
+    out.push(new THREE.Mesh(hgRibbon(H, st, 0.006, true), leather));
+    return { objs: out }; } },
+  mascara_de_baile: { slot: 'face', build(H) {
+    const mat = new THREE.MeshStandardMaterial({ map: maskTex(), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.45, metalness: 0.1 }), rings = [];
+    for (let i = 0; i <= 8; i++) { const v = i / 8, y = H.E.y - 0.036 + v * 0.074; rings.push(hgRing(H, y, 0.01 + 0.004 * Math.sin(v * Math.PI), 'R', 28, -1.35, 1.35, false)); }
+    const out = [new THREE.Mesh(hgSweep(rings, { closed: false }), mat)]; const g = new THREE.Group(); g.position.copy(H.at(H.E.y + 0.03, 1.2, H.R(H.E.y, 1.2) + 0.012)); const f = hgFeather(0.11, 0.014, '#2a1438', '#d8b25a'); f.rotation.set(-0.3, 1.2, -0.5); g.add(f); out.push(g);
+    return { objs: out }; } },
+  /* -------- BAIXO (BOCA) -------- */
+  folha_hortela: { slot: 'mouth', build(H) {
+    const p = new THREE.Vector3(H.cx + 0.018, H.mouthY, H.mouthZ + 0.002), stem = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([p.clone().add(new THREE.Vector3(-0.006, 0, -0.004)), p, p.clone().add(new THREE.Vector3(0.018, -0.006, 0.01))]), 8, 0.0012, 5), std('#5a7a3a'));
+    const lf = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.022), new THREE.MeshStandardMaterial({ map: leafTex('one'), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.6 })); lf.position.copy(p).add(new THREE.Vector3(0.036, -0.012, 0.016)); lf.rotation.set(0.5, 0.6, -0.4);
+    return { objs: [stem, lf] }; } },
+  bigode_postico: { slot: 'mouth', build(H) {
+    const mat = std('#2a1a12', { roughness: 0.9 }), out = [], y = H.N.y - (H.N.y - H.mouthY) * 0.55, z = H.cz + H.R(y, 0) + 0.004;
+    for (const s of [-1, 1]) for (let k = 0; k < 7; k++) { const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10, a = s * (0.04 + t * 0.62), rr = H.R(y, a) + 0.006 + Math.sin(t * Math.PI) * 0.004; const p = H.at(y - t * 0.012 + (t > 0.75 ? (t - 0.75) * 0.08 : 0) + (k - 3) * 0.0016, a, rr); pts.push(p); } out.push(new THREE.Mesh(taperTube(new THREE.CatmullRomCurve3(pts), 0.0042 - k * 0.0002, 0.0007, 18, 6), mat)); }
+    void z; return { objs: out }; } },
+  cachimbo: { slot: 'mouth', build(H) {
+    const wood = HGM.wood('#4a2a16'), out = [], s = 1, m = new THREE.Vector3(H.cx + s * 0.016, H.mouthY - 0.002, H.mouthZ - 0.002);
+    const stemPts = [m, m.clone().add(new THREE.Vector3(s * 0.03, -0.018, 0.04)), m.clone().add(new THREE.Vector3(s * 0.05, -0.05, 0.075))], stem = new THREE.Mesh(taperTube(new THREE.CatmullRomCurve3(stemPts), 0.0035, 0.0045, 16, 8), HGM.wood('#1a120c')); out.push(stem);
+    const bowlPos = stemPts[2].clone().add(new THREE.Vector3(0, 0.012, 0.004)), prof = [[0.0, -0.02], [0.012, -0.019], [0.016, -0.01], [0.016, 0.012], [0.013, 0.014], [0.011, 0.0]]; const bowl = new THREE.Mesh(new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x, y)), 20), wood); bowl.position.copy(bowlPos); out.push(bowl);
+    const ember = new THREE.Mesh(new THREE.CircleGeometry(0.0105, 16), glowMat('#ff7a2a', 1.2)); ember.rotation.x = -Math.PI / 2; ember.position.copy(bowlPos).add(new THREE.Vector3(0, 0.011, 0)); out.push(ember);
+    const puffs = []; const smat = new THREE.SpriteMaterial({ map: glowSpriteTex(), color: '#cfcac2', transparent: true, opacity: 0, depthWrite: false });
+    const sg = new THREE.Group(); sg.position.copy(ember.position); for (let k = 0; k < 4; k++) { const sp = new THREE.Sprite(smat.clone()); sp.scale.setScalar(0.02); sg.add(sp); puffs.push(sp); } out.push(sg);
+    return { objs: out, fx: t => { ember.material.emissiveIntensity = 0.9 + Math.sin(t * 3) * 0.35; puffs.forEach((sp, k) => { const ph = (t * 0.35 + k / 4) % 1; sp.position.set(Math.sin(t + k) * 0.01 * ph, ph * 0.14, Math.cos(t * 0.7 + k) * 0.008 * ph); sp.scale.setScalar(0.014 + ph * 0.05); sp.material.opacity = 0.22 * Math.sin(ph * Math.PI); }); } }; } },
+  lenco_de_bandoleiro: { slot: 'mouth', build(H) {
+    const mat = HGM.cloth('#7a2420'), out = [], yT = H.N.y + 0.016, yB = H.chinY - 0.03, rows = [];
+    for (let i = 0; i <= 10; i++) { const v = i / 10, y = yT - v * (yT - yB); rows.push(hgRing(H, a => y - (v > 0.6 ? (v - 0.6) * 0.09 * Math.max(0, Math.cos(a)) ** 2 : 0), (a, yy) => 0.009 + (H.beard ? 0.004 : 0) + v * 0.01 * Math.cos(a) ** 2, 'RB', 32, -1.75, 1.75, false)); }
+    out.push(new THREE.Mesh(hgSweep(rows, { closed: false, uRep: 3 }), mat));
+    const back = []; for (let k = 0; k <= 20; k++) { const a = 1.75 + (Math.PI * 2 - 3.5) * k / 20; back.push(H.at(yT - 0.006, a, H[H.covered ? 'R' : 'RH'](yT - 0.006, a) + 0.008)); } out.push(new THREE.Mesh(hgRibbon(H, back, 0.014), mat));
+    const kn = H.at(yT - 0.006, Math.PI, H[H.covered ? 'R' : 'RH'](yT - 0.006, Math.PI) + 0.016), knot = new THREE.Mesh(new THREE.TorusGeometry(0.011, 0.006, 8, 18), mat); knot.position.copy(kn); knot.scale.set(1, 0.7, 0.9); out.push(knot);
+    return { objs: out }; } },
+  talo_de_trigo: { slot: 'mouth', build(H) {
+    const out = [], m = new THREE.Vector3(H.cx - 0.015, H.mouthY, H.mouthZ - 0.001), end = m.clone().add(new THREE.Vector3(-0.05, 0.022, 0.085));
+    out.push(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([m, m.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 0.008, 0)), end]), 16, 0.0021, 6), std('#c8a85a', { roughness: 0.8 })));
+    const dir = end.clone().sub(m).normalize(), gm = std('#d8b468', { roughness: 0.75 });
+    for (let k = 0; k < 12; k++) { const t = k / 12, p = end.clone().addScaledVector(dir, t * 0.04), g = new THREE.Mesh(new THREE.SphereGeometry(0.0034, 10, 8), gm); g.scale.set(1, 1.7, 1); g.position.copy(p).add(new THREE.Vector3(0, (k % 2 ? 1 : -1) * 0.003, (k % 2 ? 1 : -1) * 0.002)); g.lookAt(p.clone().add(dir)); g.rotateX(Math.PI / 2 + (k % 2 ? 0.5 : -0.5)); out.push(g); }
+    return { objs: out }; } },
+};
+function flowerMesh(r, col) {
+  const g = new THREE.Group(), sh = new THREE.Shape(); for (let i = 0; i <= 60; i++) { const a = i / 60 * Math.PI * 2, rr = r * (0.55 + 0.45 * Math.abs(Math.cos(a * 2.5))); i ? sh.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : sh.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  const geo = new THREE.ShapeGeometry(sh, 6), P = geo.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), d = Math.hypot(x, y) / r; P.setZ(i, d * d * r * 0.35); } geo.computeVertexNormals();
+  g.add(new THREE.Mesh(geo, std(col, { roughness: 0.6, side: THREE.DoubleSide }))); const c = new THREE.Mesh(new THREE.SphereGeometry(r * 0.28, 12, 8), std('#e8b830', { roughness: 0.7 })); c.scale.z = 0.5; c.position.z = r * 0.05; g.add(c); return g;
+}
+// monta as peças de um acessório na cabeça medida e prende ao osso da cabeça
+function buildHeadGear(root, id) {
+  const D = HEAD_GEAR[id]; if (!D) return null; const H = headInfo(root); if (!H) return null;
+  const res = D.build(H) || {}, objs = res.objs || [];
+  for (const o of objs) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; } }); pinToBone(root, 'head', o); o.userData.headGear = id; }
+  return res;
+}
+/* o chapéu "recolhe" o cabelo: acima da linha cut(a) (no espaço do personagem), cada fio é puxado para dentro da copa
+   (raio do crânio + folga, e nunca acima do topo da cabeça); abaixo dela o cabelo fica como está (nuca, franja comprida, rabo) */
+function squashHair(root, cut) {
+  const H = headInfo(root); if (!H) return; humanIdlePose(root); root.updateMatrixWorld(true);
+  const invRoot = new THREE.Matrix4().copy(root.matrixWorld).invert(), p = new THREE.Vector3(), M = new THREE.Matrix4(), Mi = new THREE.Matrix4();
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !/^Hair_/.test(o.name) || /Beard/.test(o.name) || !o.visible) return;
+    const bi = o.skeleton.bones.findIndex(b => b.name === 'Head'); if (bi < 0) return;
+    const dom = domBones(o); o.geometry = o.geometry.clone(); const P = o.geometry.attributes.position;
+    // mapa "posição do molde → posição no personagem" para fios presos só à cabeça (e a volta)
+    M.copy(invRoot).multiply(o.matrixWorld).multiply(o.bindMatrixInverse).multiply(new THREE.Matrix4().multiplyMatrices(o.skeleton.bones[bi].matrixWorld, o.skeleton.boneInverses[bi])).multiply(o.bindMatrix); Mi.copy(M).invert();
+    let moved = 0;
+    for (let v = 0; v < P.count; v++) {
+      if (dom[v] !== 'Head') continue; p.fromBufferAttribute(P, v).applyMatrix4(M);
+      const a = Math.atan2(p.x - H.cx, p.z - H.cz), y0 = cut(a); if (p.y < y0) continue;
+      const k = Math.min(1, (p.y - y0) / 0.012), y = Math.min(p.y, H.top - 0.004), rMax = Math.max(0.02, H.R(y, a)) + 0.003, r = Math.hypot(p.x - H.cx, p.z - H.cz);
+      const rr = r > rMax ? r + (rMax - r) * k : r, yy = p.y + (y - p.y) * k;
+      if (rr === r && yy === p.y) continue;
+      p.set(H.cx + (p.x - H.cx) * (rr / (r || 1)), yy, H.cz + (p.z - H.cz) * (rr / (r || 1))).applyMatrix4(Mi); P.setXYZ(v, p.x, p.y, p.z); moved++;
+    }
+    if (moved) { P.needsUpdate = true; o.geometry.computeVertexNormals(); }
+  });
 }
 
 /* =========================================================================

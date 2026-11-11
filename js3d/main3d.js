@@ -18,13 +18,16 @@ import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/band
 import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
 import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
-import { initSkillFx, playSkillFx, skillProjectile, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
+import { initSkillFx, playSkillFx, playSkillFxRemote, skillProjectile, skillHitDelay, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
 import { faceSculpt, FACE_FEATS, softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
-import { initWeather, updateWeather } from './weather3d.js';
+import { initWeather, updateWeather, setWeatherLight } from './weather3d.js';
+import { initBossFight, bossTick, updateBossFights, bossOnDeath, bossActive, BOSS_SCRIPT } from './bossfight3d.js'; // P-022: chefes com fases, avisos no chão, lacaios, barra e música
+import { initDayNight, updateDayNight, tintFog, isNight, dayNightHours } from './daynight3d.js'; // P-020: dia e noite pelo relógio do jogo
 import { initTutorial, startTutorial, updateTutorial, tutorialCamera, restartTutorial, tutorialActive } from './tutorial3d.js'; // P-018: primeiros passos do jogador novo
 import { initRoutines, updateRoutines, gameClock } from './routines3d.js'; // P-017: NPCs com rotina pela hora do jogo
-import { initNet, updateNet } from './net3d.js'; // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
+import { initNet, updateNet, onNetView, netId, netOthers } from './net3d.js';
+import { initParty, updateParty } from './party3d.js'; // P-026: grupo online (quadro, convites, chat de grupo, EXP dividida) // online fase 1: outros jogadores no mundo, chat e chave do jogador nos saves
 import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: contas (tela Entrar / Criar conta para quem vem de fora)
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { runQA, showQA, checkCharsDeep, showQAChars } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música · P-012: dos personagens
@@ -75,6 +78,7 @@ Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, n
 sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
 const sky = buildSky(); scene.add(sky);
+initDayNight({ scene, renderer, hemi, sun, sky, getClouds: () => S.cloudInst, setWeatherLight }); // P-020
 scene.add(camera); // a câmera fica na cena: as mãos da 1ª pessoa são filhas dela
 { const ch = document.createElement('div'); ch.id = 'crosshair'; ch.className = 'hidden'; ch.innerHTML = '<i></i><i></i><i></i><i></i><b></b>'; document.body.appendChild(ch); }
 const terrain = buildTerrain(); scene.add(terrain);
@@ -468,7 +472,7 @@ function renderMapa() {
     <div class="muted" style="font-size:11px;margin-top:6px">★ NPCs · 💀 mini-chefes · 👑 chefe · <b class="gold">! ? ⚔</b> suas missões · a seta é você. Feche com G ou Esc.</div></div>
     <div class="mp-side"><div class="mp-h">Monstros por região</div>${regions}</div></div>`;
   body.querySelectorAll('[data-mob]').forEach(el => el.onclick = () => { UI.bestSel = el.dataset.mob; UI.open('bestiario'); UI.render_bestiario(); });
-  const cv = $('mapa-cv'), draw = () => { if (S.interior && !S.interior.dungeon && roomMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, true)) return; if (S.interior && S.interior.dungeon && dungeonMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, { whole: true, yaw: S.pos.yaw, monsters: S.monsters.filter(m => !m.dead && m.x > HALF + 100 && Math.abs(m.z - S.interior.z) < 36).map(m => ({ x: m.x, z: m.z, boss: m.def.boss })) })) return; drawAdmMap(cv); }; draw();
+  const cv = $('mapa-cv'), draw = () => { if (S.interior && !S.interior.dungeon && roomMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, true)) return; if (S.interior && S.interior.dungeon && dungeonMap(cv.getContext('2d'), cv.width, S.pos.x, S.pos.z, 40, { whole: true, yaw: S.pos.yaw, monsters: S.monsters.filter(m => !m.dead && m.x > HALF + 100 && Math.abs(m.z - S.interior.z) < 36).map(m => ({ x: m.x, z: m.z, boss: m.def.boss })) })) return; drawAdmMap(cv); if (H3.partyDots && !S.interior) { const c = cv.getContext('2d'), W = cv.width; for (const d of H3.partyDots()) { const x = (d.x / HALF + 1) / 2 * W, y = (d.z / HALF + 1) / 2 * W; c.fillStyle = '#6dff8a'; c.strokeStyle = '#0a2a10'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 6, 0, 7); c.fill(); c.stroke(); c.font = '700 12px Nunito, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = 'rgba(0,0,0,0.8)'; c.strokeText(d.name, x, y - 11); c.fillStyle = '#c8ffd4'; c.fillText(d.name, x, y - 11); } } }; draw(); // P-026: membros do grupo no mapa grande
   clearInterval(mapaTimer); mapaTimer = setInterval(() => { if (!UI.wins.mapa || !document.body.contains(cv)) { clearInterval(mapaTimer); return; } draw(); }, 400);
 }
 
@@ -1696,14 +1700,15 @@ function updateMonster(m, dt) {
   // S-310: voltando para casa (desistiu da perseguição) ele não se irrita de novo no caminho — antes alternava perseguir/voltar a cada quadro no limite da área ("pra lá e pra cá")
   if (!m.aggro && !m.returning && t >= (m.calmUntil || 0) && d.aggressive && !S.p.dead && !safe && dp < d.aggroRange * TM * 1.3) { m.aggro = true; m.returning = false; }
   if (m.aggro && (S.p.dead || safe || Math.hypot(m.x - m.home.x, m.z - m.home.z) > 38)) { m.aggro = false; m.returning = true; m.hp = m.maxHp; m.inReach = false; m.calmUntil = t + 3; }
-  let goal = null, speed = d.speed / 32 * TM;
+  if (BOSS_SCRIPT[m.type]) bossTick(m, dt); // P-022: fases, ataques avisados no chão e lacaios
+  let goal = null, speed = d.speed / 32 * TM * (m.speedMul || 1);
   if (m.aggro) {
     const reach = d.range * TM + m.radius + 0.7;
     m.inReach = m.inReach ? dp <= reach + 0.6 : dp <= reach; // S-310: folga para não ficar parando/andando na borda do alcance
     if (!m.inReach) { goal = { x: P.x, z: P.z }; speed *= 1.25; }
     else {
       m.yaw = angLerp(m.yaw, Math.atan2(P.x - m.x, P.z - m.z), Math.min(1, dt * 10));
-      if (t >= m.nextAttack && t >= m.lockAnim) { m.nextAttack = t + d.aspd / 1000; monsterAttack(m); }
+      if (t >= m.nextAttack && t >= m.lockAnim) { m.nextAttack = t + d.aspd / 1000 * (m.aspdMul || 1); monsterAttack(m); }
     }
   } else if (m.returning) {
     goal = m.home; speed *= 1.4;
@@ -1849,7 +1854,7 @@ function killMonster(m) {
   if (m.deathStyle === 'raro') later(m.vis.kind === 'critter' ? 0.25 : 1.1, () => soulBurst(m));
   if (m.vis.anim) monAnim(m, 'Death_C_Skeletons', { once: true, fade: 0.1 });
   Sound.play((MON_SFX[d.shape] && MON_SFX[d.shape].die) || 'mdie');
-  gainExp(d.exp, d.jexp);
+  if (!(H3.partyKill && H3.partyKill(m, d))) gainExp(d.exp, d.jexp); // P-026: com o grupo por perto, a EXP é dividida (o servidor confere)
   if (questOnKill(p, m.type)) hudDirty = true; // S-126
   for (const [id, rate] of d.drops) if (Math.random() < rate * CONFIG.DROP_RATE) { addItem(p, id, 1); log(`Saque: ${ITEMS[id].name}`, 'item'); }
   if (Math.random() < (d.cardRate ?? CONFIG.CARD_DROP_RATE)) {
@@ -1858,7 +1863,8 @@ function killMonster(m) {
     log(`✨ Você obteve ${ITEMS['carta_' + m.type].name}!`, 'card');
   }
   if (S.target === m) { S.target = null; S.autoAttack = false; }
-  later(d.respawn ? d.respawn / 1000 : CONFIG.RESPAWN_MIN + rng() * (CONFIG.RESPAWN_MAX - CONFIG.RESPAWN_MIN), () => spawnMonster(m.zoneId, m.type));
+  if (BOSS_SCRIPT[m.type]) bossOnDeath(m); // P-022: banner de vitória e baú
+  if (!m.summoned) later(d.respawn ? d.respawn / 1000 : CONFIG.RESPAWN_MIN + rng() * (CONFIG.RESPAWN_MAX - CONFIG.RESPAWN_MIN), () => spawnMonster(m.zoneId, m.type));
   hudDirty = true;
 }
 
@@ -1903,7 +1909,8 @@ function dressLook(ch, cls, look = {}, hatId = null) {
   const hfx = hatId ? applyHat(ch, hatId, MODELS, custom) : null; // chapéu = o que estiver equipado no topo da cabeça
   return hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d;
 }
-const hatOf = p => (p && p.equip && p.equip.cabeca && p.equip.cabeca.id) || null;
+// P-019: chave 'topo|rosto|boca' — muda quando qualquer um dos três muda (refaz o modelo e vai no sync online)
+const hatOf = p => { const e = (p && p.equip) || {}, k = [e.cabeca && e.cabeca.id || '', e.rosto && e.rosto.id || '', e.boca && e.boca.id || '']; return k.some(Boolean) ? k.join('|') : null; };
 const wpnOf = p => (p && p.equip && p.equip.arma && p.equip.arma.id) || null;
 // personagem realista (S-093): roupa da classe + rosto/cabelo/pele do jogador + armas + enfeites + chapéu equipado
 const SKIN_HEX = { clara: '#e2b393', escura: '#8a5a3c' };
@@ -1914,12 +1921,12 @@ function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   const wid = extra.weaponId, wopt = wid !== undefined ? { wtype: wid && ITEMS[wid] ? ITEMS[wid].wtype : 'nenhuma', weaponId: wid } : {}; // katar do Executor só com katar equipada
   const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand, ...wopt }) : { style: '1h', update: () => { } };
   if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
-  const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null;
   unsquashDwarf(h.root); // S-246: peças da roupa sem esticar nos ossos de anão
   { // P-015: rosto esculpido pelos parâmetros do look (NPC sem rosto definido: variado e fixo pelo id) + expressões e piscar
     let rig = null; try { rig = faceSculpt(h.root, look, extra.faceSeed ? { seed: extra.faceSeed, keepFace: extra.keepFace } : {}); } catch (e) { console.warn('rosto', e); }
     if (rig) { const u = h.anim.update.bind(h.anim); h.anim.update = dt => { u(dt); rig.update(dt); }; h.face = rig; }
   }
+  const hfx = hatId ? applyHat(h, hatId, MODELS, true) : null; // P-019: depois do rosto esculpido — as peças medem a cabeça final
   return { ch: h, d: hfx ? { ...d, update: t => { d.update(t); hfx(t); } } : d };
 }
 const NPC_FEMALE = new Set(['ivra', 'clara', 'flora', 'rosa', 'neli', 'samira', 'isis', 'mirela', 'marta']);
@@ -2241,6 +2248,8 @@ function updatePlayer(dt) {
     vx = dx / l * sp; vz = dz / l * sp;
   }
   S.chasing = false;
+  if (mi.any && S.followTo) S.followStop = true; // P-026: andar com WASD para de seguir
+  else if (S.followTo && !mi.any && !S.casting && !S.sitting && !fireLock()) { const dx = S.followTo.x - P.x, dz = S.followTo.z - P.z, d = Math.hypot(dx, dz); if (d > 2.6) { const sp = base * Math.min(1, (d - 2.6) * 1.5 + 0.3); vx = dx / d * sp; vz = dz / d * sp; S.chasing = true; } } // P-026: seguir outro jogador
   { // S-305: segurando o esquerdo num alvo longe (sem apertar WASD), o boneco corre até o alcance da arma — corpo a corpo encosta, arqueiro/mago para no alcance dele
     const lk = fireLock();
     if (lk && !mi.any && !S.casting && !S.sitting) { const dx = lk.x - P.x, dz = lk.z - P.z, d = Math.hypot(dx, dz), want = attackReach(p, lk) - 0.25;
@@ -2672,7 +2681,7 @@ function executeSkill(a) {
   const anim = eff.dmg === 'magic' || eff.kind === 'heal' || eff.kind === 'buff' ? 'Spellcast_Shoot' : sk.target === 'selfAoe' ? '2H_Melee_Attack_Spin' : ATTACK_ANIM[me.look.style][0];
   if (p.d.sonic && (SONG_BUFFS.has(a.id) || sk.fx === 'sound')) { S.songPlay = S.time + 2.8; Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong'); later(0.5, () => Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong')); S.lockAnim = S.time + 0.6; } // S-324: canção = o bardo TOCA de verdade (sem pose de magia)
   else { // P-016: gesto próprio da habilidade (golpe sob medida / mão erguida / mãos ao céu); sem gesto, o clipe antigo
-    const g = skillGesture(a.id), dur = g && startStrike(me, g.strike, { variant: g.variant });
+    const g = skillGesture(a.id), dur = g && startStrike(me, g.strike, { variant: g.variant }); S.skillRel = dur ? Math.min(0.35, dur.hitAt) : 0; // P-021: o projétil sai no auge do gesto
     if (dur) { S.lockAnim = S.time + Math.min(0.7, dur.dur * 0.8); me.root.userData.ovT = performance.now(); } else { me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6; }
   }
   { // P-016: efeito de lançamento (e o mesmo para os outros jogadores pelo online)
@@ -2695,7 +2704,7 @@ function executeSkill(a) {
   if (eff.kind === 'steal') {
     const m = a.m;
     if (m.stolen) floatAt(m.obj.position, 'Nada', '#cfd6e0', m.height + 0.4);
-    else if (Math.random() < eff.chance(lv) + (p.d.dex - m.def.lv) / 300) { const [id] = m.def.drops[Math.floor(Math.random() * m.def.drops.length)]; m.stolen = true; addItem(p, id, 1); Sound.play('coin'); floatAt(m.obj.position, 'Roubou!', '#ffd84a', m.height + 0.4); log(`Você roubou ${ITEMS[id].name}!`, 'item'); }
+    else if (m.def.drops && m.def.drops.length && Math.random() < eff.chance(lv) + (p.d.dex - m.def.lv) / 300) { /* P-021: alvo sem drops (boneco de treino) dava erro */ const [id] = m.def.drops[Math.floor(Math.random() * m.def.drops.length)]; m.stolen = true; addItem(p, id, 1); Sound.play('coin'); floatAt(m.obj.position, 'Roubou!', '#ffd84a', m.height + 0.4); log(`Você roubou ${ITEMS[id].name}!`, 'item'); }
     else { floatAt(m.obj.position, 'Falhou', '#cfd6e0', m.height + 0.4); Sound.play('miss'); }
     m.aggro = true; return;
   }
@@ -2719,13 +2728,13 @@ function executeSkill(a) {
   const to = m => () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0));
   if (R > 0) {
     const cy = groundAt(center.x, center.z);
-    for (let i = 0; i < hits; i++) later(0.15 + i * 0.25, () => { playSkillFx(a.id, me.obj.position, { x: center.x, y: cy, z: center.z }, { phase: 'wave', wave: i, radius: R }); inRadius(center, R).forEach(hitOne); });
+    for (let i = 0; i < hits; i++) later(0.15 + i * 0.25, () => { playSkillFx(a.id, me.obj.position, { x: center.x, y: cy, z: center.z }, { phase: 'wave', wave: i, radius: R }); later(skillHitDelay(a.id), () => inRadius(center, R).forEach(hitOne)); }); // P-021: dano do meteoro no impacto
   } else if (eff.splash) {
     const m = a.m;
     shoot(from(), to(m), col, () => { playSkillFx(a.id, me.obj.position, { x: m.x, y: m.obj.position.y, z: m.z }, { phase: 'hit' }); inRadius({ x: m.x, z: m.z }, eff.splash * TM).forEach(hitOne); }, true);
-  } else if (eff.dmg === 'magic' || ['arrow', 'bolt', 'lightning', 'pillar'].includes(sk.fx)) {
-    if (sk.fx !== 'arrow' && skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m))) { for (let i = 1; i < hits; i++) later(i * 0.14, () => skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m))); } // P-016: o efeito da habilidade viaja até o alvo
-    else { if (sk.fx !== 'arrow') Sound.play(el === 'fogo' ? 'fire' : el === 'agua' ? 'ice' : 'magic'); for (let i = 0; i < hits; i++) later(i * 0.14, () => shoot(from(), to(a.m), col, () => { hitOne(a.m); playSkillFx(a.id, me.obj.position, { x: a.m.x, y: a.m.obj.position.y, z: a.m.z }, { phase: 'hit' }); }, sk.fx === 'arrow')); }
+  } else if (eff.dmg === 'magic' || ['arrow', 'firearrow', 'bolt', 'lightning', 'pillar'].includes(sk.fx)) { // P-021: a Flecha Explosiva agora voa de verdade até o alvo
+    if (sk.fx !== 'arrow' && skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m), S.skillRel)) { for (let i = 1; i < hits; i++) later(i * 0.14, () => skillProjectile(a.id, from(), to(a.m), () => hitOne(a.m), S.skillRel)); } // P-016: o efeito da habilidade viaja até o alvo
+    else { if (sk.fx !== 'arrow') Sound.play(el === 'fogo' ? 'fire' : el === 'agua' ? 'ice' : 'magic'); for (let i = 0; i < hits; i++) later(i * 0.14, () => shoot(from(), to(a.m), col, () => { hitOne(a.m); playSkillFx(a.id, me.obj.position, { x: a.m.x, y: a.m.obj.position.y, z: a.m.z }, { phase: 'hit' }); }, sk.fx === 'arrow' || sk.fx === 'firearrow')); }
   } else {
     for (let i = 0; i < hits; i++) later(0.25 + i * 0.14, () => { hitOne(a.m); if (!i) playSkillFx(a.id, me.obj.position, { x: a.m.x, y: a.m.obj.position.y, z: a.m.z }, { phase: 'hit', yaw: Math.atan2(a.m.x - S.pos.x, a.m.z - S.pos.z) }); });
   }
@@ -3137,6 +3146,7 @@ function drawMinimap() {
     c.beginPath(); c.arc(x, y, m.def.mini || m.def.boss ? 3.5 : 2.3, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 1; c.stroke();
   }
   for (const n of S.npcs) { const [x, y] = pt(n.x, n.z); if (!inside(x, y)) continue; c.fillStyle = '#ffe36a'; c.font = '11px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('★', x, y); }
+  if (H3.partyDots) for (const d of H3.partyDots()) { const [x, y] = pt(d.x, d.z); if (!inside(x, y)) continue; c.fillStyle = '#6dff8a'; c.strokeStyle = 'rgba(0,0,0,0.7)'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, 3.4, 0, 7); c.fill(); c.stroke(); } // P-026: membros do grupo
   if (S.pet) { const [x, y] = pt(S.pet.x, S.pet.z); c.fillStyle = '#9ff0ff'; c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); }
   c.restore();
   // moldura dourada estilo WoW
@@ -3348,11 +3358,12 @@ function step(dt) {
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     updateCloudInstances();
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateNet(dt); updateBossFights(dt); updateParty(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
     updateTutorial(dt); // P-018: dicas dos primeiros passos (só personagens novos)
   }
 }
+const NIGHT_MUSIC = new Set(['vila', 'campo', 'floresta', 'cidade', 'geada', 'dunas', 'colossos']); // P-020: onde a trilha da noite substitui a da região
 function draw(dt) {
   if (S.started) {
     // câmera estilo WoW: atrás do personagem, orbitando
@@ -3389,7 +3400,10 @@ function draw(dt) {
     if (!S.flight && tutorialCamera(camera, dt)) { /* P-018: câmera de apresentação da vila */ }
     else if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
     else { updateImpact(dt); shakeCamera(camera, dt); } updateSkillFx(dt); // P-011: recuo/piscada do alvo, partículas e tremidinha só em críticos/pesados
-    sun.position.set(P.x + 30, P.y + 60, P.z + 18); sun.target.position.set(P.x, P.y, P.z);
+    updateDayNight(dt, P, !!S.interior || P.x > HALF + 100); // P-020: sol/lua, céu, luzes da noite (a luz direcional segue o sol de dia e a lua à noite)
+    if ((S._dnMus = (S._dnMus || 0) + dt) > 1) { S._dnMus = 0; // P-020: trilha calma de noite ao ar livre (uma música por vez; salas e masmorras têm a delas)
+      const outside = !S.interior && P.x <= HALF + 100, zm = S.zone && S.zone.music, want = outside && zm ? (isNight() && NIGHT_MUSIC.has(zm) ? 'noite' : zm) : null;
+      if (want && Sound.ctx && Sound.songId !== want && !bossActive()) Sound.playSong(want); } // P-022: durante a luta de chefe a música de luta manda
     sky.position.copy(camera.position);
     // névoa por região
     if (S.interior && S.interior.dungeon) { scene.fog.color.set('#0d0b0c'); scene.fog.near = 6; scene.fog.far = 46; }
@@ -3397,6 +3411,7 @@ function draw(dt) {
       const wr = zoneWeight('ruinas', P.x, P.z), wf = zoneWeight('floresta', P.x, P.z), wg = zoneWeight('geada', P.x, P.z), wd = zoneWeight('dunas', P.x, P.z), wc = zoneWeight('colossos', P.x, P.z);
       scene.fog.color.copy(FOG_DAY).lerp(FOG_FOREST, wf * 0.6).lerp(FOG_RUINS, wr * 0.85).lerp(FOG_SNOW, wg * 0.85).lerp(FOG_SAND, wd * 0.7).lerp(FOG_PLAIN, wc * 0.6);
       scene.fog.near = 90 - wr * 60 - wf * 35 - wg * 40 - wc * 55; scene.fog.far = 420 - wr * 270 - wf * 180 - wg * 150 - wd * 60 - wc * 210;
+      tintFog(scene.fog.color); // P-020: névoa na cor da hora
     }
     // seleção
     const t = S.target;
@@ -3411,7 +3426,7 @@ function draw(dt) {
     const a = performance.now() / 9000;
     camera.position.set(VILLAGE.x + Math.cos(a) * 42, 18, VILLAGE.z + Math.sin(a) * 42);
     camera.lookAt(VILLAGE.x, 2, VILLAGE.z);
-    sky.position.copy(camera.position);
+    sky.position.copy(camera.position); updateDayNight(dt, { x: VILLAGE.x, y: 0, z: VILLAGE.z }, false); tintFog(scene.fog.color.copy(FOG_DAY)); // P-020: o céu da hora também no fundo da vitrine
   }
   if (S.started) cullInteriors(); // garante que a sala aparece no mesmo quadro em que a câmera entra
   renderer.render(scene, camera);
@@ -3640,7 +3655,7 @@ function showCreate3d(list, opts = {}) {
   const stage = makeStage($('cc-cv'));
   window.__ccStage = stage; // testes
   const refresh = () => {
-    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, sex: st.sex, skin: st.skin, face: st.face, feat: st.feat }, st.cls));
+    stage.setChar(buildPreviewChar({ race: st.race, hair: st.hair, beard: st.beard, sex: st.sex, skin: st.skin, face: st.face, feat: st.feat }, st.cls, null, edit ? hatOf(S.p) : null)); // P-019: na Barbearia, prévia com o que está na cabeça
     o.querySelectorAll('[data-ftype]').forEach(el => el.classList.toggle('on', el.dataset.ftype === st.face));
     o.querySelectorAll('[data-feat]').forEach(el => { el.value = String(st.feat[el.dataset.feat] || 0); });
     o.querySelectorAll('[data-sex]').forEach(el => el.classList.toggle('on', el.dataset.sex === st.sex));
@@ -3730,8 +3745,12 @@ function startWith(s) {
   buildPlayerModel(); buildPet();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
   S.started = true; hudDirty = true; syncG(); UI.refreshOpen(); aspdTool();
+  if (!S._bossInit) { S._bossInit = true; initBossFight({ S, scene, groundAt, resolve, floatAt, log, banner, Sound, get MON_SFX() { return MON_SFX; }, spawnMonster, monAnim, later, hurtPlayer, petHurt, addItem,
+    grantZeny: (p, z) => { p.zeny += z; }, touch: () => { hudDirty = true; },
+    restoreMusic: () => { const I = S.interior, id = I && I.music ? I.music : (S.zone && S.zone.music); if (id && Sound.ctx) Sound.playSong(id); } }); } // P-022
   initTutorial({ S, UI, isAdmin, log, Sound, save3d, questState, countItem, addItem, banner, markDirty: () => { hudDirty = true; UI.markDirty(); }, toScreen, groundAt: (x, z) => groundAt(x, z), VILLAGE }); startTutorial(); // P-018
-  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
+  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx: playSkillFxRemote, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
+  initParty({ S, H3, log, gainExp, camera, renderer, THREE, CLASSES, net: { onNetView, netId, netOthers } }); // P-026
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }
@@ -3922,8 +3941,13 @@ function adminRender() {
         <button class="adm-chip" data-cmd="job1">✦ +1 Nível Classe</button><button class="adm-chip" data-cmd="job10">✦ +10 Níveis Classe</button><button class="adm-chip" data-cmd="zeny">💰 +10.000 z</button>
         <button class="adm-chip" data-cmd="rate">📈 EXP ${CONFIG.EXP_RATE}× (trocar)</button>
         ${p.pet ? '<button class="adm-chip" data-pet="1">🐾 Mascote +5 níveis</button>' : ''}<button class="adm-chip" data-qa="1">🔍 Verificar o mundo</button><button class="adm-chip" data-qach="1">🧍 Verificar personagens</button><button class="adm-chip" data-aur="1">✦ +1.000 Auroras (teste)</button></div>
+      <div class="adm-hour" style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>🕐 Hora do dia</b><input id="adm-hour" type="range" min="0" max="23.75" step="0.25" value="${dayNightHours().toFixed(2)}" style="flex:1;min-width:140px"><span id="adm-hour-v">${gameClock().label}</span>
+        <label style="font-size:11px"><input type="checkbox" id="adm-hour-fix" ${globalThis.__aethraClock != null ? 'checked' : ''}> fixar (só na sua tela)</label></div>
     </div>`;
   body.querySelector('#adm-god').onclick = () => toggleGod();
+  { const r = body.querySelector('#adm-hour'), fx = body.querySelector('#adm-hour-fix'), v = body.querySelector('#adm-hour-v'); // P-020: o mestre testa a hora do dia (só local; os outros jogadores seguem o relógio real)
+    if (r) { const set = () => { if (fx.checked) globalThis.__aethraClock = +r.value * 60; else globalThis.__aethraClock = null; v.textContent = gameClock().label; };
+      r.oninput = () => { fx.checked = true; set(); }; r.onchange = () => r.blur(); fx.onchange = () => { set(); fx.blur(); }; } }
   body.querySelector('#adm-pw-go').onclick = async () => { // fase 2 do online: senha da conta do administrador "robertofpj" (o servidor só aceita isso do computador local)
     const m = body.querySelector('#adm-pw-msg'), a = body.querySelector('#adm-pw1'), b = body.querySelector('#adm-pw2');
     let r = null; try { r = await (await fetch('/api/auth/admin-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: a.value, confirmar: b.value }) })).json(); } catch (e) { r = { msg: 'Sem conexão com o servidor.' }; }

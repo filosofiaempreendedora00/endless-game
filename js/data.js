@@ -399,12 +399,21 @@ const ITEMS = {
   capuz_sombrio: { name: 'Capuz Sombrio', type: 'cabeca', icon: '🥷', price: 1300, def: 2, slots: 1, lv: 10, bonuses: { agi: 2 }, desc: 'Esconde o rosto nas sombras.' },
   tiara_arcana: { name: 'Tiara Arcana', type: 'cabeca', icon: '👑', price: 1500, mdef: 4, slots: 0, lv: 12, bonuses: { int: 1, spRegen: 2 } },
   faixa_de_penas: { name: 'Faixa de Penas', type: 'cabeca', icon: '🪶', price: 600, def: 1, slots: 0, lv: 3, bonuses: { dex: 1 } },
+  gorro_de_la: { name: 'Gorro de Lã', type: 'cabeca', icon: '🧶', price: 450, def: 1, slots: 0, lv: 1, bonuses: { vit: 1 }, desc: 'Tricotado à mão; segura o frio das serras.' },
+  chapeu_de_viajante: { name: 'Chapéu de Viajante', type: 'cabeca', icon: '🤠', price: 950, def: 2, slots: 1, lv: 6, bonuses: { agi: 1, vit: 1 }, desc: 'Feltro surrado de quem já cruzou o vale inteiro.' },
+  coroa_de_bronze: { name: 'Coroa de Bronze', type: 'cabeca', icon: '👑', price: 2400, def: 2, mdef: 2, slots: 1, lv: 15, bonuses: { str: 1, int: 1, luk: 2 }, desc: 'Antiga, de um reino que ninguém lembra o nome.' },
 
   // Cabeça (meio e baixo)
   oculos_redondos: { name: 'Óculos Redondos', type: 'rosto', icon: '👓', price: 500, mdef: 2, slots: 0, lv: 5, bonuses: { int: 1 } },
   mascara_folha: { name: 'Máscara de Folha', type: 'rosto', icon: '🍃', price: 350, def: 1, slots: 0, lv: 1, bonuses: { dex: 1 } },
   folha_hortela: { name: 'Folha de Hortelã', type: 'boca', icon: '🌿', price: 300, slots: 0, lv: 1, bonuses: { spRegen: 2 }, desc: 'Mastigar dá um fôlego novo.' },
   bigode_postico: { name: 'Bigode Postiço', type: 'boca', icon: '🥸', price: 250, slots: 0, lv: 1, bonuses: { luk: 2 }, desc: 'Ninguém vai te reconhecer.' },
+  monoculo: { name: 'Monóculo', type: 'rosto', icon: '🧐', price: 700, mdef: 1, slots: 0, lv: 5, bonuses: { dex: 1, int: 1 }, desc: 'Lente de cristal presa por uma correntinha dourada.' },
+  venda_de_pirata: { name: 'Venda de Corsário', type: 'rosto', icon: '🏴', price: 550, def: 1, slots: 0, lv: 4, bonuses: { str: 1, crit: 2 }, desc: 'Um olho a menos, um ar de perigo a mais.' },
+  mascara_de_baile: { name: 'Máscara de Baile', type: 'rosto', icon: '🎭', price: 1600, mdef: 2, slots: 1, lv: 12, bonuses: { agi: 1, luk: 2 }, desc: 'Veludo escuro com fios dourados e uma pluma.' },
+  cachimbo: { name: 'Cachimbo de Raiz', type: 'boca', icon: '🪵', price: 650, slots: 0, lv: 5, bonuses: { int: 1, spRegen: 1 }, desc: 'Fumaça calma para pensar melhor.' },
+  lenco_de_bandoleiro: { name: 'Lenço de Bandoleiro', type: 'boca', icon: '🧣', price: 800, def: 1, slots: 0, lv: 7, bonuses: { agi: 1, flee: 3 }, desc: 'Cobre nariz e boca; poeira e testemunhas ficam de fora.' },
+  talo_de_trigo: { name: 'Talo de Trigo', type: 'boca', icon: '🌾', price: 120, slots: 0, lv: 1, bonuses: { hpRegen: 1 }, desc: 'Coisa de quem não tem pressa.' },
 
   // Escudos
   escudo_madeira: { name: 'Escudo de Madeira', type: 'escudo', icon: '🛡️', price: 150, def: 3, slots: 1, lv: 1 },
@@ -505,12 +514,12 @@ const MONSTERS = {
   },
   lobo_cinzento: {
     name: 'Lobo Cinzento', lv: 12, hp: 400, atk: [30, 42], def: 12, exp: 120, jexp: 90, element: 'terra', shape: 'wolf', color: '#8a8f99', size: 1, speed: 95, aggressive: true, aggroRange: 6,
-    drops: [['pelugem', 0.5], ['carne_assada', 0.1], ['colete_couro', 0.02]],
+    drops: [['pelugem', 0.5], ['carne_assada', 0.1], ['colete_couro', 0.02], ['lenco_de_bandoleiro', 0.012]],
     card: { equip: 'arma', bonuses: { crit: 8, atk: 5 } },
   },
   espantalho: {
     name: 'Espantalho Errante', lv: 15, hp: 560, atk: [36, 50], def: 18, exp: 170, jexp: 130, element: 'terra', shape: 'scarecrow', color: '#c9a15a', size: 1, speed: 50,
-    drops: [['palha', 0.6], ['chapeu_de_palha', 0.03], ['maca', 0.3]],
+    drops: [['palha', 0.6], ['chapeu_de_palha', 0.03], ['talo_de_trigo', 0.05], ['maca', 0.3]],
     card: { equip: 'capa', bonuses: { resist: { terra: 25 }, def: 3 } },
   },
   morcego_cripta: {
@@ -525,7 +534,7 @@ const MONSTERS = {
   },
   esqueleto_vigia: {
     name: 'Esqueleto Vigia', lv: 24, hp: 950, atk: [60, 82], def: 25, exp: 400, jexp: 300, element: 'sombra', shape: 'skeleton', color: '#e6e2d3', size: 1, speed: 60, aggressive: true,
-    drops: [['osso', 0.6], ['elmo_de_ferro', 0.02], ['espada_longa', 0.015]],
+    drops: [['osso', 0.6], ['elmo_de_ferro', 0.02], ['venda_de_pirata', 0.015], ['espada_longa', 0.015]],
     card: { equip: 'escudo', bonuses: { resist: { sombra: 30 }, vit: 2 } },
   },
   golem_musgo: {
@@ -535,12 +544,12 @@ const MONSTERS = {
   },
   espectro: {
     name: 'Espectro Pálido', lv: 31, hp: 1300, atk: [90, 120], def: 10, mdef: 40, exp: 780, jexp: 590, element: 'sombra', shape: 'ghost', color: '#a8c8ff', size: 1, speed: 70, aggressive: true, range: 5, flee: 70,
-    drops: [['ectoplasma', 0.5], ['pocao_azul', 0.1], ['arco_lunar', 0.008], ['cajado_arcano', 0.01], ['katar_do_eclipse', 0.004]],
+    drops: [['ectoplasma', 0.5], ['pocao_azul', 0.1], ['mascara_de_baile', 0.008], ['arco_lunar', 0.008], ['cajado_arcano', 0.01], ['katar_do_eclipse', 0.004]],
     card: { equip: 'cabeca', bonuses: { int: 3, matkPct: 6 } },
   },
   cavaleiro_caido: {
     name: 'Cavaleiro Caído', lv: 34, hp: 2600, atk: [110, 150], def: 45, exp: 1050, jexp: 780, element: 'sombra', shape: 'knight', color: '#3c3f4a', size: 1.15, speed: 65, aggressive: true,
-    drops: [['fragmento_ferro', 0.5], ['cota_de_malha', 0.03], ['espada_longa', 0.03], ['katar_rubra', 0.012]],
+    drops: [['fragmento_ferro', 0.5], ['cota_de_malha', 0.03], ['coroa_de_bronze', 0.006], ['espada_longa', 0.03], ['katar_rubra', 0.012]],
     card: { equip: 'arma', bonuses: { str: 3, atk: 15 } },
   },
   guardiao_ancestral: {
@@ -660,7 +669,7 @@ SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive'
 const FRUIT_SHOP = ['maca', 'laranja', 'pera', 'banana', 'uvas', 'melancia', 'frutinha_azul'];
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
   'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto', 'katar_de_ferro', 'alaude_de_viajante', 'besta_de_caca',
-  'tunica_algodao', 'colete_couro', 'bandana', 'chapeu_de_palha', 'chapeu_de_mago', 'chapeu_de_bardo', 'tricornio', 'capuz_sombrio', 'faixa_de_penas', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
+  'tunica_algodao', 'colete_couro', 'bandana', 'chapeu_de_palha', 'chapeu_de_mago', 'chapeu_de_bardo', 'tricornio', 'capuz_sombrio', 'faixa_de_penas', 'gorro_de_la', 'chapeu_de_viajante', 'mascara_folha', 'oculos_redondos', 'monoculo', 'folha_hortela', 'cachimbo', 'talo_de_trigo', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
 
 /* ---------------- Rótulos de bônus ---------------- */
 const BONUS_LABELS = {

@@ -44,7 +44,12 @@ export function playerToken() {
 const SYNC_EVERY = 0.2, DELAY = 0.22, FAR = 140;
 const ATTACK_RE = /Attack|Punch|Shoot|Spell|Chop|Slice|Stab|Swing/;
 let C = null;            // contexto vindo do main3d
-const N = { id: null, since: -1, busy: false, last: -9, others: new Map(), failed: 0 };
+const N = { id: null, since: -1, busy: false, last: -9, others: new Map(), failed: 0, hooks: [] };
+// P-026: quem quiser a resposta do servidor a cada sync (grupo), o id deste jogador e os outros jogadores desenhados
+export const onNetView = fn => { N.hooks.push(fn); };
+export const netId = () => N.id;
+export const netOthers = () => N.others;
+export const netSample = (R, t) => sample(R, t);
 
 export function initNet(ctx) {
   const again = !!C; C = ctx; _p = new ctx.THREE.Vector3();
@@ -69,7 +74,7 @@ function myState() {
     riding: S.riding && p.mount ? p.mount.kind : null,
     x: +S.pos.x.toFixed(2), y: +(S.pos.y || 0).toFixed(2), z: +S.pos.z.toFixed(2), yaw: +(me ? me.obj.rotation.y : S.pos.yaw).toFixed(3),
     anim: me && me.anim ? me.anim.name : 'Idle', moving: sp > 0.3, speed: +sp.toFixed(2), sit: !!S.sitting, dead: !!p.dead,
-    room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp,
+    room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp, sp: p.sp, maxSp: p.d ? p.d.maxSp : p.sp, jobLv: p.jobLv, // sp/jobLv: quadro do grupo (P-026)
     atk: (S.atkN || 0) + (S.katN || 0), clip: me && me.anim ? me.anim.name : null,
     sfx: S.skillFx || null, // P-016: última habilidade lançada (os outros jogadores mostram o mesmo efeito)
     comp: S.comp ? S.comp.state() : null, // S-325: lobo gigante do Caçador (os outros jogadores desenham pelo que chega aqui)
@@ -91,7 +96,8 @@ function receive(j) {
   const now = performance.now() / 1000, seen = new Set();
   // chat: na primeira resposta só marca onde está (não despeja o histórico)
   if (N.since < 0) N.since = j.seq || 0;
-  else for (const m of j.chat || []) { N.since = Math.max(N.since, m.seq); if (m.id === N.id) continue; C.log(`${m.name}: ${m.text}`, 'net'); const o = N.others.get(m.id); if (o) bubble(o, m.text); }
+  else for (const m of j.chat || []) { N.since = Math.max(N.since, m.seq); if (m.ch) continue; if (m.id === N.id) continue; C.log(`${m.name}: ${m.text}`, 'net'); const o = N.others.get(m.id); if (o) bubble(o, m.text); } // m.ch (grupo/sussurro/aviso): quem mostra é o party3d
+  for (const h of N.hooks) { try { h(j, N.since < 0); } catch (e) { console.warn(e); } } // P-026: grupo, convites e EXP dividida
   N.since = Math.max(N.since, j.seq || 0);
   for (const o of j.players || []) {
     seen.add(o.id);
