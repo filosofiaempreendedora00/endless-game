@@ -25,8 +25,8 @@ export const CLASS_LOOKS = {
   cavaleiro_runico: { outfit: 'Knight', show: ['2H_Sword'], armor: 'placas', tint: { body: '#3a4258', legs: '#262c3c', cape: '#7a1020' }, glow: { '2H_Sword': '#4ad0ff' }, style: '2h', extras: ['runes'] },
   guardiao_sagrado: { outfit: 'Knight', show: ['1H_Sword'], armor: 'paladino', tint: { body: '#fff6dc', legs: '#8a7a5a' }, glow: { '1H_Sword': '#ffd76a' }, style: '1h' }, // S-204: armadura de placas de verdade, tabardo e capa de pano com física (sem asas de fada)
   mago: { outfit: 'Mage', show: [], staff: { wood: '#5a3a22', gem: '#8ab8ff' }, tint: { body: '#3a5ad8', legs: '#2a3470', cape: '#1e2a78' }, style: 'cast' },
-  arquimago: { outfit: 'Mage', show: [], staff: { wood: '#3a2a3e', gem: '#c07aff' }, tint: { body: '#4a2a7a', legs: '#2a1446', cape: '#24103c' }, glow: { '2H_Staff': '#c07aff' }, style: 'cast', extras: ['starMotes'] }, // S-220: sem os anéis em volta do cajado
-  sabio_elemental: { outfit: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Cape'], tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, glow: { '1H_Wand': '#7affd0', 'Spellbook_open': '#7affd0' }, style: 'cast', extras: ['elementOrbs'] },
+  arquimago: { outfit: 'Mage', show: [], staff: { wood: '#3a2a3e', gem: '#c07aff' }, tint: { body: '#4a2a7a', legs: '#2a1446', cape: '#24103c' }, glow: { '2H_Staff': '#c07aff' }, style: 'cast', extras: ['arcaneEnergy'] }, // S-220: sem os anéis · S-315: energia arcana em filetes (no lugar das bolinhas)
+  sabio_elemental: { outfit: 'Mage', show: ['Mage_Cape'], book: true, tint: { body: '#2f7a6a', legs: '#1f4a40', cape: '#c9a24a' }, style: 'cast', extras: ['elementOrbs'] }, // S-314: livro de verdade na mão (sem varinha/livro do pacote) · S-313: orbes elementais
   arqueiro: { outfit: 'Rogue', show: [], bow: { wood: '#7a4a22' }, tint: { body: '#4f8a45', legs: '#5a4430', cape: '#2f5a2a' }, style: 'ranged', extras: ['quiver'] },
   cacador: { outfit: 'Barbarian', show: [], bow: { wood: '#4a2c14', tip: '#d8c8a0', h: 1.4 }, tint: { body: '#8a6a3a', legs: '#5a4028', cape: '#4a3020' }, style: 'ranged', extras: ['quiver', 'falcon'] },
   menestrel: { outfit: 'Rogue', show: [], bow: { wood: '#8a3a2a', h: 1.1 }, tint: { body: '#8a2a5a', legs: '#3a2a5a', cape: '#d8a03a' }, style: 'ranged', extras: ['lute'] }, // S-108: as notas só aparecem com a Canção de Batalha ativa (songAura em main3d)
@@ -40,6 +40,8 @@ const HUMAN_BONE = { head: 'Head', chest: 'spine_03', hips: 'pelvis', 'handslot.
 const bone = (root, n) => (root.userData.human && HUMAN_BONE[n] ? root.getObjectByName(HUMAN_BONE[n]) : null) || root.getObjectByName(n.replace(/\./g, '')) || root.getObjectByName(n);
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: false, ...extra });
 const glowMat = (color, k = 1.4, extra = {}) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: k, roughness: 0.3, ...extra });
+let _glowSpr = null; // brilho redondo e macio (sem borda) para auras e centelhas
+function glowSpriteTex() { if (_glowSpr) return _glowSpr; const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.55)'); g.addColorStop(0.6, 'rgba(255,255,255,0.12)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); _glowSpr = new THREE.CanvasTexture(c); return _glowSpr; }
 
 // grupo preso a um osso, onde 1 unidade = 1 metro (desfaz a escala do personagem)
 // medidas do corpo (m): cabeça de 0,95 a 1,80 (largura ~0,84); tronco ~0,62 de largura; peito em 0,73
@@ -123,10 +125,51 @@ const EXTRAS = {
     fx.push(t => ms.forEach((m, i) => { const k = (t * 0.35 + i / 8) % 1, a = i * 2.4 + t; m.position.set(Math.cos(a) * 0.45, 0.2 + k * 1.8, Math.sin(a) * 0.45); m.scale.setScalar(1 - k); }));
   },
   circlet(root) { const g = socket(root, 'head'); const c = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.018, 10, 28), std('#d8b04a', { metalness: 0.8, roughness: 0.3 })); c.rotation.x = Math.PI / 2; c.position.y = 0.38; c.scale.set(1, 1.1, 1); g.add(c); const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), glowMat('#7affd0', 1.8)); gem.position.set(0, 0.38, 0.25); g.add(gem); },
+  // S-313: quatro orbes pequenos e bem acabados, cada um com o princípio do seu elemento, numa órbita lenta e levemente inclinada
   elementOrbs(root, fx) {
-    const g = new THREE.Group(); g.position.y = 1.55; root.parent.add(g); const os = [];
-    for (const c of ['#ff6a3d', '#4aa3ff', '#c49a55', '#a6ec7c']) { const o = new THREE.Mesh(new THREE.SphereGeometry(0.06, 20, 14), glowMat(c, 1.8)); g.add(o); os.push(o); }
-    fx.push(t => os.forEach((o, i) => { const a = t * 1.2 + i * Math.PI / 2; o.position.set(Math.cos(a) * 0.5, Math.sin(t * 2 + i) * 0.08, Math.sin(a) * 0.5); }));
+    const g = new THREE.Group(); g.position.y = 1.32; root.parent.add(g); const orbs = [];
+    const halo = (c, s, o = 0.55) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: c, transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.setScalar(s); return sp; };
+    // água: gotícula líquida e brilhante que ondula
+    { const o = new THREE.Group(), d = new THREE.Mesh(new THREE.SphereGeometry(0.026, 24, 18), new THREE.MeshStandardMaterial({ color: '#3d8fe8', emissive: '#1f5fb8', emissiveIntensity: 0.6, roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.88 }));
+      const hl = new THREE.Mesh(new THREE.SphereGeometry(0.007, 10, 8), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(-0.009, 0.011, 0.018); o.add(d, hl, halo('#5ab0ff', 0.11, 0.5));
+      o.userData.tick = t => d.scale.set(1 + Math.sin(t * 5.3) * 0.06, 1 - Math.sin(t * 5.3) * 0.05, 1 + Math.cos(t * 4.1) * 0.05); orbs.push(o); }
+    // fogo: chaminha viva (núcleo claro, línguas de fogo que tremulam e sobem)
+    { const o = new THREE.Group(), core = new THREE.Mesh(new THREE.SphereGeometry(0.013, 14, 10), new THREE.MeshBasicMaterial({ color: '#fff0c0' })); o.add(core, halo('#ff6a20', 0.12, 0.6));
+      const ls = []; for (let k = 0; k < 4; k++) { const l = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.045, 12, 1, true), new THREE.MeshBasicMaterial({ color: k % 2 ? '#ff5a1a' : '#ffa030', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })); l.position.y = 0.014; o.add(l); ls.push(l); }
+      o.userData.tick = t => ls.forEach((l, k) => { const f = 0.75 + 0.35 * Math.abs(Math.sin(t * (9 + k * 2.3) + k)); l.scale.set(1 - k * 0.15, f * (1 - k * 0.12), 1 - k * 0.15); l.rotation.set(Math.sin(t * 7 + k) * 0.25, k * 1.6, Math.cos(t * 6 + k) * 0.25); }); orbs.push(o); }
+    // terra: pedrinha lapidada âmbar com veio verde (cristal liso, sem facetas duras)
+    { const o = new THREE.Group(), geo = new THREE.IcosahedronGeometry(0.024, 2); const P = geo.attributes.position; for (let k = 0; k < P.count; k++) { const v = new THREE.Vector3().fromBufferAttribute(P, k), n = 1 + 0.18 * Math.sin(v.x * 140) * Math.cos(v.y * 120) + 0.25 * Math.max(0, v.y / 0.024); P.setXYZ(k, v.x * n, v.y * n * 1.25, v.z * n); } geo.computeVertexNormals();
+      const s = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#c08a3a', emissive: '#6a4a10', emissiveIntensity: 0.35, roughness: 0.35, metalness: 0.15 })); const moss = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), new THREE.MeshStandardMaterial({ color: '#4f8a3a', roughness: 0.9 })); moss.position.set(0.012, -0.012, 0.01); moss.scale.set(1.4, 0.6, 1.2);
+      o.add(s, moss, halo('#e0b060', 0.09, 0.35)); o.userData.tick = t => { s.rotation.set(t * 0.6, t * 0.9, 0); }; orbs.push(o); }
+    // vento: espiral de ar translúcida (filetes que giram)
+    { const o = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: '#d8f8ea', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), sp = [];
+      for (let k = 0; k < 3; k++) { const pts = []; for (let j = 0; j <= 20; j++) { const u = j / 20, a = u * Math.PI * 3 + k * 2.1, r = 0.006 + u * 0.022; pts.push(new THREE.Vector3(Math.cos(a) * r, (u - 0.5) * 0.04, Math.sin(a) * r)); } const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.0022, 5, false), mat); o.add(m); sp.push(m); }
+      o.add(halo('#c8ffe8', 0.1, 0.3)); o.userData.tick = t => sp.forEach((m, k) => { m.rotation.y = t * (3.5 + k * 0.7); }); orbs.push(o); }
+    orbs.forEach(o => g.add(o));
+    fx.push(t => orbs.forEach((o, i) => { const a = t * 0.7 + i * Math.PI / 2, r = 0.36; o.position.set(Math.cos(a) * r, 0.18 + Math.sin(a * 2 + i) * 0.035 + Math.sin(a) * 0.06, Math.sin(a) * r); o.userData.tick(t); }));
+  },
+  // S-315: energia arcana do Arquimago (no espírito do mago de Skyrim): filetes luminosos em espiral em volta da pedra do cajado,
+  // centelhas suaves que sobem e a mão livre acesa — mais forte ao conjurar
+  arcaneEnergy(root, fx) {
+    const mk = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const fil = [], head = new THREE.Group();
+    const attach = () => { const staff = root.userData.items && root.userData.items['2H_Staff']; if (!staff) return; head.position.y = staff.userData.gripY / 0.58 + 0.075; staff.add(head); }; // o cajado é montado depois dos efeitos
+    for (let k = 0; k < 3; k++) { const pts = []; for (let j = 0; j <= 30; j++) { const u = j / 30, a = u * Math.PI * 4 + k * 2.09, r = 0.035 + Math.sin(u * Math.PI) * 0.045; pts.push(new THREE.Vector3(Math.cos(a) * r, (u - 0.5) * 0.22, Math.sin(a) * r)); }
+      const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.0028, 5, false), mk(k === 1 ? '#9fd0ff' : '#c89aff', 0.75)); head.add(m); fil.push(m); }
+    const aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: '#b08aff', transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); aura.scale.setScalar(0.22); head.add(aura);
+    // mão livre (esquerda): brilho e centelhas que sobem e somem
+    const hl = bone(root, 'hand_l'), handG = new THREE.Group(); if (hl) hl.add(handG); handG.position.set(0, 0.07, 0.02);
+    const hglow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: '#a88aff', transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending })); hglow.scale.setScalar(0.16); handG.add(hglow);
+    const sparks = []; for (let k = 0; k < 10; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: k % 3 ? '#cfb2ff' : '#9fd0ff', transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending })); s.scale.setScalar(0.025); (k < 5 ? head : handG).add(s); sparks.push(s); }
+    let cast = 0;
+    fx.push(t => {
+      if (!head.parent) attach();
+      const an = (root.userData.anim && root.userData.anim.name) || '', want = /Spell|Shoot|Cast/.test(an) || performance.now() - (root.userData.ovT || -1e9) < 600 ? 1 : 0.25;
+      cast += (want - cast) * 0.08;
+      fil.forEach((m, k) => { m.rotation.y = t * (1.6 + k * 0.5) * (k % 2 ? -1 : 1); m.material.opacity = 0.35 + 0.35 * cast + 0.1 * Math.sin(t * 3 + k); });
+      aura.material.opacity = 0.3 + 0.35 * cast + 0.08 * Math.sin(t * 2.3); hglow.material.opacity = 0.12 + 0.6 * cast; hglow.scale.setScalar(0.12 + 0.08 * cast + 0.02 * Math.sin(t * 6));
+      sparks.forEach((s, k) => { const u = (t * 0.45 + k * 0.137) % 1, a = k * 2.4 + t * 1.3, r = 0.03 + u * 0.05; s.position.set(Math.cos(a) * r, u * 0.22, Math.sin(a) * r); s.material.opacity = Math.sin(u * Math.PI) * (0.35 + 0.5 * cast); });
+    });
   },
   quiver(root) {
     const g = socket(root, 'chest');
@@ -450,7 +493,8 @@ const HUMAN_SKIP_EXTRAS = new Set(['belt']);
 export const CLASS_OUTFIT = { aprendiz: 'campones', guerreiro: 'patrulheiro', cavaleiro_runico: 'patrulheiro', guardiao_sagrado: 'patrulheiro', mago: 'campones', arquimago: 'campones', sabio_elemental: 'campones', arqueiro: 'patrulheiro', cacador: 'patrulheiro', menestrel: 'campones', ladino: 'patrulheiro', lamina_sombria: 'patrulheiro', saqueador: 'campones' };
 export function dressHuman(ch, cls, MODELS, opts = {}) {
   const L = CLASS_LOOKS[cls] || CLASS_LOOKS.aprendiz, root = ch.root, fx = [];
-  root.userData.human = true;
+  root.userData.human = true; root.userData.anim = ch.anim; // os efeitos de classe sabem o que o corpo está fazendo (ex.: conjurando)
+  if (ch.anim && ch.anim.overlay && !ch.anim._ovWrap) { const ov = ch.anim.overlay.bind(ch.anim); ch.anim.overlay = (...a) => { root.userData.ovT = performance.now(); return ov(...a); }; ch.anim._ovWrap = true; }
   const t = L.tint || {}, mix = (m, hex, k) => { m.material = m.material.clone(); m.material.color = new THREE.Color('#ffffff').lerp(new THREE.Color(hex), k); };
   root.traverse(o => {
     if (!o.isSkinnedMesh || !/_(Body|Legs|Arms|Feet|Acc|Head_Hood)/.test(o.name)) return;
@@ -468,7 +512,8 @@ export function dressHuman(ch, cls, MODELS, opts = {}) {
   // katar: o Executor usa o par de katares (opts.wtype permite trocar pela adaga quando a arma equipada não for katar)
   if (L.katar && (!opts.wtype || opts.wtype === 'katar')) holdKatars(root, { ...L.katar, ...katarLook(opts.weaponId) });
   else if (L.dagger) holdDagger(root, codeDagger(L.dagger));
-  if (L.staff) holdStaff(root, codeStaff(L.staff));
+  if (L.staff) holdStaff(root, codeStaff(L.staff), fx, ch); // S-315: cajado dentro do punho, braço dobrado fora dos golpes
+  if (L.book) holdBook(root, codeBook(), fx); // S-314: livro do Sábio segurado pela lombada na mão esquerda
   if (opts.offhand) strapShield(root, codeShield(SHIELD_KIND[opts.offhand] || (/paladino|guardiao/.test(cls) ? 'cavaleiro' : 'madeira')));
   // S-147: sem a capa chapada nas costas (não combina com o corpo realista) — vale para todas as classes
   return { style: L.style, update: tt => fx.forEach(f => f(tt)) };
@@ -1239,6 +1284,7 @@ function tabardTex(base, trim, emblem) {
   if (emblem === 'sol') { for (let k = 0; k < 12; k++) { x.rotate(Math.PI / 6); x.beginPath(); x.moveTo(-4, -14); x.lineTo(0, -30); x.lineTo(4, -14); x.fill(); } x.beginPath(); x.arc(0, 0, 13, 0, 7); x.fill(); x.stroke(); }
   else if (emblem === 'torre') { x.fillRect(-14, -18, 28, 40); for (const k of [-14, -4, 6]) x.fillRect(k, -26, 8, 9); x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(-4, 6, 8, 16); }
   else if (emblem === 'cruz') { x.fillRect(-5, -26, 10, 52); x.fillRect(-18, -12, 36, 10); }
+  else if (emblem === 'espadas') { for (const s of [-1, 1]) { x.save(); x.rotate(s * 0.62); x.fillRect(-3, -34, 6, 50); x.fillRect(-11, 12, 22, 5); x.fillRect(-2.5, 17, 5, 12); x.beginPath(); x.arc(0, 32, 4, 0, 7); x.fill(); x.restore(); } } // espadas cruzadas (casa do Cavaleiro)
   x.restore();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (_tex[key] = t);
 }
@@ -1344,13 +1390,24 @@ export function codeBow(opt = {}) {
   if (opt.glow) g.traverse(o => { if (o.isMesh && o !== str) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(opt.glow); o.material.emissiveIntensity = 0.5; } });
   g.userData.gripZ = -0.11; return g;
 }
-function holdBow(root, bow) { // na mão esquerda, vertical, com a corda virada para o corpo
-  humanIdlePose(root); const hand = bone(root, 'hand_l'), kn = bone(root, 'middle_01_l'), at = kn ? rootPos(root, kn).lerp(rootPos(root, hand), 0.4) : rootPos(root, hand);
-  const holder = new THREE.Group(); hand.add(holder);
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.12, -Math.PI / 2 + 0.2, 0.05)); // arco de lado, levemente inclinado para frente
-  fitToBone(root, hand, holder, q, at.add(new THREE.Vector3(0.012, 0, 0.015)));
-  bow.position.z = -bow.userData.gripZ; holder.add(bow); bow.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
-  root.userData.items = root.userData.items || {}; root.userData.items.bow = bow; return bow;
+/* S-312: arco no estilo Skyrim/WoW — fora de combate vai NAS COSTAS (atravessado, da ponta no ombro direito ao quadril esquerdo, corda
+   encostada nas costas); em combate vai para a MÃO ESQUERDA com a empunhadura DENTRO do punho fechado (cabo do mindinho ao indicador),
+   ventre do arco para o alvo e corda para o arqueiro. root.userData.bowState('back' | 'hand') troca o lugar. */
+function holdBow(root, bow) {
+  humanIdlePose(root); root.updateMatrixWorld(true);
+  const hand = bone(root, 'hand_l'), sp = bone(root, 'spine_03') || bone(root, 'spine_02'), F = fistFrame(root, 'l');
+  const basis = (Y, Z) => { const y = Y.clone().normalize(), z = Z.clone().sub(y.clone().multiplyScalar(Z.dot(y))).normalize(), x = new THREE.Vector3().crossVectors(y, z); return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); };
+  const inHand = new THREE.Group(); hand.add(inHand);
+  if (F) fitToBone(root, hand, inHand, basis(F.A, F.E.clone().multiplyScalar(-1)), F.C); // eixo do arco = eixo do cabo no punho; ventre para fora dos nós dos dedos
+  else { const kn = bone(root, 'middle_01_l'), at = kn ? rootPos(root, kn).lerp(rootPos(root, hand), 0.4) : rootPos(root, hand); fitToBone(root, hand, inHand, new THREE.Quaternion().setFromEuler(new THREE.Euler(0.12, -Math.PI / 2 + 0.2, 0.05)), at); }
+  const onBack = new THREE.Group(); (sp || root).add(onBack);
+  if (sp) { const c = rootPos(root, sp), shR = bone(root, 'upperarm_r'), shL = bone(root, 'upperarm_l'), w = shR && shL ? rootPos(root, shL).distanceTo(rootPos(root, shR)) : 0.34;
+    fitToBone(root, sp, onBack, basis(new THREE.Vector3(-0.55, 1, 0), new THREE.Vector3(0, 0, 1)), c.add(new THREE.Vector3(0.0, -0.06, -0.25 - w * 0.03))); } // corda encostada nas costas (a corda fica 11 cm à frente da empunhadura), ventre para fora
+  bow.position.z = -bow.userData.gripZ; bow.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  root.userData.items = root.userData.items || {}; root.userData.items.bow = bow;
+  root.userData.bowState = s => { const tgt = s === 'hand' ? inHand : onBack; if (bow.parent !== tgt) { tgt.add(bow); root.userData.bowAt = s; } };
+  root.userData.bowState('back');
+  return bow;
 }
 /* cajado de verdade (S-220): madeira retorcida de ~1,5 m, garras de madeira segurando um cristal no topo (sem anéis) */
 export function codeStaff(opt = {}) {
@@ -1365,11 +1422,93 @@ export function codeStaff(opt = {}) {
   const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.16, 12), new THREE.MeshStandardMaterial({ color: '#3a2216', map: metalTex('couro'), roughness: 0.9 })); wrap.position.y = H * 0.58; g.add(wrap);
   g.userData.gripY = H * 0.58; return g;
 }
-function holdStaff(root, staff) { // em pé ao lado do corpo, na mão direita fechada, o pé quase no chão
-  humanIdlePose(root); const hand = bone(root, 'hand_r'), kn = bone(root, 'middle_01_r'), at = kn ? rootPos(root, kn).lerp(rootPos(root, hand), 0.35) : rootPos(root, hand);
-  const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, new THREE.Quaternion().setFromEuler(new THREE.Euler(0.06, 0, -0.04)), at.add(new THREE.Vector3(0, 0, 0.01)));
-  staff.position.y = -Math.min(staff.userData.gripY, at.y - 0.04); holder.add(staff); staff.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
-  root.userData.items = root.userData.items || {}; root.userData.items['2H_Staff'] = staff; return staff;
+/* S-315: cajado DENTRO do punho fechado. Com o braço pendurado, o "furo" do punho fica na horizontal — por isso, fora dos golpes,
+   o braço do cajado dobra (cinemática inversa de 2 ossos): cotovelo para trás, antebraço à frente, punho na altura do quadril e
+   o cajado em pé, com o pé quase no chão. Ao conjurar/golpear o braço volta para a animação (o cajado acompanha a mão). */
+const STAFF_FREE = /Sword_Attack|Melee|Punch|Hit_|Death|Jump|Sit|Interact|PickUp|Roll/; // a magia sai da mão livre: o cajado segue em pé na outra
+const _ikA = new THREE.Vector3(), _ikB = new THREE.Vector3(), _ikC = new THREE.Vector3(), _ikD = new THREE.Vector3(), _ikQ = new THREE.Quaternion(), _ikQ2 = new THREE.Quaternion(), _ikM = new THREE.Matrix4(), _ikM2 = new THREE.Matrix4();
+function setWorldQuat(b, qw) { b.parent.getWorldQuaternion(_ikQ2).invert(); b.quaternion.copy(_ikQ2.multiply(qw)); b.updateMatrixWorld(true); }
+function holdStaff(root, staff, fx, ch, side = 'r') {
+  humanIdlePose(root); root.updateMatrixWorld(true);
+  const ua = bone(root, 'upperarm_' + side), la = bone(root, 'lowerarm_' + side), hand = bone(root, 'hand_' + side), F = fistFrame(root, side);
+  if (!ua || !la || !hand || !F) return staff;
+  const L1 = ua.getWorldPosition(_v()).distanceTo(la.getWorldPosition(_v())), L2 = la.getWorldPosition(_v()).distanceTo(hand.getWorldPosition(_v()));
+  // a mira do braço (espaço do personagem): punho à frente do quadril, um pouco para fora
+  const S0 = rootPos(root, ua), sx = side === 'r' ? -1 : 1, tgt = new THREE.Vector3(S0.x + sx * 0.06, S0.y - L1 * 0.97, S0.z + L2 * 0.82);
+  // o punho medido no espaço do osso da mão (fixo): eixo do cabo (A), direção dos dedos (E) e centro (C)
+  const hq = hand.getWorldQuaternion(new THREE.Quaternion()).invert(), rq = root.getWorldQuaternion(new THREE.Quaternion());
+  const aH = F.A.clone().applyQuaternion(rq).applyQuaternion(hq).normalize(), eH = F.E.clone().applyQuaternion(rq).applyQuaternion(hq).normalize();
+  const cH = hand.worldToLocal(root.localToWorld(F.C.clone().add(F.E.clone().multiplyScalar(-0.026)))); // o cabo no meio do punho (não rente aos nós dos dedos)
+  const grip = Math.max(0.5, Math.min(staff.userData.gripY + 0.25, tgt.y - 0.03)); // pé do cajado rente ao chão (anão tem a mão mais baixa)
+  const holder = new THREE.Group(); hand.add(holder);
+  holder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), aH); holder.position.copy(cH);
+  staff.position.y = -grip; holder.add(staff); staff.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  root.userData.items = root.userData.items || {}; root.userData.items['2H_Staff'] = staff;
+  const curl = handGrip(root, side, 1);
+  let w = 0, last = null;
+  if (fx) fx.push(tt => {
+    const now = performance.now(), dt = last === null || !(tt > last) ? 0.016 : Math.min(0.1, tt - last); last = tt;
+    const an = ch && ch.anim ? ch.anim.name || '' : 'Idle'; void now;
+    w += ((STAFF_FREE.test(an) ? 0 : 1) - w) * Math.min(1, dt * 9);
+    if (w > 0.01) {
+      root.updateMatrixWorld(true);
+      const S = ua.getWorldPosition(_ikA), E = la.getWorldPosition(_ikB), T = root.localToWorld(_ikC.copy(tgt));
+      const d = Math.min(S.distanceTo(T), (L1 + L2) * 0.999), dir = _ikD.copy(T).sub(S).normalize();
+      const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+      const pole = new THREE.Vector3(sx * 0.35, -0.1, -1).applyQuaternion(root.getWorldQuaternion(_ikQ)); pole.sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
+      const E2 = S.clone().add(dir.clone().multiplyScalar(a)).add(pole.multiplyScalar(h));
+      _ikQ.setFromUnitVectors(E.clone().sub(S).normalize(), E2.clone().sub(S).normalize()); _ikQ.slerp(new THREE.Quaternion(), 1 - w);
+      setWorldQuat(ua, _ikQ.multiply(ua.getWorldQuaternion(_ikQ2.identity()).clone()));
+      const E3 = la.getWorldPosition(_v()), H = hand.getWorldPosition(_v());
+      _ikQ.setFromUnitVectors(H.sub(E3).normalize(), T.clone().sub(E3).normalize()); _ikQ.slerp(new THREE.Quaternion(), 1 - w);
+      setWorldQuat(la, _ikQ.multiply(la.getWorldQuaternion(_ikQ2.identity()).clone()));
+      // a mão: eixo do punho em pé (leve inclinação para a frente), dedos apontando para a frente/fora
+      const rqw = root.getWorldQuaternion(new THREE.Quaternion()), up = new THREE.Vector3(0, 1, 0.1).normalize().applyQuaternion(rqw);
+      const fore = T.clone().sub(E3).normalize(); fore.sub(up.clone().multiplyScalar(fore.dot(up))).normalize();
+      _ikM.makeBasis(up, fore, new THREE.Vector3().crossVectors(up, fore)); _ikM2.makeBasis(aH, eH, new THREE.Vector3().crossVectors(aH, eH));
+      const want = new THREE.Quaternion().setFromRotationMatrix(_ikM.multiply(_ikM2.invert())), cur = hand.getWorldQuaternion(new THREE.Quaternion());
+      setWorldQuat(hand, cur.slerp(want, w));
+    }
+    curl();
+  });
+  return staff;
+}
+/* S-314: livro do Sábio (como o sábio do RO) — tomo fechado de capa de couro com cantoneiras e fecho de latão, gravado com os
+   quatro elementos; segurado pela LOMBADA dentro da mão esquerda fechada (dedos numa capa, polegar na outra), pendendo junto da coxa */
+let _bookTex = null;
+function bookCoverTex() {
+  if (_bookTex) return _bookTex;
+  const c = document.createElement('canvas'); c.width = 256; c.height = 360; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 256, 360); g.addColorStop(0, '#2f5a4a'); g.addColorStop(1, '#1d3a30'); x.fillStyle = g; x.fillRect(0, 0, 256, 360);
+  for (let k = 0; k < 900; k++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * 256, Math.random() * 360, 2, 2); }
+  x.strokeStyle = '#c9a24a'; x.lineWidth = 6; x.strokeRect(16, 16, 224, 328); x.lineWidth = 2; x.strokeRect(28, 28, 200, 304);
+  const els = [['#ff7a3d', 0], ['#4aa8ff', 1], ['#c9a24a', 2], ['#cfeedd', 3]]; // fogo, água, terra, vento em losango
+  x.save(); x.translate(128, 180);
+  for (const [col, i] of els) { const a = i * Math.PI / 2 - Math.PI / 2; x.fillStyle = col; x.beginPath(); x.arc(Math.cos(a) * 44, Math.sin(a) * 44, 13, 0, 7); x.fill(); x.strokeStyle = '#e8c870'; x.lineWidth = 2; x.stroke(); }
+  x.strokeStyle = '#e8c870'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, 44, 0, 7); x.stroke(); x.beginPath(); x.arc(0, 0, 16, 0, 7); x.stroke(); x.restore();
+  _bookTex = new THREE.CanvasTexture(c); _bookTex.colorSpace = THREE.SRGBColorSpace; _bookTex.anisotropy = 4; return _bookTex;
+}
+export function codeBook() { // y = lombada (comprimento), x = largura (sai da lombada), z = espessura; a lombada fica em x = 0
+  const g = new THREE.Group(), W = 0.16, Hh = 0.23, T = 0.045, cover = new THREE.MeshStandardMaterial({ map: bookCoverTex(), roughness: 0.8 }), leather = new THREE.MeshStandardMaterial({ color: '#21402f', map: metalTex('couro'), roughness: 0.85 });
+  const brass = new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: 0.85, roughness: 0.35 }), pages = new THREE.MeshStandardMaterial({ color: '#efe4c8', roughness: 0.95 });
+  const block = new THREE.Mesh(new THREE.BoxGeometry(W - 0.008, Hh - 0.012, T - 0.012), pages); block.position.set(W / 2 + 0.002, 0, 0); g.add(block);
+  for (const s of [-1, 1]) { const cv = new THREE.Mesh(new THREE.BoxGeometry(W + 0.004, Hh, 0.006), s > 0 ? cover : leather); cv.position.set(W / 2, 0, s * (T / 2 - 0.003)); g.add(cv); }
+  const spine = new THREE.Mesh(new THREE.CylinderGeometry(T / 2, T / 2, Hh, 16, 1, false, Math.PI / 2, Math.PI), leather); spine.position.set(0, 0, 0); spine.rotation.y = Math.PI; g.add(spine);
+  for (const y of [-0.07, 0, 0.07]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(T / 2 + 0.0025, T / 2 + 0.0025, 0.007, 16, 1, false, Math.PI / 2, Math.PI), leather); r.rotation.y = Math.PI; r.position.set(0, y, 0); g.add(r); } // nervuras da lombada (rentes, de couro)
+  for (const [cx, cy] of [[W, Hh / 2], [W, -Hh / 2]]) for (const s of [-1, 1]) { const k = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.026, 0.004), brass); k.position.set(cx - 0.011, cy - Math.sign(cy) * 0.011, s * (T / 2 + 0.001)); g.add(k); } // cantoneiras
+  const clasp = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.022, T + 0.01), brass); clasp.position.set(W + 0.006, 0, 0); g.add(clasp);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  return g;
+}
+function holdBook(root, book, fx, side = 'l') {
+  humanIdlePose(root); const hand = bone(root, 'hand_' + side), F = fistFrame(root, side); if (!hand || !F) return book;
+  // lombada ao longo do "furo" do punho (A), o livro saindo pela frente dos dedos (E), a espessura na direção da palma
+  const A = F.A.clone(), E = F.E.clone().sub(A.clone().multiplyScalar(F.E.dot(A))).normalize(), N = new THREE.Vector3().crossVectors(E, A).normalize();
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(E, A, N));
+  const holder = new THREE.Group(); hand.add(holder); fitToBone(root, hand, holder, q, F.C.clone().add(E.clone().multiplyScalar(-0.012)));
+  holder.add(book); root.userData.items = root.userData.items || {}; root.userData.items.Spellbook = book;
+  const curl = handGrip(root, side, 0.8); if (fx) fx.push(() => curl());
+  return book;
 }
 /* adaga de verdade (S-202): uma só, na mão direita */
 export function codeDagger(opt = {}) {
@@ -1461,6 +1600,166 @@ export function holdKatars(root, opt = {}) {
 }
 // o jogador tem katar equipada?
 export function hasKatar(p) { const w = p && p.equip && p.equip.arma; const it = w && typeof ITEMS !== 'undefined' && ITEMS[w.id]; return !!(it && it.wtype === 'katar'); }
+/* =====================================================================================================
+   ARMADURAS REFEITAS (S-317/S-318) — referência Skyrim (Ferro/Couro, Aço, Imperial), WoW e Assassin's Creed.
+   • Metal de verdade: reflete um céu próprio (mapa de ambiente), com riscos, desgaste nas bordas e rebites —
+     nada de "latão" chapado. • Peças em LÂMINAS sobrepostas (fralda, ombreiras, gola, placa da barriga),
+     moldadas no corpo (wrapShell) e presas ao osso que as move. • Couro com fivelas e cota de malha nas juntas.
+   Guerreiro = couro batido + malha + ferro simples · Cavaleiro = aço azulado de guerra, rebites, ombreiras
+   assimétricas, tabardo vermelho da casa · Paladino = aço polido claro com filetes de ouro, sol no peito, capa.
+   ===================================================================================================== */
+let _aEnv = null;
+function armorEnv() {
+  if (_aEnv) return _aEnv;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d'); let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#f2f6fb'); g.addColorStop(0.4, '#b4c2d2'); g.addColorStop(0.5, '#8c877e'); g.addColorStop(0.6, '#5a5046'); g.addColorStop(1, '#221d18');
+  x.fillStyle = g; x.fillRect(0, 0, 512, 256);
+  for (let k = 0; k < 8; k++) { const cx = r() * 512, cy = 30 + r() * 70, rad = 25 + r() * 55, h = x.createRadialGradient(cx, cy, 0, cx, cy, rad); h.addColorStop(0, 'rgba(255,255,250,0.75)'); h.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = h; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); }
+  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; return (_aEnv = t);
+}
+// chapa de metal: escovado fino, manchas de uso, riscos, bordas escurecidas e (opcional) fileiras de rebites
+function plateTex(rivets) {
+  const key = 'plate' + (rivets ? 'R' : ''); if (_tex[key]) return _tex[key];
+  const W = 512, c = document.createElement('canvas'); c.width = c.height = W; const x = c.getContext('2d'); let s = 23; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#cfcfcf'; x.fillRect(0, 0, W, W);
+  for (let k = 0; k < 2200; k++) { const y = r() * W, a = 0.02 + r() * 0.05; x.strokeStyle = r() < 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`; x.lineWidth = 0.6; x.beginPath(); x.moveTo(r() * W, y); x.lineTo(r() * W, y + (r() - 0.5) * 2); x.stroke(); } // escovado
+  for (let k = 0; k < 60; k++) { const cx = r() * W, cy = r() * W, rad = 10 + r() * 60, h = x.createRadialGradient(cx, cy, 0, cx, cy, rad); h.addColorStop(0, `rgba(40,34,28,${0.05 + r() * 0.08})`); h.addColorStop(1, 'rgba(40,34,28,0)'); x.fillStyle = h; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); } // manchas
+  for (let k = 0; k < 140; k++) { x.strokeStyle = `rgba(${r() < 0.5 ? '255,255,255' : '20,20,20'},${0.12 + r() * 0.18})`; x.lineWidth = 0.6 + r() * 0.8; x.beginPath(); const a = r() * W, b = r() * W, ang = r() * 6.28, l = 5 + r() * 30; x.moveTo(a, b); x.lineTo(a + Math.cos(ang) * l, b + Math.sin(ang) * l); x.stroke(); } // riscos
+  const e = x.createLinearGradient(0, 0, 0, W); e.addColorStop(0, 'rgba(30,26,22,0.28)'); e.addColorStop(0.08, 'rgba(30,26,22,0)'); e.addColorStop(0.92, 'rgba(30,26,22,0)'); e.addColorStop(1, 'rgba(30,26,22,0.3)'); x.fillStyle = e; x.fillRect(0, 0, W, W); // bordas gastas
+  if (rivets) for (const v of [0.06, 0.94]) for (let u = 12; u < W; u += 42) { const g = x.createRadialGradient(u - 2, v * W - 2, 0, u, v * W, 7); g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#9a9a9a'); g.addColorStop(1, 'rgba(20,20,20,0.9)'); x.fillStyle = g; x.beginPath(); x.arc(u, v * W, 6, 0, 7); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_tex[key] = t);
+}
+function plateRough() {
+  if (_tex.plateRough) return _tex.plateRough;
+  const W = 256, c = document.createElement('canvas'); c.width = c.height = W; const x = c.getContext('2d'); let s = 31; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#8a8a8a'; x.fillRect(0, 0, W, W);
+  for (let k = 0; k < 90; k++) { const cx = r() * W, cy = r() * W, rad = 6 + r() * 34, v = r() < 0.5 ? 200 : 60, h = x.createRadialGradient(cx, cy, 0, cx, cy, rad); h.addColorStop(0, `rgba(${v},${v},${v},0.35)`); h.addColorStop(1, `rgba(${v},${v},${v},0)`); x.fillStyle = h; x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return (_tex.plateRough = t);
+}
+const _am = {};
+const AM = {
+  steel: (color, o = {}) => _am['s' + color + JSON.stringify(o)] || (_am['s' + color + JSON.stringify(o)] = new THREE.MeshStandardMaterial({ color, map: plateTex(!!o.rivets), roughnessMap: plateRough(), metalness: o.metal ?? 0.9, roughness: o.rough ?? 0.42, envMap: armorEnv(), envMapIntensity: o.env ?? 1.0 })),
+  gold: (color = '#c9a24a') => _am['g' + color] || (_am['g' + color] = new THREE.MeshStandardMaterial({ color, map: plateTex(false), roughnessMap: plateRough(), metalness: 0.95, roughness: 0.3, envMap: armorEnv(), envMapIntensity: 1.25 })),
+  leather: (color) => _am['l' + color] || (_am['l' + color] = new THREE.MeshStandardMaterial({ color, map: metalTex('couro'), bumpMap: metalTex('couro'), bumpScale: 0.6, roughness: 0.68, metalness: 0.02, envMap: armorEnv(), envMapIntensity: 0.25 })),
+  mail: (color) => _am['m' + color] || (_am['m' + color] = new THREE.MeshStandardMaterial({ color, map: metalTex('malha'), bumpMap: metalTex('malha'), bumpScale: 1.4, roughness: 0.48, metalness: 0.8, envMap: armorEnv(), envMapIntensity: 0.7 })),
+};
+// casca moldada num trecho de osso(s); opt.front define a "frente" (para eixos horizontais, como o pé)
+function shellOn(root, key, bones, meshRe, A, B, o, mat, pin) {
+  const g = wrapCached(root, key, () => wrapShell(sampleBody(root, bones, meshRe), A, B, { bins: 8, sec: 32, smooth: 4, ...o }));
+  return pinToBone(root, pin, new THREE.Mesh(g, mat));
+}
+// LÂMINAS sobrepostas: n faixas de t0 a t1 ao longo de A→B, cada uma levemente mais para dentro que a anterior (a de cima cobre a de baixo)
+function lames(root, key, bones, meshRe, A, B, t0, t1, n, o, mat, pin, matLast) {
+  for (let k = 0; k < n; k++) {
+    const a = t0 + (t1 - t0) * k / n, b = t0 + (t1 - t0) * (k + 1.22) / n;
+    shellOn(root, key + 'L' + k, bones, meshRe, A, B, { ...o, t0: a, t1: b, bins: 3, off: (o.off ?? 0.022) - k * (o.step ?? 0.004), th: o.th ?? 0.008, ridge: (t) => (t > 0.82 ? (t - 0.82) * 0.03 : 0) }, k === n - 1 && matLast ? matLast : mat, pin);
+  }
+}
+const AV3 = (p, dx = 0, dy = 0, dz = 0) => new THREE.Vector3(p.x + dx, p.y + dy, p.z + dz);
+// PEITORAL anatômico (frente e costas) com quilha central e placa da barriga em lâminas
+function breastplate(root, mat, o = {}) {
+  const sp1 = bonePos(root, 'spine_01'), nk = bonePos(root, 'neck_01'), A = AV3(sp1, 0, -0.02, 0), B = AV3(nk, 0, -0.035, 0), body = ['spine_01', 'spine_02', 'spine_03'];
+  shellOn(root, 'bp' + (o.k || ''), body, /_Body/, A, B, { t0: 0.34, t1: 1, bins: 14, sec: 40, off: o.off ?? 0.026, th: 0.013, smooth: 5, uvRep: 2,
+    ridge: (t, a) => Math.max(0, Math.cos(a)) ** 6 * 0.018 * Math.min(1, t * 1.4) + (t > 0.9 ? (t - 0.9) * 0.08 : 0), flare: (t, a) => Math.max(0, Math.cos(a)) * Math.sin(Math.min(1, t) * Math.PI) * 0.012 }, mat, 'spine_02');
+  lames(root, 'plack' + (o.k || ''), body, /_Body/, A, B, 0.0, 0.36, 3, { sec: 40, off: (o.off ?? 0.026) + 0.006, arc: o.backOpen ? [-1.7, 1.7] : undefined }, mat, 'spine_02');
+}
+// FRALDA (saia de lâminas) na cintura + TASSETS que acompanham as coxas
+function fauldTassets(root, mat, o = {}) {
+  const pv = bonePos(root, 'pelvis'), sp = bonePos(root, 'spine_01');
+  lames(root, 'fauld' + (o.k || ''), ['pelvis', 'thigh_l', 'thigh_r'], /_(Body|Legs)/, AV3(pv, 0, sp.y - pv.y + 0.02, 0), AV3(pv, 0, -0.16, 0), 0, 0.5, o.n || 3, { sec: 36, off: 0.03, step: -0.005, flare: (t) => t * 0.02 }, mat, 'pelvis', o.trim);
+  if (o.tassets) for (const s of ['l', 'r']) {
+    const th = bonePos(root, 'thigh_' + s), ca = bonePos(root, 'calf_' + s);
+    lames(root, 'tas' + s + (o.k || ''), ['thigh_' + s], /_Legs/, th, ca, 0.02, 0.42, 3, { sec: 24, off: 0.03, step: -0.004, arc: [-1.25, 1.25] }, mat, 'thigh_' + s, o.trim);
+  }
+}
+// OMBREIRA: cúpula moldada no ombro + lâminas descendo pelo braço (size > 1 = maior, como a do braço do escudo)
+function pauldronSet(root, mat, side, o = {}) {
+  const ua = bonePos(root, 'upperarm_' + side), la = bonePos(root, 'lowerarm_' + side), c = ua.x > 0 ? -Math.PI / 2 : Math.PI / 2, size = o.size || 1, w = 1.75 + (size - 1) * 0.6;
+  shellOn(root, 'pdome' + side + size + (o.k || ''), ['upperarm_' + side], /_(Body|Arms)/, ua, la, { t0: -0.08, t1: 0.16, bins: 6, sec: 32, off: 0.024 * size, th: 0.012, arc: [c - w, c + w],
+    ridge: (t, a) => (t < 0.1 ? (0.1 - t) * 0.03 : 0) + Math.max(0, Math.cos(a - c)) ** 10 * 0.008, flare: (t) => Math.max(0, t - 0.6) * 0.04 * size }, mat, 'upperarm_' + side);
+  lames(root, 'plame' + side + size + (o.k || ''), ['upperarm_' + side], /_(Body|Arms)/, ua, la, 0.12, 0.12 + 0.11 * (o.n || 3), o.n || 3, { sec: 28, off: 0.026 * size, step: 0.004, arc: [c - w + 0.15, c + w - 0.15], flare: (t) => t * 0.02 * size }, mat, 'upperarm_' + side, o.trim);
+}
+// BRAÇO: rerebraço, cotoveleira com asa, avambraço e manopla (punho largo + dorso da mão)
+function armSet(root, mat, side, o = {}) {
+  const ua = bonePos(root, 'upperarm_' + side), la = bonePos(root, 'lowerarm_' + side), hd = bonePos(root, 'hand_' + side), mk = bonePos(root, 'middle_01_' + side);
+  if (!o.noRere) shellOn(root, 'nrere' + side, ['upperarm_' + side], /_(Body|Arms)/, ua, la, { t0: 0.48, t1: 0.92, off: 0.012, th: 0.009 }, mat, 'upperarm_' + side);
+  shellOn(root, 'vamb' + side, ['lowerarm_' + side], /_(Body|Arms)/, la, hd, { t0: 0.18, t1: 0.86, off: 0.01, th: 0.009, flare: (t) => (t > 0.8 ? (t - 0.8) * 0.12 : 0) }, o.vamb || mat, 'lowerarm_' + side);
+  if (!o.noCouter) { const m = ARMOR_PIECES.joint(root, o.trim || mat, 'lowerarm_' + side, 0.15, new THREE.Vector3(0, 0.15, -1), 0.05); m.scale.set(1.25, 0.65, 1.1); }
+  if (o.gauntlet && mk) shellOn(root, 'gaunt' + side, ['hand_' + side], /_(Arms|Body)/, hd, mk, { t0: -0.05, t1: 0.95, bins: 6, sec: 24, off: 0.006, th: 0.007, smooth: 3 }, o.gauntlet, 'hand_' + side);
+}
+// PERNA: coxote, joelheira com asa, greva e escarpe sobre o pé
+function legSet(root, mat, side, o = {}) {
+  const th = bonePos(root, 'thigh_' + side), ca = bonePos(root, 'calf_' + side), ft = bonePos(root, 'foot_' + side), bl = bonePos(root, 'ball_' + side);
+  if (o.cuisse !== false) shellOn(root, 'cuis' + side, ['thigh_' + side], /_Legs/, th, ca, { t0: 0.14, t1: 0.86, off: 0.016, th: 0.01, arc: o.cuisseArc }, mat, 'thigh_' + side);
+  if (o.poleyn !== false) { const m = ARMOR_PIECES.joint(root, o.trim || mat, 'calf_' + side, 0.25, new THREE.Vector3(0, 0.1, 1), 0.066); m.scale.set(1.2, 0.75, 1.0); }
+  shellOn(root, 'grev' + side, ['calf_' + side], /_(Legs|Feet)/, ca, ft, { t0: 0.1, t1: 0.9, off: 0.014, th: 0.01, flare: (t) => (t > 0.85 ? (t - 0.85) * 0.1 : 0) }, o.greave || mat, 'calf_' + side);
+  if (o.sabaton && bl) shellOn(root, 'sab' + side, ['foot_' + side, 'ball_' + side], /_(Feet|Legs)/, ft, bl, { t0: -0.1, t1: 1.05, bins: 6, sec: 24, off: 0.008, th: 0.008, front: new THREE.Vector3(0, 1, 0), arc: [-1.9, 1.9] }, o.sabaton, 'foot_' + side);
+}
+// GOLA em duas lâminas (gorjal), cinto de couro com fivela, faixa/talabarte
+function gorgetSet(root, mat, o = {}) {
+  const s3 = bonePos(root, 'spine_03'), nk = bonePos(root, 'neck_01');
+  lames(root, 'gorg' + (o.k || ''), ['neck_01', 'spine_03'], /_(Body|Head)/i, AV3(nk, 0, 0.07, 0), AV3(s3, 0, -0.02, 0), 0.0, 0.62, 2, { sec: 36, off: 0.02, step: -0.006, flare: (t) => t * 0.05 }, mat, 'spine_03', o.trim);
+}
+function beltSet(root, leather, buckleMat) {
+  const pv = bonePos(root, 'pelvis');
+  shellOn(root, 'belt', ['pelvis', 'spine_01'], /_(Body|Legs)/, AV3(pv, 0, 0.05, 0), AV3(pv, 0, 0.14, 0), { bins: 3, sec: 40, off: 0.04, th: 0.012, smooth: 5 }, leather, 'pelvis');
+  const bk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.014), buckleMat); const inner = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.032, 0.016), leather);
+  let fz = -1e9; for (const q of sampleBody(root, ['pelvis'], /_Body/)) if (Math.abs(q.y - pv.y - 0.095) < 0.03 && Math.abs(q.x - pv.x) < 0.05) fz = Math.max(fz, q.z);
+  for (const m of [bk, inner]) { m.position.set(pv.x, pv.y + 0.095, (fz > -1e8 ? fz : pv.z + 0.13) + 0.06); pinToBone(root, 'pelvis', m); }
+}
+// abas de tecido da casa (frente e costas), presas no cinto e acompanhando as pernas
+function surcoatFlaps(root, base, trim, emblem, len = 0.36) {
+  const pv = bonePos(root, 'pelvis'), knee = bonePos(root, 'calf_l'), tex = tabardTex(base, trim, emblem), cloth = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.93, side: THREE.DoubleSide }), hem = new THREE.MeshStandardMaterial({ color: trim, roughness: 0.6, metalness: 0.3, side: THREE.DoubleSide });
+  for (const a0 of [-0.5, Math.PI - 0.5]) clothSkirt(root, gownGeo(root, { top: pv.y + 0.07, bot: Math.max(knee.y - 0.02, pv.y - len), r0: 0.205, r1: 0.05, arc: [a0, 1.0], seg: 16, pleats: 5, pleatAmp: 0.012, sz: 0.88, seed: a0, hemRows: 1 }), [cloth, hem], 0.04);
+}
+// emblema em relevo no peito (sol dourado do Paladino, leão da casa do Cavaleiro)
+function chestEmblem(root, mat, kind = 'sol', size = 0.11) {
+  const s2 = bonePos(root, 'spine_03'); let fz = -1e9; for (const q of sampleBody(root, ['spine_03', 'spine_02'], /_Body/)) if (Math.abs(q.y - s2.y) < 0.05 && Math.abs(q.x - s2.x) < 0.05) fz = Math.max(fz, q.z);
+  const sh = new THREE.Shape(), R = size / 2;
+  if (kind === 'sol') { for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, rr = k % 2 ? R * 0.62 : R; k ? sh.lineTo(Math.sin(a) * rr, Math.cos(a) * rr) : sh.moveTo(0, rr); } sh.closePath(); }
+  else { sh.moveTo(0, R); sh.lineTo(R * 0.85, R * 0.55); sh.lineTo(R * 0.7, -R * 0.5); sh.lineTo(0, -R); sh.lineTo(-R * 0.7, -R * 0.5); sh.lineTo(-R * 0.85, R * 0.55); sh.closePath(); } // escudete
+  const g = new THREE.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.003, bevelSegments: 2, curveSegments: 6 });
+  const m = new THREE.Mesh(g, mat); m.position.set(s2.x, s2.y + 0.01, (fz > -1e8 ? fz : s2.z + 0.13) + 0.046); pinToBone(root, 'spine_02', m);
+  if (kind === 'sol') { const c = new THREE.Mesh(new THREE.SphereGeometry(R * 0.38, 20, 12), mat); c.scale.set(1, 1, 0.45); c.position.copy(m.position).add(new THREE.Vector3(0, 0, 0.012)); pinToBone(root, 'spine_02', c); }
+}
+// por baixo das placas: cota de malha no tronco/braços e calça escura (sem a camisa verde da roupa base)
+function underLayer(root, top, legs) {
+  root.traverse(o => { if (!o.isSkinnedMesh || !/_(Arms|Legs|Body)/.test(o.name)) return; o.material = o.material.clone();
+    if (/_Legs/.test(o.name)) { o.material.color = new THREE.Color(legs); o.material.map = metalTex('couro'); o.material.metalness = 0.05; o.material.roughness = 0.8; }
+    else { o.material.color = new THREE.Color(top); o.material.map = metalTex('malha'); o.material.bumpMap = metalTex('malha'); o.material.bumpScale = 1.2; o.material.metalness = 0.75; o.material.roughness = 0.5; o.material.envMap = armorEnv(); o.material.envMapIntensity = 0.6; } });
+}
+const ARMOR_BUILD = {
+  // Guerreiro: couro batido sobre cota de malha, peitoral de ferro rebitado, uma ombreira de ferro (braço do escudo) e outra de couro
+  leve(root) {
+    const iron = AM.steel('#9a9ea4', { rivets: true, metal: 0.82, rough: 0.55 }), leather = AM.leather('#6a4a30'), dark = AM.leather('#3e2a1c'), brass = AM.gold('#a8884a');
+    underLayer(root, '#8a8e94', '#4a3a2a');
+    breastplate(root, iron, { k: 'w', backOpen: true });
+    fauldTassets(root, leather, { k: 'w', n: 2, tassets: true });
+    pauldronSet(root, iron, 'l', { size: 1.05, n: 2, k: 'w' }); pauldronSet(root, leather, 'r', { size: 0.9, n: 2, k: 'wr' });
+    for (const s of ['l', 'r']) { armSet(root, leather, s, { noRere: true, noCouter: true }); legSet(root, leather, s, { cuisse: false, poleyn: false, greave: dark }); }
+    beltSet(root, dark, brass);
+  },
+  // Cavaleiro: placas de aço azulado de guerra (rebites, malha nas juntas), ombreira grande no braço esquerdo, tabardo vermelho da casa
+  placas(root) {
+    const steel = AM.steel('#7f8ea2', { rivets: true, metal: 0.92, rough: 0.36 }), dark = AM.steel('#5a6676', { metal: 0.9, rough: 0.45 }), leather = AM.leather('#3a2618'), brass = AM.gold('#b08a48');
+    underLayer(root, '#6e747c', '#2a2622');
+    breastplate(root, steel, { k: 'k' }); gorgetSet(root, dark, { k: 'k' });
+    fauldTassets(root, dark, { k: 'k', n: 3, tassets: true });
+    pauldronSet(root, steel, 'l', { size: 1.25, n: 4, k: 'k' }); pauldronSet(root, steel, 'r', { size: 0.95, n: 2, k: 'k' });
+    for (const s of ['l', 'r']) { armSet(root, steel, s, { gauntlet: dark }); legSet(root, steel, s, { sabaton: dark }); }
+    beltSet(root, leather, brass); surcoatFlaps(root, '#6a1a1e', '#c9a24a', 'espadas', 0.4); chestEmblem(root, brass, 'escudete', 0.1);
+  },
+  // Paladino: aço polido claro com filetes de ouro, gola dourada, sol no peito, abas brancas com sol e capa de pano
+  paladino(root, fx) {
+    const steel = AM.steel('#d6dade', { metal: 0.93, rough: 0.26, env: 1.15 }), gold = AM.gold('#d4ac52'), leather = AM.leather('#5a3a22');
+    underLayer(root, '#9aa0a8', '#4a4640');
+    breastplate(root, steel, { k: 'p' }); gorgetSet(root, steel, { k: 'p', trim: gold });
+    fauldTassets(root, steel, { k: 'p', n: 3, tassets: true, trim: gold });
+    for (const s of ['l', 'r']) { pauldronSet(root, steel, s, { size: 1.12, n: 3, k: 'p', trim: gold }); armSet(root, steel, s, { gauntlet: steel, trim: gold }); legSet(root, steel, s, { sabaton: steel, trim: gold }); }
+    beltSet(root, leather, gold); chestEmblem(root, gold, 'sol', 0.12); surcoatFlaps(root, '#f4efe2', '#c9a24a', 'sol', 0.42);
+    clothCape(root, fx, '#ece4d2');
+  },
+};
 /* conjuntos de armadura por classe/papel */
 const ARMOR_SETS = {
   // guerreiro (S-195): armadura simples — gibão de couro com couraça de aço no peito, ombreiras e braçadeiras de couro
@@ -1474,6 +1773,7 @@ const ARMOR_SETS = {
   guarda: { cuirass: ['#9aa0aa', 'aco'], fauld: ['#5a3a22', 'couro'], pauldron: ['#8a9099', 'aco', 1.0], bracer: ['#5a3a22', 'couro'], greave: ['#8a9099', 'aco'], tabard: ['#2f5aa8', '#e8c860', 'torre'] },
 };
 export function applyArmor(root, setId, fx = []) {
+  if (ARMOR_BUILD[setId] && root.userData.human) { root.userData.outfitKey = root.userData.outfitKey || outfitKey(root); ARMOR_BUILD[setId](root, fx); return; } // S-317/S-318: armaduras refeitas
   const S = ARMOR_SETS[setId]; if (!S || !root.userData.human) return;
   root.userData.outfitKey = root.userData.outfitKey || outfitKey(root);
   const M = ([c, k]) => armorMat(c, k);

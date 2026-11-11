@@ -14,6 +14,7 @@ import { LEVELS, levelAt } from './levels3d.js'; // S-281: andares e escadas ond
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
+import { bowPose, bowRelease as bowReleaseMs, bowDraw } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca)
 import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
@@ -546,14 +547,27 @@ function ensureGallery() {
   }
   log(`🧪 Laboratório de roupas: ${N} personagens (${list.length} classes × ${races.length} raças) em volta da Arena.`, 'sys');
 }
-function galleryAnim(n) {
+function galleryAnim(n, dt = 1 / 30) {
   const t = (S.time + n.gOff) % 8, ph = t < 3 ? 0 : t < 5.2 ? 1 : 2, ca = CLASS_ATTACK[n.cls] || CLASS_ATTACK.aprendiz;
+  { // S-316/S-319: a mesma postura própria da classe que o jogador usa (guarda → pose da classe; golpe → ênfase da classe)
+    const g = (key, want, rate) => (n[key] = (n[key] || 0) + (want - (n[key] || 0)) * Math.min(1, dt * rate)), on = ph > 0, atk = ph === 2;
+    levelHead(n, on ? 0.75 : 0.4, dt); // S-320: manequins olham em frente, não para o chão
+    applyClassPose(n, n.cls, g('_pL', on ? 1 : 0, 5), g('_pB', on ? 1 : 0, 5), g('_pA', on && !atk && !ARMLESS_POSE.test(n.cls) ? 1 : 0, atk ? 18 : 5), g('_pK', atk ? 1 : 0, atk ? 14 : 5));
+  }
   if (n.dress && n.dress.update) n.dress.update(S.time);
   const stance = ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
   if (ph === 0 && n.gPh !== 0) n.anim.play('Idle', { fade: 0.3 });
   else if (ph === 1 && n.gPh !== 1) n.anim.play(stance, { fade: 0.3 });
-  else if (ph === 2) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: ca.speed || 1 }); n.gHit = hit; } }
+  else if (ph === 2) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: (ca.speed || 1) * (((CLASS_POSE[n.cls] || {}).atk || [0, 0, 1])[2]) }); n.gHit = hit; } }
   if (ph !== 2) n.gHit = -1; n.gPh = ph;
+  if (n.root.userData.bowState) { // S-312: arqueiros da galeria — arco nas costas parado, na mão em guarda, de lado puxando até a boca nos golpes
+    if (n._baseYaw === undefined) n._baseYaw = n.obj.rotation.y;
+    const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
+    const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 10 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, rel = 0.3;
+    const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.55, (since - rel - 0.1) * 3);
+    n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -1.1 * A, 7);
+    bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12) }, BOW_CTX);
+  }
 }
 function buildArena() {
   const A = ARENA_I, g = new THREE.Group(); g.position.set(A.x, 0, A.z); scene.add(g);
@@ -1213,7 +1227,7 @@ function attackAnim(p, me) {
   let clips = !melee ? ca.clips : armed ? ca.clips.filter(c => c !== 'Punch_Jab') : ['Punch_Jab', 'Punch_Cross'];
   if (melee && armed && clips.length < 2 && ca.clips.some(c => /^Punch/.test(c))) clips = ['Punch_Cross', 'Sword_Attack']; // estocada + talho, os dois com a mão direita
   { const wt = (weaponInfo(p) || {}).wtype; if (melee && armed && /^(espada|machado|maca|lanca)/.test(wt || '')) clips = ['Sword_Attack']; } // S-305: espada/machado/maça/lança = só golpe de arma, nunca soco
-  S.atkN = (S.atkN || 0) + 1; const clip = clips[S.atkN % clips.length]; S.lastAtk = S.time; const vary = clips.length === 1 && clip === 'Sword_Attack' ? (S.atkN % 2 ? 1.12 : 0.94) : 1; // dois ritmos de talho alternados
+  S.atkN = (S.atkN || 0) + 1; const clip = clips[S.atkN % clips.length]; S.lastAtk = S.time; const vary = (clips.length === 1 && clip === 'Sword_Attack' ? (S.atkN % 2 ? 1.12 : 0.94) : 1) * (((CLASS_POSE[p.cls] || {}).atk || [0, 0, 1])[2]); // dois ritmos de talho alternados · S-319: ritmo próprio da classe
   if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: vary * ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = true; } // S-236: andando, o golpe vai só no tronco e as pernas seguem andando
   else { me.anim.play(clip, { once: true, restart: true, fade: 0.06, speed: vary * ca.speed * Math.max(1, 900 / p.d.aspd) }); S.overlayAtk = false; }
   if (ca.lunge) S.lunge = { t: S.time, d: ca.lunge }; // avanço curto do corpo no golpe
@@ -1320,7 +1334,7 @@ function actionFire() {
   // S-192: no vazio o golpe é idêntico ao golpe num alvo (mesma animação, tempo e som) — só não dá dano; projétil segue reto
   if (S.riding && !S.riding.war) dismount(true);
   const me = S.me, ca = attackAnim(p, me); S.lockAnim = S.overlayAtk ? t : t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
-  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : 0.25, () => shoot(p.d.magicAuto ? me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)) : bowFrom(me), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bowDraw'); }
+  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : bowRelease(p), () => shoot(p.d.magicAuto ? me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)) : bowFrom(me), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bowDraw'); }
   else { Sound.play(ca.sound || 'swing'); later(0.25, () => { const q = aimPoint(3); floatAt(new THREE.Vector3(q.x, groundAt(q.x, q.z), q.z), 'Errou', '#cfd6e0', 1.2); Sound.play('miss'); }); } // S-233: golpe no vazio mostra "Errou" com som
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
@@ -1885,6 +1899,54 @@ function legTwist(me, ang) {
   pel.updateWorldMatrix(false, false); pel.getWorldQuaternion(_tq);
   _ty.setFromAxisAngle(_UP, -ang); _tq2.copy(_tq).invert().multiply(_ty).multiply(_tq); sp.quaternion.premultiply(_tq2); // e devolve o tronco para a mira
 }
+/* S-316/S-319: postura própria de cada classe — mesma base (clipe de guarda), personalidade diferente na linha evolutiva.
+   Ajustes por osso aplicados DEPOIS do mixer, no espaço do corpo (X = esquerda do boneco, Y = cima, Z = frente), só rotações
+   pequenas (os pés não saem do chão). spread = pernas afastadas · knee = joelhos dobrados · lean = tronco à frente (− = ereto/altivo)
+   twist = tronco gira (+ = ombro direito à frente) · rArm/lArm = [ergue à frente, abre para o lado, dobra o cotovelo, inclina o punho]
+   atk = ênfase no golpe: [avanço do tronco, giro do tronco, multiplica a velocidade do clipe] */
+const CLASS_POSE = { // S-320/S-322: pernas quase juntas (nada de "perereca"/pernas escancaradas) — firmeza vem do tronco e dos braços
+  aprendiz: { spread: 0.0, knee: 0.02, lean: 0.0 },
+  guerreiro: { spread: 0.03, knee: 0.02, lean: 0.02, rArm: [0.05, 0, 0.05, 0], atk: [0.08, 0.05, 1] },                       // guarda média clássica (o clipe já é agachado)
+  cavaleiro_runico: { spread: 0.07, knee: 0.04, lean: 0.05, twist: 0.12, rArm: [0.30, 0.06, 0.26, -0.25], atk: [0.18, 0.14, 0.95] }, // guarda alta e agressiva, pés bem afastados
+  guardiao_sagrado: { spread: 0.05, knee: 0.03, lean: -0.05, twist: -0.06, rArm: [-0.12, 0.04, 0, 0.18], lArm: [0.42, -0.08, 0.30, 0], atk: [0.05, 0.04, 1] }, // ereto e firme, escudo à frente, espada baixa
+  // magos: o braço do cajado (direito) e o do livro (esquerdo, Sábio) seguem o IK de holdStaff/holdBook em looks3d — aqui só tronco, pernas e a mão LIVRE
+  mago: { spread: 0.03, knee: 0.02, lean: 0.04, lArm: [0.26, 0, 0.2, 0], atk: [0.06, 0.05, 1] },                           // mão livre à frente, conjurando
+  arquimago: { spread: 0.03, lean: -0.07, twist: -0.03, lArm: [0.10, 0.04, 0.1, 0], atk: [0.03, 0.02, 0.9] },               // altivo, peito aberto, cajado firme ao lado
+  sabio_elemental: { spread: 0.04, knee: 0.02, lean: 0.03, twist: 0.05, rArm: [0.22, 0.18, 0.2, 0], atk: [0.08, 0.10, 1.05] }, // livro na esquerda, mão direita em gesto elemental
+  arqueiro: { spread: 0.03, knee: 0.02, lean: 0.03 },                                                                       // (braços: postura de arco própria)
+  cacador: { spread: 0.05, knee: 0.05, lean: 0.06 },                                                                        // baixo, de tocaia
+  menestrel: { spread: 0.03, lean: -0.03, twist: 0.04 },                                                                    // solto e ereto
+  ladino: { spread: 0.05, knee: 0.04, lean: 0.05, rArm: [0.10, 0, 0.1, 0], atk: [0.10, 0.08, 1] },
+  lamina_sombria: { spread: 0.05, knee: 0.05, lean: 0.05, rArm: [0.16, 0, 0.18, 0], lArm: [0.16, 0, 0.18, 0], atk: [0.12, 0.10, 1] }, // agachado, lâminas à frente
+  saqueador: { spread: 0.06, knee: 0.05, lean: 0.06, twist: -0.10, rArm: [0.10, 0.08, 0.1, 0], atk: [0.10, 0.14, 1] },      // arruaceiro: de lado, ombro à frente
+};
+const _pq = new THREE.Quaternion(), _pq2 = new THREE.Quaternion(), _pqR = new THREE.Quaternion(), _pax = new THREE.Vector3();
+const _AX = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
+function rotBody(b, ax, ang) { // gira o osso (com tudo o que pende dele) em volta de um eixo do CORPO, no pivô do próprio osso
+  if (!b || Math.abs(ang) < 1e-4) return;
+  _pax.copy(_AX[ax]).applyQuaternion(_pqR); b.parent.updateWorldMatrix(true, false); b.parent.getWorldQuaternion(_pq);
+  _pq2.setFromAxisAngle(_pax, ang); b.quaternion.premultiply(_pq.clone().invert().multiply(_pq2).multiply(_pq));
+}
+function poseBones(ch) { if (ch._pb) return ch._pb; const g = n => ch.root.getObjectByName(n); return (ch._pb = { sp: g('spine_01'), sp2: g('spine_02'), tl: g('thigh_l'), tr: g('thigh_r'), cl: g('calf_l'), cr: g('calf_r'), fl: g('foot_l'), fr: g('foot_r'), ur: g('upperarm_r'), ul: g('upperarm_l'), lr: g('lowerarm_r'), ll: g('lowerarm_l'), hr: g('hand_r'), hl: g('hand_l') }); }
+// legK = pernas (só parado), bodyK = tronco, armK = braços (cai durante o golpe), atkK = ênfase do golpe (0..1)
+function applyClassPose(ch, cls, legK, bodyK, armK, atkK = 0) {
+  const P = CLASS_POSE[cls]; if (!P || !ch || !ch.root) return; if (legK + bodyK + armK + atkK < 0.01) return;
+  const B = poseBones(ch); if (!B.sp) return;
+  (ch.obj || ch.root).getWorldQuaternion(_pqR);
+  const A = P.atk || [0, 0, 1];
+  if (legK > 0.01) {
+    const s = (P.spread || 0) * legK, k = (P.knee || 0) * legK;
+    rotBody(B.tl, 'z', s); rotBody(B.tr, 'z', -s); rotBody(B.tl, 'x', -k); rotBody(B.tr, 'x', -k);
+    rotBody(B.cl, 'x', 2 * k); rotBody(B.cr, 'x', 2 * k); rotBody(B.fl, 'x', -k); rotBody(B.fr, 'x', -k); rotBody(B.fl, 'z', -s); rotBody(B.fr, 'z', s);
+  }
+  const lean = (P.lean || 0) * bodyK + A[0] * atkK, tw = (P.twist || 0) * bodyK + A[1] * atkK;
+  rotBody(B.sp, 'x', lean * 0.6); rotBody(B.sp2, 'x', lean * 0.4); rotBody(B.sp, 'y', -tw);
+  for (const [arm, side] of [[P.rArm, -1], [P.lArm, 1]]) {
+    if (!arm || armK < 0.01) continue; const [up, out, elb, wr] = arm.map(v => v * armK), u = side < 0 ? B.ur : B.ul, l = side < 0 ? B.lr : B.ll, h = side < 0 ? B.hr : B.hl;
+    rotBody(u, 'x', -up); rotBody(u, 'z', side * out); rotBody(l, 'x', -elb); rotBody(h, 'x', wr);
+  }
+}
+const ARMLESS_POSE = /^(arqueiro|cacador|menestrel)$/; // a postura do arco cuida dos braços dessas classes
 // S-294: guarda a orientação da cabeça (em relação ao corpo) da pose parada normal e, em combate, puxa a cabeça de volta para ela
 const _hq = new THREE.Quaternion(), _hq2 = new THREE.Quaternion(), _hq3 = new THREE.Quaternion();
 function levelHead(me, k, dt) {
@@ -1914,29 +1976,20 @@ function ik2(a, b, c, T, pole, w) {
   b.getWorldPosition(_ib); c.getWorldPosition(_ic); rotBoneTo(b, _ic.clone().sub(_ib), tgt.clone().sub(_ib));
 }
 function bowFrom(me) { const h = me._bowHand || (me._bowHand = me.root.getObjectByName('hand_l')); return h ? h.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.05, 0)) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)); }
+/* S-312: a pose do arco (costas fora de combate, guarda, de lado puxando até a boca) fica em js3d/bow3d.js (bowPose) */
+const bowRelease = p => bowReleaseMs(p.d.aspd);
+const BOW_CTX = { scene, makeArrow: () => makeArrow() };
 function archerPose(me, p, t, dt) {
-  const on = p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.bow && !S.riding && !S.casting && (S._fighting || t < S.lockAnim);
-  me._aimW = (me._aimW || 0) + ((on ? 1 : 0) - (me._aimW || 0)) * Math.min(1, dt * 8); if (me._aimW < 0.02) { if (S._nock) S._nock.visible = false; return; }
-  const r = me.root, g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'); if (!sl || !sr || !hd) return;
-  r.updateWorldMatrix(true, true);
-  const yaw = me.obj.rotation.y, fwd = _iv.set(Math.sin(yaw), 0, Math.cos(yaw)), right = _iw.set(-Math.cos(yaw), 0, Math.sin(yaw)), up = new THREE.Vector3(0, 1, 0);
-  const shL = sl.getWorldPosition(new THREE.Vector3()), shR = sr.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
-  // puxada: sobe até a soltura (0,25 s depois do golpe), solta de uma vez e volta a meia-puxada em guarda
-  const since = t - (S.lastAtk || -9), draw = since < 0.25 ? 0.35 + since / 0.25 * 0.65 : since < 0.4 ? 0.15 : 0.6;
-  me._draw = (me._draw || 0.6) + (draw - (me._draw || 0.6)) * Math.min(1, dt * (since < 0.4 ? 30 : 6));
-  const L = shL.distanceTo(hl.getWorldPosition(new THREE.Vector3())) > 0 ? 0.56 : 0.56;
-  const bowT = shL.clone().add(fwd.clone().multiplyScalar(L)).add(right.clone().multiplyScalar(-0.06)).add(up.clone().multiplyScalar(0.02));
-  ik2(sl, el, hl, bowT, shL.clone().add(up.clone().multiplyScalar(-0.4)).add(right.clone().multiplyScalar(-0.5)), me._aimW);
-  { const bow = r.userData.items.bow; bow.updateWorldMatrix(true, false); const bu = new THREE.Vector3(0, 1, 0).transformDirection(bow.matrixWorld), want = up.clone().add(right.clone().multiplyScalar(0.18)).normalize(); // arco em pé (levemente inclinado), corda para o corpo
-    rotBoneTo(hl, bu, bu.clone().lerp(want, me._aimW)); }
-  const anchor = head.clone().add(right.clone().multiplyScalar(0.07)).add(up.clone().multiplyScalar(-0.07)).add(fwd.clone().multiplyScalar(0.04)); // canto da boca
-  const strT = bowT.clone().lerp(anchor, me._draw).add(right.clone().multiplyScalar(0.02));
-  ik2(sr, er, hr, strT, shR.clone().add(fwd.clone().multiplyScalar(-0.6)).add(right.clone().multiplyScalar(0.35)).add(up.clone().multiplyScalar(0.15)), me._aimW);
-  // flecha encaixada na corda: da mão direita até o arco (some no instante da soltura)
-  if (!S._nock) { S._nock = makeArrow(); S._nock.scale.setScalar(1); scene.add(S._nock); } me._nock = S._nock;
-  const hR = hr.getWorldPosition(new THREE.Vector3()), hL = hl.getWorldPosition(new THREE.Vector3()), dir = hL.clone().sub(hR);
-  me._nock.visible = me._aimW > 0.6 && !(since >= 0.22 && since < 0.45) && dir.length() > 0.12;
-  if (me._nock.visible) { me._nock.position.copy(hR).add(dir.normalize().multiplyScalar(0.37)); me._nock.lookAt(me._nock.position.clone().add(dir)); }
+  const has = p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.bow;
+  if (!has) { if (me._nockObj) me._nockObj.visible = false; return; }
+  const fight = !S.riding && !S.casting && !S.sitting && (S._fighting || t < S.lockAnim), since = t - (S.lastAtk || -9), rel = bowRelease(p);
+  const shooting = fight && (S.fire || S.autoAttack || since < 0.9);
+  const sm = (k, v, rate) => (me[k] = (me[k] ?? 0) + (v - (me[k] ?? 0)) * Math.min(1, dt * rate));
+  const W = sm('_aimW', fight ? 1 : 0, 8), A = sm('_aimA', shooting ? 1 : 0, shooting ? 10 : 4), draw = bowDraw(since, rel, shooting);
+  me._draw = since >= rel && since < rel + 0.1 ? draw : (me._draw ?? 0.1) + (draw - (me._draw ?? 0.1)) * Math.min(1, dt * 25); // a soltura é instantânea, a puxada é suave
+  const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
+  sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
+  bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12) }, BOW_CTX);
 }
 function moveInput() {
   const k = keys;
@@ -2012,7 +2065,14 @@ function updatePlayer(dt) {
     if (rel != null) { const back = Math.abs(rel) > 2.0, r2 = back ? rel - Math.sign(rel) * Math.PI : rel; want = Math.max(-1.45, Math.min(1.45, r2 * 0.9)); } // S-265: pernas para onde anda, tronco no alvo travado
     S.legTwist = angLerp(S.legTwist || 0, want, Math.min(1, dt * 10));
     if (Math.abs(S.legTwist) > 0.01) legTwist(me, S.legTwist);
-    levelHead(me, S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
+    { // S-316/S-319: postura própria da classe em guarda (pernas só parado; braços cedem durante o golpe)
+      const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, on = S._fighting && !S.riding && !S.sitting && !S.casting && P.ground && !p.dead, atk = t < S.lockAnim + 0.15 || t - (S.lastAtk || -9) < 0.35;
+      const g = (key, want, rate) => (S[key] = (S[key] || 0) + (want - (S[key] || 0)) * Math.min(1, dt * rate));
+      const legK = g('_poseLeg', on && spd < 0.4 && Math.abs(S.legTwist || 0) < 0.05 ? 1 : 0, 6), bodyK = g('_poseBody', on ? (spd < 0.4 ? 1 : 0.45) : 0, 6);
+      const armK = g('_poseArm', on && !atk && !ARMLESS_POSE.test(p.cls) ? 1 : 0, atk ? 18 : 5), atkK = g('_poseAtk', on && atk ? 1 : 0, atk ? 14 : 5);
+      applyClassPose(me, p.cls, legK, bodyK, armK, atkK);
+    }
+    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));
@@ -2108,7 +2168,7 @@ function updatePlayer(dt) {
   if (S.autoAttack && S.target && !mi.any && !mi.turn && !mouse.right) P.yaw = angLerp(P.yaw, Math.atan2(S.target.x - P.x, S.target.z - P.z), Math.min(1, dt * 8));
   // S-151: o corpo gira para o lado em que anda (andar de lado vira corrida na diagonal; para trás, passos de ré de verdade)
   { const moving = mi.any && !S.riding && P.ground && !isAction() && !S.fire; const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
-  me.obj.rotation.y = P.yaw + (S.bodyTwist || 0);
+  me.obj.rotation.y = P.yaw + (S.bodyTwist || 0) + (me._bowTwist || 0); // S-312: arqueiro mirando fica de lado para o alvo
   if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
   const fighting = !S.riding && inCombat(t); S._fighting = fighting;
@@ -2177,7 +2237,7 @@ function playerAttack(m) {
     Sound.play('magic');
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
-  else if (p.d.ranged) { const isBow = ca.sound !== 'magic'; Sound.play(isBow ? 'bowDraw' : 'magic'); later(0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
+  else if (p.d.ranged) { const isBow = ca.sound !== 'magic'; Sound.play(isBow ? 'bowDraw' : 'magic'); later(isBow ? bowRelease(p) : 0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
   else { Sound.play(ca.sound || 'swing'); later(ca && ca.katar ? Math.min(0.12, p.d.aspd / 2000) : 0.28, hit); } // katar: o rasgo cai no meio da estocada, mesmo em ASPD alto
 }
 function playerDie() {
@@ -3089,7 +3149,7 @@ function step(dt) {
       m.obj.visible = true; updateMonster(m, dt);
     }
     separateBodies();
-    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (n.gallery) galleryAnim(n); else if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
+    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (n.gallery) galleryAnim(n, dt); else if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
     for (let i = S.projectiles.length - 1; i >= 0; i--) {
       const pr = S.projectiles[i], to = pr.toFn(), d = to.distanceTo(pr.mesh.position), st = pr.speed * dt;
       if (d <= st + 0.2) { scene.remove(pr.mesh); S.projectiles.splice(i, 1); pr.onHit(); }
@@ -3738,7 +3798,7 @@ function drawAdmMap(cv, clean) { // clean (S-232): no Painel do Mestre só o map
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
   globalThis.__world = { scene, groundAt }; // o que o jogo precisa entre módulos (sem ferramentas de teste)
-  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { classPose: applyClassPose, CLASS_POSE, qa: o => runQA(qaCtx(), o), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();
