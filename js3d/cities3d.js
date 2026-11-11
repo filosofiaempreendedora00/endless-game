@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
-import { heightAt, PORT, DWARF, ELF, SEA, seaDist, FROZEN } from './world3d.js';
+import { heightAt, PORT, DWARF, ELF, SEA, seaDist, FROZEN, HALF } from './world3d.js';
 
 export const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
 
@@ -1057,7 +1057,7 @@ function buildFrostHold(ctx) {
 // ctx: { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera }
 export function buildCities(ctx) {
   let cullT = -9;
-  const anim = { userData: { update: t => { clothT.value = t; if (t - cullT < 0.5) return; cullT = t; const c = ctx.camera.position; if (c.x > 550) return; for (const g of CULL) { const d = Math.hypot(g.position.x - c.x, g.position.z - c.z); g.visible = d < (g.userData.far || 380); } } } };
+  const anim = { userData: { update: t => { clothT.value = t; if (t - cullT < 0.5) return; cullT = t; const c = ctx.camera.position; if (c.x > HALF + 100) return; /* nas salas (o mundo agora vai até 630) */ for (const g of CULL) { const d = Math.hypot(g.position.x - c.x, g.position.z - c.z); g.visible = d < (g.userData.far || 380); } } } };
   ctx.roomAnims.push(anim); // vento nos estandartes e distância de desenho das cidades
   const dwarf = buildDwarfCity(ctx);
   buildElfCity(ctx);

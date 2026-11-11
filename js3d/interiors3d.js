@@ -11,7 +11,7 @@ import { dungeonWallMat, dungeonBox } from './dungeon3d.js';
 import { realFlame } from './castle3d.js';
 
 export const INTERIORS = {
-  // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 450 e as montanhas do horizonte até ~740)
+  // salas ficam bem longe do mundo (x ≥ 1300; o mundo vai até 630 (HALF) e as montanhas do horizonte até ~925; a Arena em x = 800 fica no vão do mar do leste)
   estabulo: { name: 'Estábulo do Tomé', x: 1300, z: 0, w: 16, d: 13, h: 5.2, wall: '#b39570', floor: '#8a6a44', beam: '#5a3d24' },
   taverna: { name: 'Taverna Caneca Alegre', x: 1360, z: 0, w: 15, d: 12, h: 4.8, wall: '#c9b48e', floor: '#6e4e30', beam: '#4a3220' },
   // S-159: as Catacumbas têm 4 andares (labirintos de 64 × 64 m), um atrás do outro em z; o chefe fica no 4º

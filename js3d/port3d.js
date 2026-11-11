@@ -35,6 +35,10 @@ function wall(ctx, x, z, rot, hx, hz) { ctx.colliders.push({ x, z, r: Math.max(h
 function wallT(ctx, s, t0, t1, th = 0.18) { const c = at(s, (t0 + t1) / 2); wall(ctx, c.x, c.z, YAW_T, th, Math.abs(t1 - t0) / 2); }
 // parede ao longo do eixo s (mar adentro), de s0 a s1, na posição lateral t
 function wallS(ctx, t, s0, s1, th = 0.18) { const c = at((s0 + s1) / 2, t); wall(ctx, c.x, c.z, YAW_SEA, th, Math.abs(s1 - s0) / 2); }
+// beirada sobre a água: segura quem anda/pula em cima (pés até 1,45 m acima do chão), mas quem está NADANDO passa por baixo e sobe no cais/doca
+function edge(ctx) { const c = ctx.colliders[ctx.colliders.length - 1]; c.y0 = -1; c.y1 = 1.45; }
+// casco na água: só barra quem está nadando (no convés valem as amuradas)
+function hull(ctx, s, t, rot, hx, hz) { const c = at(s, t); ctx.colliders.push({ x: c.x, z: c.z, r: Math.max(hx, hz), box: true, hx, hz, rot, swim: true, name: 'casco' }); }
 
 /* ---------------- peças ---------------- */
 // cabeço de amarração de ferro fundido (cogumelo baixo), às vezes com corda enrolada
@@ -156,6 +160,7 @@ function palmTree(seed) {
   for (let k = 0; k < 9 + Math.floor(r() * 5); k++) { const a = k * 2.3 + r(), rr = 0.24 + (k % 3) * 0.06; K.add(new THREE.SphereGeometry(0.17, 12, 10), nutM[k % 3], top.x + Math.cos(a) * rr, top.y - 0.35 - (k % 3) * 0.13, top.z + Math.sin(a) * rr, 0, 0, 0, 1, 1.18, 1); } // cachos de coco verde
   return K;
 }
+export function palmModel(seed) { return palmTree(seed).build(); } // expansão: coqueiros da Costa Turquesa e do oásis (o mesmo do porto)
 function palmTreeOld(seed) {
   const K = new Kit(), r = rngOf(seed), H = 6.5 + r() * 4, lean = 0.6 + r() * 1.8, dir = r() * 6.28, bark = M.bark();
   const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector3(Math.cos(dir) * Math.pow(t, 1.7) * lean * 2, t * H, Math.sin(dir) * Math.pow(t, 1.7) * lean * 2)); }
@@ -360,14 +365,17 @@ export function buildPortCity(ctx) {
     K.box(1.3, 0.08, L, M.wood(), 0, rise / 2 + 0.02, lenA / 2, 0, -ang); for (let k = 0; k < 10; k++) K.box(1.3, 0.04, 0.05, M.darkWood(), 0, 0.09 + (k + 0.5) / 10 * rise, (k + 0.5) / 10 * lenA, 0, -ang);
     for (let k = 0; k < 3; k++) K.box(1.2, 0.08, 0.5, M.wood(), 0, rise - (k + 1) * (RAIL - DY) / 3.2, lenA + 0.25 + k * 0.42); // degraus para dentro do navio
     for (const s of [-1, 1]) { K.cyl(0.04, 0.05, 1.2, M.darkWood(), s * 0.75, 0.6, 0.2, 6); K.cyl(0.04, 0.05, 1.2, M.darkWood(), s * 0.75, rise + 0.6, lenA - 0.2, 6); const g2 = new THREE.CylinderGeometry(0.015, 0.015, L, 4); g2.rotateX(Math.PI / 2); g2.rotateX(-ang); K.add(g2, M.rope(), s * 0.75, rise / 2 + 1.0, lenA / 2); }
-    put(ctx, K, 'prancha', pA.x, pA.z, YAW_SEA, { y: LAND, occ: false }); }
+    put(ctx, K, 'prancha', pA.x, pA.z, YAW_SEA, { y: LAND, occ: false });
+    for (const sd of [-1, 1]) wallS(ctx, gangT + sd * 0.8, q - 0.3, sc - deckW / 2 + 0.1, 0.1); } // laterais da prancha: do cais até a amurada, sem vão para a água
   // colisões do navio: amuradas dos dois lados (com a abertura da prancha), proa, popa, cabine e mastros
   { const sIn = sc - deckW / 2 - 0.15, sOut = sc + deckW / 2 + 0.15, t1 = deckT0 + deckLen;
     wallT(ctx, sIn, deckT0, gangT - 0.85); wallT(ctx, sIn, gangT + 0.85, t1); wallT(ctx, sOut, deckT0, t1);
     wallS(ctx, deckT0 - 0.1, sIn, sOut); wallS(ctx, t1 + 0.1, sIn, sOut);
     { const c = at(sc, tc - SHIP.len / 2 + 4); wall(ctx, c.x, c.z, YAW_T, (SHIP.beam - 1.9) / 2, 2.5); } // cabine
     for (const mz of [-5.0, 3.5, 10.0]) { const c = at(sc, tc + mz); ctx.colliders.push({ x: c.x, z: c.z, r: 0.45, name: 'mastro' }); }
-    { const c = at(sc, tc + 7.8); ctx.colliders.push({ x: c.x, z: c.z, r: 0.55, name: 'cabrestante' }); } }
+    { const c = at(sc, tc + 7.8); ctx.colliders.push({ x: c.x, z: c.z, r: 0.55, name: 'cabrestante' }); }
+    for (const [x, z, r] of [[-2.4, -6.6, 0.42], [-2.4, -5.8, 0.42], [2.3, 1.2, 0.42], [2.3, -6.4, 0.5], [2.4, -5.4, 0.5], [-2.2, 1.4, 0.5], [2.75, -7.8, 0.5], [-2.75, -7.8, 0.5], [2.75, 6.8, 0.5], [-2.75, 6.8, 0.5]]) { const c = at(sc - x, tc + z); ctx.colliders.push({ x: c.x, z: c.z, r, name: 'carga' }); } // barris, caixas e canhões do convés
+    hull(ctx, sc, tc - 1, YAW_T, SHIP.beam / 2 + 0.1, SHIP.len / 2 - 0.6); hull(ctx, sc, tc + SHIP.len / 2 - 0.8, YAW_T, 1.2, 1.4); } // casco inteiro (popa à proa) para quem nada
   // escotilha → porão (portal em cima da grade)
   const hold = buildHold(ctx);
   { const h = at(sc, tc - 1); ctx.addDoorPortal('porao_gaivota', h.x, h.z, YAW_T + Math.PI); const pt = ctx.portals[ctx.portals.length - 1]; pt.mesh.position.y = DY + 0.26; pt.out.y = DY; }
@@ -382,13 +390,13 @@ export function buildPortCity(ctx) {
     for (let z = 2; z < len; z += 4) for (const sx of [-1, 1]) K.cyl(0.05, 0.06, 0.95, M.darkWood(), sx * (w / 2 - 0.05), 0.5, z, 6); // postes do corrimão de corda
     for (const sx of [-1, 1]) { const g = new THREE.CylinderGeometry(0.02, 0.02, len - 2, 4); g.rotateX(Math.PI / 2); K.add(g, M.rope(), sx * (w / 2 - 0.05), 0.85, len / 2 + 0.6); }
     const p = H(q - 0.3, pt, 0); put(ctx, K, 'cais', p.x, p.z, YAW_SEA, { y, occ: false }); deck(p.x, p.z, YAW_SEA, len, w, y);
-    wallS(ctx, pt - w / 2 - 0.12, q, q + len); wallS(ctx, pt + w / 2 + 0.12, q, q + len); { const e = at(q - 0.3 + len + 0.1, pt); wall(ctx, e.x, e.z, YAW_SEA, w / 2 + 0.3, 0.15); }
-    for (const [ds, st, seed] of [[8, -1, 1], [16, 1, 2], [12, 1, 3]]) { if (pt > 0 && seed === 3) continue; const bp = H(q + ds, pt + st * 3.1, 0), bk = rowboat(4.6 + seed * 0.4, seed + (pt > 0 ? 3 : 0)), g = put(ctx, bk, 'barco', bp.x, bp.z, YAW_SEA + (seed - 2) * 0.08, { y: SEA.level - 0.12, occ: false });
+    wallS(ctx, pt - w / 2 - 0.12, q, q + len); edge(ctx); wallS(ctx, pt + w / 2 + 0.12, q, q + len); edge(ctx); { const e = at(q - 0.3 + len + 0.1, pt); wall(ctx, e.x, e.z, YAW_SEA, w / 2 + 0.3, 0.15); edge(ctx); }
+    for (const [ds, st, seed] of [[8, -1, 1], [16, 1, 2], [12, 1, 3]]) { if (pt > 0 && seed === 3) continue; const bp = H(q + ds, pt + st * 3.1, 0), bk = rowboat(4.6 + seed * 0.4, seed + (pt > 0 ? 3 : 0)), g = put(ctx, bk, 'barco', bp.x, bp.z, YAW_SEA + (seed - 2) * 0.08, { y: SEA.level - 0.12, occ: false }); hull(ctx, q + ds, pt + st * 3.1, YAW_SEA + (seed - 2) * 0.08, 0.95, (4.6 + seed * 0.4) / 2);
       g.userData.update = t => { g.position.y = SEA.level - 0.12 + Math.sin(t * 1.1 + bp.x) * 0.05; g.rotation.z = Math.sin(t * 0.9 + bp.z) * 0.03; }; ctx.roomAnims.push(g); }
   }
   // borda do cais: ninguém cai na água (aberturas na prancha e nas docas)
-  { const gaps = [[gangT - 0.85, gangT + 0.85], ...PIERS.map(t => [t - 1.6, t + 1.6]), [56, 64]]; let t0 = -HARBOR.half + 2;
-    for (const [a, b] of gaps.sort((x, y) => x[0] - y[0])) { if (a > t0) wallT(ctx, q + 0.3, t0, a); t0 = b; } wallT(ctx, q + 0.3, t0, HARBOR.half - 2); }
+  { const gaps = [[gangT - 0.85, gangT + 0.85], ...PIERS.map(t => [t - 1.6, t + 1.6]), [60 - 1.6, 60 + 1.6]]; let t0 = -HARBOR.half + 2;
+    for (const [a, b] of gaps.sort((x, y) => x[0] - y[0])) { if (a > t0) { wallT(ctx, q + 0.3, t0, a); edge(ctx); } t0 = b; } wallT(ctx, q + 0.3, t0, HARBOR.half - 2); edge(ctx); }
   // 4) quebra-mar de pedras até o farol na boca do porto
   { const bt = 60, s0 = q - 0.5, s1 = q + 30, K = new Kit(), st = M.greyStone(), rock = plain('brkRock', '#7c776c', { rough: 0.95 }), yTop = LAND + 0.03, rr = rngOf(606);
     void rock; // S-285: enrocamento de verdade — blocos de pedra partidos (faces de corte), com textura, parte molhada escura e alga na linha d'água
@@ -410,7 +418,8 @@ export function buildPortCity(ctx) {
     for (let k = 0; k < 18; k++) { const a = k / 18 * Math.PI * 2; if (Math.abs(a - Math.PI * 1.5) < 0.4) continue; K.cyl(0.07, 0.07, 0.95, M.iron(), Math.cos(a) * 5.4, yTop + 0.47, s1 - s0 + 5.5 + Math.sin(a) * 5.4, 6); }
     const p = H(s0, bt, 0); put(ctx, K, 'quebra_mar', p.x, p.z, YAW_SEA, { y: 0, occ: false });
     deck(p.x, p.z, YAW_SEA, s1 - s0 + 1, 3.2, yTop); { const pc = H(s1 + 0.5, bt, 0); deck(pc.x, pc.z, YAW_SEA, 10.5, 10.4, yTop); }
-    wallS(ctx, bt - 1.75, s0 + 1, s1 + 1); wallS(ctx, bt + 1.75, s0 + 1, s1 + 1);
+    wallS(ctx, bt - 1.75, q, s1 + 1); wallS(ctx, bt + 1.75, q, s1 + 1); // laterais desde a borda do cais (antes havia um vão de 1,5 m)
+    wallT(ctx, s1 + 1, bt - 3.4, bt - 1.75); wallT(ctx, s1 + 1, bt + 1.75, bt + 3.4); // fecha o vão entre o fim das laterais e o anel do farol (por ali se caía no mar)
     { const ctr = at(s1 + 5.5, bt); for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, x = Math.sin(a), z = Math.cos(a); if (z < -0.85) continue; const pp = at(s1 + 5.5 + z * 5.7, bt + x * 5.7); ctx.colliders.push({ x: pp.x, z: pp.z, r: 1.15, name: 'porto' }); } }
     const lc = H(s1 + 5.5, bt, 0), lh = put(ctx, lighthouseKit(), 'farol', lc.x, lc.z, YAW_SEA + Math.PI, { y: yTop - 0.05, occ: true }); ctx.colliders.push({ x: lc.x, z: lc.z, r: 3.4, name: 'farol' });
     const L = vlight('#ffd27a', 6, 30, 1.4); L.position.set(0, 21, 0); lh.add(L); lh.userData.far = 700;

@@ -72,7 +72,7 @@ function myState() {
     id: myId(), since: Math.max(0, N.since), name: p.name, cls: p.cls, look: p.look, baseLv: p.baseLv,
     hat: C.hatOf(p), wpn: C.wpnOf(p), off: C.offOf(p), skin: p.cosmetics && p.cosmetics.skin || null,
     riding: S.riding && p.mount ? p.mount.kind : null,
-    x: +S.pos.x.toFixed(2), y: +(S.pos.y || 0).toFixed(2), z: +S.pos.z.toFixed(2), yaw: +(me ? me.obj.rotation.y : S.pos.yaw).toFixed(3),
+    x: +S.pos.x.toFixed(2), y: +((S.pos.y || 0) + (S.swimOff || 0)).toFixed(2), z: +S.pos.z.toFixed(2), yaw: +(me ? me.obj.rotation.y : S.pos.yaw).toFixed(3),
     anim: me && me.anim ? me.anim.name : 'Idle', moving: sp > 0.3, speed: +sp.toFixed(2), sit: !!S.sitting, dead: !!p.dead,
     room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp, sp: p.sp, maxSp: p.d ? p.d.maxSp : p.sp, jobLv: p.jobLv, // sp/jobLv: quadro do grupo (P-026)
     atk: (S.atkN || 0) + (S.katN || 0), clip: me && me.anim ? me.anim.name : null,

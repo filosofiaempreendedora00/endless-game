@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 
 const SKIP = /^(cloud|mountain|lily|barco|veleiro|navio|galeao|calcamento|neve|ponte|cais|quebra_mar|redes|mar|prancha|estaleiro|lago|bote)/;
-const TREE = /^(oak|oakdark|pine|pinedark|pinesnow|tree|trees|palmeira|arvore)/;
+const TREE = /^(oak|oakdark|pine|pinedark|pinesnow|tree|trees|palmeira|palm_|arvore)/;
 const BUILDING = /(home|tavern|taverna|church|igreja|blacksmith|ferraria|market|windmill|tower|casa|estabulo|salao|templo|armazem|guilda|alojamento|arsenal|corvaria|torreao|castelo|portao|muralha|wall)/;
 const _b = new THREE.Box3(), _v = new THREE.Vector3(), _m = new THREE.Matrix4();
 
@@ -74,7 +74,7 @@ export function checkWorld(ctx) {
   // NPCs dentro de objetos (fora o próprio círculo do NPC)
   for (const n of ctx.S.npcs || []) {
     const cs = near(n.x, n.z, 1).filter(c => !(Math.abs(c.x - n.x) < 0.01 && Math.abs(c.z - n.z) < 0.01 && !c.box && Math.abs(c.r - 0.6) < 0.01));
-    const inside = cs.find(c => insideCollider(c, n.x, n.z) && !(c.y1 !== undefined));
+    const inside = cs.find(c => insideCollider(c, n.x, n.z) && !(c.y1 !== undefined) && !c.swim); // casco "swim" só segura quem nada: NPC no convés não está dentro dele
     if (inside) out.push({ tipo: 'NPC dentro de objeto', gravidade: inside.box ? 'baixa' : 'media', /* caixa de prédio costuma incluir alpendre/pórtico (NPC na porta); círculo = adereço (banca, mesa, trono) */ objeto: n.name || n.id, x: n.x, z: n.z, detalhe: `dentro de ${inside.name || (inside.box ? 'caixa' : 'círculo')} de colisão` });
   }
   return out;

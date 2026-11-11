@@ -5,8 +5,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 
-export const HALF = 450; // o mundo vai de -450 a +450 nos dois eixos (S-076: 9× maior que o vale original)
-export const PLAY_LIMIT = 425; // até onde o jogador consegue ir (depois disso, montanhas)
+// S-076: 9× maior que o vale original. Expansão (2026-11-11): 450 → 630 (≈ 2× a área). Não passe de ~670: as salas ficam
+// em x > HALF + 100 e a Arena começa em x = 777 (o servidor também usa x = 800 para ela).
+export const HALF = 630; // o mundo vai de -630 a +630 nos dois eixos (2·HALF é múltiplo dos blocos de terreno de 90 m)
+export const PLAY_LIMIT = 605; // até onde o jogador consegue ir (depois disso, montanhas ou mar)
 
 export const ZONES = [
   { id: 'vila', name: 'Vila de Alvorada', lvl: 'Cidade', x: -70, z: 20, r: 30, music: 'vila', grass: '#7cb35a', safe: true },
@@ -24,7 +26,24 @@ export const ZONES = [
   { id: 'pedrafunda', name: 'Pedrafunda', lvl: 'Cidade dos Anões', x: -288, z: -288, r: 40, music: 'cidade', grass: '#8d877c', safe: true },
   { id: 'aelindra', name: 'Aelindra', lvl: 'Cidade dos Elfos', x: 286, z: -284, r: 52, music: 'floresta', grass: '#4d7f3c', safe: true },
   { id: 'valcinza', name: 'Campos de Valcinza', lvl: 'Nv. 35–45', x: -268, z: 268, r: 72, music: 'campo', grass: '#8aa850' },
+  // Expansão (2026-11-11): além da antiga serra da borda. `kind` = a região "mãe" (relevo, chão, clima, árvores e névoa iguais),
+  // então a neve e o deserto continuam com transição gradual (biome/zoneWeight somam as regiões do mesmo tipo)
+  { id: 'pinhal', name: 'Pinhal Nevado', lvl: 'Nv. 36–46', x: -532, z: 150, r: 100, music: 'geada', grass: '#b7c9bc', kind: 'geada' },
+  { id: 'alem', name: 'Ermos Além da Muralha', lvl: 'Nv. 40–50', x: -532, z: -170, r: 110, music: 'geada', grass: '#e2eaef', kind: 'geada' },
+  { id: 'brumosa', name: 'Costa Brumosa', lvl: 'Nv. 42–52', x: 0, z: -505, r: 120, music: 'geada', grass: '#b4bfbd', kind: 'geada' },
+  { id: 'estepe', name: 'Estepe do Vento Seco', lvl: 'Nv. 30–40', x: -290, z: 515, r: 85, music: 'campo', grass: '#b3a862' },
+  { id: 'areal', name: 'Grande Areal', lvl: 'Nv. 28–38', x: 40, z: 500, r: 120, music: 'dunas', grass: '#dcbb7c', kind: 'dunas' },
+  { id: 'savana', name: 'Savana Dourada', lvl: 'Nv. 18–28', x: 418, z: 118, r: 70, music: 'campo', grass: '#b0b05c' },
+  { id: 'turquesa', name: 'Costa Turquesa', lvl: 'Nv. 15–25', x: 468, z: -80, r: 72, music: 'campo', grass: '#86c25a' },
+  { id: 'mata', name: 'Mata das Araras', lvl: 'Nv. 20–30', x: 508, z: -320, r: 70, music: 'floresta', grass: '#3f7a34' },
 ];
+for (const zn of ZONES) zn._g = new THREE.Color(zn.grass); // cor da grama já convertida uma vez só (groundColor roda centenas de milhares de vezes)
+const ZONE_GROUP = {}; for (const zn of ZONES) { (ZONE_GROUP[zn.id] = ZONE_GROUP[zn.id] || []).push(zn); if (zn.kind) (ZONE_GROUP[zn.kind] = ZONE_GROUP[zn.kind] || []).push(zn); } // 'geada' = Vale da Geada + Pinhal + Ermos + Costa Brumosa...
+// Expansão: lagos congelados nos Ermos (só gelo no chão; o lago do Vale da Geada continua sendo o FROZEN), o oásis do Grande Areal
+// (água rasa, de molhar os pés) e o platô da Costa Turquesa (cachoeira caindo na laguna). y/level são calculados na 1ª vez.
+export const ICE_LAKES = [{ x: -538, z: -140, r: 17 }, { x: -527, z: -318, r: 13 }, { x: -548, z: 40, r: 11 }];
+export const OASIS = { x: -44, z: 470, r: 12, level: null };
+export const MESA = { x: null, z: -170, r: 36, top: 15 };
 export const CITY2 = { x: 305, z: -14 }; // Pedraclara
 export const FROZEN = { x: -330, z: 75, r: 24 }; // lago congelado do Vale da Geada
 export const TEMPLE = { x: 0, z: -392 }; // Santuário Silente (entrada das Catacumbas)
@@ -36,7 +55,13 @@ export const DWARF = { x: -288, z: -288 };     // Pedrafunda: bacia entre os pic
 export const ELF = { x: 286, z: -284 };        // Aelindra: vale de floresta antiga
 export const CASTLE = { x: -292, z: 296 };     // Castelo de Valcinza, no meio dos campos
 const CASTLE_RY = Math.atan2(-280 - CASTLE.x, 270 - CASTLE.z), CASTLE_CS = Math.cos(CASTLE_RY), CASTLE_SN = Math.sin(CASTLE_RY); // mesma rotação do castle3d (a frente olha para a estrada)
-export const SEA = { x: 500, z: 500, r: 300, level: -0.6 }; // o mar: tudo a menos de r deste ponto (com a costa irregular)
+export const SEA = { x: 500, z: 500, r: 300, level: -0.6, id: 'porto', shelf: 0.16, beach: 0.045 }; // o mar: tudo a menos de r deste ponto (com a costa irregular)
+// Expansão (2026-11-11): mais dois mares, com o MESMO nível de água (seaDist/seaPush/waterLevelAt valem para todos):
+// leste = Costa Turquesa (laguna rasa e clara, areia branca); norte = Costa Brumosa (fria, cascalho escuro, blocos de gelo).
+// shelf = quanto o fundo afunda por metro mar adentro; beach = inclinação da praia.
+export const SEA_TROPIC = { x: 960, z: -20, r: 470, level: SEA.level, id: 'turquesa', shelf: 0.065, beach: 0.03 };
+export const SEA_NORTH = { x: 40, z: -1480, r: 950, level: SEA.level, id: 'brumosa', shelf: 0.2, beach: 0.07 };
+export const SEAS = [SEA, SEA_TROPIC, SEA_NORTH];
 // S-216: o porto tem um cais de pedra reto — a linha d'água é a mesma dos dois lados (nada de praia torta no meio da cidade)
 // s = metros do centro do porto em direção ao mar; t = metros para o lado (ao longo do cais)
 export const HARBOR = (() => { const ux = SEA.x - PORT.x, uz = SEA.z - PORT.z, l = Math.hypot(ux, uz); return { x: PORT.x, z: PORT.z, ux: ux / l, uz: uz / l, quay: 30, half: 72, land: SEA.level + 1.3 }; })();
@@ -45,12 +70,16 @@ export function harborW(x, z) { const { s, t } = harborST(x, z); return (1 - smo
 // S-218: o porto não fica grudado no deserto — uma faixa verde de litoral (capim e arbustos) separa as dunas da cidade
 export function coastBelt(x, z) { return smooth(115, 185, Math.hypot(x - PORT.x, z - PORT.z)); }
 export function harborXZ(s, t) { return { x: HARBOR.x + HARBOR.ux * s + HARBOR.uz * t, z: HARBOR.z + HARBOR.uz * s - HARBOR.ux * t }; }
-export function seaDist(x, z) { // > 0 em terra, < 0 no mar (metros até a linha da praia)
-  const a = Math.atan2(z - SEA.z, x - SEA.x);
-  const sd = Math.hypot(x - SEA.x, z - SEA.z) - SEA.r * (1 + 0.06 * Math.sin(a * 7 + 1.3) + 0.035 * Math.sin(a * 13 + 0.4)) + (vnoise(x * 0.05, z * 0.05) - 0.5) * 8;
-  const w = harborW(x, z); if (w <= 0) return sd;
+// costa irregular de um mar (o mar do porto continua com a mesma conta de antes: k = 1); longe da costa não precisa do detalhe
+function seaRaw(s, x, z) { const dx = x - s.x, dz = z - s.z, d = Math.hypot(dx, dz) - s.r; if (d > 160) return d; const a = Math.atan2(dz, dx), k = s.r / 300; return d - 18 * Math.sin(a * 7 * k + 1.3) - 10.5 * Math.sin(a * 13 * k + 0.4); }
+let lastSea = SEA; // o mar mais perto na última chamada de seaDist (seaAt/seaPush/heightAt usam)
+export function seaDist(x, z) { // > 0 em terra, < 0 no mar (metros até a linha da praia) — o mais perto dos mares
+  let sd = 1e9; for (const s of SEAS) { const d = seaRaw(s, x, z); if (d < sd) { sd = d; lastSea = s; } }
+  sd += (vnoise(x * 0.05, z * 0.05) - 0.5) * 8;
+  const w = lastSea === SEA ? harborW(x, z) : 0; if (w <= 0) return sd;
   return sd * (1 - w) + (HARBOR.quay - harborST(x, z).s) * w;
 }
+export function seaAt(x, z) { seaDist(x, z); return lastSea; } // qual mar (SEA, SEA_TROPIC ou SEA_NORTH) é o mais perto deste ponto
 // bacias planas das cidades novas (1 no centro, 0 fora) — tiram as montanhas e aplainam o chão
 const BASINS = [[PORT, 72, 104], /* S-285: o porto ganhou uma planície maior — sem o morro (pé da serra do canto) na entrada da cidade e do quebra-mar */[DWARF, 66, 84], [ELF, 50, 74], [CASTLE, 70, 104]];
 export function basin(x, z) { let b = 0; for (const [c, r0, r1] of BASINS) { const d = Math.hypot(x - c.x, z - c.z); if (d < r1) b = Math.max(b, 1 - smooth(r0, r1, d)); } return b; }
@@ -68,7 +97,15 @@ export const ROADS = [
   [[305, -14], [312, -80], [306, -150], [294, -222], [286, -262]],                    // norte de Pedraclara → Aelindra (elfos)
   [[12, 300], [80, 296], [150, 284], [205, 272], [240, 264]],                         // leste das dunas → Porto das Gaivotas
   [[-165, 30], [-188, 100], [-222, 170], [-254, 230], [-280, 270]],                   // sudoeste: estrada do castelo de Valcinza
+  // Expansão (2026-11-11): estradas para as regiões novas (as da serra abrem passagens)
+  [[-222, 170], [-268, 186], [-338, 210], [-380, 262], [-418, 330], [-472, 344], [-526, 302], [-536, 220]], // passo do sudoeste: Valcinza → Pinhal Nevado (atrás da Muralha)
+  [[12, 300], [2, 360], [-18, 418], [-36, 452]],                                        // sul: dunas → oásis do Grande Areal
+  [[-36, 452], [-110, 482], [-200, 504], [-282, 516]],                                  // oásis → Estepe do Vento Seco
+  [[305, -14], [352, -26], [404, -48], [446, -66]],                                     // leste: Pedraclara → Costa Turquesa
+  [[2, -330], [-58, -352], [-104, -404], [-92, -458], [-40, -492]],                     // norte: contorna o Santuário até a Costa Brumosa
 ];
+// S-expansão: caixa de cada trecho (pula o cálculo dos trechos longe — roadDist roda em todo heightAt)
+const ROAD_SEGS = []; for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) { const [ax, az] = r[i], [bx, bz] = r[i + 1]; ROAD_SEGS.push([ax, az, bx, bz, Math.min(ax, bx), Math.max(ax, bx), Math.min(az, bz), Math.max(az, bz)]); }
 
 /* ---------- ruído ---------- */
 function hash(x, z) { const h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return h - Math.floor(h); }
@@ -88,7 +125,11 @@ function segDist(px, pz, ax, az, bx, bz) {
 }
 export function roadDist(x, z) {
   let d = 1e9;
-  for (const r of ROADS) for (let i = 0; i < r.length - 1; i++) d = Math.min(d, segDist(x, z, r[i][0], r[i][1], r[i + 1][0], r[i + 1][1]));
+  for (const g of ROAD_SEGS) {
+    const ex = g[4] - x > 0 ? g[4] - x : x - g[5] > 0 ? x - g[5] : 0, ez = g[6] - z > 0 ? g[6] - z : z - g[7] > 0 ? z - g[7] : 0;
+    if (ex * ex + ez * ez >= d * d) continue; // a caixa do trecho já está mais longe que o melhor achado
+    const v = segDist(x, z, g[0], g[1], g[2], g[3]); if (v < d) d = v;
+  }
   return d;
 }
 
@@ -106,16 +147,26 @@ export function templeCliff(x, z) {
   const d = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (d > 75) return 0;
   return (1 - templeNiche(x, z)) * (1 - smooth(36, 75, d + Math.max(0, z - TEMPLE.z) * 0.6));
 }
+// Expansão (2026-11-11): a Muralha Gélida (cities3d, x = -405) era encostada na borda do mundo. A borda foi para longe, então
+// uma serra alta continua atrás dela (a muralha segue encravada na montanha, igual a antes) e os Ermos começam depois (x < -500).
+export function wallRidge(x, z) {
+  if (x > -396 || x < -520) return 0;
+  const n = (vnoise(x * 0.03 + 11, z * 0.03) - 0.5) * 18;
+  return smooth(398, 436, -x) * (1 - smooth(468, 500, -x + n)) * (1 - smooth(262, 300, Math.abs(z - 2) + n));
+}
 export function mountainMask(x, z) {
   const e = edgeDist(x, z) + (vnoise(x * 0.03, z * 0.03) - 0.5) * 18;
   const inner = smooth(104, 128, e) * (1 - smooth(158, 192, e)); // serra que cerca o vale de Alvorada
-  const corner = smooth(208, 262, Math.min(Math.abs(x), Math.abs(z)) + (vnoise(x * 0.02 + 5, z * 0.02) - 0.5) * 34); // maciços entre as regiões novas
+  const ax = Math.abs(x), az = Math.abs(z), mn = Math.min(ax, az) + (vnoise(x * 0.02 + 5, z * 0.02) - 0.5) * 34;
+  // maciços entre as regiões novas; expansão: eles param antes da borda nova (faixas de terra em volta), os cantos continuam montanha
+  const corner = smooth(208, 262, mn) * (1 - smooth(445, 485, Math.max(ax, az) + (vnoise(x * 0.025 + 2, z * 0.025 + 8) - 0.5) * 24) * (1 - smooth(395, 445, mn)));
   const outer = smooth(HALF - 58, HALF - 14, e); // borda do mundo
-  const pass = inner > 0.01 || corner > 0.01 ? 1 - smooth(10, 26, roadDist(x, z)) : 0; // as estradas abrem passagens na serra
+  const wr = wallRidge(x, z);
+  const pass = inner > 0.01 || corner > 0.01 || wr > 0.01 ? 1 - smooth(10, 26, roadDist(x, z)) : 0; // as estradas abrem passagens na serra
   const tn = Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 80 ? templeNiche(x, z) : 0; // pátio do Santuário escavado na montanha
   const bs = basin(x, z), sea = 1 - smooth(-30, 30, seaDist(x, z)); // cidades novas e o mar não têm montanha
   // S-166: as bacias das cidades só tiram a serra de dentro; a borda do mundo continua com montanha (nada de chão cortado e vazio cinza)
-  return Math.max(Math.max(Math.max(inner, corner) * (1 - pass) * (1 - bs), outer * (1 - tn)) * (1 - sea), tn < 1 ? templeCliff(x, z) : 0);
+  return Math.max(Math.max(Math.max(inner, corner) * (1 - pass) * (1 - bs), outer * (1 - tn), wr * (1 - pass)) * (1 - sea), tn < 1 ? templeCliff(x, z) : 0);
 }
 // paredões de Pedrafunda: anel de rocha alta em volta da cidade dos anões, aberto ao sul (estrada)
 export function dwarfCliff(x, z) {
@@ -129,6 +180,7 @@ export function mountainH(x, z) {
   const big = 0.45 + vnoise(x * 0.011 + 3, z * 0.011) * 0.9; // picos altos e vales mais baixos ao longo da cordilheira
   let h = Math.pow(m, 1.7) * (12 + r * 58) * big;
   const tc = templeCliff(x, z); if (tc > 0) h = Math.max(h, Math.pow(tc, 0.8) * (30 + r * 22)); // paredões altos em volta do Santuário
+  const wr = wallRidge(x, z); if (wr > 0) h = Math.max(h, Math.pow(wr * smooth(10, 26, roadDist(x, z)), 0.8) * (42 + r * 34)); // serra alta atrás da Muralha (esconde as costas dela)
   if (dcl > 0) h = Math.max(h, Math.pow(dcl, 0.75) * (46 + r * 40 + vnoise(x * 0.04, z * 0.04) * 18)); // picos mais altos do mundo em volta de Pedrafunda
   return h;
 }
@@ -147,6 +199,8 @@ export function treeAllowed(x, z, opts = {}) {
   if (rock > (opts.maxRock ?? 0.3) || slope > (opts.maxSlope ?? 0.5) || h > 20) return false;
   if (Math.hypot(x - DWARF.x, z - DWARF.z) < 146) return false; // cascalho de Pedrafunda
   if (seaDist(x, z) < 14) return false; // praia
+  if (x < -470 && ICE_LAKES.some(L => Math.hypot(x - L.x, z - L.z) < L.r * 1.3)) return false; // lagos congelados dos Ermos
+  if (z > 400 && oasisDist(x, z) < OASIS.r + 2) return false; // lagoa do oásis
   return true;
 }
 
@@ -155,7 +209,15 @@ export function treeAllowed(x, z, opts = {}) {
 export function lakeShape(x, z) { const a = Math.atan2(z - LAKE.z, x - LAKE.x); return 1 + 0.16 * Math.sin(3 * a + 1.1) + 0.09 * Math.sin(5 * a + 2.4) + 0.05 * Math.sin(8 * a + 0.3); }
 // distância até o centro "corrigida" pela forma da margem: comparar com LAKE.r
 export function lakeDist(x, z) { return Math.hypot(x - LAKE.x, z - LAKE.z) / lakeShape(x, z); }
-const zw = (id, x, z) => { const zn = ZONE_BY[id]; return 1 - smooth(zn.r * 0.55, zn.r * 1.3, Math.hypot(x - zn.x, z - zn.z)); };
+const zw = (id, x, z) => { let w = 0; for (const zn of ZONE_GROUP[id]) { const v = 1 - smooth(zn.r * 0.55, zn.r * 1.3, Math.hypot(x - zn.x, z - zn.z)); if (v > w) w = v; } return w; }; // região + as do mesmo tipo
+export function oasisShape(x, z) { const a = Math.atan2(z - OASIS.z, x - OASIS.x); return 1 + 0.14 * Math.sin(3 * a + 0.7) + 0.08 * Math.sin(5 * a + 2.1); }
+export function oasisDist(x, z) { return Math.hypot(x - OASIS.x, z - OASIS.z) / oasisShape(x, z); } // comparar com OASIS.r (como o lakeDist)
+function mesaReady() { if (MESA.x !== null) return; let cx = 520; for (let x = 400; x < 640; x++) if (seaDist(x, MESA.z) < 0) { cx = x; break; } MESA.x = cx - 22; } // o platô encosta na água
+export function mesaH(x, z) { // platô de pedra da Costa Turquesa (altura somada ao chão; 0 fora dele)
+  if (x < 420 || Math.abs(z - MESA.z) > 52) return 0; mesaReady();
+  const d = Math.hypot(x - MESA.x, (z - MESA.z) * 1.25) + (vnoise(x * 0.12, z * 0.12) - 0.5) * 5; if (d > MESA.r) return 0;
+  return (1 - smooth(MESA.r - 6, MESA.r, d)) * smooth(-1, 2.5, seaDist(x, z)) * (MESA.top + (vnoise(x * 0.07 + 3, z * 0.07) - 0.5) * 2.5);
+}
 export function heightAt(x, z) {
   let h = (fbm(x * 0.032, z * 0.032) - 0.45) * 8;
   if (Math.abs(x) > 140 || Math.abs(z) > 140) { // relevo próprio de cada região nova
@@ -168,6 +230,16 @@ export function heightAt(x, z) {
     const dc = Math.hypot(x - CITY2.x, z - CITY2.z); if (dc < 50) h *= smooth(26, 50, dc); // cidade plana
     for (const c of Object.values(CAMPS)) { const d = Math.hypot(x - c.x, z - c.z); if (d < 20) h *= smooth(8, 20, d); }
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r; if (df < 1.5) h = h * smooth(0.95, 1.5, df) + -0.3 * (1 - smooth(0.95, 1.5, df)); // lago congelado plano
+    if (x < -470) for (const L of ICE_LAKES) { // lagos congelados dos Ermos: chão plano (o nível vem do relevo no centro, calculado 1 vez)
+      const d = Math.hypot(x - L.x, z - L.z) / L.r; if (d >= 1.6) continue;
+      if (L.y === undefined) { L.y = null; L.y = heightAt(L.x, L.z) - 0.35; } if (L.y === null) continue;
+      const k = 1 - smooth(0.95, 1.6, d); h = h * (1 - k) + L.y * k;
+    }
+    if (z > 400) { const dO = oasisDist(x, z); if (dO < OASIS.r + 30) { // oásis: chão plano em volta e uma lagoa rasa
+      if (OASIS.level === null) { OASIS.level = undefined; const b = heightAt(OASIS.x, OASIS.z); OASIS.level = Math.max(0.2, b * 0.4); }
+      if (OASIS.level !== undefined) { const lv = OASIS.level, k = 1 - smooth(OASIS.r + 8, OASIS.r + 30, dO); h = h * (1 - k) + (lv + 0.3 + (vnoise(x * 0.3, z * 0.3) - 0.5) * 0.2) * k;
+        if (dO < OASIS.r + 2) { const k2 = smooth(OASIS.r + 2, OASIS.r - 4, dO); h = h * (1 - k2) + (lv - 0.5 + (vnoise(x * 0.5, z * 0.5) - 0.5) * 0.12) * k2; } }
+    } }
   }
   h *= smooth(16, 34, Math.hypot(x - VILLAGE.x, z - VILLAGE.z)); // vila plana
   h *= 0.3 + 0.7 * smooth(2.5, 8, roadDist(x, z)); // estradas suaves
@@ -175,10 +247,11 @@ export function heightAt(x, z) {
   if (dl < LAKE.r + 6) { const k = smooth(LAKE.r + 6, LAKE.r - 4, dl); h = h * (1 - k) + (LAKE.level - 1.3 - 1.5 * smooth(LAKE.r - 3, LAKE.r * 0.25, dl) + (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.4) * k; } // fundo mais fundo no meio
   { const bs = basin(x, z); if (bs > 0) h *= 1 - bs * 0.85; } // cidades novas: chão quase plano
   { const sd = seaDist(x, z); if (sd < 60) { // litoral: praia que desce suave até o mar e fundo que vai afundando
-    const beach = SEA.level + 0.35 + Math.max(0, sd) * 0.045, k = 1 - smooth(18, 60, sd);
+    const sea = lastSea, beach = SEA.level + 0.35 + Math.max(0, sd) * sea.beach, k = 1 - smooth(18, 60, sd); // cada mar tem praia e fundo próprios (o do porto = como antes)
     h = h * (1 - k) + beach * k;
-    if (sd < 0) h = SEA.level + 0.2 - Math.min(9, Math.pow(-sd, 0.9) * 0.16) + (vnoise(x * 0.1, z * 0.1) - 0.5) * 0.6;
+    if (sd < 0) h = SEA.level + 0.2 - Math.min(9, Math.pow(-sd, 0.9) * sea.shelf) + (vnoise(x * 0.1, z * 0.1) - 0.5) * (sea === SEA_TROPIC ? 0.3 : 0.6);
   } }
+  h += mesaH(x, z); // platô da Costa Turquesa
   { const w = harborW(x, z); if (w > 0) { // S-216: cais de pedra — chão firme até a borda e água funda logo depois (dos dois lados igual)
     const { s } = harborST(x, z), q = HARBOR.quay;
     const target = s < q ? h + (HARBOR.land - h) * smooth(q - 46, q - 18, s) : SEA.level - 3.4 - Math.min(2.6, (s - q) * 0.05) + (vnoise(x * 0.1, z * 0.1) - 0.5) * 0.4;
@@ -194,7 +267,7 @@ const ZONE_BY = Object.fromEntries(ZONES.map(z => [z.id, z]));
 // peso de cada região num ponto (somam 1): transições suaves entre biomas (S-095)
 export function biome(x, z) {
   let tw = 0; const w = {};
-  for (const zn of ZONES) { const d = Math.max(1, Math.hypot(x - zn.x, z - zn.z) / zn.r), v = 1 / (d * d * d * d); w[zn.id] = v; tw += v; }
+  for (const zn of ZONES) { const d = Math.max(1, Math.hypot(x - zn.x, z - zn.z) / zn.r), v = 1 / (d * d * d * d), k = zn.kind || zn.id; w[k] = (w[k] || 0) + v; tw += v; } // regiões novas somam no tipo delas (neve, deserto)
   for (const k in w) w[k] /= tw; return w;
 }
 export function zoneAt(x, z) {
@@ -202,9 +275,9 @@ export function zoneAt(x, z) {
   for (const zn of ZONES) { const d = Math.hypot(x - zn.x, z - zn.z) / zn.r; if (d < bd) { bd = d; best = zn; } }
   return best;
 }
-export function zoneWeight(id, x, z) {
-  const zn = ZONE_BY[id];
-  return 1 - smooth(zn.r * 0.6, zn.r * 1.4, Math.hypot(x - zn.x, z - zn.z));
+export function zoneWeight(id, x, z) { // a região e as do mesmo tipo (zoneWeight('geada') também vale nos Ermos, no Pinhal e na Costa Brumosa)
+  let w = 0; for (const zn of ZONE_GROUP[id] || []) { const v = 1 - smooth(zn.r * 0.6, zn.r * 1.4, Math.hypot(x - zn.x, z - zn.z)); if (v > w) w = v; }
+  return w;
 }
 
 /* ---------- malha do terreno (low-poly, cores por vértice) ---------- */
@@ -214,8 +287,8 @@ export function groundColor(x, z, h, slopeIn) {
   let tw = 0; const acc = new THREE.Color(0, 0, 0);
   for (const zn of ZONES) {
     const d = Math.max(1, Math.hypot(x - zn.x, z - zn.z) / zn.r);
-    const w = 1 / Math.pow(d, 4); tw += w;
-    const g = new THREE.Color(zn.grass); acc.r += g.r * w; acc.g += g.g * w; acc.b += g.b * w;
+    const w = 1 / (d * d * d * d); tw += w;
+    const g = zn._g; acc.r += g.r * w; acc.g += g.g * w; acc.b += g.b * w;
   }
   c.setRGB(acc.r / tw, acc.g / tw, acc.b / tw);
   const n = (fbm(x * 0.15, z * 0.15) - 0.5) * 0.12;
@@ -234,13 +307,28 @@ export function groundColor(x, z, h, slopeIn) {
     }
     const df = Math.hypot(x - FROZEN.x, z - FROZEN.z) / FROZEN.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.15);
     if (df < 1.05) c.lerp(new THREE.Color('#cfe6f1').offsetHSL(0, 0, (vnoise(x * 0.05, z * 0.05) - 0.5) * 0.05), smooth(1.05, 0.95, df)); // gelo (S-229: cor lisa no chão; o desenho do gelo vem da camada de gelo por cima, sem quadriculado)
+    if (x < -470) for (const L of ICE_LAKES) { const d = Math.hypot(x - L.x, z - L.z) / L.r * (1 + (vnoise(x * 0.2, z * 0.2) - 0.5) * 0.18); if (d < 1.08) { // lagos congelados dos Ermos: gelo azulado com rachaduras
+      const crack = Math.abs(vnoise(x * 0.5 + 7, z * 0.5) - 0.5) < 0.03 ? 0.06 : 0; c.lerp(new THREE.Color('#bcdcec').offsetHSL(0, 0, (vnoise(x * 0.08, z * 0.08) - 0.5) * 0.08 + crack), smooth(1.08, 0.94, d)); } }
+    if (z > 400) { const dO = oasisDist(x, z); if (dO < OASIS.r + 24) { // oásis: anel verde de capim e areia úmida na beira
+      c.lerp(new THREE.Color('#6fa548').offsetHSL(0, 0, (vnoise(x * 0.3, z * 0.3) - 0.5) * 0.08), (1 - smooth(OASIS.r + 8, OASIS.r + 24, dO)) * 0.9);
+      if (dO < OASIS.r + 2.5) c.lerp(new THREE.Color('#b8a678'), smooth(OASIS.r + 2.5, OASIS.r, dO) * 0.85);
+    } }
+    if (x > 420) { const me = mesaH(x, z); if (me > 0.4) { // platô da Costa Turquesa: paredões de pedra clara, topo com capim
+      const sl = slopeIn ?? 0, rk = new THREE.Color('#a69780').lerp(new THREE.Color('#857761'), vnoise(x * 0.3, z * 0.3 + 4)).offsetHSL(0, 0, (vnoise(x * 0.9, z * 0.9) - 0.5) * 0.06);
+      c.lerp(rk, Math.min(1, smooth(0.45, 1.0, sl) + smooth(0.6, 0.2, me / MESA.top) * 0.6)); } }
     const dc = Math.hypot(x - CITY2.x, z - CITY2.z); if (dc < 26) c.lerp(new THREE.Color('#bdb5a3').offsetHSL(0, 0, ((Math.floor(x / 2.5) + Math.floor(z / 2.5)) & 1) * 0.03), smooth(26, 22, dc)); // praça de Pedraclara
     const dt = Math.hypot(x - TEMPLE.x, z - TEMPLE.z); if (dt < 34) c.lerp(new THREE.Color('#9e998d').offsetHSL(0, 0, ((Math.floor(x / 3) + Math.floor(z / 3)) & 1) * 0.035), smooth(34, 26, dt) * smooth(0.6, 0.95, templeNiche(x, z))); // pátio do Santuário
   }
-  { const sd = seaDist(x, z); if (sd < 26) { // areia da praia (com a faixa molhada mais escura) e fundo do mar
-    const wet = smooth(4, -1, sd), sand = new THREE.Color('#e3cf9c').offsetHSL(0, 0, (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.06 - wet * 0.12);
-    c.lerp(sand, smooth(26, 12, sd) * (1 - harborW(x, z))); // no porto o cais é de pedra: sem faixa de areia
-    if (sd < -2) c.lerp(new THREE.Color('#9c9a72'), smooth(-2, -20, sd) * 0.8);
+  { const sd = seaDist(x, z), sea = lastSea; if (sd < 26) { // areia da praia (com a faixa molhada mais escura) e fundo do mar
+    const wet = smooth(4, -1, sd);
+    if (sea === SEA_NORTH) { // Costa Brumosa: cascalho escuro e seixos, sem areia
+      const peb = vnoise(x * 1.7, z * 1.7), grav = new THREE.Color('#6d6a64').lerp(new THREE.Color('#4c4a47'), vnoise(x * 0.25, z * 0.25)).offsetHSL(0, 0, (peb - 0.5) * 0.12 - wet * 0.08);
+      c.lerp(grav, smooth(28, 10, sd)); if (sd < -2) c.lerp(new THREE.Color('#3f4a4c'), smooth(-2, -16, sd) * 0.85);
+    } else {
+      const trop = sea === SEA_TROPIC, sand = new THREE.Color(trop ? '#f1e6c4' : '#e3cf9c').offsetHSL(0, 0, (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.06 - wet * (trop ? 0.08 : 0.12));
+      c.lerp(sand, smooth(trop ? 30 : 26, 12, sd) * (1 - harborW(x, z))); // no porto o cais é de pedra: sem faixa de areia
+      if (sd < -2) c.lerp(new THREE.Color(trop ? '#e6dcb4' : '#9c9a72'), smooth(-2, -20, sd) * (trop ? 0.9 : 0.8)); // laguna: fundo de areia clara (a água fica turquesa)
+    }
   } }
   { const dp = Math.hypot(x - PORT.x, z - PORT.z); if (dp < 190) { // S-218: litoral verde em volta do porto (capim de restinga), sem areia de deserto
     const k = (1 - smooth(120, 190, dp)) * smooth(10, 30, seaDist(x, z)), g = new THREE.Color('#86a85a').offsetHSL(0, 0, (vnoise(x * 0.12, z * 0.12) - 0.5) * 0.08);
@@ -376,7 +464,8 @@ export function buildDistantMountains() {
     const sq = (HALF + 25) / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))), r0 = Math.max(R0, sq), r = r0 + (R1 - R0) * k;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const peak = ridged(a * 3.1, k * 2 + 3) * 0.6 + ridged(a * 7.3 + 2, k * 3) * 0.3 + vnoise(a * 17, k * 4) * 0.1;
-    const seaGap = Math.exp(-Math.pow((((a - Math.PI / 4) + Math.PI * 3) % (Math.PI * 2) - Math.PI) / 0.42, 2)); // S-117: horizonte aberto sobre o mar (sudeste)
+    const gap = (c, w) => Math.exp(-Math.pow((((a - c) + Math.PI * 3) % (Math.PI * 2) - Math.PI) / w, 2));
+    const seaGap = Math.max(gap(Math.PI / 4, 0.42), gap(-0.12, 0.5), gap(-1.56, 0.6)); // S-117: horizonte aberto sobre o mar (sudeste); expansão: e sobre os mares do leste e do norte
     const h = (j === 0 || j === ROWS ? 0 : 1) * (45 + peak * 120) * Math.sin(k * Math.PI) * (1 - seaGap * 0.97) - 4 - seaGap * 30;
     pos.push(x, h, z);
     const c = rockC.clone().lerp(farC, 0.6 + k * 0.3).lerp(hazeC, 0.35 + k * 0.25); // névoa azulada da distância
@@ -392,8 +481,9 @@ export function buildDistantMountains() {
 }
 
 // água com ondas, brilho do sol, cor rasa perto da margem, espuma na beira e reflexo do céu
-export function buildWater() {
-  const R = LAKE.r * 1.3 + 3, seg = 110;
+export function buildWater(L = LAKE, distFn = lakeDist, seg = 110) { // expansão: também a lagoa do oásis (buildWater(OASIS, oasisDist, 60))
+  const LAKE = L, lakeDist = distFn; if (L === OASIS && OASIS.level == null) heightAt(OASIS.x, OASIS.z); // o nível do oásis sai do relevo
+  const R = LAKE.r * 1.3 + 3;
   const geo = new THREE.PlaneGeometry(R * 2, R * 2, seg, seg); geo.rotateX(-Math.PI / 2);
   const p = geo.attributes.position, depth = new Float32Array(p.count);
   const mask = new Float32Array(p.count);
@@ -435,25 +525,43 @@ export function buildWater() {
   return m;
 }
 // S-117: o mar do canto sudeste — mesma água do lago (cor pela profundidade, espuma na beira, ondas), em grande escala
+// Expansão: cada mar tem a sua cor (rasa e funda) — por vértice, misturando suave onde dois mares se encontram (porto ↔ Costa Turquesa)
+const SEA_COLORS = new Map([[SEA, [[0.22, 0.62, 0.60], [0.03, 0.22, 0.40]]], [SEA_TROPIC, [[0.30, 0.84, 0.77], [0.04, 0.40, 0.56]]], [SEA_NORTH, [[0.27, 0.42, 0.45], [0.05, 0.14, 0.21]]]]);
+// planos de água (retângulos sem sobreposição) que cobrem o mar de cada costa, até um pouco além da borda do mundo
+// (mantidos abaixo de x = HALF + 70: a Arena e as salas ficam em x > HALF + 100)
+const SEA_RECTS = [[150, 700, 150, 700], [430, 700, -400, 150], [-440, 470, -720, -480]];
+let seaMat = null;
 export function buildSea() {
-  const W = 420, seg = 140, cx = 365, cz = 365;
-  const geo = new THREE.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
-  const p = geo.attributes.position, depth = new Float32Array(p.count), mask = new Float32Array(p.count);
-  for (let i = 0; i < p.count; i++) { const x = cx + p.getX(i), z = cz + p.getZ(i); depth[i] = SEA.level - heightAt(x, z); mask[i] = 1 - smooth(-2, 6, seaDist(x, z)); }
+  const g = new THREE.Group();
+  for (const [x0, x1, z0, z1] of SEA_RECTS) g.add(seaPlane(x0, x1, z0, z1));
+  return g;
+}
+function seaPlane(x0, x1, z0, z1) {
+  const W = x1 - x0, D = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, STEP = 3;
+  const geo = new THREE.PlaneGeometry(W, D, Math.round(W / STEP), Math.round(D / STEP)); geo.rotateX(-Math.PI / 2);
+  const p = geo.attributes.position, depth = new Float32Array(p.count), mask = new Float32Array(p.count), shal = new Float32Array(p.count * 3), deep = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const x = cx + p.getX(i), z = cz + p.getZ(i); depth[i] = SEA.level - heightAt(x, z); mask[i] = 1 - smooth(-2, 6, seaDist(x, z));
+    let dm = 1e9; const ds = SEAS.map(s => { const d = Math.hypot(x - s.x, z - s.z) - s.r; dm = Math.min(dm, d); return d; });
+    let tw = 0; const a = [0, 0, 0], b = [0, 0, 0];
+    SEAS.forEach((s, k) => { const w = Math.exp(-(ds[k] - dm) / 35), [cs, cd] = SEA_COLORS.get(s); tw += w; for (let c = 0; c < 3; c++) { a[c] += cs[c] * w; b[c] += cd[c] * w; } });
+    for (let c = 0; c < 3; c++) { shal[i * 3 + c] = a[c] / tw; deep[i * 3 + c] = b[c] / tw; }
+  }
   geo.setAttribute('aDepth', new THREE.BufferAttribute(depth, 1)); geo.setAttribute('aMask', new THREE.BufferAttribute(mask, 1));
-  const mat = new THREE.MeshStandardMaterial({ color: '#2a6f9e', roughness: 0.15, metalness: 0.0, transparent: true, depthWrite: false });
-  mat.onBeforeCompile = sh => {
+  geo.setAttribute('aShal', new THREE.BufferAttribute(shal, 3)); geo.setAttribute('aDeep', new THREE.BufferAttribute(deep, 3));
+  const mat = seaMat || (seaMat = new THREE.MeshStandardMaterial({ color: '#2a6f9e', roughness: 0.15, metalness: 0.0, transparent: true, depthWrite: false }));
+  if (!mat.onBeforeCompile.__sea) mat.onBeforeCompile = sh => {
     sh.uniforms.uTime = windUniform;
-    sh.vertexShader = 'uniform float uTime;\nattribute float aDepth;\nattribute float aMask;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-      vDepth = aDepth; vMask = aMask;
+    sh.vertexShader = 'uniform float uTime;\nattribute float aDepth;\nattribute float aMask;\nattribute vec3 aShal;\nattribute vec3 aDeep;\nvarying vec3 vShal;\nvarying vec3 vDeep;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vDepth = aDepth; vMask = aMask; vShal = aShal; vDeep = aDeep;
       vec3 wp0 = (modelMatrix * vec4(transformed, 1.0)).xyz;
       transformed.y += (sin(wp0.x * 0.11 + uTime * 1.1) * 0.12 + sin(wp0.z * 0.07 - uTime * 0.8) * 0.1) * smoothstep(0.5, 4.0, aDepth); // marulho em mar aberto
       vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform float uTime;\nvarying vec3 vShal;\nvarying vec3 vDeep;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vDepth < -0.1 || vMask < 0.02) discard;
         float dk = smoothstep(0.0, 5.0, vDepth);
-        diffuseColor.rgb = mix(vec3(0.22, 0.62, 0.60), vec3(0.03, 0.22, 0.40), dk);
+        diffuseColor.rgb = mix(vShal, vDeep, dk);
         diffuseColor.a = mix(0.4, 0.95, smoothstep(0.0, 1.6, vDepth));
         float fo = smoothstep(0.22, 0.0, vDepth + 0.08 * sin(uTime * 1.3 + vWPos.x * 0.6 + vWPos.z * 0.5));
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.96, 0.95), fo * 0.75);
@@ -468,14 +576,87 @@ export function buildSea() {
           gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.55, 0.74, 0.90), fr * 0.45);
           gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5) * smoothstep(0.02, 0.5, vMask); }`);
   };
+  mat.onBeforeCompile.__sea = true;
   const m = new THREE.Mesh(geo, mat); m.position.set(cx, SEA.level, cz); m.receiveShadow = true; m.renderOrder = 2;
   return m;
+}
+/* ---------- Expansão (2026-11-11): cachoeira do platô da Costa Turquesa e blocos de gelo do mar do norte ---------- */
+function fallMat(kind) { // água que escorre (faixas descendo) ou espuma (anéis), sem textura: só o tempo do vento (windUniform)
+  const m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.3, metalness: 0, emissive: '#5d7f88', emissiveIntensity: 0.6, transparent: true, depthWrite: false, side: THREE.DoubleSide }); // emissivo: a água nunca fica preta na sombra
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uTime = windUniform;
+    sh.vertexShader = 'attribute vec2 aFall;\nvarying vec2 vF;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vF = aFall;');
+    sh.fragmentShader = 'uniform float uTime;\nvarying vec2 vF;\n' + sh.fragmentShader.replace('#include <color_fragment>', kind === 'fall' ? `#include <color_fragment>
+      float col = floor(vF.x * 22.0), hh = fract(sin(col * 91.7) * 4375.5);
+      float flow = fract(vF.y * 2.4 - uTime * (1.2 + hh * 0.7) + hh), streak = smoothstep(0.0, 0.3, flow) * smoothstep(1.0, 0.5, flow);
+      float edge = smoothstep(0.0, 0.14, vF.x) * smoothstep(1.0, 0.86, vF.x);
+      diffuseColor.rgb = mix(vec3(0.55, 0.83, 0.90), vec3(0.97, 0.99, 1.0), streak * 0.75 + vF.y * 0.25);
+      diffuseColor.a = (0.45 + streak * 0.45) * edge;` : `#include <color_fragment>
+      vec2 c = vF - 0.5; float r = length(c) * 2.0, a = atan(c.y, c.x);
+      float ring = 0.5 + 0.5 * sin(r * 18.0 - uTime * 3.0 + sin(a * 7.0) * 0.8);
+      diffuseColor.rgb = vec3(0.95, 0.98, 1.0); diffuseColor.a = smoothstep(1.0, 0.35, r) * (0.35 + ring * 0.4);`);
+  };
+  return m;
+}
+export function buildWaterfall() {
+  mesaReady();
+  const ul = Math.hypot(SEA_TROPIC.x - MESA.x, SEA_TROPIC.z - MESA.z), ux = (SEA_TROPIC.x - MESA.x) / ul, uz = (SEA_TROPIC.z - MESA.z) / ul;
+  let rim = null, foot = null;
+  for (let t = 0; t < 90; t += 0.5) { // anda do meio do platô em direção ao mar: borda (rim) e onde a água cai (foot)
+    const x = MESA.x + ux * t, z = MESA.z + uz * t;
+    if (mesaH(x, z) > MESA.top * 0.75) rim = { x, z, t, y: heightAt(x, z) };
+    else if (rim && heightAt(x, z) < SEA.level + 0.15) { foot = { x, z, t }; break; }
+  }
+  if (!rim) return null;
+  const g = new THREE.Group(), top = rim.y + 0.25, bot = SEA.level + 0.02, out = foot ? Math.min(7, Math.max(2, foot.t - rim.t + 0.5)) : 3, W = 4.4, N = 28, C = 6;
+  const pos = [], uv = [], idx = [];
+  for (let j = 0; j <= N; j++) { const v = j / N, f = 0.3 + out * Math.pow(v, 1.2), y = top - (top - bot) * v; // quase vertical no alto (nada de lâmina deitada no topo)
+    for (let i = 0; i <= C; i++) { const u = i / C - 0.5, sw = u * W * (1 + v * 0.3); pos.push(ux * f - uz * sw, y, uz * f + ux * sw); uv.push(i / C, v); } }
+  for (let j = 0; j < N; j++) for (let i = 0; i < C; i++) { const a = j * (C + 1) + i, b = a + C + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); fg.setAttribute('aFall', new THREE.Float32BufferAttribute(uv, 2)); fg.setIndex(idx); fg.computeVertexNormals();
+  const fall = new THREE.Mesh(fg, fallMat('fall')); fall.renderOrder = 3; g.add(fall);
+  // véu de trás (mais largo e transparente): dá volume à queda
+  const back = fall.clone(); back.scale.set(1.12, 1, 1.12); back.renderOrder = 3; g.add(back);
+  const fx = ux * (0.2 + out), fz = uz * (0.2 + out);
+  const cg = new THREE.CircleGeometry(5.5, 40); cg.rotateX(-Math.PI / 2); cg.setAttribute('aFall', cg.attributes.uv.clone());
+  const foam = new THREE.Mesh(cg, fallMat('foam')); foam.position.set(fx, bot + 0.05, fz); foam.renderOrder = 4; g.add(foam);
+  { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,0.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+    const sm = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, opacity: 0.4 });
+    for (let k = 0; k < 3; k++) { const sp = new THREE.Sprite(sm); sp.scale.setScalar(6 + k * 2.5); sp.position.set(fx + (k - 1) * 1.5 * -uz, bot + 1.2 + k * 1.1, fz + (k - 1) * 1.5 * ux); g.add(sp); } } // névoa da queda
+  g.position.set(rim.x, 0, rim.z); g.userData.asset = 'cachoeira'; g.userData.big = true;
+  return g;
+}
+export function buildIceFloes(rng) {
+  const geo = new THREE.CylinderGeometry(1, 1.12, 0.7, 8, 1); const P = geo.attributes.position;
+  for (let i = 0; i < P.count; i++) { const y = P.getY(i), k = 0.82 + Math.abs(Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.32; P.setXYZ(i, P.getX(i) * k, y > 0 ? y + Math.abs(Math.sin(i * 7.31)) * 0.12 : y, P.getZ(i) * k); }
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: '#e6f2f7', roughness: 0.32, metalness: 0.02, emissive: '#5c7f92', emissiveIntensity: 0.12 });
+  mat.onBeforeCompile = sh => { sh.uniforms.uTime = windUniform; sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+    #ifdef USE_INSTANCING
+      transformed.y += sin(uTime * 0.7 + instanceMatrix[3][0] * 0.37 + instanceMatrix[3][2] * 0.21) * 0.09; // balança devagar na água
+    #endif`); };
+  const spots = [];
+  for (let k = 0; k < 2500 && spots.length < 46; k++) {
+    const x = -420 + rng() * 870, z = -700 + rng() * 200, sd = seaDist(x, z), near = sd > -12;
+    if (sd > -3 || sd < -150 || spots.some(p => Math.hypot(p.x - x, p.z - z) < (near ? 5 : 11))) continue;
+    const s = near ? 0.7 + rng() * 1.2 : 1.4 + Math.pow(rng(), 2) * 5.5; spots.push({ x, z, s, r: rng() * 6.28 });
+  }
+  const im = new THREE.InstancedMesh(geo, mat, spots.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  spots.forEach((p, i) => { q.setFromAxisAngle(v.set(0, 1, 0), p.r); sc.set(p.s * (0.8 + rng() * 0.4), 0.55 + rng() * 0.5, p.s * (0.8 + rng() * 0.4)); m4.compose(v.set(p.x, SEA.level - 0.22, p.z), q, sc); im.setMatrixAt(i, m4); });
+  im.receiveShadow = true; im.castShadow = false; im.computeBoundingSphere(); im.userData.asset = 'gelo_flutuante'; im.userData.big = true;
+  return im;
 }
 // o jogador e os monstros não entram no mar fundo (devolve a posição empurrada de volta para a praia)
 export function seaPush(x, z, maxDepth = 8) { // maxDepth = metros mar adentro (≈ 1 m de fundura)
   const sd = seaDist(x, z); if (sd > -maxDepth) return null;
-  const dx = x - SEA.x, dz = z - SEA.z, d = Math.hypot(dx, dz) || 1, k = (-maxDepth - sd) / d;
+  const sea = lastSea, dx = x - sea.x, dz = z - sea.z, d = Math.hypot(dx, dz) || 1, k = (-maxDepth - sd) / d; // empurra para longe do centro do mar mais perto
   return { x: x + dx * k, z: z + dz * k };
+}
+// nível da superfície da água neste ponto (mar ou lago), ou null se não há água aqui — base da natação; costas e lagos novos entram aqui
+export function waterLevelAt(x, z) {
+  if (seaDist(x, z) < 6) return SEA.level;
+  if (lakeDist(x, z) < LAKE.r + 1) return LAKE.level;
+  return null;
 }
 // juncos e taboas na margem
 export function buildReeds(rng) {
@@ -648,7 +829,7 @@ function rubbleGeometry() {
 function mergeVerticesSafe(g) { const pa = g.attributes.position; const map = new Map(), idx = [], pos = []; for (let i = 0; i < pa.count; i++) { const k = `${pa.getX(i).toFixed(4)},${pa.getY(i).toFixed(4)},${pa.getZ(i).toFixed(4)}`; let j = map.get(k); if (j === undefined) { j = pos.length / 3; map.set(k, j); pos.push(pa.getX(i), pa.getY(i), pa.getZ(i)); } idx.push(j); } const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setIndex(idx); return out; }
 const grassChunks = [];
 // grama em blocos de 50 m gerados conforme o jogador chega perto (o mundo é grande demais para gerar tudo de uma vez)
-const GCH = 50, GN = Math.round(HALF * 2 / GCH);
+const GCH = 50, GN = Math.ceil(HALF * 2 / GCH); // ceil: o último bloco passa um pouco da borda (nada de faixa sem grama)
 let grassRoot = null, grassMat = null, flowerMat = null, petalMat = null, tuftGeos = null, flowerGeo = null, rubbleGeo = null, rubbleMat = null;
 const grassMade = new Map();
 const PETAL = ['#ffd84a', '#ff7aa8', '#ffffff', '#b48cff', '#ff9a4a', '#7ad0ff'].map(c => new THREE.Color(c));
@@ -666,6 +847,9 @@ function grassChunk(ci, cj) {
     if (Math.abs(x) > PLAY_LIMIT || Math.abs(z) > PLAY_LIMIT) continue;
     if (lakeDist(x, z) < LAKE.r + 1.5 || Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 12 || Math.hypot(x - CITY2.x, z - CITY2.z) < 27 || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 31) continue;
     if (Math.hypot(x - FROZEN.x, z - FROZEN.z) < FROZEN.r * 1.05) continue;
+    if (x < -470 && ICE_LAKES.some(L => Math.hypot(x - L.x, z - L.z) < L.r * 1.05)) continue; // gelo dos Ermos
+    const oas = z > 400 ? 1 - smooth(OASIS.r + 6, OASIS.r + 22, oasisDist(x, z)) : 0; if (oas > 0 && oasisDist(x, z) < OASIS.r + 1) continue; // oásis: sem grama dentro d'água, capim verde em volta
+    if (x > 420) { const me = mesaH(x, z); if (me > 0.5 && me < MESA.top - 2.5) continue; } // paredão do platô
     { const dx = x - CASTLE.x, dz = z - CASTLE.z; if (Math.abs(dx) < 80 && Math.abs(dz) < 80 && Math.abs(dx * CASTLE_CS - dz * CASTLE_SN) < 56 && Math.abs(dx * CASTLE_SN + dz * CASTLE_CS) < 56) continue; } // S-275: nada de grama no pátio calçado, na muralha e no fosso do castelo
     { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150 && rng() > smooth(75, 150, dd)) continue; } // S-164: a grama vai sumindo antes de Pedrafunda
     if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 64 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || (harborW(x, z) > 0.3 && harborST(x, z).s > HARBOR.quay - 14) || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
@@ -673,7 +857,7 @@ function grassChunk(ci, cj) {
     const y = heightAt(x, z);
     if (valley && y > 7) continue;
     const ruins = valley ? zoneWeight('ruinas', x, z) : 0, forest = valley ? zoneWeight('floresta', x, z) : 0;
-    const bw = biome(x, z), wD = bw.dunas * coastBelt(x, z), wG = bw.geada, wC = bw.colossos;
+    const bw = biome(x, z), wD = bw.dunas * coastBelt(x, z) * (1 - oas), wG = bw.geada, wC = bw.colossos;
     q.setFromAxisAngle(up, rng() * 6.28);
     // densidade de planta pela mistura de regiões: deserto quase nada, neve pouco, planície dos colossos capim alto (transição gradual)
     // S-249: na areia, nada de tufos espalhados por todo canto — só em poucas manchas (baixadas onde a água empoça), em touceiras

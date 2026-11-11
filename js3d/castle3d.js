@@ -7,7 +7,7 @@
    ========================================================================= */
 import * as THREE from 'three';
 import { vlight } from './lights3d.js';
-import { heightAt, CASTLE, ZONES, seaDist, mountainMask, groundColor, lakeDist, LAKE } from './world3d.js';
+import { heightAt, CASTLE, ZONES, seaDist, mountainMask, groundColor, lakeDist, LAKE, HALF } from './world3d.js';
 import { Kit, M, rngOf, makeBanner, flame, brazier, axeGeo, archBlocks, gable, stoneTex, woodTex, CULL } from './cities3d.js';
 import { addLevel, levelWall } from './levels3d.js';
 
@@ -496,7 +496,7 @@ function aethraMapCanvas() { // vista de cima do mundo de verdade: mar, costa, m
   if (_aethraMap) return _aethraMap;
   const N = 160, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), img = g.createImageData(N, N), col = new THREE.Color();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const x = (i / (N - 1) * 2 - 1) * 450, z = (j / (N - 1) * 2 - 1) * 450, k = (j * N + i) * 4;
+    const x = (i / (N - 1) * 2 - 1) * HALF, z = (j / (N - 1) * 2 - 1) * HALF, k = (j * N + i) * 4;
     if (seaDist(x, z) < 0) { const d = Math.min(1, -seaDist(x, z) / 60); col.setRGB(0.16 - d * 0.06, 0.32 - d * 0.1, 0.42 - d * 0.08); }
     else if (lakeDist(x, z) < LAKE.r) col.set('#3a6a80');
     else { const h = heightAt(x, z), mm = mountainMask(x, z); col.copy(groundColor(x, z, h, 0)); if (mm > 0.45) col.lerp(new THREE.Color(h > 30 ? '#eef0f2' : '#8a8274'), Math.min(1, (mm - 0.45) * 2.4)); }
@@ -510,7 +510,7 @@ function mapTableTex() { // pergaminho com o mapa, nomes das regiões e rosa dos
   g.fillStyle = '#d8c49a'; g.fillRect(0, 0, S, S); g.imageSmoothingEnabled = true; g.globalAlpha = 0.85; g.drawImage(aethraMapCanvas(), 60, 60, S - 120, S - 120); g.globalAlpha = 1;
   const v = g.createRadialGradient(S / 2, S / 2, S * 0.3, S / 2, S / 2, S * 0.72); v.addColorStop(0, 'rgba(120,80,30,0)'); v.addColorStop(1, 'rgba(90,55,20,0.6)'); g.fillStyle = v; g.fillRect(0, 0, S, S);
   g.font = 'bold 22px Georgia, serif'; g.textAlign = 'center'; g.fillStyle = '#2a1a0a';
-  for (const zn of ZONES) { const px = 60 + (zn.x / 450 + 1) / 2 * (S - 120), py = 60 + (zn.z / 450 + 1) / 2 * (S - 120); g.fillText(zn.name, px, py); }
+  for (const zn of ZONES) { const px = 60 + (zn.x / HALF + 1) / 2 * (S - 120), py = 60 + (zn.z / HALF + 1) / 2 * (S - 120); g.fillText(zn.name, px, py); }
   g.strokeStyle = '#5a3a1a'; g.lineWidth = 6; g.strokeRect(30, 30, S - 60, S - 60);
   g.save(); g.translate(S - 110, 110); g.fillStyle = '#5a3a1a'; for (let k = 0; k < 4; k++) { g.rotate(Math.PI / 2); g.beginPath(); g.moveTo(0, -60); g.lineTo(10, 0); g.lineTo(-10, 0); g.fill(); } g.font = 'bold 26px Georgia'; g.fillText('N', 0, -68); g.restore();
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;

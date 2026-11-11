@@ -79,7 +79,7 @@ export function updateWeather(dt, x, z, inside, cam) {
   if (!W) return;
   dt = Math.min(dt, 0.1); W.t += dt; const t = W.t;
   const out = inside || x > HALF + 100;
-  const tSnow = out ? 0 : zoneWeight('geada', x, z), tSand = out ? 0 : zoneWeight('dunas', x, z), tMist = out ? 0 : zoneWeight('colossos', x, z);
+  const tSnow = out ? 0 : zoneWeight('geada', x, z), tSand = out ? 0 : zoneWeight('dunas', x, z), tMist = out ? 0 : Math.max(zoneWeight('colossos', x, z), zoneWeight('brumosa', x, z) * 0.75); // expansão: névoa fria na Costa Brumosa
   const k = Math.min(1, dt * (out ? 6 : 0.8)); // entra e sai devagar; ao entrar numa sala some na hora
   W.wSnow += (tSnow - W.wSnow) * k; W.wSand += (tSand - W.wSand) * k; W.wMist += (tMist - W.wMist) * k;
 
