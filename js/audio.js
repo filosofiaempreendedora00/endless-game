@@ -286,8 +286,23 @@ const Sound = {
       case 'impact': { this.sweep(160, 50, t, 0.12, 'sine', 0.55); this.noise(t, 0.06, 0.45, 900, 'lowpass'); const c = this.ctx, o = c.createOscillator(), g = c.createGain(); o.frequency.value = 1900 + Math.random() * 600; g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25); o.connect(g); g.connect(this.sfx); o.start(t); o.stop(t + 0.26); break; } // pancada que acerta
       case 'bow': this.sweep(600, 200, t, 0.1, 'triangle', 0.25); this.sweep(140, 90, t, 0.18, 'sine', 0.35); this.noise(t + 0.02, 0.18, 0.12, 1800, 'bandpass'); break; // corda + flecha cortando o ar
       // S-295: arco de verdade — puxar a corda (rangido da madeira), soltar (estalo grave da corda + zunido da flecha) e a flecha cravando
+      // S-324: Bardo — cordas dedilhadas (acorde arpejado, cada corda = estalo filtrado + nota que se apaga), flauta com sopro, e o toque da onda sonora
+      case 'strum': case 'strumSong': { const song = name === 'strumSong', chords = [['C4', 'E4', 'G4', 'C5'], ['G3', 'D4', 'G4', 'B4'], ['A3', 'E4', 'A4', 'C5'], ['F3', 'C4', 'F4', 'A4'], ['D4', 'F#4', 'A4', 'D5']];
+        this._chord = ((this._chord ?? -1) + 1 + (Math.random() < 0.3 ? 1 : 0)) % chords.length; const ch = chords[this._chord], up = Math.random() < 0.5;
+        (up ? ch : [...ch].reverse()).forEach((n, i) => { const f = mtof(noteToMidi(n)), tt = t + i * (song ? 0.045 : 0.018);
+          this.tone(f, tt, song ? 0.5 : 0.22, 'triangle', song ? 0.07 : 0.055, this.sfx, 0.003, true); this.tone(f * 2, tt, 0.12, 'sine', 0.018, this.sfx, 0.002, true); this.noise(tt, 0.02, 0.05, f * 3, 'bandpass'); });
+        break; }
+      case 'fluteNote': { const ns = ['A5', 'C6', 'E6', 'D6', 'G5'], f = mtof(noteToMidi(ns[Math.floor(Math.random() * ns.length)])), c = this.ctx, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+        o.type = 'sine'; o.frequency.value = f; lfo.frequency.value = 5.5; lg.gain.value = f * 0.008; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 0.05); g.gain.setTargetAtTime(0.0001, t + 0.28, 0.08); o.connect(g); g.connect(this.sfx); o.start(t); lfo.start(t); o.stop(t + 0.7); lfo.stop(t + 0.7);
+        this.noise(t, 0.12, 0.03, 6000, 'highpass'); break; }
+      case 'sonicHit': { this.tone(1320, t, 0.15, 'sine', 0.03, this.sfx, 0.002, true); this.tone(1980, t + 0.02, 0.12, 'sine', 0.018, this.sfx, 0.002, true); this.noise(t, 0.08, 0.06, 2600, 'bandpass'); break; }
       case 'bowDraw': { const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 9; f.frequency.setValueAtTime(380, t); f.frequency.linearRampToValueAtTime(620, t + 0.22);
         g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.16, t + 0.06); g.gain.linearRampToValueAtTime(0.0001, t + 0.24); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.26); this.tone(170, t + 0.02, 0.2, 'sawtooth', 0.025, this.sfx); break; }
+      // S-325: besta — estalo seco do gatilho + chicote do arco de aço + zunido curto do virote; impacto pesado; recarga com catraca
+      case 'crossbowShot': { this.noise(t, 0.025, 0.55, 3200, 'bandpass'); this.sweep(520, 140, t + 0.008, 0.07, 'triangle', 0.35); this.tone(72, t + 0.01, 0.12, 'sine', 0.4, this.sfx); this.noise(t + 0.02, 0.16, 0.18, 5200, 'highpass'); break; }
+      case 'boltHit': { this.noise(t, 0.035, 0.5, 900, 'bandpass'); this.tone(60, t, 0.12, 'sine', 0.45, this.sfx); this.noise(t + 0.01, 0.06, 0.22, 2400, 'bandpass'); break; }
+      case 'crossbowReload': { for (let k = 0; k < 4; k++) this.noise(t + k * 0.055, 0.012, 0.22, 2600 + k * 180, 'bandpass'); this.noise(t + 0.25, 0.03, 0.3, 1800, 'bandpass'); break; }
       case 'arrowLoose': { this.sweep(260, 70, t, 0.12, 'triangle', 0.42); this.tone(110, t, 0.16, 'sine', 0.3, this.sfx); this.noise(t, 0.04, 0.35, 2600, 'highpass');
         const c = this.ctx, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); src.buffer = this.noiseBuf; f.type = 'bandpass'; f.Q.value = 3; f.frequency.setValueAtTime(2400, t + 0.02); f.frequency.exponentialRampToValueAtTime(700, t + 0.42);
         g.gain.setValueAtTime(0.0001, t + 0.02); g.gain.linearRampToValueAtTime(0.22, t + 0.07); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45); src.connect(f); f.connect(g); g.connect(this.sfx); src.start(t, Math.random() * 0.4); src.stop(t + 0.47); break; }

@@ -90,7 +90,7 @@ function recalc(p) {
   d.maxSp = Math.floor(((12 + lv * 2.5 * c.spMod + lv * lv * 0.04 * c.spMod) * (1 + d.int * 0.01) + (b.sp || 0)) * (1 + (b.spPct || 0) / 100));
   const w = p.equip.arma ? ITEMS[p.equip.arma.id] : null;
   const wt = w ? w.wtype : 'mao';
-  const ranged = wt === 'arco';
+  const ranged = wt === 'arco' || !!(WEAPON_TYPES[wt] && WEAPON_TYPES[wt].ranged); // S-325: besta também é à distância (usa DES)
   const main = ranged ? d.dex : d.str, sec = ranged ? d.str : d.dex;
   d.atk = Math.floor((main + Math.pow(Math.floor(main / 10), 2) + Math.floor(sec / 5) + Math.floor(d.luk / 5) + (b.atk || 0)) * (1 + (b.atkPct || 0) / 100));
   d.matk = Math.floor((d.int * 1.5 + Math.pow(Math.floor(d.int / 7), 2) + (b.matk || 0)) * (1 + (b.matkPct || 0) / 100));
@@ -104,7 +104,8 @@ function recalc(p) {
   d.rangeTiles = wm.range + (ranged ? (b.range || 0) : 0);
   d.range = d.rangeTiles * CONFIG.TILE;
   d.magicAuto = !!wm.magic; // cajado: ataque básico é um projétil mágico (usa ATQM)
-  d.ranged = ranged || d.magicAuto; d.wtype = wt;
+  d.sonic = !!wm.sonic; // S-324: instrumento do Bardo — onda sonora à distância (usa DES como o arco)
+  d.ranged = ranged || d.magicAuto || d.sonic; d.wtype = wt;
   d.speed = 125 * (1 + (b.moveSpeedPct || 0) / 100);
   d.castMult = Math.max(0.2, 1 - d.dex / 150);
   d.lifesteal = b.lifesteal || 0; d.doubleAttack = b.doubleAttack || 0; d.falcon = b.falcon || 0;

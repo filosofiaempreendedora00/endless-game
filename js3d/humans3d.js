@@ -333,7 +333,16 @@ export function makeHuman(opts = {}) {
       a.reset(); a.setEffectiveTimeScale(o.speed || 1); a.setLoop(o.once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = !!o.once;
       if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, o.fade ?? 0.2, false); a.play(); this.cur = a; this.name = n; },
     update(dt) {
+      /* S-329: o mixer do three.js só regrava um osso quando o valor da animação MUDA de um quadro para o outro. Em clipes com as
+         pernas paradas (Pistol_*, guardas) ele deixava de regravar as coxas, e os ajustes feitos depois do mixer (postura da classe,
+         giro de quadril, arco/besta, cabeça erguida) se SOMAVAM quadro a quadro — as pernas iam abrindo/girando até o absurdo.
+         Agora cada osso volta à pose pura da animação do quadro anterior antes do mixer atualizar: nada acumula. */
+      const B = this._bones || (this._bones = (() => { const l = []; root.traverse(o => { if (o.isBone) l.push(o); }); return l; })());
+      const SQ = this._sq || (this._sq = B.map(b => b.quaternion.clone())), SP = this._sp || (this._sp = B.map(b => b.position.clone()));
+      if (this._snapOk) for (let i = 0; i < B.length; i++) { B[i].quaternion.copy(SQ[i]); B[i].position.copy(SP[i]); }
       mixer.update(dt);
+      for (let i = 0; i < B.length; i++) { SQ[i].copy(B[i].quaternion); SP[i].copy(B[i].position); }
+      this._snapOk = true;
       // S-309: o golpe por cima da corrida some suave no fim (sem estalo de volta para a pose de correr)
       for (const [k, a] of Object.entries(acts)) { if (!k.startsWith('upr:') || !a.enabled || a._fading || a.getEffectiveWeight() <= 0) continue; const left = (a.getClip().duration - a.time) / Math.max(0.01, a.getEffectiveTimeScale()); if (left < 0.1) { a.fadeOut(Math.max(0.04, left)); a._fading = true; } }
     },

@@ -144,8 +144,8 @@ float wFurLen(vec3 p){
 }`;
 const MATS = {};
 function coatUniforms(sh, C) { Object.assign(sh.uniforms, { uBase: { value: C.base }, uLight: { value: C.light }, uDark: { value: C.dark }, uTan: { value: C.tan }, uEye: { value: new THREE.Vector3(...EYE) } }); }
-function wolfMats(color) {
-  if (MATS[color]) return MATS[color];
+function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo (lobo gigante do Caçador = pelagem bem mais longa)
+  const KEY = color + '|' + fur; if (MATS[KEY]) return MATS[KEY];
   const base = new THREE.Color(color), C = { base, light: base.clone().lerp(new THREE.Color('#efe6d4'), 0.72), dark: base.clone().multiplyScalar(0.22), tan: base.clone().lerp(new THREE.Color('#b8925e'), 0.55) };
   const body = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9 });
   body.onBeforeCompile = sh => {
@@ -162,7 +162,7 @@ function wolfMats(color) {
     m.onBeforeCompile = sh => {
       coatUniforms(sh, C); sh.uniforms.uF = { value: f };
       sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-        vOP = position; vON = normal; float h = wFurLen(position) * uF;
+        vOP = position; vON = normal; float h = wFurLen(position) * uF * ${fur.toFixed(3)};
         transformed += normal * h + vec3(0.0, -0.55, -0.85) * h * uF * 0.9;`);
       sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
         float L = wFurLen(vOP);
@@ -170,10 +170,10 @@ function wolfMats(color) {
         if (L < 0.0025 || r < uF * 0.92 + 0.04) discard;
         diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.62, 1.08, uF);`);
     };
-    m.customProgramCacheKey = () => 'wolf-shell-' + i;
+    m.customProgramCacheKey = () => 'wolf-shell-' + i + '-' + fur;
     shells.push(m);
   }
-  return (MATS[color] = { body, shells });
+  return (MATS[KEY] = { body, shells });
 }
 
 // ---------- marcha: fase de cada pata [frente esq., frente dir., trás esq., trás dir.] ----------
@@ -185,9 +185,9 @@ const GAITS = {
 const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const angOf = (dz, dy) => Math.atan2(dz, -dy); // ângulo a partir de "para baixo" (positivo = para a frente)
 
-export function realWolf(color = '#8a8f99') {
+export function realWolf(color = '#8a8f99', opts = {}) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const geo = wolfGeo(), M = wolfMats(color);
+  const geo = wolfGeo(), M = wolfMats(color, opts.fur || 1);
   const rig = sdfRig(geo, WB, M.body), { at, bones } = rig, R = n => bones[n].rotation; body.add(rig.mesh);
   const shells = M.shells.map(m => { const s = new THREE.SkinnedMesh(geo, m); s.bind(rig.mesh.skeleton, rig.mesh.bindMatrix); s.frustumCulled = false; s.castShadow = false; s.receiveShadow = true; body.add(s); return s; });
   let shellsOn = true;

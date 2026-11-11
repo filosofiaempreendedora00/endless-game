@@ -76,3 +76,50 @@ export function bowPose(me, o, ctx) {
 export const bowRelease = aspdMs => Math.max(0.09, Math.min(0.25, aspdMs / 1000 * 0.55));
 // curva da corda ao longo de um tiro: puxa até a âncora, solta de uma vez, re-encaixa a próxima flecha
 export function bowDraw(since, rel, shooting) { if (!shooting) return 0.1; if (since < rel) return 0.35 + 0.65 * (since / rel); if (since < rel + 0.1) return 0.02; return Math.min(0.55, 0.02 + (since - rel - 0.1) * 3); }
+
+/* S-325: BESTA do Caçador — segurada com as DUAS mãos: a direita no cabo de pistola (a besta está presa a ela), a esquerda apoiando a
+   coronha por baixo. Em guarda fica na altura do quadril apontando para a frente e para baixo; mirando, a coronha vai ao ombro direito e
+   o rosto encosta no trilho; o disparo dá um coice para trás/cima; a recarga baixa a besta e a mão esquerda puxa a corda até a noz.
+   o = { w, aim, recoil: 0..1, reload: 0..1, yaw, twist, cocked } */
+export function crossbowPose(me, o) {
+  const r = me.root, xb = r.userData.items && r.userData.items.xbow; if (!xb || !r.userData.xbowState) return;
+  r.userData.xbowState(o.w > 0.02 ? 'hand' : 'back');
+  if (xb.userData.setCocked) xb.userData.setCocked(o.cocked !== false);
+  if (o.w < 0.02) return;
+  const g = n => r.getObjectByName(n), sl = g('upperarm_l'), el = g('lowerarm_l'), hl = g('hand_l'), sr = g('upperarm_r'), er = g('lowerarm_r'), hr = g('hand_r'), hd = g('Head'), nk = g('neck_01'), s3 = g('spine_03');
+  if (!sl || !el || !hl || !sr || !er || !hr || !hd) return;
+  (me._gripR || (me._gripR = handGrip(r, 'r', 1)))(); (me._gripL || (me._gripL = handGrip(r, 'l', 0.7)))();
+  const W = o.w, A = Math.max(0, o.aim - (o.reload || 0) * 0.85), tw = o.twist || 0, rc = o.recoil || 0, rl = o.reload || 0;
+  const fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
+  r.updateWorldMatrix(true, true);
+  yawBone(s3, -tw * 0.45 * W); yawBone(nk, -tw * 0.25 * W); yawBone(hd, -tw * 0.3 * W);
+  const shR = sr.getWorldPosition(new THREE.Vector3()), shL = sl.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
+  // mão direita (cabo): guarda na altura do quadril à frente; mirando, logo abaixo da bochecha com a coronha no ombro; coice para trás/cima
+  const guardT = shR.clone().add(fwd.clone().multiplyScalar(0.26)).add(UP.clone().multiplyScalar(-0.42)).add(right.clone().multiplyScalar(-0.05));
+  const aimT = head.clone().add(UP.clone().multiplyScalar(-0.17)).add(right.clone().multiplyScalar(0.06)).add(fwd.clone().multiplyScalar(0.12));
+  const T = guardT.lerp(aimT, A).add(fwd.clone().multiplyScalar(-0.06 * rc)).add(UP.clone().multiplyScalar(0.03 * rc));
+  ik2(sr, er, hr, T, shR.clone().add(UP.clone().multiplyScalar(-0.5)).add(right.clone().multiplyScalar(0.35)).add(fwd.clone().multiplyScalar(-0.15)), W);
+  // gira o punho para a besta apontar para o alvo (guarda: inclinada para baixo; coice: o bico sobe), trilho para cima
+  const dirG = fwd.clone().add(UP.clone().multiplyScalar(-0.45)).normalize(), dirA = fwd.clone().add(UP.clone().multiplyScalar(0.02 + 0.22 * rc)).normalize();
+  const want = dirG.lerp(dirA, A).add(UP.clone().multiplyScalar(-0.6 * rl)).normalize();
+  xb.updateWorldMatrix(true, false); const xz = new THREE.Vector3(0, 0, 1).transformDirection(xb.matrixWorld);
+  rotBoneTo(hr, xz, xz.clone().lerp(want, W).normalize());
+  xb.updateWorldMatrix(true, false); { const xy = new THREE.Vector3(0, 1, 0).transformDirection(xb.matrixWorld), xz2 = new THREE.Vector3(0, 0, 1).transformDirection(xb.matrixWorld);
+    const upW = UP.clone().sub(xz2.clone().multiplyScalar(UP.dot(xz2))); if (upW.lengthSq() > 1e-4) { upW.normalize(); const ang = Math.atan2(new THREE.Vector3().crossVectors(xy, upW).dot(xz2), xy.dot(upW)); hr.getWorldQuaternion(_q2); _q.setFromAxisAngle(xz2, ang * W); _q2.premultiply(_q); setWorldQuat(hr, _q2.clone()); } }
+  // mão esquerda: por baixo da coronha (na guarda e mirando); na recarga vai até a noz puxar a corda
+  xb.updateWorldMatrix(true, false);
+  const fore = new THREE.Vector3(0, -0.035, xb.userData.foreZ ?? 0.2).applyMatrix4(xb.matrixWorld), nut = new THREE.Vector3(0, 0.05, 0.05 + 0.25 * (1 - Math.abs(rl * 2 - 1))).applyMatrix4(xb.matrixWorld);
+  const LT = fore.lerp(nut, Math.sin(Math.min(1, rl) * Math.PI));
+  ik2(sl, el, hl, LT, shL.clone().add(UP.clone().multiplyScalar(-0.55)).add(right.clone().multiplyScalar(-0.25)).add(fwd.clone().multiplyScalar(0.05)), W);
+  { hl.updateWorldMatrix(true, false); const hy = new THREE.Vector3(0, 1, 0).transformDirection(hl.matrixWorld), xzN = new THREE.Vector3(0, 0, 1).transformDirection(xb.matrixWorld); rotBoneTo(hl, hy, hy.clone().lerp(xzN, 0.5 * W).normalize()); } // dedos ao longo da coronha
+  // cabeça encosta no trilho mirando
+  if (A > 0.05 && nk) { hd.updateWorldMatrix(true, false); }
+}
+// tempos de um disparo de besta (segundos depois do clique): mira → solta (coice) → recarga; acompanham a velocidade de ataque
+export function crossbowTimes(aspdMs) { const d = aspdMs / 1000; return { rel: Math.max(0.08, Math.min(0.2, d * 0.22)), kick: 0.14, reload: Math.max(0.25, Math.min(0.9, d * 0.55)) }; }
+export function crossbowCycle(since, T, shooting) {
+  if (!shooting || since > T.rel + T.kick + T.reload + 0.05) return { recoil: 0, reload: 0, cocked: true };
+  if (since < T.rel) return { recoil: 0, reload: 0, cocked: true };
+  const a = since - T.rel; if (a < T.kick) return { recoil: Math.sin(a / T.kick * Math.PI) , reload: 0, cocked: false };
+  const b = (a - T.kick) / T.reload; return { recoil: 0, reload: Math.min(1, b), cocked: b > 0.82 };
+}

@@ -222,3 +222,8 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Declaração de objetivo: o jogo será MULTIPLAYER completo (plano em docs/ONLINE.md). Daqui em diante toda entrega pensa em vários jogadores e em servidor juiz.
 - S-309: "boneco de posto" = mistura aditiva de animações abrindo os braços; golpe andando deve substituir o tronco, não somar. Ele pede para generalizar a todas as classes.
 - S-310: vaivém de IA na borda da área ("pra lá e pra cá travadão") — histerese/tempo de calma em decisões de IA é obrigatório.
+
+### Rodada das classes (S-311 a S-329), 2026-11-10
+- Ele criou um "laboratório" na Arena para revisar classe por classe: quer cada classe com identidade de MMO real (RO para sistema/conceito; Skyrim, WoW e Assassin's Creed para estética). Rejeita "gambiarra", "latão", "Frankenstein", "perereca", "Jack Estripador".
+- Gosta de prata+dourado no Paladino, ombro metálico+couro no Guerreiro; quer acabamento (lâminas limpas, pés de armadura, mãos com luva), não só forma.
+- Bug de raiz achado: ajustes pós-animação acumulando quando o clipe deixa ossos parados — sempre restaurar a pose pura antes do mixer.

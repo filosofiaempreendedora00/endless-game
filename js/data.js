@@ -62,7 +62,9 @@ const WEAPON_TYPES = {
   cajado: { name: 'Cajado', range: 4.5, delay: 1.15, magic: true }, // dispara um projétil arcano (alcance menor que o arco)
   arco: { name: 'Arco', range: 6, delay: 1.05 },
   garra: { name: 'Garras', range: 1.4, delay: 0.75 },
+  instrumento: { name: 'Instrumento', range: 5, delay: 0.95, sonic: true, ranged: true }, // S-324: Bardo — dedilha e a onda sonora sai do instrumento (usa DES, como o arco)
   katar: { name: 'Katar', range: 1.4, delay: 0.7 }, // punhal de soco em par (Executor): golpes curtos e muito rápidos
+  besta: { name: 'Besta', range: 5.5, delay: 1.3, ranged: true }, // S-325: Caçador — virote pesado: mira no ombro, disparo com recuo e recarga
 };
 // tipos de equipamento (o que cada item é)
 const SLOT_NAMES = { cabeca: 'Cabeça (topo)', rosto: 'Cabeça (meio)', boca: 'Cabeça (baixo)', armadura: 'Armadura', arma: 'Arma', escudo: 'Escudo', capa: 'Capa', botas: 'Botas', acessorio: 'Acessório' };
@@ -71,7 +73,7 @@ const EQUIP_TYPES = Object.keys(SLOT_NAMES);
 const EQUIP_SLOTS = [...EQUIP_TYPES, 'acessorio2'];
 const slotType = s => (s === 'acessorio2' ? 'acessorio' : s);
 const SLOT_LABELS = { ...SLOT_NAMES, acessorio: 'Acessório 1', acessorio2: 'Acessório 2' };
-const TWO_HANDED = ['arco', 'katar']; // armas de duas mãos não deixam usar escudo
+const TWO_HANDED = ['arco', 'katar', 'instrumento', 'besta']; // armas de duas mãos não deixam usar escudo
 
 /* ---------------- Classes (carreira em Y) ---------------- */
 const CLASSES = {
@@ -127,12 +129,12 @@ const CLASSES = {
   },
   cacador: {
     name: 'Caçador', tier: 2, parent: 'arqueiro', icon: '🦅', color: '#5a6b2f', accent: '#e0c070', hat: 'feather', cape: true,
-    hpMod: 1.3, spMod: 1.2, skills: ['flecha_explosiva', 'falcao'], next: [], gift: [['arco_composto', 1]],
-    desc: 'Rastreador com um falcão companheiro que ataca junto com você.',
+    hpMod: 1.3, spMod: 1.2, weapons: ['adaga', 'arco', 'besta'], skills: ['flecha_explosiva', 'falcao'], next: [], gift: [['arco_composto', 1]],
+    desc: 'Rastreador das matas com arco ou besta e um lobo gigante como fiel escudeiro, que caça junto com você.',
   },
   menestrel: {
     name: 'Bardo', tier: 2, parent: 'arqueiro', icon: '🎵', color: '#2f4f8e', accent: '#ffb3d9', hat: 'feather',
-    hpMod: 1.3, spMod: 1.4, skills: ['cancao_de_batalha', 'nota_dissonante'], next: [], gift: [['brinco_sabio', 1]],
+    hpMod: 1.3, spMod: 1.4, weapons: ['adaga', 'arco', 'instrumento'], skills: ['cancao_de_batalha', 'nota_dissonante'], next: [], gift: [['alaude_de_viajante', 1], ['brinco_sabio', 1]], // S-324: arco OU instrumento, como no RO
     desc: 'Bardo errante com alaúde e chapéu de pena. Canções que fortalecem e notas que atordoam inimigos ao redor.',
   },
   lamina_sombria: {
@@ -141,9 +143,9 @@ const CLASSES = {
     desc: 'Assassino das sombras. Críticos garantidos e uma dança de lâminas mortal.',
   },
   saqueador: {
-    name: 'Arruaceiro', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#ffd84a', hat: 'hood',
-    hpMod: 1.5, spMod: 1.0, skills: ['roubar', 'golpe_traicoeiro'], next: [], gift: [['adaga_afiada', 1]],
-    desc: 'Oportunista. Rouba itens dos monstros e golpeia com traição baseada em Agilidade.',
+    name: 'Salteador', tier: 2, parent: 'ladino', icon: '💰', color: '#6b4a2f', accent: '#c8302a', hat: 'hood', // S-321: era "Arruaceiro" (o id saqueador continua)
+    hpMod: 1.5, spMod: 1.0, skills: ['roubar', 'golpe_traicoeiro'], next: [], gift: [['espada_curta', 1], ['adaga_afiada', 1]],
+    desc: 'Mercenário das estradas: sabre numa mão e adaga na outra, capuz caído nas costas. Rouba dos monstros e golpeia com traição baseada em Agilidade.',
   },
 };
 // classes de 2º nível herdam as armas do pai
@@ -368,9 +370,15 @@ const ITEMS = {
   cajado_arcano: { name: 'Cajado Arcano', type: 'arma', wtype: 'cajado', icon: '🪄', price: 3500, atk: 20, matk: 70, slots: 1, lv: 20, bonuses: { int: 3 } },
   arco_curto: { name: 'Arco Curto', type: 'arma', wtype: 'arco', icon: '🏹', price: 350, atk: 25, slots: 2, lv: 1 },
   arco_composto: { name: 'Arco Composto', type: 'arma', wtype: 'arco', icon: '🏹', price: 2400, atk: 58, slots: 1, lv: 15 },
+  besta_de_caca: { name: 'Besta de Caça', type: 'arma', wtype: 'besta', icon: '🏹', price: 2800, atk: 66, slots: 1, lv: 15, bonuses: { hit: 4 }, desc: 'Coronha de freixo e arco de aço: um virote pesado, mirado no ombro.' },
+  besta_de_cerco: { name: 'Besta de Cerco Leve', type: 'arma', wtype: 'besta', icon: '🏹', price: 11000, atk: 112, slots: 1, lv: 30, bonuses: { hit: 8, crit: 4 }, desc: 'Arco de aço temperado com estribo e manivela: atravessa couraças.' },
   arco_lunar: { name: 'Arco Lunar', type: 'arma', wtype: 'arco', icon: '🌙', price: 9000, atk: 95, slots: 1, lv: 28, bonuses: { dex: 3, crit: 5 }, desc: 'Brilha fracamente sob a lua.' },
   katar_de_ferro: { name: 'Katar de Ferro', type: 'arma', wtype: 'katar', icon: '🗡️', price: 2400, atk: 60, slots: 2, lv: 12, bonuses: { crit: 4 }, desc: 'Par de punhais de soco: a mão fecha na travessa e a lâmina continua o braço. Só o Executor sabe usá-las.' },
   katar_rubra: { name: 'Katar Rubra', type: 'arma', wtype: 'katar', icon: '🗡️', price: 7800, atk: 92, slots: 1, lv: 25, bonuses: { crit: 8, aspdPct: 5 }, desc: 'Katares de aço claro com guarnição de ouro e uma pedra rubra. Golpes ainda mais rápidos.' },
+  // S-324: instrumentos do Bardo (arma de duas mãos; o ataque é uma onda sonora; nas canções ele toca de verdade)
+  alaude_de_viajante: { name: 'Alaúde de Viajante', type: 'arma', wtype: 'instrumento', instrument: 'alaude', icon: '🪕', price: 2200, atk: 38, slots: 2, lv: 12, bonuses: { matk: 8, dex: 1 }, desc: 'Alaúde de bojo arredondado e tampo de abeto, gasto de tanta estrada. Toca canções de batalha e solta ondas de som que ferem.' },
+  bandolim_rubro: { name: 'Bandolim Rubro', type: 'arma', wtype: 'instrumento', instrument: 'bandolim', icon: '🪕', price: 7600, atk: 70, slots: 1, lv: 25, bonuses: { matk: 18, aspdPct: 5 }, desc: 'Bandolim de madeira avermelhada com marchetaria dourada. Notas mais rápidas e brilhantes.' },
+  flauta_de_prata: { name: 'Flauta de Prata', type: 'arma', wtype: 'instrumento', instrument: 'flauta', icon: '🎶', price: 9800, atk: 64, slots: 1, lv: 30, bonuses: { matk: 25, sp: 40 }, desc: 'Flauta transversal de prata lavrada. Sopros longos e claros que atravessam o campo de batalha.' },
   katar_do_eclipse: { name: 'Katar do Eclipse', type: 'arma', wtype: 'katar', icon: '🗡️', price: 24000, atk: 130, slots: 1, lv: 40, bonuses: { crit: 12, aspdPct: 8, atkPct: 5 }, desc: 'Lâminas que bebem a luz. Rara: dizem que só aparecem nas mãos de quem já caçou nas Criptas Profundas.' },
   garras_gemeas: { name: 'Garras Gêmeas', type: 'arma', wtype: 'garra', icon: '🐾', price: 2000, atk: 52, slots: 1, lv: 12, bonuses: { crit: 6 } },
 
@@ -651,7 +659,7 @@ SKILLS.bencao_mare = { name: 'Bênção da Maré', icon: '🌊', type: 'passive'
 /* ---------------- Loja ---------------- */
 const FRUIT_SHOP = ['maca', 'laranja', 'pera', 'banana', 'uvas', 'melancia', 'frutinha_azul'];
 const SHOP_ITEMS = ['maca', 'pocao_vermelha', 'frutinha_azul', 'pocao_azul', 'pergaminho_retorno',
-  'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto', 'katar_de_ferro',
+  'adaga_simples', 'espada_curta', 'lanca_de_ferro', 'cajado_de_salgueiro', 'arco_curto', 'katar_de_ferro', 'alaude_de_viajante', 'besta_de_caca',
   'tunica_algodao', 'colete_couro', 'bandana', 'chapeu_de_palha', 'chapeu_de_mago', 'chapeu_de_bardo', 'tricornio', 'capuz_sombrio', 'faixa_de_penas', 'mascara_folha', 'folha_hortela', 'escudo_madeira', 'capa_viagem', 'sandalias_corda', 'botas_couro', 'luvas_couro'];
 
 /* ---------------- Rótulos de bônus ---------------- */

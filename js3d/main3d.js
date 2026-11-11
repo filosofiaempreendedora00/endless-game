@@ -14,7 +14,9 @@ import { LEVELS, levelAt } from './levels3d.js'; // S-281: andares e escadas ond
 import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, makeCampfire, makeRoost, makeRuinWall, makeWheelbarrow, makeSentinel, makeSeatedKing, makeStoneBeast, makeFallenTitan, makeHeadless, makeMist, buildRuins } from './landmarks3d.js';
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
-import { bowPose, bowRelease as bowReleaseMs, bowDraw } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca)
+import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
+import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
+import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
 import { softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather } from './weather3d.js';
@@ -530,20 +532,23 @@ function renderLoja() {
 const ARENA_I = { name: 'Arena de Aethra', x: 800, z: 0, w: 46, d: 46, h: 8, round: 21 };
 /* S-311: laboratório de roupas na Arena (só o administrador vê) — todas as classes × raças em volta do círculo,
    com a arma padrão da classe e um ciclo de animações (parado → pose de luta → dois golpes) para revisar uma por uma */
-const GALLERY_WEAPON = { aprendiz: 'espada_curta', guerreiro: 'espada_curta', mago: 'cajado_de_salgueiro', arqueiro: 'arco_curto', ladino: 'adaga_simples', cavaleiro_runico: 'espada_longa', guardiao_sagrado: 'espada_curta', arquimago: 'cajado_arcano', sabio_elemental: 'cajado_arcano', cacador: 'arco_composto', menestrel: 'arco_curto', lamina_sombria: 'katar_de_ferro', saqueador: 'adaga_afiada' };
+const GALLERY_WEAPON = { aprendiz: 'adaga_simples', guerreiro: 'espada_curta', mago: 'cajado_de_salgueiro', arqueiro: 'arco_curto', ladino: 'adaga_simples', cavaleiro_runico: 'espada_longa', guardiao_sagrado: 'espada_curta', arquimago: 'cajado_arcano', sabio_elemental: 'cajado_arcano', cacador: 'arco_composto', menestrel: 'arco_curto', lamina_sombria: 'katar_de_ferro', saqueador: 'espada_curta' };
 const GALLERY_ORDER = ['aprendiz', 'guerreiro', 'cavaleiro_runico', 'guardiao_sagrado', 'mago', 'arquimago', 'sabio_elemental', 'arqueiro', 'cacador', 'menestrel', 'ladino', 'lamina_sombria', 'saqueador'];
 let galleryBuilt = false;
 function ensureGallery() {
   if (galleryBuilt || !isAdmin() || Math.abs(S.pos.x - ARENA_I.x) > 40 || Math.abs(S.pos.z - ARENA_I.z) > 40) return;
   galleryBuilt = true; const A = ARENA_I, list = GALLERY_ORDER.filter(c => CLASSES[c]), races = Object.keys(RACES), N = list.length * races.length, R = 17.2; let k = 0;
   for (const cls of list) for (const race of races) {
-    const a = (k / N) * Math.PI * 2 + 0.04, x = A.x + Math.sin(a) * R, z = A.z + Math.cos(a) * R, wid = ITEMS[GALLERY_WEAPON[cls]] ? GALLERY_WEAPON[cls] : null;
+    const a = (k / N) * Math.PI * 2 + 0.04, x = A.x + Math.sin(a) * R, z = A.z + Math.cos(a) * R, wid0 = cls === 'cacador' && race === 'anao' && ITEMS.besta_de_caca ? 'besta_de_caca' : cls === 'menestrel' && race === 'elfo' && ITEMS.alaude_de_viajante ? 'alaude_de_viajante' : GALLERY_WEAPON[cls], wid = ITEMS[wid0] ? wid0 : null; // S-325: o caçador anão mostra a besta
     const look = { race, sex: 'm', skin: 'clara', face: 'valente', hair: { style: 'curto', color: race === 'elfo' ? 'loiro' : 'castanho' }, beard: race === 'anao' };
     const { ch, d } = makeHero(cls, look, null, { weaponId: wid, offhand: cls === 'guardiao_sagrado' ? 'escudo_sagrado' : null });
     ch.obj.position.set(x, 0, z); ch.obj.rotation.y = Math.atan2(A.x - x, A.z - z);
-    const npc = { id: 'galeria_' + cls + '_' + race, name: `${CLASSES[cls].name} · ${RACES[race].name}`, title: (wid ? ITEMS[wid].name : 'Sem arma') + ' · galeria do mestre', x, z, ...ch, isNpc: true, height: race === 'anao' ? 1.45 : 1.85, radius: 0.45, gallery: true, cls, dress: d, gOff: k * 0.37,
+    const npc = { id: 'galeria_' + cls + '_' + race, name: `${CLASSES[cls].name} · ${RACES[race].name}`, title: (wid ? ITEMS[wid].name : 'Sem arma') + ' · galeria do mestre', x, z, ...ch, isNpc: true, height: race === 'anao' ? 1.45 : 1.85, radius: 0.45, gallery: true, cls, dress: d, gOff: k * 0.37, sonic: !!(wid && ITEMS[wid].wtype === 'instrumento'),
       lines: `Laboratório de roupas: ${CLASSES[cls].name} ${RACES[race].name.toLowerCase()} com ${wid ? ITEMS[wid].name : 'sem arma'}. Eu repito: parado, pose de luta e dois golpes.` };
     ch.obj.add(hitbox(npc, 0.5, 1.9)); scene.add(ch.obj); S.npcs.push(npc); k++;
+    if (cls === 'cacador' && race === 'humano') { // S-325: o lobo gigante sentado ao lado do caçador da galeria
+      const w = makeDirewolf(), sx = Math.cos(a) * 1.55, sz = -Math.sin(a) * 1.55; w.root.position.set(x + sx - Math.sin(a) * 0.4, 0, z + sz - Math.cos(a) * 0.4); w.root.rotation.y = ch.obj.rotation.y; scene.add(w.root); npc._wolf = w;
+    }
   }
   log(`🧪 Laboratório de roupas: ${N} personagens (${list.length} classes × ${races.length} raças) em volta da Arena.`, 'sys');
 }
@@ -555,11 +560,19 @@ function galleryAnim(n, dt = 1 / 30) {
     applyClassPose(n, n.cls, g('_pL', on ? 1 : 0, 5), g('_pB', on ? 1 : 0, 5), g('_pA', on && !atk && !ARMLESS_POSE.test(n.cls) ? 1 : 0, atk ? 18 : 5), g('_pK', atk ? 1 : 0, atk ? 14 : 5));
   }
   if (n.dress && n.dress.update) n.dress.update(S.time);
-  const stance = ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
+  const stance = n.sonic ? 'Idle' : ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
   if (ph === 0 && n.gPh !== 0) n.anim.play('Idle', { fade: 0.3 });
   else if (ph === 1 && n.gPh !== 1) n.anim.play(stance, { fade: 0.3 });
-  else if (ph === 2) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: (ca.speed || 1) * (((CLASS_POSE[n.cls] || {}).atk || [0, 0, 1])[2]) }); n.gHit = hit; } }
+  else if (ph === 2 && !n.sonic) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: (ca.speed || 1) * (((CLASS_POSE[n.cls] || {}).atk || [0, 0, 1])[2]) }); n.gHit = hit; } }
   if (ph !== 2) n.gHit = -1; n.gPh = ph;
+  if (n._wolf) { n._wolf.root.visible = n.obj.visible; if (n.obj.visible) n._wolf.animate(S.time, false, dt); }
+  if (n.root.userData.xbowState) { // S-325: caçador com besta — nas costas parado, em guarda na pose de luta, mira/coice/recarga nos golpes
+    if (n._baseYaw === undefined) n._baseYaw = n.obj.rotation.y;
+    const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
+    const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 9 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, cy = crossbowCycle(since, crossbowTimes(1100), ph === 2);
+    n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -0.55 * A, 7);
+    crossbowPose(n, { w: W, aim: A, recoil: cy.recoil, reload: cy.reload, cocked: cy.cocked, yaw: n._baseYaw, twist: n._bowTwist });
+  }
   if (n.root.userData.bowState) { // S-312: arqueiros da galeria — arco nas costas parado, na mão em guarda, de lado puxando até a boca nos golpes
     if (n._baseYaw === undefined) n._baseYaw = n.obj.rotation.y;
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
@@ -567,6 +580,10 @@ function galleryAnim(n, dt = 1 / 30) {
     const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.55, (since - rel - 0.1) * 3);
     n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -1.1 * A, 7);
     bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12) }, BOW_CTX);
+  }
+  if (n.root.userData.instrument) { // S-324: bardo com instrumento — nas costas parado, nas mãos pronto na pose de luta, tocando nos "golpes"
+    const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
+    instrumentPose(n, { w: sm('_instW', ph > 0 ? 1 : 0, 5), play: sm('_instP', ph === 2 ? 1 : 0.15, 6), t: S.time + n.gOff });
   }
 }
 function buildArena() {
@@ -1213,13 +1230,15 @@ const CLASS_ATTACK = {
   mago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.0 }, arquimago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.1 }, sabio_elemental: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.05 },
 };
 function attackAnim(p, me) {
-  if (hasKatar(p)) { // katar (Executor), no espírito do Algoz do RO: estocadas alternadas esquerda/direita cujo ritmo segue a velocidade de ataque (ASPD 190 = rajada contínua)
+  if (p.d.sonic) { S.lastAtk = S.time; S.overlayAtk = true; return { sound: instrSound(p), sonic: true }; } // S-324: com instrumento o "golpe" é o dedilhado (braços por IK em bardPose), sem clipe de corpo inteiro
+  const dualDag = p.cls === 'lamina_sombria' && ((weaponInfo(p) || {}).wtype === 'adaga'); // S-322: Executor de duas adagas = golpes alternados, como a katar
+  if (hasKatar(p) || dualDag) { // katar (Executor), no espírito do Algoz do RO: estocadas alternadas esquerda/direita cujo ritmo segue a velocidade de ataque (ASPD 190 = rajada contínua)
     const delay = Math.max(0.12, p.d.aspd / 1000); S.katN = (S.katN || 0) + 1; const clip = S.katN % 2 ? 'Punch_Cross' : 'Punch_Jab', dur = clip === 'Punch_Cross' ? 1.0 : 0.867;
     const sp = Math.min(6.5, Math.max(1.4, dur * 0.8 / delay)); S.lastAtk = S.time;
     if (Math.hypot(S.vel.x, S.vel.z) > 0.6 && me.anim.overlay) { me.anim.overlay(clip, { speed: sp }); S.overlayAtk = true; }
     else { me.anim.play(clip, { once: true, restart: true, fade: Math.min(0.06, delay * 0.25), speed: sp }); S.overlayAtk = false; }
     S.lunge = { t: S.time, d: 0.12 };
-    return { sound: 'katarSlash', katar: true };
+    return dualDag ? { sound: 'stab', dual: true } : { sound: 'katarSlash', katar: true };
   }
   const ca = CLASS_ATTACK[p.cls]; if (!ca) { const list = ATTACK_ANIM[me.look.style]; me.anim.play(list[Math.floor(rng() * list.length)], { once: true, restart: true, fade: 0.08, speed: Math.max(1, 900 / p.d.aspd) }); return { sound: 'swing' }; }
   // S-292: com arma na mão, golpeia só com a mão da arma (Punch_Jab é a esquerda: sai); os dois punhos só sem arma equipada
@@ -1243,7 +1262,7 @@ function attackReach(p, m) {
   return r + 0.4 + (wt ? (WEAPON_REACH[wt + (two && WEAPON_REACH[wt + '2'] ? '2' : '')] ?? 1.0) : 0.55);
 }
 // modo de combate: postura de luta da classe (parado) e guarda no tronco (andando) enquanto houver luta por perto
-function stanceOf(p) { const ca = CLASS_ATTACK[p.cls]; if (p.d.magicAuto || (ca && ca.sound === 'magic')) return 'Spell_Simple_Idle_Loop'; if (p.d.ranged) return 'Pistol_Idle_Loop'; return 'Sword_Idle'; }
+function stanceOf(p) { const ca = CLASS_ATTACK[p.cls]; if (p.d.sonic) return 'Idle'; /* S-324: bardo com instrumento: corpo solto, os braços tocam por IK */ if (p.d.magicAuto || (ca && ca.sound === 'magic')) return 'Spell_Simple_Idle_Loop'; if (p.d.ranged) return 'Pistol_Idle_Loop'; return 'Sword_Idle'; }
 function inCombat(t) {
   if (S.fire || S.autoAttack || t - (S.lastAtk || -99) < 5 || t - (S.lastHurt || -99) < 5) return true;
   if ((S._cbT = (S._cbT || 0) + 1) % 10 === 0) S._cbNear = S.monsters.some(m => m.aggro && !m.dead && Math.abs(m.x - S.pos.x) + Math.abs(m.z - S.pos.z) < 14);
@@ -1334,7 +1353,8 @@ function actionFire() {
   // S-192: no vazio o golpe é idêntico ao golpe num alvo (mesma animação, tempo e som) — só não dá dano; projétil segue reto
   if (S.riding && !S.riding.war) dismount(true);
   const me = S.me, ca = attackAnim(p, me); S.lockAnim = S.overlayAtk ? t : t + Math.min(0.55, p.d.aspd / 1000 * 0.7); S.sitting = false;
-  if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : bowRelease(p), () => shoot(p.d.magicAuto ? me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)) : bowFrom(me), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto)); Sound.play(p.d.magicAuto ? 'magic' : 'bowDraw'); }
+  if (ranged && p.d.sonic) { const to = aimPoint(28); Sound.play(ca.sound || 'strum'); later(0.12, () => shoot(instrFrom(me), () => to.clone(), '#ffc8ee', () => { }, 'sonic')); } // S-324: onda sonora no vazio
+  else if (ranged) { const to = aimPoint(28); later(p.d.magicAuto ? 0.3 : bowRelease(p), () => shoot(p.d.magicAuto ? me.obj.position.clone().add(new THREE.Vector3(0, 1.2, 0)) : bowFrom(me), () => to.clone(), p.d.magicAuto ? '#9ad0ff' : '#e8d9b0', () => { }, !p.d.magicAuto && (isXbow(p) ? 'bolt' : true))); if (isXbow(p)) later(bowRelease(p) + 0.16, () => Sound.play('crossbowReload')); else Sound.play(p.d.magicAuto ? 'magic' : 'bowDraw'); }
   else { Sound.play(ca.sound || 'swing'); later(0.25, () => { const q = aimPoint(3); floatAt(new THREE.Vector3(q.x, groundAt(q.x, q.z), q.z), 'Errou', '#cfd6e0', 1.2); Sound.play('miss'); }); } // S-233: golpe no vazio mostra "Errou" com som
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
@@ -1914,11 +1934,11 @@ const CLASS_POSE = { // S-320/S-322: pernas quase juntas (nada de "perereca"/per
   arquimago: { spread: 0.03, lean: -0.07, twist: -0.03, lArm: [0.10, 0.04, 0.1, 0], atk: [0.03, 0.02, 0.9] },               // altivo, peito aberto, cajado firme ao lado
   sabio_elemental: { spread: 0.04, knee: 0.02, lean: 0.03, twist: 0.05, rArm: [0.22, 0.18, 0.2, 0], atk: [0.08, 0.10, 1.05] }, // livro na esquerda, mão direita em gesto elemental
   arqueiro: { spread: 0.03, knee: 0.02, lean: 0.03 },                                                                       // (braços: postura de arco própria)
-  cacador: { spread: 0.05, knee: 0.05, lean: 0.06 },                                                                        // baixo, de tocaia
+  cacador: { spread: 0.05, knee: 0.06, lean: 0.07, twist: 0.04 },                                                           // S-325: rastreador — joelhos soltos, tronco à frente, de tocaia (braços: arco/besta próprios)
   menestrel: { spread: 0.03, lean: -0.03, twist: 0.04 },                                                                    // solto e ereto
   ladino: { spread: 0.05, knee: 0.04, lean: 0.05, rArm: [0.10, 0, 0.1, 0], atk: [0.10, 0.08, 1] },
-  lamina_sombria: { spread: 0.05, knee: 0.05, lean: 0.05, rArm: [0.16, 0, 0.18, 0], lArm: [0.16, 0, 0.18, 0], atk: [0.12, 0.10, 1] }, // agachado, lâminas à frente
-  saqueador: { spread: 0.06, knee: 0.05, lean: 0.06, twist: -0.10, rArm: [0.10, 0.08, 0.1, 0], atk: [0.10, 0.14, 1] },      // arruaceiro: de lado, ombro à frente
+  lamina_sombria: { spread: -0.07, knee: -0.03, lean: -0.03, rArm: [0.06, 0, 0.08, 0], lArm: [0.06, 0, 0.08, 0], atk: [0.06, 0.16, 1.05] }, // S-322: imponente e elegante — pernas próximas, tronco ereto, lâminas junto ao corpo; o golpe gira o tronco (dança)
+  saqueador: { spread: -0.03, knee: 0.0, lean: 0.02, twist: -0.08, rArm: [0.08, 0.06, 0.08, 0], atk: [0.08, 0.12, 1] },      // S-321: Salteador — meio de lado, ombro do sabre à frente, pernas próximas
 };
 const _pq = new THREE.Quaternion(), _pq2 = new THREE.Quaternion(), _pqR = new THREE.Quaternion(), _pax = new THREE.Vector3();
 const _AX = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
@@ -1930,7 +1950,8 @@ function rotBody(b, ax, ang) { // gira o osso (com tudo o que pende dele) em vol
 function poseBones(ch) { if (ch._pb) return ch._pb; const g = n => ch.root.getObjectByName(n); return (ch._pb = { sp: g('spine_01'), sp2: g('spine_02'), tl: g('thigh_l'), tr: g('thigh_r'), cl: g('calf_l'), cr: g('calf_r'), fl: g('foot_l'), fr: g('foot_r'), ur: g('upperarm_r'), ul: g('upperarm_l'), lr: g('lowerarm_r'), ll: g('lowerarm_l'), hr: g('hand_r'), hl: g('hand_l') }); }
 // legK = pernas (só parado), bodyK = tronco, armK = braços (cai durante o golpe), atkK = ênfase do golpe (0..1)
 function applyClassPose(ch, cls, legK, bodyK, armK, atkK = 0) {
-  const P = CLASS_POSE[cls]; if (!P || !ch || !ch.root) return; if (legK + bodyK + armK + atkK < 0.01) return;
+  const P = CLASS_POSE[cls]; if (!P || !ch || !ch.root) return; if (ch.root.userData.dwarf) legK = 0; // anão: pernas reesculpidas — o ajuste de pernas o fazia afundar até quase sentar (S-322 "pernas abertas")
+  if (legK + bodyK + armK + atkK < 0.01) return;
   const B = poseBones(ch); if (!B.sp) return;
   (ch.obj || ch.root).getWorldQuaternion(_pqR);
   const A = P.atk || [0, 0, 1];
@@ -1975,11 +1996,24 @@ function ik2(a, b, c, T, pole, w) {
   rotBoneTo(a, _ib.clone().sub(_ia), B2.clone().sub(_ia));
   b.getWorldPosition(_ib); c.getWorldPosition(_ic); rotBoneTo(b, _ic.clone().sub(_ib), tgt.clone().sub(_ib));
 }
-function bowFrom(me) { const h = me._bowHand || (me._bowHand = me.root.getObjectByName('hand_l')); return h ? h.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.05, 0)) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)); }
+const isXbow = p => p.d.wtype === 'besta'; // S-325
+function bowFrom(me) { const xb = me.root.userData.items && me.root.userData.items.xbow; if (xb && xb.parent && me.root.userData.xbowAt === 'hand') { xb.updateWorldMatrix(true, false); return new THREE.Vector3(0, 0.04, xb.userData.tipZ || 0.42).applyMatrix4(xb.matrixWorld); } // a besta dispara da boca do trilho
+  const h = me._bowHand || (me._bowHand = me.root.getObjectByName('hand_l')); return h ? h.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.05, 0)) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)); }
 /* S-312: a pose do arco (costas fora de combate, guarda, de lado puxando até a boca) fica em js3d/bow3d.js (bowPose) */
-const bowRelease = p => bowReleaseMs(p.d.aspd);
+const bowRelease = p => (isXbow(p) ? crossbowTimes(p.d.aspd).rel : bowReleaseMs(p.d.aspd)); // S-325: a besta solta logo (já está armada)
 const BOW_CTX = { scene, makeArrow: () => makeArrow() };
 function archerPose(me, p, t, dt) {
+  if (p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.xbow) { // S-325: besta — mira no ombro, coice e recarga
+    const fight = !S.riding && !S.casting && !S.sitting && (S._fighting || t < S.lockAnim), since = t - (S.lastAtk || -9), T = crossbowTimes(p.d.aspd);
+    const shooting = fight && (S.fire || S.autoAttack || since < T.rel + T.kick + T.reload);
+    const sm = (k, v, rate) => (me[k] = (me[k] ?? 0) + (v - (me[k] ?? 0)) * Math.min(1, dt * rate));
+    const W = sm('_aimW', fight ? 1 : 0, 8), A = sm('_aimA', shooting ? 1 : 0, shooting ? 9 : 4), cy = crossbowCycle(since, T, shooting);
+    const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
+    sm('_bowTwist', -0.55 * A * still * W, 7); // besta: meio de lado (ombro direito atrás, coronha no ombro)
+    if (me._nockObj) me._nockObj.visible = false;
+    crossbowPose(me, { w: W, aim: A, recoil: cy.recoil, reload: cy.reload, cocked: cy.cocked, yaw: S.pos.yaw, twist: me._bowTwist });
+    return;
+  }
   const has = p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.bow;
   if (!has) { if (me._nockObj) me._nockObj.visible = false; return; }
   const fight = !S.riding && !S.casting && !S.sitting && (S._fighting || t < S.lockAnim), since = t - (S.lastAtk || -9), rel = bowRelease(p);
@@ -1990,6 +2024,25 @@ function archerPose(me, p, t, dt) {
   const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
   sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
   bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12) }, BOW_CTX);
+}
+/* S-324: Bardo com instrumento — fora de combate nas costas; em guarda nas mãos, pronto; tocando (ataque ou canção) dedilha
+   no ritmo, com o corpo e a cabeça balançando. A pose dos braços fica em js3d/instrument3d.js (instrumentPose). */
+const instrSound = p => { const it = p.equip && p.equip.arma && ITEMS[p.equip.arma.id]; return it && it.instrument === 'flauta' ? 'fluteNote' : 'strum'; };
+function instrFrom(me) { const I = me.root.userData.instrument; if (I && I.obj) { const v = I.obj.localToWorld((I.obj.userData.inst.mouth || I.obj.userData.inst.hands.r).clone()); return v; } return me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)); }
+let _waveMat = null;
+function sonicWave(color) { // anéis de som que se abrem + uma nota no meio (sem bola chapada)
+  const g = new THREE.Group(), m = _waveMat || (_waveMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  const rings = []; for (let k = 0; k < 3; k++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.16 + k * 0.08, 0.012, 6, 32), m.clone()); r.position.z = -k * 0.18; g.add(r); rings.push(r); }
+  const note = new THREE.Mesh(noteShape(['seminima', 'colcheia', 'par'][Math.floor(Math.random() * 3)]), new THREE.MeshBasicMaterial({ color: '#fff0fa', transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide })); note.scale.setScalar(1.3); note.position.set(-0.05, -0.1, 0); g.add(note);
+  g.onBeforeRender = () => { const t = performance.now() / 1000; rings.forEach((r, k) => { const s = 1 + ((t * 2.2 + k / 3) % 1) * 0.6; r.scale.setScalar(s); r.material.opacity = 0.75 * (1.6 - s); }); note.rotation.z = Math.sin(t * 8) * 0.3; };
+  rings[0].onBeforeRender = g.onBeforeRender; return g;
+}
+function bardPose(me, p, t, dt) {
+  if (!me.root.userData.instrument) return;
+  const playing = t < (S.songPlay || 0), atk = t - (S.lastAtk || -9) < 0.75, fight = !S.riding && !S.sitting && !p.dead && (S._fighting || playing || atk || S.fire);
+  const sm = (k, v, rate) => (me[k] = (me[k] ?? 0) + (v - (me[k] ?? 0)) * Math.min(1, dt * rate));
+  const W = sm('_instW', fight ? 1 : 0, fight ? 6 : 3), P = sm('_instP', playing ? 1 : atk ? 0.85 : 0.12, 8);
+  instrumentPose(me, { w: W, play: P, t });
 }
 function moveInput() {
   const k = keys;
@@ -2072,7 +2125,7 @@ function updatePlayer(dt) {
       const armK = g('_poseArm', on && !atk && !ARMLESS_POSE.test(p.cls) ? 1 : 0, atk ? 18 : 5), atkK = g('_poseAtk', on && atk ? 1 : 0, atk ? 14 : 5);
       applyClassPose(me, p.cls, legK, bodyK, armK, atkK);
     }
-    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
+    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bardPose(me, p, t, dt); /* S-324: instrumento */ // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));
@@ -2237,7 +2290,8 @@ function playerAttack(m) {
     Sound.play('magic');
     later(0.3, () => shoot(me.obj.position.clone().add(new THREE.Vector3(0, 1.1, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#9fb8ff', () => { if (!m.dead) hurtMonster(m, rollMagic(p, m, 0.85, 'neutro'), 'neutro'); }, false));
   }
-  else if (p.d.ranged) { const isBow = ca.sound !== 'magic'; Sound.play(isBow ? 'bowDraw' : 'magic'); later(isBow ? bowRelease(p) : 0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, true)); }
+  else if (p.d.sonic) { Sound.play(ca.sound || 'strum'); later(0.12, () => shoot(instrFrom(me), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#ffc8ee', () => { Sound.play('sonicHit'); hit(); }, 'sonic')); } // S-324: dedilhado → onda sonora até o alvo
+  else if (p.d.ranged) { const isBow = ca.sound !== 'magic', xb = isBow && isXbow(p); if (xb) later(bowRelease(p) + 0.16, () => Sound.play('crossbowReload')); else Sound.play(isBow ? 'bowDraw' : 'magic'); later(isBow ? bowRelease(p) : 0.25, () => shoot(isBow ? bowFrom(me) : me.obj.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => m.obj.position.clone().add(new THREE.Vector3(0, m.height * 0.6, 0)), '#e8e0c8', hit, xb ? 'bolt' : true)); } // S-325: besta dispara virote
   else { Sound.play(ca.sound || 'swing'); later(ca && ca.katar ? Math.min(0.12, p.d.aspd / 2000) : 0.28, hit); } // katar: o rasgo cai no meio da estocada, mesmo em ASPD alto
 }
 function playerDie() {
@@ -2288,6 +2342,19 @@ function petHit(m, mult = 1) {
   const data = S.p.pet, sp = PETS[data.species], pw = petPower(data);
   const dmg = Math.max(1, Math.round(pw.atk * mult * (0.9 + Math.random() * 0.2) * elementMult(sp.element, m.def.element) * 100 / (100 + m.def.mdef)));
   hurtMonster(m, { dmg }, sp.element);
+}
+/* S-325: o lobo gigante do Caçador (js3d/companion3d.js) — companheiro da CLASSE, separado do mascote */
+function updateCompanion(dt) {
+  const want = S.p && S.p.cls === 'cacador' && !S.p.dead;
+  if (!want) { if (S.comp) { S.comp.dispose(); S.comp = null; } return; }
+  if (!S.comp) S.comp = createCompanion({
+    scene, later, groundAt: (x, z) => groundAt(x, z), resolve: (x, z, r) => resolve(x, z, r), sound: n => Sound.play(n),
+    player: () => ({ x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw, speed: S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0 }),
+    target: () => { const m = fireLock() || (S.target && !S.target.isNpc && (S.autoAttack || S.time - (S.lastAtk || -99) < 6) ? S.target : null); return m && !m.dead && !(m.def && m.def.dummy && !S.fire && !S.autoAttack) ? m : null; },
+    bite: m => { if (!m.dead) hurtMonster(m, rollPhys(S.p, m, 0.7, 'neutro')); },
+    visible: () => !S.riding || true,
+  });
+  S.comp.update(dt, S.time);
 }
 function updatePet(dt) {
   const pe = S.pet, data = S.p && S.p.pet; if (!pe || !data || S.p.dead) return;
@@ -2523,7 +2590,8 @@ function executeSkill(a) {
   if (sk.target === 'enemy' && (!a.m || a.m.dead)) return;
   if (!S.god) { p.sp -= sk.sp(lv); p.cds[a.id] = S.time + (sk.cd || 0) / 1000; }
   const anim = eff.dmg === 'magic' || eff.kind === 'heal' || eff.kind === 'buff' ? 'Spellcast_Shoot' : sk.target === 'selfAoe' ? '2H_Melee_Attack_Spin' : ATTACK_ANIM[me.look.style][0];
-  me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6;
+  if (p.d.sonic && (SONG_BUFFS.has(a.id) || sk.fx === 'sound')) { S.songPlay = S.time + 2.8; Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong'); later(0.5, () => Sound.play(me.root.userData.instrument && me.root.userData.instrument.kind === 'flauta' ? 'fluteNote' : 'strumSong')); S.lockAnim = S.time + 0.6; } // S-324: canção = o bardo TOCA de verdade (sem pose de magia)
+  else { me.anim.play(anim, { once: true, restart: true, fade: 0.08 }); S.lockAnim = S.time + 0.6; }
   hudDirty = true;
   if (eff.kind === 'warmount') { // S-203
     if (S.riding && S.riding.war) { dismount(); log('Trotavento dispensado.'); return; }
@@ -2594,15 +2662,23 @@ function makeArrow() {
   A.vanes.forEach((v, k) => g.add(new THREE.Mesh(v, k ? A.feather : A.featherR)));
   g.scale.setScalar(1.25); return g;
 }
+function makeBolt() { // S-325: virote — curto e grosso, ponta piramidal de aço, duas penas de couro
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: '#8a6238', roughness: 0.7 }), steel = new THREE.MeshStandardMaterial({ color: '#9aa2ab', metalness: 0.85, roughness: 0.32 }), lea = new THREE.MeshStandardMaterial({ color: '#4a2e1c', roughness: 0.9, side: THREE.DoubleSide });
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.36, 8).rotateX(Math.PI / 2), wood));
+  const hd = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.055, 4).rotateX(Math.PI / 2), steel); hd.position.z = 0.2; g.add(hd);
+  for (const r of [Math.PI / 4, -Math.PI / 4]) { const v = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.026, 0.075), lea); v.position.z = -0.14; v.rotation.z = r; g.add(v); }
+  g.scale.setScalar(1.25); return g;
+}
 function shoot(from, toFn, color, onHit, arrow) {
   let mesh;
-  if (arrow) { mesh = makeArrow(); Sound.play('arrowLoose'); const h0 = onHit; onHit = () => { Sound.play('arrowHit'); h0(); }; }
+  if (arrow === 'sonic') { mesh = sonicWave(color); mesh.position.copy(from); scene.add(mesh); mesh.lookAt(toFn()); S.projectiles.push({ mesh, toFn, onHit, speed: 20 }); return; } // S-324: onda sonora do Bardo (anéis + nota)
+  if (arrow) { const bolt = arrow === 'bolt'; mesh = bolt ? makeBolt() : makeArrow(); Sound.play(bolt ? 'crossbowShot' : 'arrowLoose'); const h0 = onHit; onHit = () => { Sound.play(bolt ? 'boltHit' : 'arrowHit'); h0(); }; } // S-325: virote de besta
   else {
     mesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), new THREE.MeshBasicMaterial({ color }));
     mesh.add(new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false })));
   }
   mesh.position.copy(from); scene.add(mesh); mesh.lookAt(toFn());
-  S.projectiles.push({ mesh, toFn, onHit, speed: arrow ? 34 : 18 });
+  S.projectiles.push({ mesh, toFn, onHit, speed: arrow === 'bolt' ? 42 : arrow ? 34 : 18 });
 }
 // morte rara: o monstro vira faíscas de luz que sobem
 function soulBurst(m) {
@@ -3142,6 +3218,7 @@ function step(dt) {
     for (let i = S.timers.length - 1; i >= 0; i--) if (S.timers[i].at <= S.time) { const t = S.timers.splice(i, 1)[0]; t.fn(); }
     if (S.flight) S.flight.update(dt); else updatePlayer(dt); // P-006: voando, o Pégaso conduz (sem controle do jogador)
     if (!S.flight) updatePet(dt);
+    if (!S.flight) updateCompanion(dt); // S-325: lobo gigante do Caçador
     for (const m of [...S.monsters]) { // monstros longe e calmos ficam parados (o mundo grande tem muitos)
       const far = Math.hypot(m.x - S.pos.x, m.z - S.pos.z);
       if (S.flight) { m.obj.visible = !m.dead && far < 85; continue; } // P-006: ninguém ataca quem está voando
@@ -3523,7 +3600,7 @@ function startWith(s) {
   buildPlayerModel(); buildPet();
   $('overlay').classList.remove('show'); $('hud').classList.remove('hidden');
   S.started = true; hudDirty = true; syncG(); UI.refreshOpen(); aspdTool();
-  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES }); // online: outros jogadores por perto
+  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');
   if (!localStorage.getItem('aethra3d_help')) { UI.open('help'); try { localStorage.setItem('aethra3d_help', '1'); } catch (e) { } }

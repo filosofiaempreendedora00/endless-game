@@ -2,45 +2,21 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (6)
+## Pendentes (2)
 
-### S-320 · Área do mapa: Área da tela (895×550 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:38:01 · **Mapa:** Vila de Alvorada (tile [809, 11])
+### S-330 · Área do mapa: Área da tela (263×207 px) (sobre: Chat)
+- **Status:** pendente · **Quando:** 2026-11-10T22:59:23 · **Mapa:** Vila de Alvorada (tile [802, 8])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Eu preciso que esse mascote de raposa ainda seja mais realista eu entendo que nosso já melhoramos muito até aqui porém repare que essas pernas não estão tão legais e o rosto também poderia ser mais realista e expressivo e principalmente essas orelhas ainda estão como se fossem um brinquedo e não orelhas reais então ainda há mais a melhorar aqui nesta raposinha e também os pelos estavam hiper esquisitos e vi que você deu uma melhorada para não ficar tão parecido como uma palha de aço ou Bombril porém acredito que ainda temos melhorias para fazer nesse sentido repare ainda que todas essas mudanças que sol icito neste monstrinho não devem refletir apenas a terceira evolução como também a primeira é a segunda
+- ![print](img/S-330.png)
+
+### S-331 · Área do mapa: Área da tela (250×338 px)
+- **Status:** pendente · **Quando:** 2026-11-10T23:04:58 · **Mapa:** Dunas de Sal-Rubro (tile [-43, 295])
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu gosto dessas roupas de aprendiz porém caso você tenha pegado de forma Idêntica de algum modelo online eu peço que você faça alguns leves ajustes para que o meu jogo fique original e claro você precisa garantir que tudo fique congruente e nada esquisito nas roupas desses personagens Porém uma coisa nítida desse print é que está absolutamente esquisito essa pose que os aprendizes estão fazendo com pernas abertas parecendo pererecas e olhando para o chão de uma forma muito bizarra Então o que mais me incomodou neles foi tanto a forma na qual eles se posicionam como também a forma como eles seguram a espada e eu Gostaria de reforçar para que os aprendizes tivessem como padrão uma Adaga e não uma espada maior
-- ![print](img/S-320.png)
+- **Sugestão:** Está ocorrendo com essa classe em específico de o meu personagem começar a dar voltas em volta de si mesmo isso é claramente um bug o único ponto que eu gostaria que você investigasse é se este bug é exclusivo desta classe ou tem relação com as armas ou algum outro ponto pois reparei que isso tem sido recorrente este bug bastante esquisito
+- ![print](img/S-331.png)
 
-### S-321 · Área do mapa: Área da tela (850×508 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:40:25 · **Mapa:** Vila de Alvorada (tile [802, 14])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu não gostaria que os arruaceiros tivessem esse nome Gostaria que você se inspirasse em outros jogos de MMO para criar o arruaceiro e outra coisa que não gosto neles é tanto a forma como eles seguram essa arma que por sua vez não faz sentido ser um machado e sim deve ser inspirado nas armas também e na classe também do desordeiro do Ragnarok online porém como falei o nome é importante que seja diferente e a estética dessa classe precisa dialogar de certa forma como se fosse a evolução do ladino em resumo o que eu espero para essa vertente de ladino Executor e arruaceiro é a seguinte eu quero que você se inspire mas mercenária do Skyrim pois eu sei que eles têm tudo a ver com s tipo de classe inclusive gosto da presença de gorros não colocados na cabeça e sim atrás ali das costas inspirados muito também em Assassin's Creed porém é importante que cada uma das duas evoluções do ladino tivessem personalidades específicas Ou seja eu quero sim que O Executor seja absolutamente inspirado no algoz do Ragnarok online ao passo que essa outra classe que eu não nomeei tem assim uma inspiração tanto no desordeiro porém quero que você se inspire mais no Assassin's Creed e nas referências que eu falei do Skyrim
-- ![print](img/S-321.png)
-
-### S-322 · Área do mapa: Área da tela (1113×407 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:41:59 · **Mapa:** Vila de Alvorada (tile [795, 14])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Sobre essa classe eu não quero que tenha essas bolas roxas saindo deles e eu também quero deixar claro que eu odiei essas pernas abertas tá mais parecendo um Jack Estripador do que qualquer coisa quando eu falo que quero que se inspire nos algozes de Ragnarok online é como o conceito como um todo de forma um pouco mais imponente sendo sim uma classe de batalha física e ele tem a elegância e sutileza de atacar como se fosse uma dança não necessariamente uma dança ridícula como ditongo mas sim uma classe que tenha relação com esquiva com assassinato e com essas armas silenciosas que estão na mão deles então gostaria de inclusive garantir que essas armas fossem melhor posicionadas pois assim como o Ragnarok online eu gostaria que eles pudessem ter dois tipos de builds tanto uma com duas adagas quanto outra com a catar
-- ![print](img/S-322.png)
-
-### S-323 · Área do mapa: Área da tela (959×369 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:43:34 · **Mapa:** Vila de Alvorada (tile [789, 10])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** De todos esse ladino foi um que a postura não me incomodou muito e acho que você chegou mais próximo de acertar quanto a segurar a arma de forma adequada porém acredito que essas roupas podem e devem ser mudadas por completo de tal modo que seja inspirada no gatuno do Ragnarok online porém sim tenho toda uma mistura de ladrões e outros jogos MMORPG Ou seja você deve se perguntar como seria a roupa de Um Ladrão de um jogo online e a partir dela você deve construir essas roupas e não fazer de uma forma completamente aleatória já te adianto que essas botas não casam em nada com o que eu espero de Um Ladrão
-- ![print](img/S-323.png)
-
-### S-324 · Área do mapa: Área da tela (865×459 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:45:50 · **Mapa:** Vila de Alvorada (tile [785, 4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Amarok online eles podem e devem utilizar o arco e flecha como arma porém eu quero que você represente aqui também as duas possibilidades ou seja tanto Arcos quanto os instrumentos musicais e eu preciso que eles tenham também animações de tocar esses instrumentos pois algumas canções ou melhor Skills deles serão canções assim como existe no bardo de Ragnarok online Então eu preciso que tudo o que você criar em termos de instrumento não só tenha uma estética perfeita para encaixar no corpo como também na prática do uso deste instrumento Eu preciso que você veja de uma forma muito acurada para que não tenhamos do res de cabeças futuras e outro ponto que eu gostaria que você trabalhasse de uma forma muito mais interessante seria a roupa deles Pois deveria ter um pouco mais relação com pardos de mmorpgs que nós sabemos que usam roupas absolutamente diferentes do que essas que foram apresentadas por esses personagens e quero sim que você se inspire no Ministério do Ragnarok online e também do bar do Ragnarok online como também de barrados como um todo de RPG investigue também como são os bardos do Skyrim e cheguem a uma solução bacana e não forçada e não que sou como gambiarra
-- ![print](img/S-324.png)
-
-### S-325 · Área do mapa: Área da tela (1073×596 px)
-- **Status:** pendente · **Quando:** 2026-11-10T21:48:20 · **Mapa:** Vila de Alvorada (tile [786, -4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Álvares eu gostaria que ele estivessem a possibilidade de utilizar arco e flecha e eu preciso que você tenha uma clareza absoluta quanto ao posicionamento dos arco e flechas na mão desses Caçadores porém eles também podem ter as bestas em suas mãos ou seja já estamos falando sobre outros movimentos de ataque que também precisam ser adaptados Além disso um ponto nevrálgico seria as roupas desses caçadores que precisam ter mais a ver com caçadores de verdade e outro ponto absolutamente formidável e essencial é que eles tenham uma criatura parceira que eu adoraria que fosse muito inspirada naqueles Lobos gigantes do Game of Thrones E você já conhece o meu gosto e entende que eu não permitiria um lobo meia boca e sim um lobo absolutamente realista com movimentos fluidos e interessantes que fosse o fiel escudeiro deste caçador e sim você deve ser inspirar e muito nos Lobos do Game of Thrones
-- ![print](img/S-325.png)
-
-## Feitas (319)
+## Feitas (329)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2284,3 +2260,73 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Aquilo que eu disse sobre a relação entre o mago e suas respectivas evoluções deve ser extrapolado para o guerreiro e respectivas e evoluções de modo que eles segurem na espada de uma forma ligeiramente diferente e tenham posições específicas seja de distanciamento entre pernas seja sobre postura seja sobre forma como segurar espada entre outros pontos muito importantes para que tornemos o guerreiro diferente do Paladino que por sua vez também é diferente do cavaleiro
 - ![print](img/S-319.png)
 - **Resposta do Claude:** A linha do Guerreiro ganhou personalidade: Guerreiro na guarda média clássica, Cavaleiro em guarda alta e agressiva com a espada erguida, Paladino ereto e firme com o escudo à frente e a espada baixa; os golpes variam no avanço, no giro e no ritmo. As outras linhas também ganharam postura própria, e reduzi a abertura das pernas de todas as classes para ficarem firmes mas naturais.
+
+### S-320 · Área do mapa: Área da tela (895×550 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:38:01 · **Mapa:** Vila de Alvorada (tile [809, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gosto dessas roupas de aprendiz porém caso você tenha pegado de forma Idêntica de algum modelo online eu peço que você faça alguns leves ajustes para que o meu jogo fique original e claro você precisa garantir que tudo fique congruente e nada esquisito nas roupas desses personagens Porém uma coisa nítida desse print é que está absolutamente esquisito essa pose que os aprendizes estão fazendo com pernas abertas parecendo pererecas e olhando para o chão de uma forma muito bizarra Então o que mais me incomodou neles foi tanto a forma na qual eles se posicionam como também a forma como eles seguram a espada e eu Gostaria de reforçar para que os aprendizes tivessem como padrão uma Adaga e não uma espada maior
+- ![print](img/S-320.png)
+- **Resposta do Claude:** O Aprendiz agora começa e aparece com adaga (não espada), com cores próprias do Aethra (linho cru e calça verde-musgo) para a roupa não ficar idêntica ao modelo base. As pernas ficaram próximas (nada de "perereca") e a cabeça erguida, olhando em frente — achei também a causa geral das pernas abrindo (os ajustes de postura se acumulavam a cada quadro), já corrigida.
+
+### S-321 · Área do mapa: Área da tela (850×508 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:40:25 · **Mapa:** Vila de Alvorada (tile [802, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu não gostaria que os arruaceiros tivessem esse nome Gostaria que você se inspirasse em outros jogos de MMO para criar o arruaceiro e outra coisa que não gosto neles é tanto a forma como eles seguram essa arma que por sua vez não faz sentido ser um machado e sim deve ser inspirado nas armas também e na classe também do desordeiro do Ragnarok online porém como falei o nome é importante que seja diferente e a estética dessa classe precisa dialogar de certa forma como se fosse a evolução do ladino em resumo o que eu espero para essa vertente de ladino Executor e arruaceiro é a seguinte eu quero que você se inspire mas mercenária do Skyrim pois eu sei que eles têm tudo a ver com s tipo de classe inclusive gosto da presença de gorros não colocados na cabeça e sim atrás ali das costas inspirados muito também em Assassin's Creed porém é importante que cada uma das duas evoluções do ladino tivessem personalidades específicas Ou seja eu quero sim que O Executor seja absolutamente inspirado no algoz do Ragnarok online ao passo que essa outra classe que eu não nomeei tem assim uma inspiração tanto no desordeiro porém quero que você se inspire mais no Assassin's Creed e nas referências que eu falei do Skyrim
+- ![print](img/S-321.png)
+- **Resposta do Claude:** O Arruaceiro agora se chama Salteador e virou o mercenário das estradas, no espírito do Assassin's Creed e dos mercenários do Skyrim: gibão de couro, capuz caído nas costas, cintos cruzados, faixa vermelha e bolsinhas. Saiu o machado: ele luta com sabre curvo e adaga, os dois dentro da mão, meio de lado com o ombro do sabre à frente.
+
+### S-322 · Área do mapa: Área da tela (1113×407 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:41:59 · **Mapa:** Vila de Alvorada (tile [795, 14])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Sobre essa classe eu não quero que tenha essas bolas roxas saindo deles e eu também quero deixar claro que eu odiei essas pernas abertas tá mais parecendo um Jack Estripador do que qualquer coisa quando eu falo que quero que se inspire nos algozes de Ragnarok online é como o conceito como um todo de forma um pouco mais imponente sendo sim uma classe de batalha física e ele tem a elegância e sutileza de atacar como se fosse uma dança não necessariamente uma dança ridícula como ditongo mas sim uma classe que tenha relação com esquiva com assassinato e com essas armas silenciosas que estão na mão deles então gostaria de inclusive garantir que essas armas fossem melhor posicionadas pois assim como o Ragnarok online eu gostaria que eles pudessem ter dois tipos de builds tanto uma com duas adagas quanto outra com a catar
+- ![print](img/S-322.png)
+- **Resposta do Claude:** O Executor ficou imponente e silencioso, no espírito do Algoz: couro quase preto, gola alta, ombreira discreta e abas carmim na cintura, sem as bolas roxas e com as pernas próximas. Tem duas builds como no RO: com katar usa o par de katares; com adaga luta com duas adagas, golpeando alternado.
+
+### S-323 · Área do mapa: Área da tela (959×369 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:43:34 · **Mapa:** Vila de Alvorada (tile [789, 10])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** De todos esse ladino foi um que a postura não me incomodou muito e acho que você chegou mais próximo de acertar quanto a segurar a arma de forma adequada porém acredito que essas roupas podem e devem ser mudadas por completo de tal modo que seja inspirada no gatuno do Ragnarok online porém sim tenho toda uma mistura de ladrões e outros jogos MMORPG Ou seja você deve se perguntar como seria a roupa de Um Ladrão de um jogo online e a partir dela você deve construir essas roupas e não fazer de uma forma completamente aleatória já te adianto que essas botas não casam em nada com o que eu espero de Um Ladrão
+- ![print](img/S-323.png)
+- **Resposta do Claude:** O Ladino ganhou roupa de gatuno de verdade: colete de couro aberto com fivelinhas, lenço vermelho, cinto com bolsinhas e adaga reserva nas costas, braçadeiras e botas macias de cano baixo. A postura e a pegada da adaga ficaram como você aprovou.
+
+### S-324 · Área do mapa: Área da tela (865×459 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:45:50 · **Mapa:** Vila de Alvorada (tile [785, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Amarok online eles podem e devem utilizar o arco e flecha como arma porém eu quero que você represente aqui também as duas possibilidades ou seja tanto Arcos quanto os instrumentos musicais e eu preciso que eles tenham também animações de tocar esses instrumentos pois algumas canções ou melhor Skills deles serão canções assim como existe no bardo de Ragnarok online Então eu preciso que tudo o que você criar em termos de instrumento não só tenha uma estética perfeita para encaixar no corpo como também na prática do uso deste instrumento Eu preciso que você veja de uma forma muito acurada para que não tenhamos do res de cabeças futuras e outro ponto que eu gostaria que você trabalhasse de uma forma muito mais interessante seria a roupa deles Pois deveria ter um pouco mais relação com pardos de mmorpgs que nós sabemos que usam roupas absolutamente diferentes do que essas que foram apresentadas por esses personagens e quero sim que você se inspire no Ministério do Ragnarok online e também do bar do Ragnarok online como também de barrados como um todo de RPG investigue também como são os bardos do Skyrim e cheguem a uma solução bacana e não forçada e não que sou como gambiarra
+- ![print](img/S-324.png)
+- **Resposta do Claude:** O Bardo tem as duas opções, como no RO: arco ou instrumento (Alaúde de Viajante, Bandolim Rubro, Flauta de Prata). Fora de combate o instrumento vai nas costas; em guarda ele segura, e ao atacar dedilha e solta uma onda sonora. Nas canções toca de verdade (mão no braço do alaúde, outra dedilhando, corpo no ritmo; flauta na boca). Ganhou roupa de bardo: gibão vinho com cortes e botões dourados, mangas bufantes, capa curta de veludo num ombro e cinto com bolsinhas.
+
+### S-325 · Área do mapa: Área da tela (1073×596 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:48:20 · **Mapa:** Vila de Alvorada (tile [786, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Álvares eu gostaria que ele estivessem a possibilidade de utilizar arco e flecha e eu preciso que você tenha uma clareza absoluta quanto ao posicionamento dos arco e flechas na mão desses Caçadores porém eles também podem ter as bestas em suas mãos ou seja já estamos falando sobre outros movimentos de ataque que também precisam ser adaptados Além disso um ponto nevrálgico seria as roupas desses caçadores que precisam ter mais a ver com caçadores de verdade e outro ponto absolutamente formidável e essencial é que eles tenham uma criatura parceira que eu adoraria que fosse muito inspirada naqueles Lobos gigantes do Game of Thrones E você já conhece o meu gosto e entende que eu não permitiria um lobo meia boca e sim um lobo absolutamente realista com movimentos fluidos e interessantes que fosse o fiel escudeiro deste caçador e sim você deve ser inspirar e muito nos Lobos do Game of Thrones
+- ![print](img/S-325.png)
+- **Resposta do Claude:** O Caçador virou caçador de verdade: capa curta de pele, capuz caído nas costas, faca de esfola, bolsa de caça e tons de terra. Além do arco bem firme no punho, agora pode usar besta (às costas, empunha com as duas mãos, mira no ombro, dispara com coice e recarrega, com sons próprios). E ganhou um fiel escudeiro: um lobo gigante prateado de pelagem longa que te segue, corre para o alvo, rosna, morde e uiva — e quem joga com você online também o vê.
+
+### S-326 · Área do mapa: Área da tela (1335×496 px)
+- **Status:** feito · **Quando:** 2026-11-10T22:37:05 · **Mapa:** Vila de Alvorada (tile [812, -3])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Ladino eu confesso que fiquei razoavelmente satisfeito eu gostei de ter uma cor mais prateada e junto a um dourado isso para mim tá incrível e também gostei dessa parte interna como proteção essa parte que tem meio que umas bolinhas pretas e tudo mais eu acho que fica bem interessante o que eu sinto que tem de melhorias Claras são primeiro um escudo que seja bem mais imponente não necessariamente em tamanho e sim nos detalhes que compõem esse escudo e também reparei que existem bugs Claros principalmente no anão no qual parte do braço atravessa o escudo e isso não é legal também senti partes deficientes nessa saia que eles usam pois está muito cortada e invadindo partes da armadura também acho que essas partes das pernas falta muito esmero e carinho em construí-las para que fiquem mais apresentadas e de forma geral Eu gostei da ideia da estrutura e o que você precisa trabalhar agora são acabamentos nessa armadura como um todo para que possamos chegar mais perto de atingir a perfeição você iniciou um ótimo caminho pois mas acredito que ainda há um tanto a evoluir E eu gostaria que essa cinta do cinto ou seja esse quadradinho dourado do cinto do paladino fosse diferente daquela da armadura dos Cavaleiros Em resumo eu gostei da linha que você escolheu porém eu preciso que você refina e aperfeiçoei em termos de acabamento o que você construiu dos paladinos
+- ![print](img/S-326.png)
+- **Resposta do Claude:** Refinei o Paladino mantendo o prata com dourado e a malha por dentro: escudo muito mais detalhado no mesmo tamanho (borda forjada com rebites, sol em camadas, umbo, forro e alças de couro), o braço do anão não atravessa mais o escudo, a saia refeita limpa (fralda de aço curta sobre malha) sem invadir a armadura, pernas caprichadas com escarpes de aço e fivela oval com sol, diferente da do Cavaleiro.
+
+### S-327 · Área do mapa: Área da tela (919×415 px)
+- **Status:** feito · **Quando:** 2026-11-10T22:39:48 · **Mapa:** Vila de Alvorada (tile [816, 7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Arma dos Cavaleiros eu confesso que gostei menos do que a armadura dos paladinos eu não gostei dela ter puxado um pouco um tom azulado eu gosto de algo mais escuro do que as armaduras dos paladinos porém sem parecer um latão azulado como tem parecido essa armadura dos Cavaleiros reforço que eu quero que você se inspire nas referências que eu citei porém assim como o caso do Paladino sentir que faltou um esmero e um carinho em realizar os acabamentos das partes das vestes de forma mais adequada e também preciso garantir que este sapato seja de fato uma parte da armadura e não um pé descoberto então preciso que sim você se a tenha aos detalhes e não fique parecendo um latão de cobre
+- ![print](img/S-327.png)
+- **Resposta do Claude:** O Cavaleiro agora usa aço enegrecido e fosco, mais escuro que o do Paladino e sem tom azulado; o pé virou parte da armadura (escarpe de aço com lâminas), com fralda de malha, joelheiras moldadas e fivela quadrada de ferro.
+
+### S-328 · Área do mapa: Área da tela (962×389 px)
+- **Status:** feito · **Quando:** 2026-11-10T22:42:30 · **Mapa:** Vila de Alvorada (tile [808, 8])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** São a roupa do guerreiro confesso que eu gostei razoavelmente só preciso que você investigue essa roupa como um todo para entender se não está meio que um Frankenstein de ter uma armadura pela metade uma coisa que confesso que para mim não tem tanta lógica é uma armadura que permite com que a mão fique com essas bolinhas de fora eu não sei qual foi a referência que você usou é eu gostei demais do fato de ter um ombro mais metálico e outro mais marrom isso foi bem legal porém tem vários defeitos um Eu já falei e outro também é sobre esse tipo de saiote que mais parece um monte de farelo de papelão ou uma cartolina em volta da cintura que ficou bastante esquisito então eu também preciso de mais cuidado e mais carinho no acabamento dessa classe contudo em relação à espada acredito que estamos num bom caminho exceto pelo fato que essa espada poderia ser um pouquinho maior
+- ![print](img/S-328.png)
+- **Resposta do Claude:** O Guerreiro ficou coerente: manteve o ombro de ferro e o de couro, as mãos usam luvas de couro (sem as bolinhas de malha), o saiote de papelão virou fralda de cota de malha com barra de couro que acompanha as pernas, e a espada ficou um pouco maior.
+
+### S-329 · Área do mapa: Área da tela (1023×231 px)
+- **Status:** feito · **Quando:** 2026-11-10T22:45:26 · **Mapa:** Vila de Alvorada (tile [784, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em todas as animações de ataque com arco e flecha existe um bug bastante exacerbado em relação as pernas dos modelos eu preciso que você revisite essas animações para garantir que estejam realistas percebi que o início da animação é bem informidável porém ao longo dela começa um bug estratosférico
+- ![print](img/S-329.png)
+- **Resposta do Claude:** Achei a causa: nas animações de tiro as pernas ficam paradas e o motor deixava de reposicioná-las, então os ajustes de postura se somavam a cada quadro até as pernas abrirem e girarem. Agora cada osso volta à pose da animação antes de cada quadro — pernas firmes do primeiro ao último disparo, em todas as classes.

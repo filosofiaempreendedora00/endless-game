@@ -71,6 +71,7 @@ function myState() {
     anim: me && me.anim ? me.anim.name : 'Idle', moving: sp > 0.3, speed: +sp.toFixed(2), sit: !!S.sitting, dead: !!p.dead,
     room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp,
     atk: (S.atkN || 0) + (S.katN || 0), clip: me && me.anim ? me.anim.name : null,
+    comp: S.comp ? S.comp.state() : null, // S-325: lobo gigante do Caçador (os outros jogadores desenham pelo que chega aqui)
   };
 }
 
@@ -117,7 +118,7 @@ function build(o, key) {
   return { key, root, ch, fx: pc.fx, mt, tag, snaps: [], anim: null, lastSeen: 0, info: o, say: null };
 }
 
-function drop(R) { C.scene.remove(R.root); R.tag.remove(); if (R.say) R.say.el.remove(); }
+function drop(R) { C.scene.remove(R.root); R.tag.remove(); if (R.say) R.say.el.remove(); if (R.comp) R.comp.dispose(); }
 
 function bubble(R, text) {
   if (R.say) R.say.el.remove();
@@ -157,7 +158,7 @@ export function updateNet(dt) {
   for (const R of N.others.values()) {
     const o = R.info, same = (o.room || null) === myRoom && myRoom !== 'arena', q = sample(R, now - DELAY);
     const far = !q || Math.hypot(q.x - S.pos.x, q.z - S.pos.z) > FAR;
-    R.root.visible = same && !far; R.tag.style.display = R.root.visible ? '' : 'none';
+    R.root.visible = same && !far; R.tag.style.display = R.root.visible ? '' : 'none'; if (R.comp) R.comp.obj.visible = R.root.visible;
     if (!R.root.visible) { if (R.say) R.say.el.style.opacity = '0'; continue; }
     // posição e rotação
     if (R.mt) {
@@ -173,6 +174,9 @@ export function updateNet(dt) {
       if (R.anim !== want) { a.play(want, want === 'Death_A' ? { once: true, fade: 0.15 } : want === 'Walking_Backwards' ? { speed: -1.05, fade: 0.2 } : { fade: 0.2 }); R.anim = want; }
     }
     a.update(dt); if (R.fx) R.fx(S.time);
+    // S-325: o lobo gigante de outro Caçador (só desenha; quem decide onde ele está é o dono)
+    if (o.comp && o.comp.kind === 'direwolf' && C.remoteCompanion) { if (!R.comp) R.comp = C.remoteCompanion(C.scene); R.comp.set(o.comp, C.groundAt); R.comp.obj.visible = true; R.comp.update(dt, S.time); }
+    else if (R.comp) { R.comp.dispose(); R.comp = null; }
     if (R.mt && C.riderPose) C.riderPose(R.ch, R.mt, { t: S.time, gait: Math.min(1, (o.speed || 0) / 6) });
     // placa com nome e balão de fala
     _p.set(q.x, (R.mt ? q.y + 2.9 : q.y + 2.15), q.z); const sc = C.toScreen(_p);

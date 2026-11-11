@@ -129,7 +129,7 @@ def owner_hash(token):
 
 WORLD_LOCK = threading.Lock()
 WORLD = {'players': {}, 'chat': [], 'seq': 0}
-WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed')
+WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed', 'comp')  # comp: companheiro (S-325, lobo gigante do Caçador)
 WORLD_NEAR = 150.0   # vê quem está a até 150 m (ou na mesma sala)
 WORLD_TTL = 8.0      # sem notícia há 8 s = saiu
 
