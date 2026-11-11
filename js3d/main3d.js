@@ -527,6 +527,34 @@ function renderLoja() {
    ARENA PvP — o servidor guarda o HP de todos; cada aba manda posição e golpes
    ========================================================================= */
 const ARENA_I = { name: 'Arena de Aethra', x: 800, z: 0, w: 46, d: 46, h: 8, round: 21 };
+/* S-311: laboratório de roupas na Arena (só o administrador vê) — todas as classes × raças em volta do círculo,
+   com a arma padrão da classe e um ciclo de animações (parado → pose de luta → dois golpes) para revisar uma por uma */
+const GALLERY_WEAPON = { aprendiz: 'espada_curta', guerreiro: 'espada_curta', mago: 'cajado_de_salgueiro', arqueiro: 'arco_curto', ladino: 'adaga_simples', cavaleiro_runico: 'espada_longa', guardiao_sagrado: 'espada_curta', arquimago: 'cajado_arcano', sabio_elemental: 'cajado_arcano', cacador: 'arco_composto', menestrel: 'arco_curto', lamina_sombria: 'katar_de_ferro', saqueador: 'adaga_afiada' };
+const GALLERY_ORDER = ['aprendiz', 'guerreiro', 'cavaleiro_runico', 'guardiao_sagrado', 'mago', 'arquimago', 'sabio_elemental', 'arqueiro', 'cacador', 'menestrel', 'ladino', 'lamina_sombria', 'saqueador'];
+let galleryBuilt = false;
+function ensureGallery() {
+  if (galleryBuilt || !isAdmin() || Math.abs(S.pos.x - ARENA_I.x) > 40 || Math.abs(S.pos.z - ARENA_I.z) > 40) return;
+  galleryBuilt = true; const A = ARENA_I, list = GALLERY_ORDER.filter(c => CLASSES[c]), races = Object.keys(RACES), N = list.length * races.length, R = 17.2; let k = 0;
+  for (const cls of list) for (const race of races) {
+    const a = (k / N) * Math.PI * 2 + 0.04, x = A.x + Math.sin(a) * R, z = A.z + Math.cos(a) * R, wid = ITEMS[GALLERY_WEAPON[cls]] ? GALLERY_WEAPON[cls] : null;
+    const look = { race, sex: 'm', skin: 'clara', face: 'valente', hair: { style: 'curto', color: race === 'elfo' ? 'loiro' : 'castanho' }, beard: race === 'anao' };
+    const { ch, d } = makeHero(cls, look, null, { weaponId: wid, offhand: cls === 'guardiao_sagrado' ? 'escudo_sagrado' : null });
+    ch.obj.position.set(x, 0, z); ch.obj.rotation.y = Math.atan2(A.x - x, A.z - z);
+    const npc = { id: 'galeria_' + cls + '_' + race, name: `${CLASSES[cls].name} · ${RACES[race].name}`, title: (wid ? ITEMS[wid].name : 'Sem arma') + ' · galeria do mestre', x, z, ...ch, isNpc: true, height: race === 'anao' ? 1.45 : 1.85, radius: 0.45, gallery: true, cls, dress: d, gOff: k * 0.37,
+      lines: `Laboratório de roupas: ${CLASSES[cls].name} ${RACES[race].name.toLowerCase()} com ${wid ? ITEMS[wid].name : 'sem arma'}. Eu repito: parado, pose de luta e dois golpes.` };
+    ch.obj.add(hitbox(npc, 0.5, 1.9)); scene.add(ch.obj); S.npcs.push(npc); k++;
+  }
+  log(`🧪 Laboratório de roupas: ${N} personagens (${list.length} classes × ${races.length} raças) em volta da Arena.`, 'sys');
+}
+function galleryAnim(n) {
+  const t = (S.time + n.gOff) % 8, ph = t < 3 ? 0 : t < 5.2 ? 1 : 2, ca = CLASS_ATTACK[n.cls] || CLASS_ATTACK.aprendiz;
+  if (n.dress && n.dress.update) n.dress.update(S.time);
+  const stance = ca.sound === 'magic' ? 'Spell_Simple_Idle_Loop' : ca.sound === 'bow' ? 'Pistol_Idle_Loop' : 'Sword_Idle';
+  if (ph === 0 && n.gPh !== 0) n.anim.play('Idle', { fade: 0.3 });
+  else if (ph === 1 && n.gPh !== 1) n.anim.play(stance, { fade: 0.3 });
+  else if (ph === 2) { const hit = t < 6.4 ? 0 : 1; if (n.gHit !== hit || n.gPh !== 2) { const clips = n.cls === 'lamina_sombria' ? ['Punch_Jab', 'Punch_Cross'] : /^(guerreiro|cavaleiro_runico|guardiao_sagrado|aprendiz)$/.test(n.cls) ? ['Sword_Attack'] : ca.clips; n.anim.play(clips[hit % clips.length], { once: true, restart: true, fade: 0.08, speed: ca.speed || 1 }); n.gHit = hit; } }
+  if (ph !== 2) n.gHit = -1; n.gPh = ph;
+}
 function buildArena() {
   const A = ARENA_I, g = new THREE.Group(); g.position.set(A.x, 0, A.z); scene.add(g);
   const M = (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, ...e });
@@ -3047,6 +3075,7 @@ function syncG() {
   if (S.zone) { G.mapId = 'mundo3d:' + S.zone.id; G.map.def.name = S.zone.name; }
 }
 function step(dt) {
+  ensureGallery();
   syncG();
   if (S.started && !S.paused && !S.menuOpen) {
     S.time += dt;
@@ -3060,7 +3089,7 @@ function step(dt) {
       m.obj.visible = true; updateMonster(m, dt);
     }
     separateBodies();
-    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
+    for (const n of S.npcs) { const d = Math.abs(n.x - S.pos.x) + Math.abs(n.z - S.pos.z); n.obj.visible = d < 95; if (d < 80) { n.anim.update(dt); if (n.roleFx) n.roleFx(S.time); if (n.gallery) galleryAnim(n); else if (d < 16) npcNotice(n, dt); else if (n._say) npcSayEnd(n); } } // auditoria: grimório/runas da Ivra e capas dos NPCs animam // gente longe: nem anima nem aparece
     for (let i = S.projectiles.length - 1; i >= 0; i--) {
       const pr = S.projectiles[i], to = pr.toFn(), d = to.distanceTo(pr.mesh.position), st = pr.speed * dt;
       if (d <= st + 0.2) { scene.remove(pr.mesh); S.projectiles.splice(i, 1); pr.onHit(); }

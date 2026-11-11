@@ -6,7 +6,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 
 _Nenhuma._
 
-## Feitas (310)
+## Feitas (311)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2187,3 +2187,10 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** bugou demais ele aqu pra la e pra ca travadao
 - ![print](img/S-310.png)
 - **Resposta do Claude:** O lobo ficava indo e voltando porque, no limite da área dele, desistia de te perseguir e no quadro seguinte te via de novo (trocava de ideia dezenas de vezes por segundo). Agora, quando desiste, volta para casa de verdade e só se irrita de novo depois; não fica parando e andando na borda do alcance, não "anda no lugar" quando esbarra em algo e troca de passo sem alternar. A correção da inteligência vale para todos os monstros.
+
+### S-311 · Área do mapa: Área da tela (1117×166 px)
+- **Status:** feito · **Quando:** 2026-11-10T21:18:37 · **Mapa:** Vila de Alvorada (tile [809, -6])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Hoje eu gostaria de destinar uma energia Extra nas roupas de todos os possíveis personagens do jogo então eu gostaria de utilizar temporariamente essa Arena PVP para criar variações de todas as classes e todas as raças entendendo que eu tenho aí cerca de quatro classes iniciais cada uma dessas classes dá origem a duas classes diferentes e eu também tenho três raças ao todo então eu preciso fazer a análise combinatória e colocar aqui personagens em volta deste círculo na área de PVP com todas as roupas deles e eu preciso olhar um a um porque está na hora de eu melhorar a estética deles como um todo e peço que você inclua as respectivas armas padrão de cada uma das classes até para que eu também consiga compreender como que cada um deles Segura as armas para garantir que todas as animações estejam em dia
+- ![print](img/S-311.png)
+- **Resposta do Claude:** A Arena virou laboratório de roupas: 39 personagens em volta do círculo — as 13 classes (Aprendiz, as 4 iniciais e as 8 evoluções) × 3 raças (Humano, Elfo, Anão), cada um com a arma padrão da classe (e o Paladino com escudo). Eles repetem um ciclo: parado, pose de luta e dois golpes, para você ver como seguram e usam a arma. A placa mostra classe · raça, e clicando ele diz a arma. Só você (mestre) vê a galeria; ela é montada ao entrar na Arena.
