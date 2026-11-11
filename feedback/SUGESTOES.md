@@ -2,25 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (9)
-
-### S-337 · Área do mapa: Área da tela (363×528 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:48:02 · **Mapa:** Vila de Alvorada (tile [820, -4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** O Paladino melhorou bastante principalmente de frente porém de costas é bem claro que ainda falta um cuidado maior em relação a essa espécie de capa para que ela não fique entrando no corpo do personagem e também repare que existem várias falhas da armadura sobretudo na parte dos ombros por isso eu digo que o acabamento precisa ser feito de forma mais interessante Pois eu não posso permitir com que essa parte interna que tenha bolinhas se sobressaia de forma externa à própria armadura
-- ![print](img/S-337.png)
-
-### S-338 · Área do mapa: Área da tela (107×176 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:48:59 · **Mapa:** Vila de Alvorada (tile [818, -2])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Repara que no braço que a parte interna está saindo para fora da armadura E isso não pode ocorrer jamais preciso que tome cuidado para você melhorar ainda mais o acabamento da armadura em todos os membros e também nas partes do tronco e o feedback que eu falei para o anão você deve também corrigir aqui nesta raça e nas demais e também quero dizer que o escudo ficou de fato bem melhor porém ainda existem alguns acabamentos que passaram batidos e que precisam ser feitos com certa urgência para finalizarmos a armadura de forma adequada
-- ![print](img/S-338.png)
-
-### S-339 · Área do mapa: Área da tela (122×39 px)
-- **Status:** pendente · **Quando:** 2026-11-10T23:50:35 · **Mapa:** Vila de Alvorada (tile [817, -4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** A barba do anão também ficou penetrando parte da roupa e eu não sei qual a melhor forma de resolver isso mas digo para você que certamente pode ser melhorado e conto com a sua astúcia para tal aproveite e repare nas falhas dos braços com as vestes de bolinhas aparecendo e inclusive boa parte da armadura que era para estar preenchendo o peitoral acabou não preenchendo então eu realmente preciso que você complete a armadura para que não fiquem essas partes soltas e sim essa parte das bolinhas seja de fato algo que pode ser percebido apenas em alguns pedaços bem esporádicos da armadura e não assim então exposto Como está atualmente em resumo quero proteger os meus faladinhos mas com a armadura
-- ![print](img/S-339.png)
+## Pendentes (6)
 
 ### S-340 · Área do mapa: Área da tela (458×219 px)
 - **Status:** pendente · **Quando:** 2026-11-10T23:52:12 · **Mapa:** Vila de Alvorada (tile [811, 3])
@@ -58,7 +40,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Sugestão:** Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver
 - ![print](img/S-345.png)
 
-## Feitas (336)
+## Feitas (339)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2421,3 +2403,24 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Gostaria que essa bolinha aqui tivesse algumas cores um pouco brilhantes parecendo como um cristal porém não tão fodas e iradas quanto o do arquimago
 - ![print](img/S-336.png)
 - **Resposta do Claude:** A bolinha do Mago virou um cristal azul vivo e brilhante, menor e mais simples que o do Arquimago.
+
+### S-337 · Área do mapa: Área da tela (363×528 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:48:02 · **Mapa:** Vila de Alvorada (tile [820, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** O Paladino melhorou bastante principalmente de frente porém de costas é bem claro que ainda falta um cuidado maior em relação a essa espécie de capa para que ela não fique entrando no corpo do personagem e também repare que existem várias falhas da armadura sobretudo na parte dos ombros por isso eu digo que o acabamento precisa ser feito de forma mais interessante Pois eu não posso permitir com que essa parte interna que tenha bolinhas se sobressaia de forma externa à própria armadura
+- ![print](img/S-337.png)
+- **Resposta do Claude:** De costas a capa fica presa atrás do aço e cai por fora da armadura (parado, andando, correndo, golpeando), agora em lã com barra dourada; os ombros ganharam uma placa moldada nas clavículas que fecha o vão entre gola, peitoral e ombreiras.
+
+### S-338 · Área do mapa: Área da tela (107×176 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:48:59 · **Mapa:** Vila de Alvorada (tile [818, -2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Repara que no braço que a parte interna está saindo para fora da armadura E isso não pode ocorrer jamais preciso que tome cuidado para você melhorar ainda mais o acabamento da armadura em todos os membros e também nas partes do tronco e o feedback que eu falei para o anão você deve também corrigir aqui nesta raça e nas demais e também quero dizer que o escudo ficou de fato bem melhor porém ainda existem alguns acabamentos que passaram batidos e que precisam ser feitos com certa urgência para finalizarmos a armadura de forma adequada
+- ![print](img/S-338.png)
+- **Resposta do Claude:** A malha não escapa mais pelos braços (rerebraço sob a ombreira, avambraço até a manopla) e só aparece em pequenos trechos das juntas, em todas as raças; o escudo ganhou forro de couro com tachas e alças de verdade com fivelas.
+
+### S-339 · Área do mapa: Área da tela (122×39 px)
+- **Status:** feito · **Quando:** 2026-11-10T23:50:35 · **Mapa:** Vila de Alvorada (tile [817, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A barba do anão também ficou penetrando parte da roupa e eu não sei qual a melhor forma de resolver isso mas digo para você que certamente pode ser melhorado e conto com a sua astúcia para tal aproveite e repare nas falhas dos braços com as vestes de bolinhas aparecendo e inclusive boa parte da armadura que era para estar preenchendo o peitoral acabou não preenchendo então eu realmente preciso que você complete a armadura para que não fiquem essas partes soltas e sim essa parte das bolinhas seja de fato algo que pode ser percebido apenas em alguns pedaços bem esporádicos da armadura e não assim então exposto Como está atualmente em resumo quero proteger os meus faladinhos mas com a armadura
+- ![print](img/S-339.png)
+- **Resposta do Claude:** A barba do anão repousa por cima da gola e do peitoral sem atravessar a armadura; peitoral e placa dos ombros preenchem o tronco inteiro e os braços ficaram fechados em aço.
