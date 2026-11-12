@@ -28,16 +28,18 @@ const FB = { y0: -0.12, z0: -0.16, n: 30, st: 0.015 };
 function faceOf(r, hd) {
   if (r.userData._face && r.userData._face.hd === hd) return r.userData._face;
   r.updateMatrixWorld(true);
-  const grid = new Float32Array(FB.n * FB.n).fill(-9), v = new THREE.Vector3(), mn = [9, 9, 9], mx = [-9, -9, -9]; let front = 0;
+  const grid = new Float32Array(FB.n * FB.n).fill(-9), v = new THREE.Vector3(), mn = [9, 9, 9], mx = [-9, -9, -9], bmn = [9, 9, 9], bmx = [-9, -9, -9]; let front = 0;
   r.traverse(o => {
-    if (!o.isSkinnedMesh || !o.visible || !o.skeleton || /hair|cabelo|brow|eye|olho|hat|helm/i.test(o.name)) return;
+    // a barba (malha "Hair_Beard") ENTRA no volume: antes caía no filtro de cabelo e o braço do anão atravessava a barba sem ser visto
+    const beard = /beard|barba/i.test(o.name);
+    if (!o.isSkinnedMesh || !o.visible || !o.skeleton || (!beard && /hair|cabelo|brow|eye|olho|hat|helm/i.test(o.name))) return;
     const hi = o.skeleton.bones.indexOf(hd), SI = o.geometry.attributes.skinIndex, SW = o.geometry.attributes.skinWeight; if (hi < 0 || !SI) return;
-    const core = !/beard|barba/i.test(o.name);
+    const core = !beard, lo = core ? mn : bmn, hi3 = core ? mx : bmx;
     for (let i = 0; i < SI.count; i++) {
       let w = 0; for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === hi) w += SW.getComponent(i, k); if (w < 0.5) continue;
       o.getVertexPosition(i, v); o.localToWorld(v); hd.worldToLocal(v);
       if (core && w > 0.9 && Math.abs(v.x) < 0.03 && v.z > front) front = v.z;
-      if (v.y > -0.06) { const a = [v.x, v.y, v.z]; for (let k = 0; k < 3; k++) { if (a[k] < mn[k]) mn[k] = a[k]; if (a[k] > mx[k]) mx[k] = a[k]; } } // S-379: volume da cabeça (crânio + rosto + barba)
+      if (v.y > -0.06 || !core) { const a = [v.x, v.y, v.z]; for (let k = 0; k < 3; k++) { if (a[k] < lo[k]) lo[k] = a[k]; if (a[k] > hi3[k]) hi3[k] = a[k]; } } // S-379: volume da cabeça (crânio + rosto) e, à parte, o da barba
       const iy = Math.floor((v.y - FB.y0) / FB.st), iz = Math.floor((v.z - FB.z0) / FB.st); if (iy < 0 || iz < 0 || iy >= FB.n || iz >= FB.n) continue;
       const j = iy * FB.n + iz; grid[j] = Math.max(grid[j], -v.x); // guarda o quanto a superfície vai para a DIREITA (−x)
     }
@@ -56,6 +58,8 @@ function faceOf(r, hd) {
   F.nr = nds.length > 10 ? Math.max(0.035, Math.min(0.09, nds[(nds.length * 0.5) | 0] * 1.05)) : (dw ? 0.06 : 0.05);
   F.ec = mx[0] > mn[0] ? new THREE.Vector3((mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2) : new THREE.Vector3(0, 0.1, 0.02);
   F.eh = mx[0] > mn[0] ? new THREE.Vector3((mx[0] - mn[0]) / 2, (mx[1] - mn[1]) / 2, (mx[2] - mn[2]) / 2) : new THREE.Vector3(0.09, 0.11, 0.11);
+  // barba: elipsoide próprio (um pouco folgado, para cobrir as "quinas" do queixo e das costeletas que o elipsoide inscrito na caixa perde)
+  if (bmx[0] > bmn[0]) { F.bc = new THREE.Vector3((bmn[0] + bmx[0]) / 2, (bmn[1] + bmx[1]) / 2, (bmn[2] + bmx[2]) / 2); F.bh = new THREE.Vector3((bmx[0] - bmn[0]) / 2 * 1.08, (bmx[1] - bmn[1]) / 2 * 1.05, (bmx[2] - bmn[2]) / 2 * 1.08); }
   return (r.userData._face = F);
 }
 function faceMinX(F, y, z) { // x (espaço da cabeça) da superfície do lado direito perto de (y, z); 9 = sem rosto ali
@@ -79,20 +83,27 @@ function orientHand(r, hr, fing, palm, w) {
    círculo (ombro e punho fixos): testa vários pontos desse círculo e fica com o mais perto do cotovelo "ideal" (alto e para trás)
    que deixe o braço inteiro por fora do elipsoide medido da cabeça (com a barba), do pescoço e do peito. Se nenhum serve (cabeça
    girada demais, rosto grande), o punho se afasta do rosto até o braço caber. Vale em TODOS os quadros da puxada. */
-const _e = new THREE.Vector3(), _e2 = new THREE.Vector3(), _mH = new THREE.Matrix4();
-function segPt(p, a, b, open) { const ab = _e2.copy(b).sub(a), t0 = p.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()); if (open && t0 > 1) return 9; const t = Math.max(0, Math.min(1, t0)); return p.distanceTo(a.clone().addScaledVector(ab, t)); } // open: acima do fim do segmento não conta (o peito não tem "tampa" subindo até o queixo)
+const _e = new THREE.Vector3(), _e2 = new THREE.Vector3(), _mH = new THREE.Matrix4(), CLEAR_MIN = 0.007; // folga mínima aceita (m)
+function segPt(p, a, b, open, out) { const ab = _e2.copy(b).sub(a), t0 = p.clone().sub(a).dot(ab) / Math.max(1e-9, ab.lengthSq()); if (open && t0 > 1) return 9; const t = Math.max(0, Math.min(1, t0)), c = a.clone().addScaledVector(ab, t); if (out) out.copy(p).sub(c); return p.distanceTo(c); } // open: acima do fim do segmento não conta (o peito não tem "tampa" subindo até o queixo)
 function bodyOf(r, F, hd) { // volumes do quadro: cabeça (elipsoide no espaço do osso), pescoço e peito (cápsulas)
   const g = n => r.getObjectByName(n), nk = g('neck_01'), s2 = g('spine_02'), s3 = g('spine_03'), dw = !!r.userData.dwarf;
   hd.updateWorldMatrix(true, false); _mH.copy(hd.matrixWorld).invert();
   const sh = g('upperarm_r'), c0 = s2 ? s2.getWorldPosition(new THREE.Vector3()) : null, c1 = s3 ? s3.getWorldPosition(new THREE.Vector3()) : null;
   const dSh = sh && c0 ? segPt(sh.getWorldPosition(new THREE.Vector3()), c0, c1) : 0.2; // o peito nunca é mais largo que a junta do ombro
-  return { inv: _mH.clone(), F, nk0: nk ? nk.getWorldPosition(new THREE.Vector3()) : null, nk1: hd.getWorldPosition(new THREE.Vector3()), nkR: F.nr,
+  return { inv: _mH.clone(), mw: hd.matrixWorld.clone(), F, nk0: nk ? nk.getWorldPosition(new THREE.Vector3()) : null, nk1: hd.getWorldPosition(new THREE.Vector3()), nkR: F.nr,
     ch0: c0, ch1: c1, chR: Math.min(dw ? 0.15 : 0.105, dSh * 0.7), armR: dw ? 0.055 : 0.046 };
 }
-function headDist(Bd, p) { const q = _e.copy(p).applyMatrix4(Bd.inv).sub(Bd.F.ec), sx = q.x / Bd.F.eh.x, sy = q.y / Bd.F.eh.y, sz = q.z / Bd.F.eh.z, L = Math.hypot(sx, sy, sz); return (L - 1) * q.length() / Math.max(L, 1e-6); }
-function armClear(Bd, S, E, T) { // menor folga (m) do braço (ombro→cotovelo→punho) até cabeça/pescoço/peito; < 0 = atravessa
-  let m = 9; const P = new THREE.Vector3();
-  const test = (p, chest, lb) => { const dh = headDist(Bd, p), dn = Bd.nk0 ? segPt(p, Bd.nk0, Bd.nk1) - Bd.nkR + Bd.armR * 0.6 : 9, /* o antebraço pode roçar o pescoço/gola (como no arqueiro de verdade) */ dc = chest && Bd.ch0 ? segPt(p, Bd.ch0, Bd.ch1, true) - Bd.chR : 9, d = Math.min(dh, dn, dc) - Bd.armR; if (d < m) { m = d; Bd.lbl = (d + Bd.armR === dh ? 'cabeça ' : d + Bd.armR === dn ? 'pescoço ' : 'peito ') + lb; } };
+function ellDist(q, c, h, out) { const x = q.x - c.x, y = q.y - c.y, z = q.z - c.z, L = Math.hypot(x / h.x, y / h.y, z / h.z); if (out) out.set(x / (h.x * h.x), y / (h.y * h.y), z / (h.z * h.z)); return (L - 1) * Math.hypot(x, y, z) / Math.max(L, 1e-6); }
+const _g1 = new THREE.Vector3(), _g2 = new THREE.Vector3(), _gn = new THREE.Vector3(), _gc = new THREE.Vector3();
+function headDist(Bd, p, out) { // crânio ∪ barba; out = direção "para fora" (mundo)
+  const q = _e.copy(p).applyMatrix4(Bd.inv); let d = ellDist(q, Bd.F.ec, Bd.F.eh, _g1), g = _g1;
+  if (Bd.F.bc) { const d2 = ellDist(q, Bd.F.bc, Bd.F.bh, _g2); if (d2 < d) { d = d2; g = _g2; } }
+  if (out) out.copy(g).transformDirection(Bd.mw); return d;
+}
+function armClear(Bd, S, E, T) { // menor folga (m) do braço (ombro→cotovelo→punho) até cabeça/pescoço/peito; < 0 = atravessa. Bd.n = para onde sair
+  let m = 9; const P = new THREE.Vector3(); Bd.n = Bd.n || new THREE.Vector3();
+  const test = (p, chest, lb) => { const dh = headDist(Bd, p, _g1.set(0, 0, 0)), hn = _gn.copy(_g1), dn = Bd.nk0 ? segPt(p, Bd.nk0, Bd.nk1, false, _gc) - Bd.nkR + Bd.armR * 0.6 : 9, /* o antebraço pode roçar o pescoço/gola (como no arqueiro de verdade) */ nn = _gc.clone(), dc = chest && Bd.ch0 ? segPt(p, Bd.ch0, Bd.ch1, true, _gc) - Bd.chR : 9, d = Math.min(dh, dn, dc) - Bd.armR;
+    if (d < m) { m = d; const w = d + Bd.armR === dh ? 0 : d + Bd.armR === dn ? 1 : 2; Bd.lbl = ['cabeça ', 'pescoço ', 'peito '][w] + lb; Bd.n.copy(w === 0 ? hn : w === 1 ? nn : _gc).normalize(); } };
   for (const t of [0.45, 0.7, 1]) test(P.copy(S).lerp(E, t), t > 0.9, 'braço'); // braço: cabeça/pescoço; o cotovelo também fora do peito
   for (const t of [0.2, 0.4, 0.6]) test(P.copy(E).lerp(T, t), true, 'antebraço'); // o fim do antebraço (punho) encosta no rosto de propósito: a mão é tratada à parte
   return m;
@@ -101,16 +112,16 @@ function elbowSafe(sr, er, hr, T, pole, Bd, prev = 0) { // devolve o polo (ponto
   const S = sr.getWorldPosition(new THREE.Vector3()), Eb = er.getWorldPosition(new THREE.Vector3()), l1 = S.distanceTo(Eb), l2 = Eb.distanceTo(hr.getWorldPosition(new THREE.Vector3()));
   const d = Math.min(l1 + l2 - 1e-3, Math.max(0.05, S.distanceTo(T))), u = T.clone().sub(S).normalize();
   const cosA = Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d))), Cc = S.clone().addScaledVector(u, l1 * cosA), rr = l1 * Math.sqrt(1 - cosA * cosA);
-  const e1 = pole.clone().sub(S); e1.addScaledVector(u, -e1.dot(u)); if (e1.lengthSq() < 1e-8) return { pole, clear: 9, th: 0 }; e1.normalize(); const e2 = new THREE.Vector3().crossVectors(u, e1);
+  const e1 = pole.clone().sub(S); e1.addScaledVector(u, -e1.dot(u)); if (e1.lengthSq() < 1e-8) return { pole, clear: 9, th: 0, n: new THREE.Vector3(), reach: l1 + l2 }; e1.normalize(); const e2 = new THREE.Vector3().crossVectors(u, e1);
   const Tc = S.clone().addScaledVector(u, d);
   let best = null;
   for (let i = 0; i <= 12; i++) { // até 90° do cotovelo ideal: o cotovelo nunca vai para a frente do peito
     const th = (i % 2 ? 1 : -1) * Math.ceil(i / 2) * Math.PI / 12, E = Cc.clone().addScaledVector(e1, rr * Math.cos(th)).addScaledVector(e2, rr * Math.sin(th));
-    const c = armClear(Bd, S, E, Tc), sc = Math.abs(th) * 0.05 + Math.abs(th - prev) * 0.04 + Math.max(0, 0.012 - c) * 25; // perto do ideal e do ângulo do quadro anterior (sem tremer)
-    if (!best || sc < best.sc) best = { sc, E, clear: c, th, lbl: Bd.lbl };
-    if (i === 0 && c >= 0.012) break; // o cotovelo ideal já está livre
+    const c = armClear(Bd, S, E, Tc), sc = Math.abs(th) * 0.05 + Math.abs(th - prev) * 0.04 + Math.max(0, 0.014 - c) * 25; // perto do ideal e do ângulo do quadro anterior (sem tremer)
+    if (!best || sc < best.sc) best = { sc, E, clear: c, th, lbl: Bd.lbl, n: Bd.n.clone() };
+    if (i === 0 && c >= 0.014) break; // o cotovelo ideal já está livre
   }
-  return { pole: best.E, clear: best.clear, th: best.th, lbl: best.lbl };
+  return { pole: best.E, clear: best.clear, th: best.th, lbl: best.lbl, n: best.n, reach: l1 + l2 };
 }
 function contactPt(r) { // onde a corda engancha: entre a 2ª e a 3ª falange do indicador e do médio
   const b = ['index_02_r', 'index_03_r', 'middle_02_r', 'middle_03_r'].map(n => r.getObjectByName(n)); if (b.some(x => !x)) return null;
@@ -221,24 +232,28 @@ export function bowPose(me, o, ctx) {
   const wristT = pull.clone().addScaledVector(fingW, -0.075).addScaledVector(palmW, -0.02);
   const hx = new THREE.Vector3(1, 0, 0).transformDirection(hd.matrixWorld); // "esquerda" da cabeça no mundo
   const q0 = [sr, er, hr].map(b => b.quaternion.clone()), reset = () => { [sr, er, hr].forEach((b, i) => b.quaternion.copy(q0[i])); sr.updateWorldMatrix(false, true); }; // cada passada parte da mesma pose (o peso W não se acumula)
-  const Bd = bodyOf(r, F, hd); let clear = 9;
+  const Bd = bodyOf(r, F, hd), Sp = sr.getWorldPosition(new THREE.Vector3()); let clear = 9;
   const solve = () => { // S-379: braço por IK com o cotovelo num ponto livre (nada de antebraço/cotovelo dentro da cabeça)
-    const wt = wristT.clone();
-    for (let k = 0; k < 5; k++) {
-      reset(); const sv = elbowSafe(sr, er, hr, wt, poleR, Bd, me._elbTh || 0); clear = sv.clear;
-      if (sv.clear >= -0.002 || k === 4) { ik2(sr, er, hr, wt, sv.pole, W); me._elbTh = sv.clear >= -0.002 ? sv.th : 0; break; }
-      // nenhum cotovelo cabe (braço curto e manga larga do anão): o punho se afasta (na horizontal) do que está sendo atravessado — peito ou
-      // pescoço: para longe do eixo deles; cabeça: para fora do rosto —, o quanto faltar (até ~10 cm)
-      const ax = sv.lbl && sv.lbl.startsWith('peito') ? [Bd.ch0, Bd.ch1] : sv.lbl && sv.lbl.startsWith('pescoço') ? [Bd.nk0, Bd.nk1] : null; let dir = hx.clone().negate();
-      if (ax && ax[0]) { const ab = ax[1].clone().sub(ax[0]), t = Math.max(0, Math.min(1, wt.clone().sub(ax[0]).dot(ab) / Math.max(1e-9, ab.lengthSq()))); dir = wt.clone().sub(ax[0].clone().addScaledVector(ab, t)); dir.y = 0; if (dir.lengthSq() < 1e-6) dir = hx.clone().negate(); dir.normalize(); }
-      wt.addScaledVector(dir, Math.min(0.025, 0.006 - sv.clear));
+    // se nenhum cotovelo cabe (braço curto e manga larga do anão, barba), o punho sai do que está sendo atravessado — na direção
+    // "para fora" do ponto mais fundo (cabeça/barba, pescoço ou peito) —, aos poucos; fica a melhor passada (nunca piora)
+    const wt = wristT.clone(), wp = () => [sr, er, hr].map(b => b.getWorldPosition(new THREE.Vector3())); let best = null, worse = 0;
+    for (let k = 0; k < 16; k++) {
+      reset(); const te = hr.getWorldPosition(new THREE.Vector3()).lerp(wt, W), sv = elbowSafe(sr, er, hr, te, poleR, Bd, me._elbTh || 0); // te: onde o punho fica DE VERDADE com o peso W (na entrada/saída da pose o braço também é conferido)
+      ik2(sr, er, hr, te, sv.pole, 1); const c = armClear(Bd, ...wp()), n = Bd.n.clone(); // a folga REAL depois do IK (o IK erra 2–3 cm em relação à previsão)
+      if (!best || c > best.c + 1e-4) { best = { sv, te, c }; worse = 0; } else if (++worse >= 6) break;
+      if (c >= CLEAR_MIN) break;
+      if (k === 0) { const dS = wt.distanceTo(Sp); if (dS > sv.reach * 0.98) { wt.sub(Sp).multiplyScalar(sv.reach * 0.98 / dS).add(Sp); continue; } } // alvo além do alcance: primeiro traz para onde o braço chega
+      wt.addScaledVector(n, Math.min(0.04, CLEAR_MIN + 0.004 - c));
+      const dS = wt.distanceTo(Sp); if (dS > sv.reach * 0.98) wt.sub(Sp).multiplyScalar(sv.reach * 0.98 / dS).add(Sp); // além do alcance não adianta
     }
+    reset(); ik2(sr, er, hr, best.te, best.sv.pole, 1); clear = best.c; me._elbTh = best.sv.th;
     orientHand(r, hr, fingW, palmW, W);
   };
   for (let it = 0; it < 3; it++) {
     solve();
     const C = contactPt(r); if (!C) break;
-    wristT.addScaledVector(pull.clone().sub(C), W);
+    // corrige só o erro da MÃO (dedos × corda): punho = corda − (dedos − punho); o afastamento do corpo é refeito na próxima passada
+    wristT.lerp(pull.clone().sub(C).add(hr.getWorldPosition(new THREE.Vector3())), W);
     // nada de mão dentro do rosto: o centro da mão (entre o punho e os dedos) fica à direita da superfície medida da cabeça
     const hc = hd.worldToLocal(hr.getWorldPosition(new THREE.Vector3()).lerp(C, 0.5)), lim = faceMinX(F, hc.y, hc.z) - (dwarf ? 0.04 : 0.032);
     if (hc.x > lim) wristT.addScaledVector(hx, (lim - hc.x) * W);

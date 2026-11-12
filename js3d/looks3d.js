@@ -1677,6 +1677,15 @@ function sampleBody(root, bones, meshRe = null) {
 const bonePos = (root, n) => { const b = bone(root, n) || root.getObjectByName(n); return b ? rootPos(root, b) : null; };
 /* casca com espessura em volta de um eixo A→B. opts: t0,t1 (fração do eixo), bins, sec (setores), off (folga), th (espessura),
    front (direção de referência), arc [a0,a1] (só parte da volta, em rad; 0 = frente), ridge (quinas/lâminas), flare(t)→extra raio */
+// parábola por mínimos quadrados sobre valores igualmente espaçados (x de 0 a 1) — devolve f(x)
+function quadFit(Y) {
+  const n = Y.length - 1; let S0 = 0, S1 = 0, S2 = 0, S3 = 0, S4 = 0, Y0 = 0, Y1 = 0, Y2 = 0;
+  for (let i = 0; i <= n; i++) { const x = n ? i / n : 0, y = Y[i]; S0++; S1 += x; S2 += x * x; S3 += x * x * x; S4 += x ** 4; Y0 += y; Y1 += x * y; Y2 += x * x * y; }
+  const D = (a, b, c, d, e, f, g, h, k) => a * (e * k - f * h) - b * (d * k - f * g) + c * (d * h - e * g), M = D(S0, S1, S2, S1, S2, S3, S2, S3, S4);
+  if (Math.abs(M) < 1e-12) { const m = Y0 / Math.max(1, S0); return () => m; }
+  const c0 = D(Y0, S1, S2, Y1, S2, S3, Y2, S3, S4) / M, c1 = D(S0, Y0, S2, S1, Y1, S3, S2, Y2, S4) / M, c2 = D(S0, S1, Y0, S1, S2, Y1, S2, S3, Y2) / M;
+  return x => c0 + c1 * x + c2 * x * x;
+}
 function wrapShell(pts, A, B, o) {
   const L = B.clone().sub(A), len = L.length(), u = L.normalize(), bins = o.bins || 14, sec = o.sec || 28;
   const e1 = (o.front || new THREE.Vector3(0, 0, 1)).clone(); e1.sub(u.clone().multiplyScalar(e1.dot(u))).normalize(); const e2 = new THREE.Vector3().crossVectors(u, e1);
@@ -1686,6 +1695,7 @@ function wrapShell(pts, A, B, o) {
   for (let i = 0; i <= bins; i++) { const b = lo[i]; C[i] = b[0] < 1e8 ? [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] : null; }
   for (let i = 0; i <= bins; i++) if (!C[i]) { let a = i, c = i; while (a >= 0 && !C[a]) a--; while (c <= bins && !C[c]) c++; C[i] = (a >= 0 ? C[a] : null) || (c <= bins ? C[c] : [0, 0]); }
   for (let pass = 0; pass < 2; pass++) for (let i = 1; i < bins; i++) C[i] = [(C[i - 1][0] + C[i][0] * 2 + C[i + 1][0]) / 4, (C[i - 1][1] + C[i][1] * 2 + C[i + 1][1]) / 4];
+  if (o.vfit) { const fx = quadFit(C.map(c => c[0])), fy = quadFit(C.map(c => c[1])); for (let i = 0; i <= bins; i++) C[i] = [fx(i / bins), fy(i / bins)]; } // S-383: eixo da peça rígida também liso (o centro "dançando" fazia os rolos)
   for (const [i, x, y] of proj) { const dx = x - C[i][0], dy = y - C[i][1], a = Math.atan2(dy, dx), j = ((Math.round(a / (Math.PI * 2) * sec) % sec) + sec) % sec, r = Math.hypot(dx, dy); if (r > R[i][j]) R[i][j] = r; }
   // preenche buracos (circular em j, linear em i) e suaviza
   for (let i = 0; i <= bins; i++) { const row = R[i]; if (row.every(r => !r)) continue; for (let j = 0; j < sec; j++) if (!row[j]) { let a = 1; while (!row[(j - a + sec) % sec] && a < sec) a++; let c = 1; while (!row[(j + c) % sec] && c < sec) c++; row[j] = (row[(j - a + sec) % sec] * c + row[(j + c) % sec] * a) / (a + c); } }
@@ -1695,6 +1705,8 @@ function wrapShell(pts, A, B, o) {
   if (o.straight) for (let j = 0; j < sec; j++) { // S-374: sem "cinturinha" — preenche o vale da cintura entre o quadril e o peito (peça rígida e reta)
     const up = [], dn = []; let m = 0; for (let i = 0; i <= bins; i++) up[i] = m = Math.max(m, R[i][j]); m = 0; for (let i = bins; i >= 0; i--) dn[i] = m = Math.max(m, R[i][j]);
     for (let i = 0; i <= bins; i++) R[i][j] = Math.max(R[i][j], Math.min(up[i], dn[i])); }
+  if (o.vfit) for (let j = 0; j < sec; j++) { // S-383: placa RÍGIDA — o perfil vertical vira uma curva suave (parábola por mínimos quadrados) erguida até não tocar o corpo: some o "gomo" do gibão por baixo, nada de rolos empilhados
+    const f = quadFit(R.map(r => r[j])); let up = 0; for (let i = 0; i <= bins; i++) up = Math.max(up, R[i][j] - f(i / bins)); for (let i = 0; i <= bins; i++) R[i][j] = f(i / bins) + up; }
   if (o.prof && o.prof.sec === sec) { // S-326: perfil COMUM (medido uma vez na peça inteira) — lâminas vizinhas coincidem e a sobreposição fica limpa, sem zigue-zague
     const P = o.prof; for (let i = 0; i <= bins; i++) { const t = t0 + (t1 - t0) * i / bins, f = Math.max(0, Math.min(P.bins, (t - P.t0) / (P.t1 - P.t0) * P.bins)), i0 = Math.floor(f), i1 = Math.min(P.bins, i0 + 1), w = f - i0;
       for (let j = 0; j < sec; j++) R[i][j] = P.R[i0][j] * (1 - w) + P.R[i1][j] * w; C[i] = [P.C[i0][0] * (1 - w) + P.C[i1][0] * w, P.C[i0][1] * (1 - w) + P.C[i1][1] * w]; } }
@@ -1759,12 +1771,14 @@ function clothSkirt(root, geo, mat, margin = 0.03, rad = null) { // rad: raios d
   const legs = ['l', 'r'].map(s => ['thigh_' + s, 'calf_' + s, 'foot_' + s, 'ball_' + s].map(n => bone(root, n) || root.getObjectByName(n)).filter(Boolean));
   if (legs.some(l => l.length < 3)) return mesh;
   const RAD = rad || [0.125, 0.075, 0.06, 0.05], K = geo.userData.skirt, P = geo.attributes.position, N = K.rows * K.cols, rr = new Float32Array(N), need = new Float32Array(K.cols);
+  const rbuf = RAD.vtent ? { yy: new Float32Array(N), raise: new Float32Array(K.cols), rz: new Float32Array(K.cols) } : null;
   const lp = legs.map(l => l.map(() => new THREE.Vector3()));
   let lastFrame = -1;
   mesh.onBeforeRender = (renderer) => {
     const f = renderer.info.render.frame; if (f === lastFrame) return; lastFrame = f;
     _skInv.copy(mesh.matrixWorld).invert();
     legs.forEach((l, li) => l.forEach((b, k) => lp[li][k].copy(b.getWorldPosition(_skW)).applyMatrix4(_skInv)));
+    if (RAD.vtent) { robeSolve(K, P, lp, RAD, margin, rr, need, N, rbuf); P.needsUpdate = true; geo.computeVertexNormals(); return; } // robe longo (magos): solver próprio
     for (let i = 0; i < K.rows; i++) {
       const y = K.yb[i * K.cols];
       need.fill(0);
@@ -1780,20 +1794,40 @@ function clothSkirt(root, geo, mat, margin = 0.03, rad = null) { // rad: raios d
         for (let d = -10; d <= 10; d++) { let jj = j + d; if (K.closed) jj = (jj + K.cols) % K.cols; else if (jj < 0 || jj >= K.cols) continue; const nd = need[jj]; if (nd > 0) { const e = nd - Math.abs(d) * K.dA * nd * (RAD.tent || 0.55); if (e > r) r = e; } }
         if (i > 0) { const up = (i - 1) * K.cols + j, ex = rr[up] - K.rb[up], dk = RAD.drop || 0.985; if (K.rb[v] + ex * dk > r) r = K.rb[v] + ex * dk; } // do joelho para baixo o pano cai reto (robe longo: volta aos poucos e acompanha a canela — S-382)
         rr[v] = r;
-        if (RAD.vtent) continue; // (robe longo: a posição sai depois da passada de baixo para cima)
         const ex = r - K.rb[v], a = K.ang[v];
         P.setXYZ(v, K.cx + Math.sin(a) * r, K.yb[v] + ex * 0.22 * (i / (K.rows - 1)), K.cz + Math.cos(a) * r * K.sz); // a barra sobe um pouco quando o pano abre
       }
     }
-    if (RAD.vtent) { // S-382: o pano empurrado embaixo (calcanhar ao correr) sobe em rampa até o quadril — tenda inclinada, nada de "degrau"/caixa
-      const s = RAD.vtent * Math.abs(K.yb[0] - K.yb[K.cols]);
-      for (let i = K.rows - 2; i >= 1; i--) for (let j = 0; j < K.cols; j++) { const v = i * K.cols + j, dn = rr[v + K.cols] - K.rb[v + K.cols] - s; if (K.rb[v] + dn > rr[v]) rr[v] = K.rb[v] + dn; }
-      const lift = RAD.lift || 0.22; // a barra sobe quando o pano abre (o tecido não estica: a perna "puxa" o robe para cima)
-      for (let v = 0; v < N; v++) { const i = (v / K.cols) | 0, ex = rr[v] - K.rb[v], a = K.ang[v]; P.setXYZ(v, K.cx + Math.sin(a) * rr[v], K.yb[v] + ex * lift * (i / (K.rows - 1)), K.cz + Math.cos(a) * rr[v] * K.sz); }
-    }
     P.needsUpdate = true; geo.computeVertexNormals();
   };
   return mesh;
+}
+/* S-383: robe longo dos magos ao correr/andar. O pano NÃO estica: (1) onde a perna passaria da folga do tecido (cap × raio de repouso),
+   ela sai por baixo — a barra sobe só ali, pouco (raiseF do comprimento) e em arco suave; (2) o resto contorna a perna numa tenda estreita,
+   cai do joelho para baixo e sobe em rampa acima do calcanhar. Nada de sino nem de perna atravessando o pano. */
+function robeSolve(K, P, lp, RAD, margin, rr, need, N, B) {
+  const rows = K.rows, cols = K.cols, S = RAD.spheres || 6, sp = [];
+  for (const L of lp) for (let k = 0; k < L.length - 1; k++) for (let s = (k ? 1 : 0); s <= S; s++) { const A = L[k], C = L[k + 1], u = s / S; sp.push(A.x + (C.x - A.x) * u - K.cx, (A.z + (C.z - A.z) * u - K.cz) / K.sz, A.y + (C.y - A.y) * u, RAD[k] + (RAD[k + 1] - RAD[k]) * u); } // perna = fileira de esferas [x, z, y, raio]
+  const needAt = (y, a) => { let n = 0; const sa = Math.sin(a), ca = Math.cos(a); for (let q = 0; q < sp.length; q += 4) { const dy = y - sp[q + 2], R0 = sp[q + 3]; if (dy * dy >= R0 * R0) continue; const ox = sp[q], oz = sp[q + 1], dc = sa * ox + ca * oz, disc = R0 * R0 - dy * dy - ox * ox - oz * oz + dc * dc; if (disc > 0) { const t = dc + Math.sqrt(disc) + margin; if (t > n) n = t; } } return n; };
+  const wrap = j => K.closed ? (j + cols) % cols : j, top = K.yb[0], bot = K.yb[(rows - 1) * cols], H = top - bot, { yy, raise, rz } = B;
+  for (let j = 0; j < cols; j++) { // 1) altura (contínua) em que a perna passaria da folga do pano → a barra sobe até logo acima dela
+    raise[j] = 0; let pe = -1;
+    for (let i = 1; i < rows; i++) { const v = i * cols + j, e = needAt(K.yb[v], K.ang[v]) - K.rb[v] * (1 + RAD.cap);
+      if (e > 0) { const t = pe < 0 ? -pe / (e - pe) : 0, y = K.yb[v - cols] + (K.yb[v] - K.yb[v - cols]) * t; raise[j] = Math.min(RAD.raiseF * H, Math.max(0, y - K.yb[(rows - 1) * cols + j] + 0.02)); break; }
+      pe = e; } }
+  for (let j = 0; j < cols; j++) { let m = 0; for (let d = -14; d <= 14; d++) { const jj = wrap(j + d); if (jj < 0 || jj >= cols) continue; const e = raise[jj] * (1 - Math.abs(d) * K.dA * RAD.hk); if (e > m) m = e; } rz[j] = m; } // arco: sobe no meio e desce dos lados
+  for (let pass = 0; pass < 3; pass++) { raise.set(rz); for (let j = 0; j < cols; j++) { const l = K.closed ? wrap(j - 1) : Math.max(0, j - 1), r = K.closed ? wrap(j + 1) : Math.min(cols - 1, j + 1); rz[j] = (raise[l] + raise[j] * 2 + raise[r]) / 4; } } // sem dentes na barra
+  for (let v = 0; v < N; v++) { const s = (H - rz[v % cols]) / H; yy[v] = top - (top - K.yb[v]) * s; } // o pano da coluna encurta por igual (não dobra nem faz degrau)
+  for (let i = 0; i < rows; i++) { // 2) contorna a perna (tenda estreita) e cai do joelho para baixo
+    for (let j = 0; j < cols; j++) need[j] = needAt(yy[i * cols + j], K.ang[i * cols + j]);
+    for (let j = 0; j < cols; j++) {
+      const v = i * cols + j; let r = K.rb[v];
+      for (let d = -12; d <= 12; d++) { const jj = wrap(j + d); if (jj < 0 || jj >= cols) continue; const nd = need[jj]; if (nd > 0) { const e = nd - Math.abs(d) * K.dA * nd * RAD.tent; if (e > r) r = e; } }
+      if (i > 0) { const up = v - cols, ex = rr[up] - K.rb[up]; if (K.rb[v] + ex * RAD.drop > r) r = K.rb[v] + ex * RAD.drop; }
+      rr[v] = r; } }
+  const s = RAD.vtent * Math.abs(K.yb[0] - K.yb[cols]); // 3) acima do calcanhar o pano sobe em rampa até o quadril (nada de "caixa")
+  for (let i = rows - 2; i >= 1; i--) for (let j = 0; j < cols; j++) { const v = i * cols + j, dn = rr[v + cols] - K.rb[v + cols] - s; if (K.rb[v] + dn > rr[v]) rr[v] = K.rb[v] + dn; }
+  for (let v = 0; v < N; v++) { const a = K.ang[v]; P.setXYZ(v, K.cx + Math.sin(a) * rr[v], yy[v], K.cz + Math.cos(a) * rr[v] * K.sz); }
 }
 // texturas de metal (riscos, desgaste) e de couro, geradas uma vez
 const _tex = {};
@@ -1912,7 +1946,11 @@ function capeClothTex(color, trim, emblem) {
   for (let xx = 0; xx < 256; xx += 2) { x.fillStyle = `rgba(255,255,255,${0.02 + r() * 0.025})`; x.fillRect(xx, 0, 1, 512); } // trama vertical
   for (let k = 0; k < 1400; k++) { x.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},${r() * 0.05})`; x.fillRect(r() * 256, r() * 512, 1 + r() * 2, 1 + r() * 3); } // fios e nós da lã
   const gr = x.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, 'rgba(0,0,0,0.12)'); gr.addColorStop(0.15, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.08)'); x.fillStyle = gr; x.fillRect(0, 0, 256, 512);
-  if (trim) { x.fillStyle = trim; x.fillRect(0, 486, 256, 14); x.fillRect(0, 0, 9, 512); x.fillRect(247, 0, 9, 512); x.fillStyle = 'rgba(0,0,0,0.25)'; x.fillRect(0, 484, 256, 2); x.fillRect(9, 0, 2, 484); x.fillRect(245, 0, 2, 484); }
+  if (trim) { // S-383: BARRA limpa — debrum dourado até a beira do pano (antes sobrava uma tira de lã escurecida abaixo dele, que lia como "dobra suja"), pesponto no meio e um filete fino acima
+    x.fillStyle = color; x.fillRect(0, 470, 256, 42); for (let y = 470; y < 512; y += 2) { x.fillStyle = `rgba(0,0,0,${0.025 + r() * 0.02})`; x.fillRect(0, y, 256, 1); } // sem o escurecido do degradê no fim
+    x.fillStyle = trim; x.fillRect(0, 490, 256, 22); x.fillRect(0, 476, 256, 3); x.fillRect(0, 0, 9, 490); x.fillRect(247, 0, 9, 490);
+    x.fillStyle = 'rgba(0,0,0,0.22)'; x.fillRect(0, 488, 256, 2); x.fillRect(0, 479, 256, 1); x.fillRect(9, 0, 2, 476); x.fillRect(245, 0, 2, 476);
+    x.fillStyle = 'rgba(255,240,200,0.35)'; x.fillRect(0, 490, 256, 1); x.fillStyle = 'rgba(70,45,10,0.45)'; for (let k = 2; k < 256; k += 6) x.fillRect(k, 500, 3, 1); } // brilho do fio na dobra e pesponto
   if (emblem === 'sol') { // S-371: sol BORDADO tom sobre tom (fio creme-dourado, meio translúcido) no meio das costas — sutil, bem menos evidente que o do escudo
     const cx = 128, cy = 178; x.save(); x.translate(cx, cy); x.lineJoin = 'round';
     const ray = (k, R0, R1, w) => { const a = k / 24 * Math.PI * 2, s = Math.sin(a), c0 = Math.cos(a), px = c0, py = s; return [[s * R0 + px * w, -c0 * R0 + py * w], [s * R1, -c0 * R1], [s * R0 - px * w, -c0 * R0 - py * w]]; };
@@ -1923,6 +1961,20 @@ function capeClothTex(color, trim, emblem) {
     x.restore(); x.globalAlpha = 1;
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return (_capeTex[key] = t);
+}
+// S-383: empurra um ponto (mundo) para fora da saia de pano (clothSkirt/gownGeo) na forma ATUAL dela — usado pela capa,
+// que antes só via cápsulas e deixava a barra irregular da fralda de malha atravessar o pano (a "faixa escura" embaixo da capa)
+const _poV = new THREE.Vector3();
+function pushOutSkirt(sk, v, pad) {
+  const K = sk.m.geometry.userData.skirt, P = sk.m.geometry.attributes.position, l = _poV.copy(v).applyMatrix4(sk.inv), top = K.yb[0], bot = K.yb[(K.rows - 1) * K.cols];
+  if (l.y > top || l.y < bot - 0.04) return;
+  const dx = l.x - K.cx, dz = (l.z - K.cz) / K.sz, rp = Math.hypot(dx, dz); if (rp < 1e-4) return;
+  const a = Math.atan2(dx, dz), a0 = K.ang[0], span = K.dA * (K.closed ? K.cols : K.cols - 1);
+  let u = (a - a0) % (Math.PI * 2); if (u < 0) u += Math.PI * 2; if (u > span) return; // fora do arco (saia aberta)
+  const j = Math.min(K.cols - 1, Math.round(u / K.dA)) % K.cols, i = Math.max(0, Math.min(K.rows - 1, Math.round((top - l.y) / (top - bot) * (K.rows - 1))));
+  let r = 0; for (let ii = Math.max(0, i - 1); ii <= Math.min(K.rows - 1, i + 1); ii++) { const q = ii * K.cols + j; r = Math.max(r, Math.hypot(P.getX(q) - K.cx, (P.getZ(q) - K.cz) / K.sz)); }
+  if (rp >= r + pad) return;
+  const f = (r + pad) / rp; l.x = K.cx + dx * f; l.z = K.cz + dz * f * K.sz; v.copy(l.applyMatrix4(sk.m.matrixWorld));
 }
 function clothCape(root, fx, color, opt = {}) {
   const W = opt.w || 0.5, H = opt.h || 1.05, NX = 11, NY = 15, mat = new THREE.MeshStandardMaterial({ color: '#ffffff', map: capeClothTex(color, opt.trim || (root.userData.armorSet === 'paladino' ? '#c9a24a' : null), opt.emblem), roughness: 0.93, side: THREE.DoubleSide }); // S-337: lã de verdade (trama, dobras de sombra e barra) — não mais o couro com cara de papelão
@@ -1959,6 +2011,7 @@ function clothCape(root, fx, color, opt = {}) {
   }
   const N = NX * NY, p = new Float32Array(N * 3), q = new Float32Array(N * 3); let rest = (W / (NX - 1)); const restY = H / (NY - 1);
   let inited = false, last = performance.now();
+  let skirts = null; // S-383: saias de pano/malha que se mexem com as pernas (fralda do Paladino) — a capa passa POR FORA delas, não atravessa
   const wp = (b, v = new THREE.Vector3()) => b.getWorldPosition(v), tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), fwd = new THREE.Vector3(), rightV = new THREE.Vector3();
   const pins = () => { // pontos de fixação: linha atrás dos ombros (no espaço do mundo)
     root.updateMatrixWorld(true); const a = wp(clL), b = wp(clR), s = wp(sp3), pv = wp(pelv); fwd.copy(s).sub(pv); const upv = fwd.clone().normalize(); rightV.copy(a).sub(b).normalize(); const back = new THREE.Vector3().crossVectors(rightV, upv).normalize().multiplyScalar(-1);
@@ -1978,6 +2031,8 @@ function clothCape(root, fx, color, opt = {}) {
     for (let i = 0; i < NX; i++) { const k = i * 3; p[k] = out[i].x; p[k + 1] = out[i].y; p[k + 2] = out[i].z; q[k] = p[k]; q[k + 1] = p[k + 1]; q[k + 2] = p[k + 2]; }
     // corpo: cápsulas (tronco e coxas) que empurram o pano para fora
     const knees = wp(caL).add(wp(caR)).multiplyScalar(0.5);
+    if (!skirts) { skirts = []; root.traverse(o => { if (o.isMesh && o !== mesh && o.geometry && o.geometry.userData.skirt) skirts.push({ m: o, inv: new THREE.Matrix4() }); }); }
+    for (const sk of skirts) sk.inv.copy(sk.m.matrixWorld).invert();
     const caps = [[wp(sp3), wp(pelv, tmp2.clone()), bodyR], [wp(sp3), wp(s1b || pelv), bodyR + 0.005], [wp(pelv), knees, pelvisR], [wp(thL), wp(caL), 0.11 + armorPad * 0.5], [wp(thR), wp(caR), 0.11 + armorPad * 0.5], // S-337: tronco e quadril medidos (com placas e abas do tabardo)
       [wp(sp2b || sp3), wp(uaLb), 0.07 + armorPad], [wp(sp2b || sp3), wp(uaRb), 0.07 + armorPad], [wp(uaLb), wp(laLb), 0.055 + armorPad], [wp(uaRb), wp(laRb), 0.055 + armorPad]]; // ombros e braços com as ombreiras
     const link = (a, b, rl) => { const ka = a * 3, kb = b * 3, dx = p[kb] - p[ka], dy = p[kb + 1] - p[ka + 1], dz = p[kb + 2] - p[ka + 2], d = Math.hypot(dx, dy, dz) || 1e-6, df = (d - rl) / d * 0.5, pa = a < NX ? 0 : 1, pb = b < NX ? 0 : 1, s = pa + pb; if (!s) return; p[ka] += dx * df * (pa / s) * 2; p[ka + 1] += dy * df * (pa / s) * 2; p[ka + 2] += dz * df * (pa / s) * 2; p[kb] -= dx * df * (pb / s) * 2; p[kb + 1] -= dy * df * (pb / s) * 2; p[kb + 2] -= dz * df * (pb / s) * 2; };
@@ -1985,6 +2040,7 @@ function clothCape(root, fx, color, opt = {}) {
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const n = j * NX + i; if (i < NX - 1) link(n, n + 1, rest); if (j < NY - 1) link(n, n + NX, restY); if (i < NX - 1 && j < NY - 1) link(n, n + NX + 1, Math.hypot(rest, restY)); }
       for (let n = NX; n < N; n++) { const k = n * 3; tmp.set(p[k], p[k + 1], p[k + 2]);
         for (const [a, b, r] of caps) { const ab = tmp2.copy(b).sub(a), t = Math.max(0, Math.min(1, tmp.clone().sub(a).dot(ab) / ab.lengthSq())), c = a.clone().add(ab.multiplyScalar(t)), d = tmp.clone().sub(c), dl = d.length(); if (dl < r) { d.multiplyScalar((r - dl) / (dl || 1)); tmp.add(d); } }
+        for (const sk of skirts) pushOutSkirt(sk, tmp, 0.022);
         p[k] = tmp.x; p[k + 1] = tmp.y; p[k + 2] = tmp.z; }
     }
     // escreve na malha (vértices no espaço do mundo; a malha anula a transformação do pai)
@@ -2582,7 +2638,7 @@ function mgLegRad(root) {
         if (k === 2 && t > 0.75) acc[3].push(r); } }
     const p95 = a => { a.sort((x, y) => x - y); return a.length ? a[Math.floor(a.length * 0.95)] : 0; };
     const out = [Math.max(0.125, p95(acc[0]) + 0.01), Math.max(0.075, p95(acc[1]) + 0.012), Math.max(0.06, p95(acc[2]) + 0.01), Math.max(0.05, p95(acc[3]) + 0.008)];
-    out.spheres = 6; out.tent = 1.0; out.drop = 0.92; out.vtent = 0.9; out.lift = 0.5; return out; // clothSkirt: perna em esferas (coxa erguida ao correr não fura o robe); pano mais rente a cada perna e que volta abaixo do joelho (nada de "caixa" ao correr)
+    out.spheres = 6; out.tent = 1.8; out.drop = 0.88; out.vtent = 1.4; out.cap = 0.5; out.raiseF = 0.22; out.hk = 1.4; return out; // robeSolve (S-383): perna em esferas; folga do pano limitada — a perna sai por baixo (barra sobe pouco, só ali) em vez de o robe virar sino // clothSkirt: perna em esferas (coxa erguida ao correr não fura o robe); pano mais rente a cada perna e que volta abaixo do joelho (nada de "caixa" ao correr)
   });
 }
 // mangas: de cima justa (por cima do ombro) e de baixo em SINO, mais funda atrás (cai para baixo quando o braço dobra), com punho
@@ -3370,7 +3426,8 @@ const AV3 = (p, dx = 0, dy = 0, dz = 0) => new THREE.Vector3(p.x + dx, p.y + dy,
 // PEITORAL anatômico (frente e costas) com quilha central e placa da barriga em lâminas
 function breastplate(root, mat, o = {}) {
   const sp1 = bonePos(root, 'spine_01'), nk = bonePos(root, 'neck_01'), A = AV3(sp1, 0, -0.02, 0), B = AV3(nk, 0, -0.035, 0), body = ['spine_01', 'spine_02', 'spine_03'];
-  shellOn(root, 'bp' + (o.k || ''), body, /_Body/, A, B, { t0: o.t0 ?? 0.34, t1: 0.93, bins: 14, sec: 40, off: o.off ?? 0.026, th: 0.013, smooth: 5, uvRep: 2, straight: o.straight,
+  const t0 = o.bottomY !== undefined ? Math.max(0, Math.min(0.34, (o.bottomY - A.y) / (B.y - A.y))) : (o.t0 ?? 0.34); // bottomY: a borda de baixo fica escondida sob o cinto
+  shellOn(root, 'bp' + (o.k || ''), body, /_Body/, A, B, { t0, t1: 0.93, bins: 14, sec: 40, off: o.off ?? 0.026, th: 0.013, smooth: o.smooth ?? 5, uvRep: 2, straight: o.straight, vfit: o.vfit,
     ridge: (t, a) => Math.max(0, Math.cos(a)) ** 6 * (o.flat ? 0.008 : 0.018) * Math.min(1, t * 1.4) + (t > 0.9 ? (t - 0.9) * 0.08 : 0), flare: (t, a) => o.flat ? 0 : Math.max(0, Math.cos(a)) * Math.sin(Math.min(1, t) * Math.PI) * 0.012 }, mat, 'spine_02'); // o.flat: peito sem a quilha alta (cabe por baixo do mantelete sem furar)
   if (!o.noPlack) lames(root, 'plack' + (o.k || ''), body, /_Body/, A, B, 0.0, 0.36, 3, { sec: 40, off: (o.off ?? 0.026) + 0.016, step: 0.002, arc: o.backOpen ? [-1.7, 1.7] : undefined, straight: o.straight }, o.plackMat || mat, 'spine_02', o.plackLast); // S-326: folga segura sobre o peitoral (nada se cruza)
 }
@@ -3477,10 +3534,10 @@ function gorgetSet(root, mat, o = {}) {
   let bearded = false; root.traverse(m => { if (m.isSkinnedMesh && m.visible && /Beard/i.test(m.name)) bearded = true; });
   if (!o.noLames) lames(root, 'gorg' + (o.k || '') + (bearded ? 'b' : ''), ['neck_01'], /_(Body|Head)|SuperHero/i, AV3(nk, 0, Math.min(0.07, (nk.y - s3.y) * (root.userData.dwarf ? 0.95 : 0.45)), 0), AV3(s3, 0, -0.02, 0), 0.0, 0.6, 2, { sec: 36, off: 0.026, step: -0.006, flare: (t) => t * 0.018, arc: bearded ? [0.62, Math.PI * 2 - 0.62] : undefined }, mat, 'spine_03', o.trim); // S-373: abertura só do tamanho da barba (antes a malha do pescoço aparecia dos lados dela)
   // S-337/S-339: PLACA DOS OMBROS (mantelete) moldada nas clavículas e no alto do tronco — fecha o vão entre gola, peitoral e ombreiras (a malha não aparece mais em cima)
-  if (o.mantle !== false) shellOn(root, 'mantle2' + (o.k || '') + (bearded ? 'b' : ''), ['spine_03', 'clavicle_l', 'clavicle_r'], /_Body/, AV3(s3, 0, -0.08, 0), AV3(nk, 0, 0.07, 0), { t0: 0.14, t1: bearded ? 0.74 : 0.9, bins: 12, sec: 44, off: o.mantleOff ?? 0.034, th: 0.012, smooth: 6, uvRep: 2,
-    ridge: (t) => (t > 0.92 ? (t - 0.92) * 0.1 : 0), flare: (t) => (1 - t) * 0.012 }, mat, 'spine_03');
+  if (o.mantle !== false) shellOn(root, 'mantle2' + (o.k || '') + (bearded ? 'b' : ''), ['spine_03', 'clavicle_l', 'clavicle_r'], /_Body/, AV3(s3, 0, -0.08, 0), AV3(nk, 0, 0.07, 0), { t0: 0.14, t1: bearded ? 0.74 : 0.9, bins: 12, sec: 44, off: o.mantleOff ?? 0.034, th: 0.012, smooth: o.mantleSmooth ?? 6, uvRep: 2, vfit: o.mantleFit,
+    ridge: (t) => (t > 0.92 ? (t - 0.92) * 0.1 : 0), flare: (t) => (1 - t) * (o.mantleFlare ?? 0.012) }, mat, 'spine_03');
   if (o.mantle !== false && bearded) // S-373: com barba, o alto do mantelete continua dos LADOS e atrás (só a frente, sob a barba, fica aberta) — a malha não aparece mais no alto dos ombros do anão
-    shellOn(root, 'mantle2top' + (o.k || ''), ['spine_03', 'clavicle_l', 'clavicle_r'], /_Body/, AV3(s3, 0, -0.08, 0), AV3(nk, 0, 0.07, 0), { t0: 0.68, t1: 0.9, bins: 5, sec: 44, off: (o.mantleOff ?? 0.034) + 0.003, th: 0.012, smooth: 6, uvRep: 2, arc: [0.3, Math.PI * 2 - 0.3],
+    shellOn(root, 'mantle2top' + (o.k || ''), ['spine_03', 'clavicle_l', 'clavicle_r'], /_Body/, AV3(s3, 0, -0.08, 0), AV3(nk, 0, 0.07, 0), { t0: 0.68, t1: 0.9, bins: 5, sec: 44, off: (o.mantleOff ?? 0.034) + 0.003, th: 0.012, smooth: o.mantleSmooth ?? 6, uvRep: 2, arc: [0.3, Math.PI * 2 - 0.3],
       ridge: (t) => (t > 0.85 ? (t - 0.85) * 0.06 : 0), flare: (t) => (1 - t) * 0.004 }, mat, 'spine_03');
 }
 // S-326: fivelas diferentes por armadura — Paladino: oval dourada com sol gravado; Cavaleiro: quadrada de ferro escuro com pino de latão; Guerreiro: simples de latão
@@ -3628,10 +3685,11 @@ const ARMOR_BUILD = {
   leve(root) {
     const steel = AM.steel('#4f5256', { rivets: true, metal: 0.72, rough: 0.6, env: 0.55 }), edge = AM.steel('#5d6064', { metal: 0.75, rough: 0.5, env: 0.6 }), leather = AM.leather('#5a3d26'), dark = AM.leather('#33241a'), iron = AM.steel('#3c3b39', { metal: 0.8, rough: 0.5 });
     underLayer(root, '#5a4a3a', '#3a2c20', '#3a281a', { body: 0.006, arms: 0.006, legs: 0.006 }, 'acolchoado'); // gibão acolchoado (tecido grosso em gomos) por baixo
-    breastplate(root, steel, { k: 'wl3', off: 0.02, straight: true, flat: true });  // peitoral de aço escurecido (frente e costas) com placas da barriga, reto na cintura
-    gorgetSet(root, steel, { k: 'wl3', noLames: true, mantleOff: 0.046 }); // mantelete de aço: cobre o alto do peito e os ombros (o peitoral não fica "tomara que caia") e liga às ombreiras
-    const dw = !!root.userData.dwarf; // anão: pernas curtas e grossas — fralda de 2 lâminas no lugar dos tassets (que viravam "anéis soltos" na coxa)
-    fauldTassets(root, steel, { k: 'wl3', short: true, n: dw ? 2 : 1, trim: edge }); // fralda curta de placas sob o cinto (no lugar da saia)
+    const dw = !!root.userData.dwarf; // anão: pernas curtas e grossas — sem tassets (que viravam "anéis soltos" na coxa)
+    // S-383: no anão o tronco é UMA couraça lisa do cinto ao peito (sem as lâminas da barriga, que no tronco largo/curto viravam "rolos empilhados"), bem suavizada
+    breastplate(root, steel, { k: 'wl3', off: 0.02, straight: true, flat: true, ...(dw ? { bottomY: bonePos(root, 'pelvis').y + 0.12, noPlack: true, smooth: 8, vfit: true } : {}) });  // peitoral de aço escurecido (frente e costas) com placas da barriga, reto na cintura
+    gorgetSet(root, steel, { k: 'wl3', noLames: true, mantleOff: 0.046, ...(dw ? { mantleOff: 0.072, mantleSmooth: 8, mantleFlare: 0.003, mantleFit: true } : {}) }); // mantelete de aço: cobre o alto do peito e os ombros (o peitoral não fica "tomara que caia") e liga às ombreiras
+    fauldTassets(root, steel, { k: 'wl3', short: true, n: 1, trim: edge }); // fralda curta de placas sob o cinto (no lugar da saia) — uma lâmina só (anão incluso)
     if (!dw) for (const s of ['l', 'r']) { const th = bonePos(root, 'thigh_' + s), ca = bonePos(root, 'calf_' + s); // TASSETS de placa (3 lâminas) na frente/lado de cada coxa, até o meio da coxa
       lames(root, 'tasW' + s, ['thigh_' + s], /_Legs/, th, ca, 0.0, 0.46, 3, { sec: 26, off: 0.048, step: -0.004, smooth: 6, arc: [-1.2, 1.2], ridge: (t, a) => Math.max(0, Math.cos(a)) ** 8 * 0.005 }, steel, 'thigh_' + s, edge); }
     for (const s of ['l', 'r']) {
