@@ -24,6 +24,7 @@ function castleMats() {
     floor: mk(stoneTex({ base: [30, 8, 46], mortar: '#2e2a26', rows: [110, 140], wide: [110, 160], seed: 45 }), 4, { bump: 1.2, rough: 0.8 }),
     planks: mk(woodTex({ base: [26, 40, 30], seed: 47 }), 2.4, { bump: 1.2 }),
     beam: mk(woodTex({ base: [22, 34, 18], seed: 49 }), 2),
+    brick: mk(stoneTex({ base: [14, 42, 34], mortar: '#6e6052', rows: [26, 34], wide: [62, 92], seed: 53 }), 1.4, { bump: 1.4 }), // tijolo do forno de pão
   };
   return _ct;
 }
@@ -183,7 +184,7 @@ function buildCastleOutside(ctx) {
   // S-179: pátio todo calçado, acompanhando o terreno (nada de grama furando a pedra)
   const groundLocal = (lx, lz) => { const p = W(lx, lz); return heightAt(p.x, p.z) - y0; };
   const terrainPlane = (x0, z0, x1, z1, step, lift) => { const nx = Math.ceil((x1 - x0) / step), nz = Math.ceil((z1 - z0) / step), g = new THREE.PlaneGeometry(x1 - x0, z1 - z0, nx, nz).rotateX(-Math.PI / 2), P2 = g.attributes.position;
-    for (let i = 0; i < P2.count; i++) { const lx = P2.getX(i) + (x0 + x1) / 2, lz = P2.getZ(i) + (z0 + z1) / 2; P2.setY(i, groundLocal(lx, lz) + lift); } g.computeVertexNormals(); return g; };
+    for (let i = 0; i < P2.count; i++) { const lx = P2.getX(i) + (x0 + x1) / 2, lz = P2.getZ(i) + (z0 + z1) / 2; P2.setY(i, groundLocal(lx, lz) + lift); } g.computeVertexNormals(); g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2); return g; }; // caça-bugs: a placa ia para o centro do pátio (escondida) e o portão mostrava grama
   K.add(terrainPlane(-HW + WT / 2, -HW + WT / 2, HW - WT / 2, HW - WT / 2, 2, 0.04), mats.floor, 0, 0, 0);
   K.add(terrainPlane(-6, HW - WT, 6, HW + 7.5, 1.5, 0.05), mats.floor, 0, 0, 0); // passagem sob a portaria até a ponte
   // S-191: construções do pátio = casas de verdade encostadas na muralha (térreo de pedra, andar de enxaimel, telhado de ardósia,
@@ -262,6 +263,85 @@ function table(K, w, d, x, z, ry = 0, mat = M.darkWood()) { K.box(w, 0.12, d, ma
 function bench(K, w, x, z, ry = 0) { K.box(w, 0.08, 0.4, M.darkWood(), x, 0.48, z, ry); const cs = Math.cos(ry), sn = Math.sin(ry); for (const sx of [-1, 1]) K.box(0.08, 0.46, 0.36, M.darkWood(), x + sx * (w / 2 - 0.2) * cs, 0.23, z - sx * (w / 2 - 0.2) * sn, ry); }
 function chair(K, x, z, ry = 0, mat = M.darkWood()) { K.box(0.5, 0.06, 0.5, mat, x, 0.48, z, ry); const cs = Math.cos(ry), sn = Math.sin(ry); for (const [lx, lz] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) K.box(0.05, 0.48, 0.05, mat, x + lx * cs + lz * sn, 0.24, z - lx * sn + lz * cs, ry); K.box(0.5, 0.6, 0.05, mat, x - 0.23 * sn, 0.8, z - 0.23 * cs, ry); }
 function candle(K, x, y, z, h = 0.25) { K.cyl(0.035, 0.04, h, P('wax', '#f2ead6', { rough: 0.6 }), x, y + h / 2, z, 10); K.add(new THREE.SphereGeometry(0.03, 8, 6), M.ember(), x, y + h + 0.04, z, 0, 0, 0, 1, 1.8, 1); }
+/* ---------------- caça-bugs/melhorias (2026-11-12): janelas de verdade, tapeçarias tecidas, forno de pão ---------------- */
+// vidro em losangos de chumbo (claro ou colorido, como numa capela), mais claro em cima — nada de retângulo chapado
+const _leaded = {};
+function leadedGlass(colored = false) {
+  const key = colored ? 'c' : 'w'; if (_leaded[key]) return _leaded[key];
+  const c = document.createElement('canvas'); c.width = 128; c.height = 288; const g = c.getContext('2d'), r = rngOf(colored ? 71 : 73);
+  const tints = colored ? ['#c2362a', '#2a5ab8', '#e6b23a', '#3a9a5a', '#8a3ab8', '#f0e2b0'] : ['#f6ecd2', '#efe2c0', '#f8f0dc', '#e8dcc0'];
+  const s = 18; // losangos de 18 px
+  for (let y = -s; y < 288 + s; y += s / 2) for (let x = -s; x < 128 + s; x += s) { const ox = (Math.abs(Math.round(y / (s / 2))) % 2) * s / 2;
+    g.fillStyle = tints[Math.floor(r() * tints.length)]; g.globalAlpha = 0.82 + r() * 0.18; g.beginPath(); g.moveTo(x + ox, y - s / 2); g.lineTo(x + ox + s / 2, y); g.lineTo(x + ox, y + s / 2); g.lineTo(x + ox - s / 2, y); g.closePath(); g.fill(); g.globalAlpha = 1; g.strokeStyle = '#2a2622'; g.lineWidth = 2; g.stroke(); } // vidro + chumbo
+  const gr = g.createLinearGradient(0, 0, 0, 288); gr.addColorStop(0, 'rgba(255,250,235,0.28)'); gr.addColorStop(1, 'rgba(40,30,20,0.18)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 288);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_leaded[key] = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: colored ? 0.85 : 0.75, roughness: 0.3 }));
+}
+// janela em arco na face interna da parede: vidro de chumbo, mainel e travessas de ferro, ombreiras, arco e peitoril de pedra.
+// (x, z) = ponto na face da parede; ry = para onde a janela olha (para dentro da sala)
+function castleWindow(K, mats, x, z, ry, y0 = 4.2, w = 1.6, h = 3.6, colored = false) {
+  const cs = Math.cos(ry), sn = Math.sin(ry), at = (lx, ly, lz) => [x + lx * cs + lz * sn, ly, z - lx * sn + lz * cs];
+  const sh = new THREE.Shape(); sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(w / 2, h - w / 2); sh.absarc(0, h - w / 2, w / 2, 0, Math.PI, false); sh.closePath();
+  const gg = new THREE.ShapeGeometry(sh, 14), uv = gg.attributes.uv, Pp = gg.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (Pp.getX(i) + w / 2) / w, Pp.getY(i) / h);
+  K.add(gg, leadedGlass(colored), ...at(0, y0, 0.03), ry);
+  K.box(0.07, h - 0.15, 0.06, M.iron(), ...at(0, y0 + (h - 0.15) / 2, 0.07), ry); // mainel
+  for (let y = 0.9; y < h - w / 2; y += 0.9) K.box(w, 0.05, 0.05, M.iron(), ...at(0, y0 + y, 0.07), ry); // travessas
+  for (const sx of [-1, 1]) K.box(0.26, h - w / 2, 0.3, mats.wall, ...at(sx * (w / 2 + 0.13), y0 + (h - w / 2) / 2, 0.13), ry); // ombreiras
+  K.add(new THREE.TorusGeometry(w / 2 + 0.13, 0.14, 8, 22, Math.PI), mats.wall, ...at(0, y0 + h - w / 2, 0.13), ry); // arco
+  K.box(w + 0.7, 0.16, 0.42, mats.inner, ...at(0, y0 - 0.08, 0.18), ry); K.box(w + 0.3, 0.12, 0.2, mats.inner, ...at(0, y0 - 0.26, 0.1), ry); // peitoril e mísula
+}
+// tapeçaria tecida (no lugar dos retângulos lisos): fundo com trama e florzinhas, barra com losangos, sol de Valcinza
+// no medalhão, faixa com escrita e franja; pendurada num varão com ponteiras, com dobras suaves
+const _tapM = {};
+function tapestryMat(seed, field, border, accent) {
+  const key = seed + field; if (_tapM[key]) return _tapM[key];
+  const c = document.createElement('canvas'); c.width = 256; c.height = 400; const g = c.getContext('2d'), r = rngOf(seed);
+  const H = 380; // 380 px de pano + 20 px de franja
+  g.fillStyle = field; g.fillRect(0, 0, 256, H);
+  for (let y = 0; y < H; y += 2) { g.fillStyle = `rgba(0,0,0,${0.05 + r() * 0.08})`; g.fillRect(0, y, 256, 1); } // trama
+  for (let x = 0; x < 256; x += 3) { g.fillStyle = `rgba(255,255,255,${r() * 0.04})`; g.fillRect(x, 0, 1, H); }
+  for (let k = 0; k < 140; k++) { const x = 30 + r() * 196, y = 30 + r() * (H - 60); g.fillStyle = ['#d8b04a', '#e8dcc0', '#8a2a2a', '#4a6a3a'][k % 4]; g.globalAlpha = 0.55; for (let p = 0; p < 5; p++) { const a = p / 5 * 6.283; g.beginPath(); g.arc(x + Math.cos(a) * 2.2, y + Math.sin(a) * 2.2, 1.5, 0, 7); g.fill(); } } // millefleurs
+  g.globalAlpha = 1; g.fillStyle = border; g.fillRect(0, 0, 256, 22); g.fillRect(0, H - 22, 256, 22); g.fillRect(0, 0, 22, H); g.fillRect(234, 0, 22, H);
+  g.fillStyle = accent; const dia = (x, y) => { g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); g.fill(); };
+  for (let x = 16; x < 256; x += 16) { dia(x, 11); dia(x, H - 11); } for (let y = 32; y < H - 20; y += 16) { dia(11, y); dia(245, y); }
+  g.strokeStyle = accent; g.lineWidth = 2; g.strokeRect(26, 26, 204, H - 52);
+  // medalhão com o sol de Valcinza
+  const cx = 128, cy = H * 0.42; g.fillStyle = border; g.beginPath(); g.arc(cx, cy, 62, 0, 7); g.fill(); g.strokeStyle = accent; g.lineWidth = 4; g.stroke();
+  g.fillStyle = accent; for (let k = 0; k < 16; k++) { g.save(); g.translate(cx, cy); g.rotate(k / 16 * 6.283); g.beginPath(); g.moveTo(-5, 22); g.lineTo(0, k % 2 ? 44 : 54); g.lineTo(5, 22); g.closePath(); g.fill(); g.restore(); }
+  g.beginPath(); g.arc(cx, cy, 20, 0, 7); g.fill(); g.fillStyle = border; g.beginPath(); g.arc(cx, cy, 13, 0, 7); g.fill(); g.fillStyle = accent; g.beginPath(); g.arc(cx, cy, 8, 0, 7); g.fill();
+  // ramagens de cima e de baixo do medalhão
+  g.strokeStyle = '#4a6a3a'; g.lineWidth = 3; for (const sy of [-1, 1]) for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(cx + sx * 20, cy + sy * 66); g.bezierCurveTo(cx + sx * 70, cy + sy * 80, cx + sx * 60, cy + sy * 130, cx + sx * 90, cy + sy * 140); g.stroke(); }
+  // faixa com escrita
+  g.fillStyle = '#e8dcc0'; g.fillRect(50, H - 78, 156, 26); g.fillStyle = border; g.font = 'bold 15px serif'; g.textAlign = 'center'; g.fillText('VALCINZA', 128, H - 59);
+  // franja (o resto fica transparente)
+  g.fillStyle = accent; for (let x = 4; x < 256; x += 6) g.fillRect(x, H, 3, 12 + r() * 8);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_tapM[key] = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.95 }));
+}
+function tapestry(K, w, h, x, y, z, ry, seed = 1, field = '#3e1e3a', border = '#1e1020', accent = '#c8a24a') {
+  const cs = Math.cos(ry), sn = Math.sin(ry), at = (lx, ly, lz) => [x + lx * cs + lz * sn, ly, z - lx * sn + lz * cs], hh = h * 400 / 380;
+  const gg = new THREE.PlaneGeometry(w, hh, 28, 1); gg.translate(0, -hh / 2, 0); const Pp = gg.attributes.position;
+  for (let i = 0; i < Pp.count; i++) Pp.setZ(i, 0.06 + Math.sin(Pp.getX(i) / w * Math.PI * 7) * 0.035 * (0.4 - Pp.getY(i) / hh)); // dobras mais fundas embaixo
+  gg.computeVertexNormals(); K.add(gg, tapestryMat(seed, field, border, accent), ...at(0, y + h, 0), ry); // y = barra de baixo do pano
+  K.cyl(0.035, 0.035, w + 0.36, M.iron(), ...at(0, y + h + 0.03, 0.08), 10, ry, 0, Math.PI / 2);
+  for (const sx of [-1, 1]) { K.add(new THREE.SphereGeometry(0.06, 12, 8), M.gold(), ...at(sx * (w / 2 + 0.2), y + h + 0.03, 0.08)); K.box(0.05, 0.16, 0.12, M.iron(), ...at(sx * (w / 2 + 0.05), y + h + 0.06, 0.03), ry); }
+}
+// forno de pão em cúpula de tijolo, com boca em arco, brasas, chaminé, pá de forno e pães
+function breadOven(K, mats, x, z, ry) {
+  const cs = Math.cos(ry), sn = Math.sin(ry), at = (lx, ly, lz) => [x + lx * cs + lz * sn, ly, z - lx * sn + lz * cs], brick = mats.brick;
+  K.box(3.4, 0.95, 3.0, mats.wall, ...at(0, 0.475, 0), ry); K.box(3.5, 0.1, 3.1, mats.inner, ...at(0, 0.98, 0), ry);
+  K.add(lathe([[1.42, 0], [1.42, 0.35], [1.32, 0.75], [1.1, 1.1], [0.7, 1.38], [0.25, 1.5], [0, 1.52]], 32), brick, ...at(0, 1.03, -0.1));
+  for (let k = 0; k < 3; k++) K.add(new THREE.TorusGeometry(1.42 - k * 0.14, 0.03, 6, 40), mats.inner, ...at(0, 1.08 + k * 0.38, -0.1), 0, Math.PI / 2); // fiadas
+  const mo = new THREE.Shape(); mo.moveTo(-0.42, 0); mo.lineTo(0.42, 0); mo.lineTo(0.42, 0.3); mo.absarc(0, 0.3, 0.42, 0, Math.PI, false); mo.closePath();
+  K.add(new THREE.ShapeGeometry(mo, 10), P('ovenMouth', '#1a0c06', { emissive: '#ff5a10', ei: 0.35 }), ...at(0, 1.05, 1.33), ry);
+  K.add(new THREE.TorusGeometry(0.5, 0.09, 8, 18, Math.PI), mats.inner, ...at(0, 1.35, 1.34), ry); for (const sx of [-1, 1]) K.box(0.18, 0.32, 0.22, mats.inner, ...at(sx * 0.5, 1.19, 1.3), ry);
+  logsGlow(K, ...at(0, 1.03, 1.5), 0.32, ry); // brasas na boca do forno
+  K.cyl(0.22, 0.26, 2.2, brick, ...at(0, 3.0, -1.0), 14); K.cyl(0.3, 0.3, 0.12, mats.inner, ...at(0, 4.1, -1.0), 14);
+  // pá de forno encostada e pães esfriando num tabuleiro
+  K.box(0.05, 2.2, 0.05, M.darkWood(), ...at(1.95, 1.05, 1.0), ry, 0, 0.18); K.box(0.32, 0.36, 0.03, M.darkWood(), ...at(2.1, 0.17, 1.0), ry, 0, 0.18);
+  K.box(1.1, 0.06, 0.6, M.darkWood(), ...at(-1.2, 1.06, 1.35), ry);
+  for (let k = 0; k < 5; k++) K.add(new THREE.SphereGeometry(0.13, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), P('bread', '#c08a4a', { rough: 0.9 }), ...at(-1.6 + k * 0.2, 1.09, 1.35 + (k % 2 ? 0.1 : -0.1)), k, 0, 0, 1.3, 0.75, 1);
+}
 function chandelier(K, x, y, z, R = 1.4) {
   K.add(new THREE.TorusGeometry(R, 0.06, 8, 40), M.iron(), x, y, z, 0, Math.PI / 2); K.add(new THREE.TorusGeometry(R * 0.5, 0.05, 8, 24), M.iron(), x, y + 0.3, z, 0, Math.PI / 2);
   for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2; K.add(new THREE.CylinderGeometry(0.018, 0.018, R, 6), M.iron(), x + Math.cos(a) * R / 2, y + 0.3, z + Math.sin(a) * R / 2, -a, 0, Math.PI / 2); } // raios do aro
@@ -610,7 +690,7 @@ function buildCastleInside(ctx) {
   // tochas de ferro nos pilares (do lado da nave)
   for (const sx of [-1, 1]) for (let z = -38; z <= 22; z += 10) { const tx = sx * 7 - sx * 1.0; K.box(0.08, 0.5, 0.25, M.iron(), sx * 7 - sx * 0.65, 3.4, z); K.add(new THREE.CylinderGeometry(0.1, 0.06, 0.24, 10), M.iron(), tx, 3.62, z); K.add(new THREE.CylinderGeometry(0.04, 0.035, 0.5, 8), M.darkWood(), tx, 3.4, z); FL(tx, 3.72, z, 0.5, z * 0.3 + sx); }
   // tapeçarias ao lado do trono
-  for (const sx of [-1, 1]) { K.box(0.1, 6, 3.2, cloth('tapestry' + sx, sx > 0 ? '#3e1e5a' : '#5a1e2e'), sx * 11.5, 6, -40); K.box(0.12, 0.2, 3.4, M.gold(), sx * 11.45, 9.1, -40); }
+  for (const sx of [-1, 1]) tapestry(K, 3.2, 6, sx * 11.52, 3.0, -40, sx > 0 ? -Math.PI / 2 : Math.PI / 2, 3 + sx, sx > 0 ? '#3e1e5a' : '#5a1e2e', '#1a0e1e', '#d8b04a'); // tapeçarias tecidas (antes: retângulos lisos)
 
   // ===== VESTÍBULO (z 30..48): armaduras completas ladeando a entrada =====
   { let v = 0; for (const sx of [-1, 1]) for (const z of [34, 39, 44]) armorStand(K, sx * 9.5, z, sx * -Math.PI / 2, sx > 0 ? '#8a1a22' : '#1e3a6a', v++); } // S-276: seis armaduras diferentes
@@ -719,12 +799,21 @@ function buildCastleInside(ctx) {
   K.box(2.2, 2.6, 0.8, M.darkWood(), 20, 1.3, -45.4); K.box(0.06, 2.2, 0.02, M.gold(), 20, 1.3, -44.98); cols.push({ x: I.x + 20, z: I.z - 45.4, r: 1.1 }); // guarda-roupa
   K.box(1.4, 0.6, 0.7, M.darkWood(), 30, 0.3, -37.4); K.box(1.42, 0.08, 0.72, M.gold(), 30, 0.62, -37.4); // baú ao pé da cama
   table(K, 1.4, 0.8, 35, -26); chair(K, 35, -25, Math.PI); K.box(0.9, 1.2, 0.05, P('mirror', '#cfe0e8', { metal: 0.9, rough: 0.05 }), 35, 1.8, -26.5);
-  K.box(0.1, 4, 5, cloth('tapR', '#2e1e4a'), hw - 0.55, 4.5, -33); K.box(0.12, 0.2, 5.2, M.gold(), hw - 0.5, 6.55, -33);
+  tapestry(K, 5, 3.8, hw - 0.48, 2.6, -33, -Math.PI / 2, 7, '#2e1e4a', '#140c22', '#c8a24a'); // o "quadrado azul" virou tapeçaria de verdade
   for (const [x, z] of [[24, -45.6], [36.6, -40]]) { K.add(lathe([[0, 0], [0.22, 0], [0.07, 0.1], [0.04, 1.3], [0.12, 1.4], [0, 1.42]], 14), M.gold(), x, 0, z); candle(K, x, 1.4, z, 0.22); FL(x, 1.66, z, 0.1, x); }
   chandelier(K, 28, 8, -33, 1.2);
   // ===== QUARTO DE HÓSPEDES =====
   bed(K, 20, -16, 0, 1.6); bed(K, 30, -16, 0, 1.6); K.box(1.2, 0.6, 0.6, M.darkWood(), 25, 0.3, -18.2);
   cols.push({ x: I.x + 20, z: I.z - 16, r: 0.1, box: true, hx: 1, hz: 1.3, rot: 0 }, { x: I.x + 30, z: I.z - 16, r: 0.1, box: true, hx: 1, hz: 1.3, rot: 0 });
+  { // quarto de hóspedes mobiliado (antes: duas camas numa sala vazia): baús, guarda-roupa, lavatório, estante, tapeçaria e castiçais
+    for (const bx of [20, 30]) { K.box(1.2, 0.55, 0.6, M.darkWood(), bx, 0.275, -14.0); K.box(1.24, 0.06, 0.64, M.iron(), bx, 0.56, -14.0); for (const sx of [-1, 1]) K.box(0.05, 0.56, 0.62, M.iron(), bx + sx * 0.45, 0.28, -14.0); cols.push({ x: I.x + bx, z: I.z - 14.0, r: 0.1, box: true, hx: 0.62, hz: 0.32, rot: 0 }); }
+    K.box(0.8, 2.6, 2.2, M.darkWood(), 12.85, 1.3, -16.4); K.box(0.04, 2.3, 0.04, M.gold(), 13.27, 1.3, -16.4); for (const dz of [-0.55, 0.55]) K.box(0.03, 1.9, 0.9, P('wardPanel', '#3a2416', { rough: 0.7 }), 13.26, 1.35, -16.4 + dz); K.box(0.9, 0.12, 2.3, M.darkWood(), 12.85, 2.66, -16.4); cols.push({ x: I.x + 12.85, z: I.z - 16.4, r: 0.1, box: true, hx: 0.42, hz: 1.12, rot: 0 });
+    bookshelf(K, 2.6, 12.6, -2.6, Math.PI / 2, 61); cols.push({ x: I.x + 12.8, z: I.z - 2.6, r: 0.1, box: true, hx: 0.38, hz: 1.35, rot: 0 });
+    K.box(1.0, 0.85, 0.55, M.darkWood(), 37.1, 0.425, -9.6); K.add(lathe([[0, 0], [0.18, 0], [0.26, 0.08], [0.3, 0.14]], 20), P('basin', '#e8e0cc', { rough: 0.35 }), 37.0, 0.86, -9.8); K.cyl(0.24, 0.24, 0.01, P('waterTop', '#2e4a5a', { rough: 0.1, metal: 0.2 }), 37.0, 0.96, -9.8, 16);
+    K.add(lathe([[0, 0], [0.08, 0], [0.1, 0.1], [0.07, 0.22], [0.05, 0.27], [0.07, 0.31]], 16), P('jug', '#9a5a3a', { rough: 0.6 }), 37.15, 0.86, -9.3); K.box(0.05, 0.9, 0.6, P('mirror', '#cfe0e8', { metal: 0.9, rough: 0.05 }), 37.5, 1.75, -9.6); cols.push({ x: I.x + 37.1, z: I.z - 9.6, r: 0.1, box: true, hx: 0.5, hz: 0.3, rot: 0 });
+    candle(K, 25, 0.6, -18.2); FL(25, 0.88, -18.2, 0.08, 3); K.box(0.26, 0.05, 0.2, bookMat(2), 25.3, 0.62, -18.1, 0.4);
+    tapestry(K, 3.4, 3.0, 25, 3.0, -19.48, 0, 9, '#1e3a3a', '#0e1e1e', '#c8a24a');
+    for (const [x, z] of [[17.6, -18.6], [32.4, -18.6]]) { K.add(lathe([[0, 0], [0.22, 0], [0.07, 0.1], [0.04, 1.3], [0.12, 1.4], [0, 1.42]], 14), M.gold(), x, 0, z); candle(K, x, 1.4, z, 0.22); FL(x, 1.66, z, 0.1, x); } }
   table(K, 2, 1.2, 25, -5); chair(K, 24.2, -4, Math.PI); chair(K, 25.8, -6, 0); candle(K, 25, 0.88, -5); FL(25, 1.15, -5, 0.09, 5); rug(K, 3, 4, 25, -9, '#2a4a6a', '#c8b07a', '#14243a', Math.PI / 2);
   // ===== COZINHA =====
   const fpK = fireplace(K, hw - 0.7, 20, -Math.PI / 2, mats); cols.push({ x: I.x + hw - 1.4, z: I.z + 20, r: 1.9 });
@@ -741,9 +830,16 @@ function buildCastleInside(ctx) {
   for (let k = 0; k < 4; k++) K.add(new THREE.SphereGeometry(0.07, 12, 8), P('onion', '#c89a5a', { rough: 0.55 }), 31.25 + (k % 2) * 0.13, 0.95, 35.75 + Math.floor(k / 2) * 0.13, 0, 0, 0, 1, 0.9, 1);
   K.add(lathe([[0, 0], [0.2, 0.0], [0.24, 0.12], [0.26, 0.2], [0.24, 0.22]], 18), P('bowl', '#8a5a34', { rough: 0.7 }), 31.3, 0.88, 36.35); // tigela
   kitchenLife(K, cols, I, hw);
+  breadOven(K, mats, 31.5, 4.1, 0); cols.push({ x: I.x + 31.5, z: I.z + 4.1, r: 0.1, box: true, hx: 1.75, hz: 1.55, rot: 0 }); flames.push([31.5, 1.1, 5.62, 0.12, 7]); // forno de pão: a cozinha tinha um vazio enorme no meio
   // ===== arandelas com tocha nas paredes dos corredores e salas =====
   const sconce = (x, z, ry, y = 3.4) => { const cs = Math.cos(ry), sn = Math.sin(ry), at = (lz, yy) => [x + lz * sn, yy, z + lz * cs]; K.box(0.3, 0.45, 0.06, M.iron(), ...at(0, y), ry); K.add(new THREE.TorusGeometry(0.22, 0.03, 6, 12, Math.PI / 2), M.iron(), ...at(0.2, y - 0.1), ry + Math.PI / 2, 0, Math.PI); K.cyl(0.07, 0.05, 0.14, M.iron(), ...at(0.4, y + 0.1), 10); K.cyl(0.035, 0.03, 0.45, M.darkWood(), ...at(0.4, y + 0.3), 8); for (let k = 0; k < 3; k++) K.add(new THREE.TorusGeometry(0.04, 0.012, 6, 10), P('rag', '#3a2a1a', { rough: 1 }), ...at(0.4, y + 0.45 + k * 0.035), 0, Math.PI / 2); const [fx, fy, fz] = at(0.42, y + 0.56); FL(fx, fy, fz, 0.42, x + z); };
   for (const [x, z, a] of [[-37.5, -2, Math.PI / 2], [-37.5, 8, Math.PI / 2], [37.5, -30, -Math.PI / 2], [37.5, -10, -Math.PI / 2], [37.5, 40, -Math.PI / 2], [-6, 47.5, Math.PI], [6, 47.5, Math.PI], [-11.5, 40, Math.PI / 2], [11.5, 40, -Math.PI / 2]]) sconce(x, z, a);
+  // janelas nas paredes de fora das salas laterais (antes as salas eram caixotes de pedra sem nenhuma janela)
+  for (const z of [-7, 3, 13]) castleWindow(K, mats, -hw + 0.46, z, Math.PI / 2, 4.6, 1.7, 4.2, true);   // capela: vitrais
+  for (const x of [24.5, 35.5]) castleWindow(K, mats, x, -hd + 0.46, 0, 4.4, 1.5, 3.4);                    // quarto real
+  for (const z of [-15, -4]) castleWindow(K, mats, hw - 0.46, z, -Math.PI / 2, 4.2, 1.5, 3.2);            // hóspedes
+  castleWindow(K, mats, hw - 0.46, 9, -Math.PI / 2, 4.4, 1.6, 3.6); castleWindow(K, mats, 27, hd - 0.46, Math.PI, 4.4, 1.6, 3.6); // cozinha
+  for (const x of [-8.5, 8.5]) castleWindow(K, mats, x, hd - 0.46, Math.PI, 5.0, 1.5, 3.4);               // vestíbulo, dos lados da porta
   for (const sx of [-1, 1]) for (let z = -33; z <= 17; z += 10) { const b = makeBanner('castelo', 1.3, 3.6); b.position.set(I.x + sx * 6.0, 8.0, I.z + z); b.rotation.y = -sx * Math.PI / 2; ctx.scene.add(b); }
   for (const [x, z] of [[33, 44], [34.5, 44], [33.6, 42.6], [35, 34], [20, 46]]) ctx.place('barrel', I.x + x, I.z + z, { y: 0, rot: x });
   for (const [x, z] of [[16, 44]]) ctx.place('crate_A', I.x + x, I.z + z, { y: 0, rot: 0.3 });
@@ -828,7 +924,24 @@ function royalRegalia(npc, kind) {
   if (kind === 'king' && hand) { const sc = new THREE.Group(); const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.7, 10), gold); rod.position.y = 0.2; sc.add(rod); const orb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), gem('#c0203a')); orb.position.y = 0.57; sc.add(orb); const cr = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.006, 6, 16), gold); cr.position.y = 0.57; sc.add(cr); attach(hand, sc, new THREE.Vector3(0, -0.15, 0.03)); }
 }
 
-// ctx: { scene, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals }
+// pátio com vida (antes: 84 m de laje vazia com duas casas): campo de treino a oeste, canto da cavalariça a leste
+// (a Rosalind é cavalariça e não tinha nem feno) e carga junto das casas. Tudo longe do caminho portão → torre.
+function courtyardLife(ctx, o) {
+  const put = (name, lx, lz, lr = 0, opt = {}) => { const p = o.W(lx, lz); return ctx.place(name, p.x, p.z, { rot: o.ry + lr, ...opt }); };
+  for (const lz of [-28, -21.5, -15]) put('target_round', -36.5, lz, Math.PI / 2);      // alvos de arco virados para o pátio
+  put('weaponrack', -24.5, -21.5, -Math.PI / 2); put('weaponrack', -31, 3.5, Math.PI);
+  for (const [n, lx, lz, lr] of [['barrel', -27, 16.6, 0], ['barrel', -26.1, 17.5, 1], ['barrel', -27.2, 18.4, 2], ['lumber', -27.6, 27.5, 0.2], ['sack', -26.4, 26.2, 0],
+    ['crate_A', 26.6, 16.2, 0.3], ['crate_A', 27.2, 17.6, -0.2], ['barrel', 26.4, 27.6, 0], ['wheelbarrow', 24.5, 4.5, 2.2], ['bucket', 27.4, -0.4, 0]]) put(n, lx, lz, lr);
+  if (ctx.hayStack) for (const [lx, lz, n, sd, lr] of [[34.5, -7, 4, 3, 0.4], [35.5, 0.5, 3, 8, -0.3], [-28, -33, 5, 5, 0.2]]) { const p = o.W(lx, lz), hs = ctx.hayStack(n, sd); hs.position.set(p.x, heightAt(p.x, p.z), p.z); hs.rotation.y = o.ry + lr; hs.scale.setScalar(1.3); ctx.scene.add(hs); ctx.colliders.push({ x: p.x, z: p.z, r: 1.2, name: 'feno' }); }
+  { // bebedouro dos cavalos (tábuas, aros de ferro e água)
+    const K = new Kit(), wd = M.darkWood(), p = o.W(28.5, -2.5), y = heightAt(p.x, p.z);
+    K.box(2.6, 0.12, 0.9, wd, 0, 0.12, 0); for (const sz of [-1, 1]) K.box(2.6, 0.7, 0.1, wd, 0, 0.45, sz * 0.42); for (const sx of [-1, 1]) K.box(0.1, 0.7, 0.9, wd, sx * 1.25, 0.45, 0);
+    for (const sx of [-0.8, 0.8]) K.box(0.04, 0.72, 0.96, M.iron(), sx, 0.45, 0);
+    K.add(new THREE.PlaneGeometry(2.4, 0.74).rotateX(-Math.PI / 2), P('troughW', '#2e4a52', { rough: 0.08, metal: 0.3 }), 0, 0.7, 0);
+    const g = K.build(); g.position.set(p.x, y, p.z); g.rotation.y = o.ry; ctx.scene.add(g); g.userData.asset = 'bebedouro'; ctx.placed.push(g);
+    ctx.colliders.push({ x: p.x, z: p.z, r: 1.3, box: true, hx: 1.3, hz: 0.45, rot: o.ry, name: 'bebedouro' }); }
+}
+// ctx: { scene, colliders, occluders, placed, roomAnims, roomNpc, worldNpc, INTERIORS, addDoorPortal, makePortal, portals, hayStack }
 export function buildCastle(ctx) {
   ctx.INTERIORS.castelo = CASTLE_I;
   const o = buildCastleOutside(ctx);
@@ -840,5 +953,6 @@ export function buildCastle(ctx) {
     lines: 'Alto! ...Ah, um aventureiro. Pode entrar: o Rei Aldemar recebe visitantes no salão do trono. A porta da torre fica no fim do pátio.' }, gate.x + 4, gate.z, o.ry);
   ctx.worldNpc({ id: 'cavalarica', name: 'Rosalind', title: 'Cavalariça', model: 'Rogue', look: { race: 'humano', sex: 'f', face: 'alegre', hair: { style: 'longo', color: 'ruivo' } },
     lines: 'Os cavalos do rei comem melhor que muito cavaleiro por aí!' }, yard.x, yard.z, o.ry + Math.PI);
+  courtyardLife(ctx, o);
   return o;
 }

@@ -51,6 +51,19 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
 - **A conferir**: o verificador acusa 7 montes de "escombros" nas Ruínas (perto de -26,-248; 12,-232; 51,-405...) sem colisão. São pedrinhas baixas e espalhadas, então talvez seja de propósito. Mas o S-302 pediu para não atravessar escombros: confira de perto se algum é alto.
 - Dados íntegros: drops, cartas, missões, habilidades e lojas apontam para coisas que existem.
 
+### 2026-11-12: segunda caçada (castelo de Valcinza)
+- **Grama no portão, corrigido.** Entre a portaria e a ponte o chão era grama e terra. O calçamento da passagem e o da ponte eram montados no centro do pátio, escondidos debaixo dele, porque `terrainPlane` não movia a placa para o lugar certo.
+- **Sol vazando pelo teto das salas, corrigido.** Faixas claras na diagonal no fundo do salão do trono, no Salão das Lâminas e na cozinha.
+  - Causa: a sombra do sol cobria só 38 m em volta do herói, e fora disso o teto não fazia sombra.
+  - Agora, em sala coberta, a sombra cobre a sala inteira e fica centrada nela (main3d, antes de `updateDayNight`). Vale para todas as salas; a Arena, aberta, continua igual.
+- **Melhorias com bom senso** (ambiente, não bug):
+  - Janelas de verdade (vidro em losangos, mainel, arco, peitoril) nas salas laterais; vitrais na capela.
+  - Tapeçarias tecidas no lugar dos retângulos lisos (trono e quarto real).
+  - Quarto de hóspedes mobiliado.
+  - Forno de pão de tijolo na cozinha.
+  - Pátio com campo de treino (alvos, suportes de armas), canto da cavalariça (feno, bebedouro, carrinho, balde) e carga junto das casas.
+- **Sinal para o futuro**: sala grande demais e vazia (13 m de pé-direito, paredes lisas) é o ponto fraco do castelo. Ao mexer nele, prefira encher o que existe a criar sala nova.
+
 ### Falsos alarmes conhecidos
 - **Gudrun e Irmão Hulda** (Pedrafunda) ficam 1,35 m acima do chão de propósito, na base da estátua e no degrau do templo. Dá para conversar com eles de baixo.
-- "NPC dentro de objeto" para NPCs sentados ou atrás de balcão (Dona Rosa, Velho Gui, Rei Aldemar...): o círculo de colisão do móvel os cobre, mas o jogador conversa normalmente.
+- "NPC dentro de objeto" para NPCs sentados ou atrás de balcão (Dona Rosa, Velho Gui, Rei Aldemar, Irmão Caio, Ilka...): o círculo de colisão do móvel os cobre, mas o jogador conversa normalmente.
