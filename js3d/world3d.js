@@ -891,22 +891,26 @@ function grassChunk(ci, cj) {
   if (rub.length) { const r = new THREE.InstancedMesh(rubbleGeo, rubbleMat, rub.length); rub.forEach((mm, i) => r.setMatrixAt(i, mm)); r.castShadow = r.receiveShadow = true; r.computeBoundingSphere(); g.add(r); }
   return g;
 }
+// qualidade gráfica: até onde a grama aparece (0 = sem grama)
+let GRASS_VIS = 131;
+export function setGrassRange(r) { GRASS_VIS = r; if (grassRoot) grassRoot.visible = r > 0; }
 // visibilidade (e geração/descarte) dos blocos de grama perto do jogador
 export function cullGrass(x, z, force = false) {
-  if (!grassRoot) return;
+  if (!grassRoot || GRASS_VIS <= 0) return;
   let made = 0;
   const ci0 = Math.floor((x + HALF) / GCH), cj0 = Math.floor((z + HALF) / GCH);
-  for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) {
+  const R = Math.ceil((GRASS_VIS + 9) / GCH) + 1;
+  for (let dj = -R; dj <= R; dj++) for (let di = -R; di <= R; di++) {
     const ci = ci0 + di, cj = cj0 + dj; if (ci < 0 || cj < 0 || ci >= GN || cj >= GN) continue;
     const key = ci * 1000 + cj; if (grassMade.has(key) || (made && !force)) continue;
     const ccx = -HALF + (ci + 0.5) * GCH, ccz = -HALF + (cj + 0.5) * GCH;
-    if (Math.hypot(ccx - x, ccz - z) > 140) continue;
+    if (Math.hypot(ccx - x, ccz - z) > GRASS_VIS + 9) continue;
     const g = grassChunk(ci, cj); grassMade.set(key, g); grassRoot.add(g); grassChunks.push(g); made++; // no máximo 1 bloco novo por quadro
   }
   for (const [key, g] of grassMade) {
     const d = Math.hypot(g.userData.cx - x, g.userData.cz - z);
-    g.visible = d < 131;
-    if (d > 280) { grassRoot.remove(g); g.traverse(o => { if (o.isInstancedMesh) o.dispose(); }); grassMade.delete(key); grassChunks.splice(grassChunks.indexOf(g), 1); } // longe demais: libera a memória
+    g.visible = d < GRASS_VIS;
+    if (d > Math.max(280, GRASS_VIS * 2)) { grassRoot.remove(g); g.traverse(o => { if (o.isInstancedMesh) o.dispose(); }); grassMade.delete(key); grassChunks.splice(grassChunks.indexOf(g), 1); } // longe demais: libera a memória
   }
 }
 export function buildGrass(rng) {

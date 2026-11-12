@@ -38,6 +38,8 @@ import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { riderPose } from './ride3d.js';
 import { startFlight } from './flight3d.js'; // P-006: voo de Noctívago de verdade
 import { makeLightPool, vlight } from './lights3d.js';
+import { GFX_LEVELS, gfxLevel, gfxId, applyGfx } from './graphics3d.js'; // qualidade gráfica (5 níveis, nas Configurações)
+import { setGrassRange } from './world3d.js';
 import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
 import { loadHumans, makeHuman, shareSkeletons, unsquashDwarf } from './humans3d.js';
@@ -80,7 +82,8 @@ sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, near: 1, far: 200 });
 sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
-const sky = buildSky(); scene.add(sky);
+const gfxCtx = { renderer, sun, scene, camera, setGrassRange }; // o céu entra no contexto logo que é criado // nível salvo neste aparelho (padrão: Alto = o visual de sempre)
+const sky = buildSky(); scene.add(sky); gfxCtx.sky = sky; applyGfx(gfxCtx); // nível salvo neste aparelho (padrão: Alto = o visual de sempre)
 initDayNight({ scene, renderer, hemi, sun, sky, getClouds: () => S.cloudInst, setWeatherLight }); // P-020
 scene.add(camera); // a câmera fica na cena: as mãos da 1ª pessoa são filhas dela
 { const ch = document.createElement('div'); ch.id = 'crosshair'; ch.className = 'hidden'; ch.innerHTML = '<i></i><i></i><i></i><i></i><b></b>'; document.body.appendChild(ch); }
@@ -224,7 +227,7 @@ function cullInteriors() {
 function cullScenery() {
   if (S.time - sceneryT < 0.5) return; sceneryT = S.time;
   const x = S.interior ? S.interior.back.x : S.pos.x, z = S.interior ? S.interior.back.z : S.pos.z;
-  for (const o of placed) { if (o.userData.big) continue; const a = o.userData.asset; if (!a || /^(cloud|mountain)/.test(a)) continue; o.visible = Math.hypot(o.position.x - x, o.position.z - z) < (/^(home|tavern|church|blacksmith|market|windmill|tower|destroyed|wall)/.test(a) ? 330 : 200); } // prédios aparecem de mais longe
+  for (const o of placed) { if (o.userData.big) continue; const a = o.userData.asset; if (!a || /^(cloud|mountain)/.test(a)) continue; o.visible = Math.hypot(o.position.x - x, o.position.z - z) < (/^(home|tavern|church|blacksmith|market|windmill|tower|destroyed|wall)/.test(a) ? 330 : 200) * gfxLevel().scenery; } // prédios aparecem de mais longe
 }
 function place(name, x, z, o = {}) {
   const g = MODELS[name]; if (!g) return null;
@@ -3434,6 +3437,8 @@ function showSettings() {
     <label class="opt-sw"><input type="checkbox" id="o-mon" ${Sound.musicOn ? 'checked' : ''}><span>🎵 Música</span><input type="range" id="o-mv" min="0" max="100" value="${pct(Sound.musicVol)}"><b id="o-mv-t">${pct(Sound.musicVol)}%</b></label>
     <label class="opt-sw"><input type="checkbox" id="o-son" ${Sound.sfxOn ? 'checked' : ''}><span>💥 Efeitos <small class="muted">(golpes, saltos, monstros, passos...)</small></span><input type="range" id="o-sv" min="0" max="100" value="${pct(Sound.sfxVol)}"><b id="o-sv-t">${pct(Sound.sfxVol)}%</b></label>
     <label class="opt-sw"><input type="checkbox" id="o-aon" ${typeof Ambience === 'undefined' || Ambience.on ? 'checked' : ''}><span>🌿 Ambiente <small class="muted">(vento, pássaros, rio, vila, forja...)</small></span><input type="range" id="o-av" min="0" max="100" value="${typeof Ambience === 'undefined' ? 80 : pct(Ambience.vol)}"><b id="o-av-t">${typeof Ambience === 'undefined' ? 80 : pct(Ambience.vol)}%</b></label>
+    <div class="opt-sec">🖥️ Gráficos</div>
+    <div class="opt-sw"><span>Qualidade gráfica <small class="muted" id="o-gfx-d">(${gfxLevel().desc})</small></span><select id="o-gfx">${GFX_LEVELS.map(l => `<option value="${l.id}" ${l.id === gfxId() ? 'selected' : ''}>${l.name}</option>`).join('')}</select></div>
     <div class="opt-sec">🌿 Mundo</div>
     <label class="opt-sw"><input type="checkbox" id="o-fauna" ${faunaEnabled() ? 'checked' : ''}><span>🦋 Vida ambiente <small class="muted">(pássaros, borboletas, vaga-lumes, peixes — desligue se o computador for fraco)</small></span></label>
     <div class="opt-sec">🎯 Combate</div>
@@ -3450,6 +3455,7 @@ function showSettings() {
   $('o-sv').oninput = e => { Sound.setVolumes(null, e.target.value / 100); $('o-sv-t').textContent = e.target.value + '%'; };
   $('o-test').onclick = () => Sound.play('levelup');
   if (typeof Ambience !== 'undefined') { $('o-aon').onchange = e => Ambience.setOn(e.target.checked); $('o-av').oninput = e => { Ambience.setVolume(e.target.value / 100); $('o-av-t').textContent = e.target.value + '%'; }; } // P-025
+  $('o-gfx').onchange = e => { const L = applyGfx(gfxCtx, e.target.value); $('o-gfx-d').textContent = '(' + L.desc + ')'; sceneryT = -1e9; cullScenery(); if (L.grass > 0) cullGrass(camera.position.x, camera.position.z, true); };
   $('o-aimw').onchange = e => { S.aimWeight = e.target.value; try { localStorage.setItem('aethra_aimw', S.aimWeight); } catch (er) { } };
   $('o-back').onclick = () => { S.menuOpen = false; toggleMenu(); };
 }
@@ -3533,7 +3539,7 @@ function step(dt) {
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > HALF + 30) c.position.x = -HALF - 30; }
     updateCloudInstances();
     if (S.me && (S.me.hatId !== hatOf(S.p) || S.me.offId !== offOf(S.p) || S.me.wpnId !== wpnOf(S.p))) buildPlayerModel(); // trocou o chapéu, o escudo ou a arma
-    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateFauna(dt, camera, S.pos, !!S.interior || !!S.arena); ambienceTick(dt); updateNet(dt); updateBossFights(dt); if (PARTY_ENABLED) updateParty(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
+    updateNature(S.time); updatePads(dt); updatePortals(dt); updateTerrain(S.pos.x, S.pos.z); cullScenery(); cullRoosts(); cullInteriors(); dungeonCull(camera.position.x, camera.position.z); updateWeather(dt, S.pos.x, S.pos.z, !!S.interior, camera); updateFauna(dt, camera, S.pos, !!S.interior || !!S.arena || !gfxLevel().fauna); ambienceTick(dt); updateNet(dt); updateBossFights(dt); if (PARTY_ENABLED) updateParty(); if (S.arena) updateArena(dt); lightPool(S.me ? S.me.obj.position : camera.position); if (!S.flight) cullGrass(camera.position.x, camera.position.z); /* P-006: lá de cima a grama nem aparece: não gera blocos novos durante o voo */
     if (S.time - S.lastSave > 30 && !S.flight) save3d(); // voando não salva (a posição no ar não serve para voltar ao jogo)
     updateTutorial(dt); // P-018: dicas dos primeiros passos (só personagens novos)
   }
@@ -3585,7 +3591,7 @@ function draw(dt) {
     else {
       const wr = zoneWeight('ruinas', P.x, P.z), wf = zoneWeight('floresta', P.x, P.z), wg = zoneWeight('geada', P.x, P.z), wd = zoneWeight('dunas', P.x, P.z), wc = zoneWeight('colossos', P.x, P.z);
       scene.fog.color.copy(FOG_DAY).lerp(FOG_FOREST, wf * 0.6).lerp(FOG_RUINS, wr * 0.85).lerp(FOG_SNOW, wg * 0.85).lerp(FOG_SAND, wd * 0.7).lerp(FOG_PLAIN, wc * 0.6);
-      scene.fog.near = 90 - wr * 60 - wf * 35 - wg * 40 - wc * 55; scene.fog.far = 420 - wr * 270 - wf * 180 - wg * 150 - wd * 60 - wc * 210;
+      { const fk = gfxLevel().fogK; scene.fog.near = (90 - wr * 60 - wf * 35 - wg * 40 - wc * 55) * fk; scene.fog.far = (420 - wr * 270 - wf * 180 - wg * 150 - wd * 60 - wc * 210) * fk; } // nível gráfico baixo: névoa um pouco mais perto (esconde o fim da visão)
       tintFog(scene.fog.color); // P-020: névoa na cor da hora
     }
     // seleção
