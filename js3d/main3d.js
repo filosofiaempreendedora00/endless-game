@@ -3393,7 +3393,10 @@ function updateAimCursor() { if (isAction()) return; const want = S.fire ? (fire
 addEventListener('mousemove', e => {
   mouseNdc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
-  if (S.fire && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'pesado']; S.cam.yaw -= e.movementX * w; S.cam.pitch = clamp(S.cam.pitch + e.movementY * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
+  // S-234 + pedido de 2026-11-11: o CURSOR é o foco da câmera — mexer o mouse gira a câmera devagar ("peso" das Configurações), segurando o ataque
+  // ou não, andando ou parado. Só sobre o mundo (não sobre janelas, barra ou menus) e sem botão de arrastar apertado (esses já giram a câmera).
+  const freeLook = !S.fire && e.target === canvas && !mouse.left && !mouse.right && !mouse.mid && !S.menuOpen && !S.flight;
+  if ((S.fire || freeLook) && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'pesado'], mx = clamp(e.movementX, -60, 60), my = clamp(e.movementY, -60, 60); S.cam.yaw -= mx * w; S.cam.pitch = clamp(S.cam.pitch + my * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
   if (mouse.mid) { S.lookYaw -= e.movementX * 0.006; S.cam.pitch = clamp(S.cam.pitch + e.movementY * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; return; }
   if (!mouse.left && !mouse.right) return;
   const dx = e.movementX, dy = e.movementY;
@@ -3442,7 +3445,7 @@ function showSettings() {
     <div class="opt-sec">🌿 Mundo</div>
     <label class="opt-sw"><input type="checkbox" id="o-fauna" ${faunaEnabled() ? 'checked' : ''}><span>🦋 Vida ambiente <small class="muted">(pássaros, borboletas, vaga-lumes, peixes — desligue se o computador for fraco)</small></span></label>
     <div class="opt-sec">🎯 Combate</div>
-    <div class="opt-sw"><span>Peso da mira ao atacar <small class="muted">(quanto a câmera gira ao mexer o mouse segurando o ataque)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="opt-sw"><span>Peso da câmera no cursor <small class="muted">(quanto a câmera gira ao mexer o mouse sobre o mundo — atacando ou não; "Câmera parada" desliga)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     <div class="opt-sec">📘 Tutorial</div>
     <div class="opt-sw"><span>Primeiros passos <small class="muted">(as dicas de boas-vindas da vila)</small></span><button class="btn" id="o-tut">Refazer os primeiros passos</button></div>
     <div class="menu-btns" style="margin-top:14px"><button class="btn" id="o-test">▶ Testar efeito</button><button class="btn gold" id="o-back">← Voltar</button></div></div>`;
