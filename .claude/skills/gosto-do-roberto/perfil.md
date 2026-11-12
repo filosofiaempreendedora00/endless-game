@@ -153,6 +153,11 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
   - O ataque básico combina com o animal (raposa morde como lobo); poderes elementais chegam como habilidade ao evoluir.
   - O mascote é um ser vivo no combate: tem vida, cansa e pode desmaiar.
 
+### 21. Jogar sem tropeços: bug claro é prioridade ★★★★★
+- Evidências: "buguei aqui, fiquei preso, isso não pode acontecer" (S-300), "bugou demais ele aqui pra lá e pra cá travadão" (S-310), personagem dando voltas sozinho (S-331), duas músicas (S-032), nomes de longe (S-096), janela voltando ao topo (S-101), recorte errado do Q (S-380), e o pedido de 2026-11-12: "no navio eu ficava meio que dando uns teleportes", "identifica bugs claros pra que a gente possa resolver?".
+- Ele quer o jogo pronto para **outros jogadores** ("ainda mais pra alguém que não é master como eu"). Um tropeço na mão pesa mais que um detalhe visual.
+- Como aplicar: rode o caça-bugs (`caca-bugs.md`) ao fim de cada rodada. Toda correção de física ou movimento é testada andando de verdade, quadro a quadro, contra paredes, bordas e portas. Uma correção nunca pode criar um bug vizinho (o destravador do S-300 criou o "teleporte" contra paredes).
+
 ## Antipadrões (ele já rejeitou)
 - Primitivos geométricos à mostra, como cones de grama, cubos de pedra e esferas de mascote.
 - Repetição idêntica de elementos.
@@ -168,7 +173,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Monstro ou cena que lembra demais outro jogo (ex.: poring).
 - Polígono chapado no lugar de objeto (hexágono vermelho no chão, retângulos coloridos como estandarte).
 - Efeito visual ligado o tempo todo sem motivo.
-- Câmera que fica atrás de parede.
+- Câmera que fica atrás de parede ou sai da sala.
+- Herói que "teleporta", treme ou é empurrado sozinho (destravador agindo sem estar preso).
 - Bicho deslizando sem passos; flor solta no chão; árvore na rocha; área cinza/vazia no mapa.
 - Combate de clicar e travar o alvo (ele quer mira e habilidade).
 - Emoji como ícone de item.

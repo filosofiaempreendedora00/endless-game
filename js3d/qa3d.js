@@ -313,10 +313,70 @@ export function showQAChars(rep, ctx) {
     const yaw = Math.atan2(n.x - x, n.z - z); S.pos.yaw = yaw; if (S.cam) { S.cam.yaw = yaw; if ('pitch' in S.cam) S.cam.pitch = 0.25; } });
 }
 
+/* CAÇA-BUGS DE JOGABILIDADE: o que o jogador sente na mão (preso, teleporte, porta que joga na parede, monstro dentro de pedra).
+   Precisa de ctx.resolve(x,z,r), ctx.trulyStuck(x,z), ctx.portals, ctx.waterLevelAt(x,z), S.monsters, S.npcs. */
+export function checkPlay(ctx) {
+  const { resolve, trulyStuck, portals = [], groundAt, HALF, S, waterLevelAt } = ctx, out = [];
+  if (!resolve || !trulyStuck) return out;
+  const moved = (x, z, r = 0.45) => { const q = resolve(x, z, r); return Math.hypot(q.x - x, q.z - z); };
+  // 1) portas: o ponto onde o jogador aparece ao sair precisa estar livre (nem dentro de parede, nem preso, nem no mar)
+  for (const p of portals) {
+    if (p.kind === 'door' && p.out) {
+      const { x, z } = p.out, d = moved(x, z);
+      if (d > 0.3) out.push({ tipo: 'saída de porta dentro de algo', gravidade: d > 1 ? 'alta' : 'media', objeto: 'porta → ' + p.to, x, z, detalhe: `ao sair, a colisão empurra o herói ${d.toFixed(2)} m (aparece encostado/dentro de objeto)` });
+      else if (trulyStuck(x, z)) out.push({ tipo: 'saída de porta presa', gravidade: 'alta', objeto: 'porta → ' + p.to, x, z, detalhe: 'ao sair, não há para onde andar' });
+      const wl = waterLevelAt ? waterLevelAt(x, z) : null; if (wl !== null && groundAt(x, z) < wl - 0.5) out.push({ tipo: 'saída de porta na água', gravidade: 'alta', objeto: 'porta → ' + p.to, x, z, detalhe: 'aparece dentro da água funda' });
+    }
+    if (p.arrive) { const { x, z } = p.arrive; const d = moved(x, z); if (d > 0.3) out.push({ tipo: 'chegada de andar dentro de algo', gravidade: 'media', objeto: `${p.from} → ${p.to}`, x, z, detalhe: `empurrado ${d.toFixed(2)} m ao chegar` }); }
+  }
+  // 2) NPCs: dá para chegar perto e conversar? (algum ponto livre a até 4,6 m — a conversa vale até 5 m, medidos no plano)
+  for (const n of S.npcs || []) {
+    const o = n.obj?.position; if (!o || n.gallery || o.x > HALF + 100 + 600) continue;
+    let ok = false; for (let r = 1.2; r <= 4.6 && !ok; r += 0.7) for (let k = 0; k < 16 && !ok; k++) { const a = k * Math.PI / 8, x = o.x + Math.sin(a) * r, z = o.z + Math.cos(a) * r; if (moved(x, z) < 0.05 && !trulyStuck(x, z)) ok = true; }
+    if (!ok) out.push({ tipo: 'NPC inalcançável', gravidade: 'media', objeto: n.name || n.id, x: o.x, z: o.z, detalhe: 'nenhum ponto livre a até 4,6 m para conversar' });
+  }
+  // 3) monstros vivos dentro de objetos ou na água funda (ficam presos, tremendo ou impossíveis de acertar)
+  let mIn = 0, mWet = 0; const mEx = [];
+  for (const m of S.monsters || []) {
+    if (m.dead || m.def?.dummy || m.def?.fly) continue; const o = (m.obj || m.mesh)?.position; if (!o) continue;
+    if (moved(o.x, o.z, 0.3) > 0.4) { mIn++; if (mEx.length < 6) mEx.push([o.x, o.z, m.def?.name || m.type]); }
+    else if (waterLevelAt && o.x <= HALF + 100) { const wl = waterLevelAt(o.x, o.z); if (wl !== null && groundAt(o.x, o.z) < wl - 0.6) { mWet++; if (mEx.length < 6) mEx.push([o.x, o.z, (m.def?.name || m.type) + ' (água)']); } }
+  }
+  for (const [x, z, nm] of mEx) out.push({ tipo: 'monstro preso', gravidade: 'media', objeto: nm, x, z, detalhe: `dentro de objeto ou na água (total: ${mIn} em objetos, ${mWet} na água)` });
+  return out;
+}
+
+/* câmera dentro das salas: girando em volta do herói (perto da parede do fundo, com o zoom da entrada) a câmera não pode
+   sair pelas paredes/teto — senão o jogador vê o "vazio" de fora da sala */
+export async function checkRoomCamera(ctx, wait = ms => new Promise(r => setTimeout(r, ms))) {
+  const { S, INTERIORS, enterInterior, leaveInterior, camera, sim } = ctx, out = [];
+  if (!camera || !enterInterior) return out;
+  const saved = { x: S.pos.x, z: S.pos.z, god: S.god }; S.god = true;
+  try {
+    if (S.interior && leaveInterior) { leaveInterior(true); sim(0.2); }
+    for (const [id, I] of Object.entries(INTERIORS)) {
+      if (I.round || !I.w || !I.d) continue;
+      enterInterior(id, { out: { x: saved.x, z: saved.z, yaw: 0 } }); await wait(320); sim(0.3);
+      if (!S.interior || S.interior.id !== id) continue;
+      let worst = 0, wy = 0;
+      for (const [px, pz] of [[0, I.d / 2 - 2.8], [0, 0], [I.w / 2 - 1.2, 0], [-(I.w / 2 - 1.2), 0], [0, -(I.d / 2 - 1.5)]]) {
+        Object.assign(S.pos, { x: I.x + px, z: I.z + pz }); S.cam.distT = S.cam.dist = 6;
+        for (let k = 0; k < 8; k++) { S.cam.yaw = S.cam.viewYaw = k * Math.PI / 4; sim(1 / 30); sim(1 / 30);
+          const c = camera.position, ex = Math.max(0, Math.abs(c.x - I.x) - I.w / 2), ez = Math.max(0, Math.abs(c.z - I.z) - I.d / 2), e = Math.hypot(ex, ez);
+          if (e > worst) { worst = e; wy = k * 45; } }
+      }
+      if (worst > 0.35) out.push({ tipo: 'câmera fura a parede', gravidade: worst > 1.5 ? 'alta' : 'media', objeto: I.name || id, x: I.x, z: I.z, detalhe: `a câmera sai ${worst.toFixed(1)} m para fora da sala (olhando a ${wy}°)` });
+      leaveInterior && leaveInterior(true); await wait(320); sim(0.2);
+    }
+  } finally { S.god = saved.god; if (S.interior && leaveInterior) leaveInterior(true); ctx.teleport3d(saved.x, saved.z); sim(0.2); }
+  return out;
+}
+
 export async function runQA(ctx, opts = {}) {
-  const t0 = performance.now(), mundo = checkWorld(ctx), pers = opts.chars === false ? [] : checkCharacters(ctx);
+  const t0 = performance.now(), mundo = [...checkWorld(ctx), ...checkPlay(ctx)], pers = opts.chars === false ? [] : checkCharacters(ctx);
   const musica = opts.music === false ? [] : await checkMusic(ctx);
-  const all = [...mundo, ...pers, ...musica], ord = { alta: 0, media: 1, baixa: 2 };
+  const cam = opts.rooms === false ? [] : await checkRoomCamera(ctx);
+  const all = [...mundo, ...pers, ...musica, ...cam], ord = { alta: 0, media: 1, baixa: 2 };
   all.sort((a, b) => ord[a.gravidade] - ord[b.gravidade]);
   const resumo = { total: all.length, alta: all.filter(r => r.gravidade === 'alta').length, media: all.filter(r => r.gravidade === 'media').length, baixa: all.filter(r => r.gravidade === 'baixa').length, ms: Math.round(performance.now() - t0), musica: musica.steps || [] };
   return { resumo, problemas: all };

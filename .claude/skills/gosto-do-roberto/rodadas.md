@@ -259,3 +259,8 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Capa do Paladino: o "começava dobrada" não era só do teste. Correndo, a capa virava uma tira de lado, porque o pano não resistia a dobrar e escorregava para o lado da perna. Teste capa e pano SEMPRE correndo no jogo de verdade (personagem jogável, não só manequim parado).
 - Robe do anão: o pano não pode abrir "tenda" atrás; a barra pode subir onde o calcanhar chuta.
 - Lobo gigante: de perto, camadas de pelo longo viram "escamas". Mais camadas finas e mechas mais finas.
+
+### Caça-bugs 1 (pedido "garanta que ela seja meio que uma caça-bugs"), 2026-11-12
+- Novo papel da skill: caçar bugs claros (`caca-bugs.md`). O exemplo dele foi o teleporte no navio: era o destravador automático do S-300 agindo contra qualquer parede, porque confundia "encostado" com "preso". Uma correção antiga criou o bug.
+- Achados e corrigidos: o teleporte contra paredes (todo o jogo), a câmera saindo pela parede em 10 salas e o engasgo da câmera perto do castelo e da Muralha Gélida.
+- O verificador ganhou duas partes: jogabilidade (portas, andares, NPCs alcançáveis, monstros presos) e câmera nas salas.

@@ -219,9 +219,11 @@ function buildCastleOutside(ctx) {
     ctx._moatCols = ring;
   }
   const g = K.build(); g.position.set(C.x, y0, C.z); g.rotation.y = ry; ctx.scene.add(g);
-  g.userData.asset = 'castelo_valcinza'; g.userData.big = true; g.userData.far = 520; ctx.placed.push(g); ctx.occluders.push(g); CULL.push(g); // visível de bem longe
+  g.userData.asset = 'castelo_valcinza'; g.userData.big = true; g.userData.far = 520; ctx.placed.push(g); CULL.push(g); // visível de bem longe — a câmera bate em caixas invisíveis (abaixo), não nas 23 mil faces do castelo (custava ~12 ms por quadro perto dele)
   // colisões (caixas giradas junto com o castelo)
-  const box = (lx, lz, hx, hz) => { const p = W(lx, lz); ctx.colliders.push({ x: p.x, z: p.z, r: Math.max(hx, hz), box: true, hx, hz, rot: ry, name: 'castelo_valcinza' }); };
+  const occM = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const box = (lx, lz, hx, hz) => { const p = W(lx, lz); ctx.colliders.push({ x: p.x, z: p.z, r: Math.max(hx, hz), box: true, hx, hz, rot: ry, name: 'castelo_valcinza' });
+    const b = new THREE.Mesh(new THREE.BoxGeometry(hx * 2, WALL_H + 4, hz * 2), occM); b.position.set(p.x, y0 + (WALL_H + 4) / 2, p.z); b.rotation.y = ry; b.visible = false; b.userData.noRender = true; ctx.scene.add(b); ctx.occluders.push(b); };
   box(-HW, 0, WT / 2, HW); box(HW, 0, WT / 2, HW); box(0, -HW, HW, WT / 2); box(-(HW + 6) / 2, HW, (HW - 6) / 2, WT / 2 + 0.6); box((HW + 6) / 2, HW, (HW - 6) / 2, WT / 2 + 0.6);
   box(0, kz, KW + 1, KD + 0.5);
   for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const p = W(sx * HW, sz * HW); ctx.colliders.push({ x: p.x, z: p.z, r: 6.6 }); }

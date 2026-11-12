@@ -922,7 +922,8 @@ function buildFrostHold(ctx) {
   frozenLake(ctx);
   // ---------- a Muralha ----------
   const H = 56, LEN = 500, wallZ = 2;
-  { const w = iceWall(LEN, H, 22); w.position.set(C.wallX, gY(C.wallX + 4, wallZ) - 0.5, wallZ); ctx.scene.add(w); w.userData.asset = 'muralha_gelida'; w.userData.big = true; w.userData.far = 900; ctx.placed.push(w); ctx.occluders.push(w); CULL.push(w); ctx.extraPick && ctx.extraPick.push(w);
+  { const w = iceWall(LEN, H, 22); w.position.set(C.wallX, gY(C.wallX + 4, wallZ) - 0.5, wallZ); ctx.scene.add(w); w.userData.asset = 'muralha_gelida'; w.userData.big = true; w.userData.far = 900; ctx.placed.push(w); CULL.push(w); ctx.extraPick && ctx.extraPick.push(w);
+    { const b = new THREE.Mesh(new THREE.BoxGeometry(9, H, LEN), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false })); b.position.set(C.wallX - 3, w.position.y + H / 2, wallZ); b.visible = false; b.userData.noRender = true; ctx.scene.add(b); ctx.occluders.push(b); } // a câmera bate numa caixa invisível, não nas 95 mil faces do gelo (custava ~75 ms por quadro perto do meio da Muralha)
     for (let z = wallZ - LEN / 2; z <= wallZ + LEN / 2; z += 3) ctx.colliders.push({ x: C.wallX - 3, z, r: 4.5, name: 'muralha_gelida' }); }
   // ---------- escadaria em zigue-zague subindo o gelo ----------
   { const K = new Kit(), z0 = 52, flights = 8, rise = (H - 9) / flights, run = 16, xw = C.wallX + 3.2, yB = gY(C.wallX + 6, z0 + 8);

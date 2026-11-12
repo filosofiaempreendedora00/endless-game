@@ -2279,12 +2279,20 @@ function resolve(x, z, r) {
   else if (x <= HALF + 100) { x = clamp(x, -PLAY_LIMIT, PLAY_LIMIT); z = clamp(z, -PLAY_LIMIT, PLAY_LIMIT); const sp = deckAt(x, z) === null ? seaPush(x, z, RES_SEA) : null; if (sp) { x = sp.x; z = sp.z; } } // ninguém anda no mar fundo (o jogador nada até 40 m da praia)
   return { x, z };
 }
+// preso de verdade = dentro de algo (a colisão empurra o próprio ponto) ou sem nenhuma direção para andar
+function trulyStuck(x, z) {
+  const q = resolve(x, z, 0.45); if (Math.hypot(q.x - x, q.z - z) > 0.05) return true;
+  const g0 = groundAt(x, z);
+  for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6, cx = x + Math.sin(a) * 0.25, cz = z + Math.cos(a) * 0.25, r = resolve(cx, cz, 0.45);
+    if (Math.hypot(r.x - x, r.z - z) > 0.12 && groundAt(r.x, r.z) - g0 < 0.3) return false; }
+  return true;
+}
 // S-300: ponto livre mais perto (sem colisão e sem degrau alto), testando primeiro os lados próximos da direção desejada
 function freeSpot(x, z, dir = 0) {
   const g0 = groundAt(x, z);
   for (let rad = 0.5; rad <= 7; rad += 0.35) for (let k = 0; k < 24; k++) {
     const a = dir + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 12, cx = x + Math.sin(a) * rad, cz = z + Math.cos(a) * rad, q = resolve(cx, cz, 0.5);
-    if (Math.hypot(q.x - cx, q.z - cz) < 0.01 && Math.abs(groundAt(cx, cz) - g0) < Math.max(0.6, rad * 0.8)) return { x: cx, z: cz };
+    if (Math.hypot(q.x - cx, q.z - cz) < 0.01 && Math.abs(groundAt(cx, cz) - g0) < Math.min(1.2, Math.max(0.6, rad * 0.8))) return { x: cx, z: cz };
   }
   return null;
 }
@@ -2455,7 +2463,8 @@ function updatePlayer(dt) {
   if (S.lunge && S.time - S.lunge.t < 0.2) { const k = S.lunge.d / 0.2 * dt, q = resolve(r.x + Math.sin(P.yaw) * k, r.z + Math.cos(P.yaw) * k, 0.45); r = q; } // avanço do golpe pesado
   { // S-300: nunca ficar preso — tentando andar e sem sair do lugar por 0,7 s, procura o ponto livre mais perto (na direção desejada) e sai por ali
     const want = Math.hypot(vx, vz) * dt, got = Math.hypot(r.x - P.x, r.z - P.z);
-    if (want > 0.005 && !S.riding && !S.casting) { S.stuckT = got < want * 0.1 ? (S.stuckT || 0) + dt : 0; if (S.stuckT > 0.7) { const f = freeSpot(P.x, P.z, Math.atan2(vx, vz)); if (f) r = f; S.stuckT = 0; } } else S.stuckT = 0;
+    // encostar numa parede NÃO é estar preso (antes, empurrar uma parede fazia o herói "teleportar" 0,5 m de tempos em tempos — ex.: no convés do navio)
+    if (want > 0.005 && !S.riding && !S.casting) { S.stuckT = got < want * 0.1 ? (S.stuckT || 0) + dt : 0; if (S.stuckT > 0.7) { if (trulyStuck(P.x, P.z)) { const f = freeSpot(P.x, P.z, Math.atan2(vx, vz)); if (f) r = f; } S.stuckT = 0; } } else S.stuckT = 0;
   }
   P.x = r.x; P.z = r.z;
   const coast = !mi.any ? Math.hypot(S.vel.x, S.vel.z) : 0;
@@ -3583,9 +3592,15 @@ function draw(dt) {
     const gy = Math.max(groundAt(cx, cz), S.swimOff ? S.swimWl ?? -99 : -99) + 0.5; if (cy < gy) cy = gy; // nadando: a câmera fica acima da água
     const camPos = new THREE.Vector3(cx, cy, cz), dir = camPos.clone().sub(head), len = dir.length();
     camRay.set(head, dir.normalize()); camRay.far = len;
-    const near = occluders.filter(o => Math.abs(o.position.x - P.x) < 30 && Math.abs(o.position.z - P.z) < 30);
+    { const I = S.interior; if (I && !I.round && I.w && I.d) { // salas: a câmera nunca sai da caixa da sala (antes ela atravessava a parede da porta e o herói sumia atrás dela)
+      const hw = I.w / 2 - 0.35, hd = I.d / 2 - 0.35, ox = camPos.x - head.x, oz = camPos.z - head.z; let tt = 1;
+      if (Math.abs(ox) > 1e-6) { const lim = (ox > 0 ? I.x + hw : I.x - hw) - head.x; if (camPos.x > I.x + hw || camPos.x < I.x - hw) tt = Math.min(tt, Math.max(0.05, lim / ox)); }
+      if (Math.abs(oz) > 1e-6) { const lim = (oz > 0 ? I.z + hd : I.z - hd) - head.z; if (camPos.z > I.z + hd || camPos.z < I.z - hd) tt = Math.min(tt, Math.max(0.05, lim / oz)); }
+      if (tt < 1) camPos.lerpVectors(head, camPos, tt); } }
+    // perto do herói pela CAIXA do objeto (paredes de salas/masmorras são montadas com o grupo na origem: a posição não diz onde estão)
+    const near = occluders.filter(o => { let b = o.userData._ob; if (!b) { b = o.userData._ob = new THREE.Box3().setFromObject(o); if (b.isEmpty()) b.set(o.position, o.position); let tri = 0; o.traverse(m => { if (m.isMesh && m.geometry) tri += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; }); o.userData._heavy = tri > 60000; if (o.userData._heavy) console.warn('[câmera] oclusor pesado ignorado (use caixa invisível):', o.userData.asset || o.name, Math.round(tri), 'faces'); } if (o.userData._heavy) return false; return P.x > b.min.x - 30 && P.x < b.max.x + 30 && P.z > b.min.z - 30 && P.z < b.max.z + 30; });
     const hit = camRay.intersectObjects(near, true)[0];
-    if (hit) camPos.copy(head).addScaledVector(dir, Math.max(0.6, hit.distance - 0.3));
+    if (hit && hit.distance - 0.3 < camPos.distanceTo(head)) camPos.copy(head).addScaledVector(dir, Math.max(0.6, hit.distance - 0.3));
     camera.position.copy(camPos); camera.lookAt(head);
     if (isAction()) { // 1ª pessoa / por cima do ombro: a câmera aponta para a mira (S-094)
       const fx = Math.sin(cam.yaw), fz = Math.cos(cam.yaw), ap = Math.cos(S.aim), as = Math.sin(S.aim), look = new THREE.Vector3(fx * ap, as, fz * ap);
@@ -4102,7 +4117,7 @@ function admPois() {
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
 }
-const qaCtx = () => ({ renderer, scene, galleryAnim, ensureGallery, S, placed, colliders, groundAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
+const qaCtx = () => ({ renderer, scene, camera, galleryAnim, ensureGallery, S, placed, colliders, groundAt, resolve, trulyStuck, portals, waterLevelAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
 function adminRender() {
   const p = S.p; if (!p) return;
   const body = UI.body('admin'), pois = admPois();
@@ -4270,7 +4285,8 @@ function pumpSpawns() {
   $('minimap').style.cursor = 'pointer'; $('minimap').title = 'Abrir o mapa (G)'; $('minimap').onclick = () => UI.toggle('mapa');
   $('loading3d').classList.add('hidden');
   globalThis.__world = { scene, groundAt }; // o que o jogo precisa entre módulos (sem ferramentas de teste)
-  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { classPose: applyClassPose, CLASS_POSE, qa: o => runQA(qaCtx(), o), qaChars: o => checkCharsDeep(qaCtx(), o), showQAChars: r => showQAChars(r, qaCtx()), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
+  if (isAdmin()) window.__S3 = S; if (isAdmin()) window.__api = { classPose: applyClassPose, CLASS_POSE, qa: o => runQA(qaCtx(), o), ctx: qaCtx, // ctx(): ganchos do caça-bugs (resolve, portals, enterInterior...)
+     qaChars: o => checkCharsDeep(qaCtx(), o), showQAChars: r => showQAChars(r, qaCtx()), groundAt, renderer, MODELS, dressLook, dressHead: (ch, cls, head) => dress(ch, cls, MODELS, head), applyRace, shot: (p, l, W = 960, H = 540) => { // para testes: foto de qualquer ângulo
     const cam = new THREE.PerspectiveCamera(60, W / H, 0.1, 900); cam.position.set(...p); cam.lookAt(...l);
     const rt = new THREE.WebGLRenderTarget(W, H, { samples: 4 }); rt.texture.colorSpace = THREE.SRGBColorSpace; renderer.setRenderTarget(rt); renderer.render(scene, cam);
     const buf = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, buf); renderer.setRenderTarget(null); rt.dispose();
