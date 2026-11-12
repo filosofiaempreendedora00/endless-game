@@ -344,10 +344,11 @@ export function groundColor(x, z, h, slopeIn) {
     if (kEarth > 0) { const e = new THREE.Color('#a8916c').offsetHSL(0, -0.02, (vnoise(x * 0.35, z * 0.35) - 0.5) * 0.1 + (vnoise(x * 1.3, z * 1.3) - 0.5) * 0.05); c.lerp(e, kEarth * w * 0.9); } // rua de terra batida entre as casas e o passeio
     if (kStone > 0) { const u = x * 0.9 + Math.sin(z * 0.7) * 0.6, v = z * 0.9 + Math.sin(x * 0.7) * 0.6, cell = vnoise(Math.floor(u * 1.4) * 1.7, Math.floor(v * 1.4) * 1.3);
       const cob = new THREE.Color('#9d927e').offsetHSL(0.012 * (cell - 0.5), 0.02, (cell - 0.5) * 0.1 + (vnoise(x * 0.25, z * 0.25) - 0.5) * 0.12 - (vnoise(x * 0.08 + 3, z * 0.08) > 0.62 ? 0.06 : 0)); c.lerp(cob, kStone * w); } } } // calçamento com manchas de uso
-  for (const [ct, rr, col, cell] of [[DWARF, 56, '#8a8073', 0], [ELF, 16, '#d9d4c4', 2.2], [PORT, 0, '#c7b48e', 2.5], [CASTLE, 0, '#b8b09c', 3]]) { // praças das cidades novas (o porto tem calçamento próprio)
+  for (const [ct, rr, col, cell] of [[DWARF, 56, '#8a8073', 0], [ELF, 0, '#d9d4c4', 2.2], [PORT, 0, '#c7b48e', 2.5], [CASTLE, 0, '#b8b09c', 3]]) { // praças das cidades novas (o porto tem calçamento próprio)
     if (!rr) continue; const d = Math.hypot(x - ct.x, z - ct.z);
     if (d < rr) c.lerp(new THREE.Color(col).offsetHSL(0, 0, (cell ? ((Math.floor(x / cell) + Math.floor(z / cell)) & 1) * 0.03 : 0) + (vnoise(x * (cell ? 0.5 : 0.12), z * (cell ? 0.5 : 0.12)) - 0.5) * 0.05), smooth(rr, rr - 4, d));
   }
+  { const de = Math.hypot(x - ELF.x, z - ELF.z); if (de < 62) { const n = vnoise(x * 0.31, z * 0.31); c.lerp(new THREE.Color(n > 0.64 ? '#80703c' : '#3c6230'), smooth(62, 42, de) * (n > 0.64 ? 0.5 : 0.42)); } } // Aelindra: chão de floresta (musgo escuro com manchas de folhas caídas)
   const rd = roadDist(x, z);
   if (rd < 3.2) { const stone = far && zw('colossos', x, z) > 0.3; c.lerp(new THREE.Color(stone ? '#a7a092' : '#b08c5a').offsetHSL(0, 0, stone ? ((Math.floor(x / 2) + Math.floor(z / 2.6)) & 1) * 0.04 : 0), smooth(3.2, 1.6, rd)); } // calçada antiga nos Colossos
   const dv = Math.hypot(x - VILLAGE.x, z - VILLAGE.z);
@@ -852,7 +853,7 @@ function grassChunk(ci, cj) {
     if (x > 420) { const me = mesaH(x, z); if (me > 0.5 && me < MESA.top - 2.5) continue; } // paredão do platô
     { const dx = x - CASTLE.x, dz = z - CASTLE.z; if (Math.abs(dx) < 80 && Math.abs(dz) < 80 && Math.abs(dx * CASTLE_CS - dz * CASTLE_SN) < 56 && Math.abs(dx * CASTLE_SN + dz * CASTLE_CS) < 56) continue; } // S-275: nada de grama no pátio calçado, na muralha e no fosso do castelo
     { const dd = Math.hypot(x - DWARF.x, z - DWARF.z); if (dd < 150 && rng() > smooth(75, 150, dd)) continue; } // S-164: a grama vai sumindo antes de Pedrafunda
-    if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 64 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || (harborW(x, z) > 0.3 && harborST(x, z).s > HARBOR.quay - 14) || Math.hypot(x - ELF.x, z - ELF.z) < 16) continue; // praia, mar e praças
+    if (seaDist(x, z) < 24 || Math.hypot(x - DWARF.x, z - DWARF.z) < 64 || Math.hypot(x - PORT.x, z - PORT.z) < 20 || (harborW(x, z) > 0.3 && harborST(x, z).s > HARBOR.quay - 14) || Math.hypot(x - ELF.x, z - (ELF.z + 18)) < 9.3 || Math.hypot(x - ELF.x, z - (ELF.z - 6)) < 6.6) continue; // praia, mar e praças (Aelindra: calçamento da Fonte da Lua e o tronco da Árvore-Mãe)
     if (mountainMask(x, z) > 0.35) continue;
     const y = heightAt(x, z);
     if (valley && y > 7) continue;

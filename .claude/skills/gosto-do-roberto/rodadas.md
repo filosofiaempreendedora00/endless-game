@@ -264,3 +264,11 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Novo papel da skill: caçar bugs claros (`caca-bugs.md`). O exemplo dele foi o teleporte no navio: era o destravador automático do S-300 agindo contra qualquer parede, porque confundia "encostado" com "preso". Uma correção antiga criou o bug.
 - Achados e corrigidos: o teleporte contra paredes (todo o jogo), a câmera saindo pela parede em 10 salas e o engasgo da câmera perto do castelo e da Muralha Gélida.
 - O verificador ganhou duas partes: jogabilidade (portas, andares, NPCs alcançáveis, monstros presos) e câmera nas salas.
+
+## Pedido direto (2026-11-12): Aelindra "muito mais élfica"
+- **O pedido**: "focada em florestas", "com presença de elfos", inspirada na vila-árvore do RO e nas cidades élficas do cinema e do WoW. "Uma cidade bem emblemática. E não pode ter bugs".
+- **A entrega**:
+  - A cidade mora numa Árvore-Mãe gigante com rampa e terraços onde se anda de verdade, árvores-irmãs com pontes e casas na copa, bosque denso de árvores prateadas, magia discreta (veias de luz, cogumelos, vaga-lumes) e 19 elfos com função.
+- **Aprendizados**:
+  - Cidade "da raça" = um marco gigante que se vê de longe e se USA (subir, atravessar), não um conjunto de casinhas numa clareira.
+  - "Não pode ter bugs" virou roteiro de teste andando (ver caca-bugs.md).

@@ -342,3 +342,4 @@ float rn(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   for (let i = 0; i < 2; i++) add('log_' + i, logGeometry(950 + i * 7));
   return out;
 }
+export { leafAtlas, card, cardGeo, rndDir }; // Aelindra (elfcity3d) usa as mesmas folhas desenhadas

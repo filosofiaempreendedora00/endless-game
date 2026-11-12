@@ -64,6 +64,20 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
   - Pátio com campo de treino (alvos, suportes de armas), canto da cavalariça (feno, bebedouro, carrinho, balde) e carga junto das casas.
 - **Sinal para o futuro**: sala grande demais e vazia (13 m de pé-direito, paredes lisas) é o ponto fraco do castelo. Ao mexer nele, prefira encher o que existe a criar sala nova.
 
+### 2026-11-12: Aelindra nova (cidade na Árvore-Mãe), testada andando
+- **Raiz bloqueando o terraço a 12 m, corrigido antes de entregar.** Colisão sem faixa de altura vale do chão ao céu. Tudo o que fica embaixo de um andar (raiz, contraforte, móvel) precisa de `y0/y1`.
+- **Pegadinha da altura**: fora das salas, o `resolve` compara `y0/y1` com a altura dos pés **acima do terreno** (`RES_Y = P.y - groundAt(x, z)`), não com a altura absoluta. O elfcity3d converte no fim (`col0`). Nas salas (x > HALF+100) é absoluto.
+- **Roteiro que funcionou** (sonda `WALK` com tecla W real e `__sim`, registrando saltos > 0,35 m/quadro e travas):
+  - rampa inteira subindo e descendo (0 → 24 m);
+  - volta completa nos terraços;
+  - andar para fora em 12 direções em cada andar;
+  - pular contra o guarda-corpo;
+  - andar de lado no meio das pontes;
+  - conversar com NPC de cima (fala) e de baixo (não fala);
+  - câmera real em 4 pontos da rampa (fica fora do tronco).
+- NPC no meio da passarela atrapalha a passagem: deixe-o perto do guarda-corpo.
+- A porta da Árvore-Mãe se alcança pelo corredor entre as raízes (vindo do norte). As raízes são muro de propósito; não é bug.
+
 ### Falsos alarmes conhecidos
 - **Gudrun e Irmão Hulda** (Pedrafunda) ficam 1,35 m acima do chão de propósito, na base da estátua e no degrau do templo. Dá para conversar com eles de baixo.
 - "NPC dentro de objeto" para NPCs sentados ou atrás de balcão (Dona Rosa, Velho Gui, Rei Aldemar, Irmão Caio, Ilka...): o círculo de colisão do móvel os cobre, mas o jogador conversa normalmente.

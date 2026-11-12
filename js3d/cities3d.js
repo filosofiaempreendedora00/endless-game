@@ -2,8 +2,7 @@
    CIDADES DAS RAÇAS (S-117) — feitas em código, com texturas de verdade:
    • Pedrafunda (anões): bacia entre os picos mais altos, pedra escura, forjas,
      machados, estandartes vermelhos e o Mestre Brakar (refino, S-124).
-   • Aelindra (elfos): vale de floresta antiga, árvores gigantes com plataformas,
-     pavilhões de pedra branca com tetos em folha, lanternas e a Fonte da Lua.
+   • Aelindra (elfos): fica em elfcity3d.js (cidade na Árvore-Mãe).
    • Porto das Gaivotas (humanos do litoral): praia, cais, barcos, farol.
    Tudo é juntado por material (poucas chamadas de desenho) e some de longe.
    ========================================================================= */
@@ -503,128 +502,7 @@ function buildDwarfCity(ctx) {
   return { refineBoard: { x: SM.x + lx * cs + lz * sn, y: gY(SM.x, SM.z) + 2.4, z: SM.z - lx * sn + lz * cs, yaw: SM.ry, w: 3.3, h: 2.3 } };
 }
 
-/* =========================== AELINDRA (elfos) =========================== */
-// árvore anciã: tronco com raízes que abraçam o chão e copa enorme de folhagem em camadas
-function ancientTree(seed, H = 36) {
-  const K = new Kit(), r = rngOf(seed), bark = M.bark();
-  const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16; prof.push(new THREE.Vector2(2.2 * (1 - t * 0.55) + Math.pow(1 - t, 8) * 3.2, t * H)); }
-  const trunk = new THREE.LatheGeometry(prof, 28); { const P = trunk.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), a = Math.atan2(z, x), k = 1 + Math.sin(a * 5 + y * 0.12) * 0.08 + Math.sin(a * 11 + y * 0.3) * 0.03; P.setXYZ(i, x * k + Math.sin(y * 0.08) * 0.6, y, z * k); } trunk.computeVertexNormals(); }
-  K.add(trunk, bark);
-  for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2 + r(); const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(Math.cos(a) * 1.5, 2.6, Math.sin(a) * 1.5), new THREE.Vector3(Math.cos(a) * 3.6, 0.9, Math.sin(a) * 3.6), new THREE.Vector3(Math.cos(a) * 5.8, -0.3, Math.sin(a) * 5.8)]), 12, 0.55 - r() * 0.15, 10); K.add(c, bark); } // raízes
-  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + r() * 0.5, y0 = H * (0.55 + r() * 0.3); const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(Math.cos(a) * 1, y0, Math.sin(a) * 1), new THREE.Vector3(Math.cos(a) * 5, y0 + 3, Math.sin(a) * 5), new THREE.Vector3(Math.cos(a) * 9, y0 + 4 + r() * 3, Math.sin(a) * 9)]), 12, 0.5, 8); K.add(c, bark); } // galhos
-  // copa: blobs de folhagem com cor por vértice (luz por cima, sombra por baixo)
-  const leafC = [new THREE.Color('#2f6a2c'), new THREE.Color('#4f8f3a'), new THREE.Color('#7fb04a')];
-  for (let k = 0; k < 13; k++) {
-    const a = r() * Math.PI * 2, rr = r() * 9, y = H * 0.72 + r() * H * 0.32, s = 5 + r() * 4;
-    const g = mergeVertices(new THREE.IcosahedronGeometry(1, 4)), P = g.attributes.position, col = new Float32Array(P.count * 3), c = new THREE.Color(); // vértices unidos: folhagem lisa, sem facetas
-    for (let i = 0; i < P.count; i++) { const x = P.getX(i), yy = P.getY(i), z = P.getZ(i), n = 1 + Math.sin(x * 4 + k) * 0.12 + Math.sin(z * 5 + yy * 3) * 0.1; P.setXYZ(i, x * n, yy * n * 0.7, z * n); c.copy(leafC[0]).lerp(leafC[1], (yy + 1) / 2).lerp(leafC[2], Math.max(0, yy) * 0.5 * (0.6 + r() * 0.4)); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
-    g.computeVertexNormals(); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); /* auditoria: as bolotas lisas saíram; a copa agora é de folhas de verdade (main3d põe a folhagem nova por cima do tronco) */
-  }
-  return K;
-}
-// plataforma de madeira em volta de um tronco, com guarda-corpo curvo e escada em espiral
-function treeDeck(K, R, y, r0) {
-  const wd = M.elfWood();
-  K.add(new THREE.RingGeometry(r0, R, 40, 1).rotateX(-Math.PI / 2), wd, 0, y + 0.01, 0); K.add(new THREE.CylinderGeometry(R, R, 0.3, 40, 1, true), wd, 0, y - 0.15, 0);
-  K.add(new THREE.RingGeometry(r0, R, 40, 1).rotateX(Math.PI / 2), wd, 0, y - 0.3, 0);
-  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; K.cyl(0.05, 0.05, 1.0, M.silver(), Math.cos(a) * (R - 0.15), y + 0.5, Math.sin(a) * (R - 0.15), 8); }
-  K.add(new THREE.TorusGeometry(R - 0.15, 0.06, 8, 64), M.elfWood(), 0, y + 1.0, 0, 0, Math.PI / 2);
-  for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(Math.cos(a) * r0, y - 3, Math.sin(a) * r0), new THREE.Vector3(Math.cos(a) * (R * 0.7), y - 1.2, Math.sin(a) * (R * 0.7)), new THREE.Vector3(Math.cos(a) * (R - 0.3), y - 0.3, Math.sin(a) * (R - 0.3))]), 10, 0.14, 8); K.add(c, wd); } // mãos-francesas curvas
-}
-function spiralStair(K, rIn, y0, y1, turns = 1.2) {
-  const n = Math.round((y1 - y0) / 0.32), wd = M.elfWood();
-  for (let k = 0; k < n; k++) { const t = k / n, a = t * turns * Math.PI * 2, y = y0 + t * (y1 - y0); K.box(1.5, 0.12, 0.6, wd, Math.cos(a) * (rIn + 0.8), y, Math.sin(a) * (rIn + 0.8), -a); if (k % 3 === 0) K.cyl(0.03, 0.03, 1.0, M.silver(), Math.cos(a) * (rIn + 1.5), y + 0.5, Math.sin(a) * (rIn + 1.5), 6); }
-}
-// pavilhão élfico: piso redondo de mármore, colunas finas, teto em forma de folha/gota com ponta e friso dourado
-function elfPavilion(seed, R = 4, H = 5) {
-  const K = new Kit(), mb = M.marble();
-  K.cyl(R + 0.6, R + 0.9, 0.7, mb, 0, 0.1, 0, 36); K.cyl(R + 0.2, R + 0.4, 0.3, mb, 0, 0.6, 0, 36);
-  const n = 8; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, x = Math.cos(a) * R, z = Math.sin(a) * R; K.cyl(0.22, 0.28, H, mb, x, 0.75 + H / 2, z, 14); K.add(new THREE.TorusGeometry(0.3, 0.07, 8, 16), M.gold(), x, 0.75 + H, z, 0, Math.PI / 2); }
-  const prof = []; for (let k = 0; k <= 30; k++) { const t = k / 30; prof.push(new THREE.Vector2((R + 1.2) * (1 - Math.pow(t, 0.6)) + 0.06, t * H * 0.95 + Math.pow(1 - t, 6) * 0.7)); }
-  K.add(new THREE.LatheGeometry(prof, 48), M.leafRoof(), 0, 0.75 + H, 0); K.add(new THREE.LatheGeometry(prof.map(v => new THREE.Vector2(v.x * 0.99, v.y - 0.06)).reverse(), 48), M.elfWood(), 0, 0.75 + H, 0);
-  K.add(new THREE.TorusGeometry(R + 0.85, 0.09, 8, 48), M.gold(), 0, 0.85 + H, 0, 0, Math.PI / 2);
-  K.add(new THREE.ConeGeometry(0.12, 2.2, 12), M.gold(), 0, 0.75 + H * 1.85, 0); K.add(new THREE.SphereGeometry(0.25, 16, 12), M.moonGlow(), 0, 0.75 + H * 1.85 + 1.2, 0);
-  return K;
-}
-// casa élfica: torre redonda de pedra branca, janelas em ogiva com luz, teto alto em folha e uma varanda curva
-function elfHouse(seed) {
-  const K = new Kit(), r = rngOf(seed), mb = M.marble(), R = 3.2 + r() * 0.8, H = 6 + r() * 3;
-  K.cyl(R + 0.4, R + 0.6, 0.8, mb, 0, 0.0, 0, 32); K.cyl(R, R * 1.05, H, mb, 0, 0.4 + H / 2, 0, 32);
-  for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + 0.4; for (const yy of [2.2, 5.2]) { if (yy > H - 0.5) continue; const sh = new THREE.Shape(); sh.moveTo(-0.45, 0); sh.lineTo(0.45, 0); sh.lineTo(0.45, 1.0); sh.quadraticCurveTo(0.45, 1.5, 0, 1.75); sh.quadraticCurveTo(-0.45, 1.5, -0.45, 1.0); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 0.1, bevelEnabled: false }); K.add(g, M.moonGlow(), Math.cos(a) * (R + 0.02), yy, Math.sin(a) * (R + 0.02), -a + Math.PI / 2); } }
-  { const sh = new THREE.Shape(); sh.moveTo(-0.8, 0); sh.lineTo(0.8, 0); sh.lineTo(0.8, 1.8); sh.quadraticCurveTo(0.8, 2.6, 0, 3.0); sh.quadraticCurveTo(-0.8, 2.6, -0.8, 1.8); sh.closePath(); K.add(new THREE.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: false }), M.elfWood(), 0, 0.4, R + 0.02); } // porta em ogiva
-  K.add(new THREE.TorusGeometry(R + 0.05, 0.08, 8, 48), M.gold(), 0, 0.4 + H, 0, 0, Math.PI / 2);
-  // teto em folha: beiral que se curva para fora e para cima, corpo côncavo e ponta fina (como um broto se abrindo)
-  const prof = [], RH = H * 1.05; for (let k = 0; k <= 30; k++) { const t = k / 30, rr = (R + 1.6) * (1 - Math.pow(t, 0.55)) + 0.08, lift = Math.pow(1 - t, 6) * 0.9; prof.push(new THREE.Vector2(rr, t * RH + lift - 0.6 * Math.pow(Math.max(0, 0.12 - t) / 0.12, 2))); }
-  K.add(new THREE.LatheGeometry(prof, 48), M.leafRoof(), 0, 0.4 + H, 0); K.add(new THREE.LatheGeometry(prof.map(v => new THREE.Vector2(v.x * 0.99, v.y - 0.06)).reverse(), 48), M.elfWood(), 0, 0.4 + H, 0);
-  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(prof.filter((_, i) => i % 3 === 0).map(v => new THREE.Vector3(Math.cos(a) * (v.x + 0.03), v.y, Math.sin(a) * (v.x + 0.03)))), 24, 0.05, 6); K.add(c, M.gold(), 0, 0.4 + H, 0); } // nervuras douradas
-  K.add(new THREE.ConeGeometry(0.08, 2.4, 10), M.gold(), 0, 0.4 + H + RH + 1.0, 0); K.add(new THREE.SphereGeometry(0.16, 12, 10), M.moonGlow(), 0, 0.4 + H + RH + 0.2, 0);
-  // varanda curva
-  K.add(new THREE.CylinderGeometry(R + 1.3, R + 1.3, 0.25, 36, 1, false, 0, Math.PI * 0.7), M.elfWood(), 0, 0.4 + H * 0.62, 0, 0.6);
-  K.add(new THREE.TorusGeometry(R + 1.25, 0.05, 8, 36, Math.PI * 0.7), M.silver(), 0, 0.4 + H * 0.62 + 0.9, 0, 0.6 + Math.PI / 2, Math.PI / 2);
-  return { K, box: [[0, 0, R + 0.5, R + 0.5]] };
-}
-// lanterna élfica: haste curva de prata com uma esfera de luz pendurada
-function elfLantern(K, x, y, z, ry) {
-  const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 2.4, 0), new THREE.Vector3(0.3, 3.2, 0), new THREE.Vector3(0.9, 3.3, 0)]), 16, 0.05, 8);
-  K.add(c, M.silver(), x, y, z, ry); K.add(new THREE.SphereGeometry(0.2, 16, 12), M.moonGlow(), x + Math.cos(ry) * 0.9, y + 2.95, z - Math.sin(ry) * 0.9);
-  K.add(new THREE.ConeGeometry(0.24, 0.25, 16, 1, true), M.silver(), x + Math.cos(ry) * 0.9, y + 3.2, z - Math.sin(ry) * 0.9);
-}
-function buildElfCity(ctx) {
-  const C = ELF, r = rngOf(909);
-  // árvores anciãs em volta da clareira, duas com plataformas ligadas por uma ponte
-  const trees = [[-30, -18, 37], [26, -26, 40], [36, 14, 33], [-34, 20, 35], [-6, -40, 42]];
-  trees.forEach(([dx, dz, H], i) => {
-    const K = ancientTree(100 + i, H);
-    if (i < 2) { treeDeck(K, 6.2, 12, 2.0); spiralStair(K, 2.3, 0.2, 12, 1.4); treeDeck(K, 4.6, 21, 1.7); }
-    put(ctx, K, 'arvore_ancia', C.x + dx, C.z + dz, r() * 6, { box: [[0, 0, 2.6, 2.6]] });
-  });
-  { // ponte suspensa curva entre as duas plataformas (12 m de altura)
-    const K = new Kit(), a = trees[0], b = trees[1], ax = a[0], az = a[1], bx = b[0], bz = b[1], len = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az);
-    const n = Math.floor((len - 12) / 0.5); for (let k = 0; k <= n; k++) { const t = k / n, s = 6 + t * (len - 12), sag = Math.sin(t * Math.PI) * 1.2; K.box(1.8, 0.12, 0.42, M.elfWood(), Math.sin(ry) * s, 12 - sag, Math.cos(ry) * s, ry); if (k % 2 === 0) for (const sd of [-1, 1]) K.cyl(0.03, 0.03, 1.0, M.silver(), Math.sin(ry) * s + Math.cos(ry) * sd * 0.85, 12.5 - sag, Math.cos(ry) * s - Math.sin(ry) * sd * 0.85, 6); }
-    for (const sd of [-1, 1]) { const pts = []; for (let k = 0; k <= 16; k++) { const t = k / 16, s = 6 + t * (len - 12); pts.push(new THREE.Vector3(Math.sin(ry) * s + Math.cos(ry) * sd * 0.85, 13 - Math.sin(t * Math.PI) * 1.2, Math.cos(ry) * s - Math.sin(ry) * sd * 0.85)); } K.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.05, 6), M.rope()); }
-    put(ctx, K, 'ponte_elfica', C.x + ax, C.z + az, 0, { y: gY(C.x + ax, C.z + az), occ: false });
-  }
-  // casas e pavilhões em volta da Fonte da Lua
-  const houses = [[210, 24], [250, 27], [300, 25], [340, 26], [20, 26], [160, 25]];
-  houses.forEach(([deg, rr], i) => { const a = deg * Math.PI / 180, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr, { K, box } = elfHouse(60 + i); put(ctx, K, 'casa_elfica', x, z, Math.atan2(C.x - x, C.z - z), { box }); });
-  for (const [dx, dz, R] of [[-14, 6, 3.6], [14, -8, 4.2]]) put(ctx, elfPavilion(7, R, 4.6), 'pavilhao_elfico', C.x + dx, C.z + dz, 0, { box: [[0, 0, R * 0.3, R * 0.3]] });
-  // Fonte da Lua: bacia de mármore, água luminosa e um cristal que gira devagar
-  { const K = new Kit(), mb = M.marble(); K.add(new THREE.LatheGeometry([[0.01, 0], [5.2, 0], [5.4, 0.7], [5.0, 0.9], [4.8, 0.4], [0.01, 0.4]].map(([a, b]) => new THREE.Vector2(a, b)), 48), mb);
-    K.cyl(4.8, 4.8, 0.05, plain('moonWater', '#7fd8ff', { emissive: '#4ab8ff', ei: 0.7, rough: 0.05, transparent: true, opacity: 0.85 }), 0, 0.66, 0, 48);
-    K.add(new THREE.LatheGeometry([[0.01, 0], [1.1, 0], [0.5, 0.5], [0.35, 2.4], [0.9, 2.8], [0.01, 2.9]].map(([a, b]) => new THREE.Vector2(a, b)), 24), mb);
-    for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + 0.785; elfLantern(K, Math.cos(a) * 7, 0, Math.sin(a) * 7, -a); }
-    const g = put(ctx, K, 'fonte_da_lua', C.x, C.z, 0, { box: [[0, 0, 5.2, 5.2]] });
-    const cr = new THREE.Mesh(new THREE.OctahedronGeometry(0.8, 0), plain('crystal', '#d8f4ff', { emissive: '#8fd8ff', ei: 1.6, rough: 0.1, transparent: true, opacity: 0.9 })); cr.scale.y = 1.8; cr.position.y = 4.4; g.add(cr);
-    cr.userData.update = t => { cr.rotation.y = t * 0.4; cr.position.y = 4.4 + Math.sin(t * 1.2) * 0.25; }; ctx.roomAnims.push(cr);
-    const L = vlight('#9fd8ff', 5, 18, 1.5); L.position.set(0, 3, 0); g.add(L); }
-  // portal de entrada: dois troncos brancos que se curvam formando uma folha, na estrada (sul)
-  { const K = new Kit(); for (const sx of [-1, 1]) { const c = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(sx * 4.5, 0, 0), new THREE.Vector3(sx * 4.8, 5, 0), new THREE.Vector3(sx * 3.2, 9.5, 0), new THREE.Vector3(0, 11.5, 0)]), 24, 0.45, 12); K.add(c, M.marble()); }
-    K.add(new THREE.SphereGeometry(0.32, 20, 14), M.moonGlow(), 0, 11.4, 0); for (const sx of [-1, 1]) elfLantern(K, sx * 6.5, 0, 0, sx > 0 ? Math.PI : 0);
-    put(ctx, K, 'portal_elfico', C.x, C.z + 42, 0, { box: [[-4.6, 0, 0.6, 0.6], [4.6, 0, 0.6, 0.6]] }); }
-  // lanternas pela clareira e árvores comuns (bosque em volta)
-  { const K = new Kit(); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 + 0.2, rr = 15 + (k % 2) * 4; elfLantern(K, Math.cos(a) * rr, gY(C.x + Math.cos(a) * rr, C.z + Math.sin(a) * rr) - gY(C.x, C.z), Math.sin(a) * rr, -a); } put(ctx, K, 'lanterna_elfica', C.x, C.z, 0, { occ: false }); }
-  for (const [dx, dz] of [[10, 12], [-12, -14]]) { const L = vlight('#bfe6ff', 3, 14, 1.6); L.position.set(C.x + dx, gY(C.x + dx, C.z + dz) + 3, C.z + dz); ctx.scene.add(L); }
-  for (let k = 0; k < 46; k++) { const a = r() * Math.PI * 2, rr = 46 + r() * 30, x = C.x + Math.cos(a) * rr, z = C.z + Math.sin(a) * rr; if (Math.abs(x - C.x) < 8 && z > C.z) continue; if (Math.hypot(heightAt(x + 1.2, z) - heightAt(x - 1.2, z), heightAt(x, z + 1.2) - heightAt(x, z - 1.2)) / 2.4 > 0.84) continue; /* P-003: nada de árvore na parede íngreme (> 40°) da bacia */ ctx.place((r() < 0.6 ? 'oakdark_' : 'pinedark_') + Math.floor(r() * 3), x, z, { scale: 1.1 + r() * 0.6 }); }
-  for (const sx of [-1, 1]) { const b = makeBanner('elfo', 1.2, 3.4); b.position.set(C.x + sx * 6.5, gY(C.x, C.z + 42) + 6.5, C.z + 42.4); ctx.scene.add(b); }
-  // NPCs: elfos (quase todos)
-  const W = (n, dx, dz, yaw) => ctx.worldNpc(n, C.x + dx, C.z + dz, yaw);
-  const npcs = [
-    [{ id: 'aerin', name: 'Aerin', title: 'Sentinela de Aelindra', model: 'Rogue_Hooded', show: ['2H_Crossbow', 'Rogue_Cape'], look: { race: 'elfo', sex: 'f', face: 'sereno', hair: { style: 'longo', color: 'platinado' } },
-      lines: 'Passos pesados de humano... Seja bem-vindo a Aelindra, viajante, mas pise de leve: estas árvores já eram velhas quando o primeiro rei humano nasceu.' }, 3, 38, Math.PI],
-    [{ id: 'lyssandra', name: 'Lyssandra', title: 'Guardiã da Fonte da Lua', model: 'Mage', show: ['2H_Staff', 'Mage_Cape'], heals: true, look: { race: 'elfo', sex: 'f', face: 'gentil', hair: { style: 'longo', color: 'loiro' } } }, 0, 7.5, Math.PI],
-    [{ id: 'thalion', name: 'Thalion', title: 'Ancião de Aelindra', model: 'Mage', show: ['Spellbook_open', 'Mage_Cape'], look: { race: 'elfo', face: 'sereno', hair: { style: 'longo', color: 'branco' } },
-      lines: 'A Fonte da Lua guarda a memória da floresta. Quando a lua cheia toca a água, ela canta — poucos humanos já ouviram.\nAo sul, depois de Pedraclara e das colinas, o mar beija a terra no Porto das Gaivotas.' }, -14, 3, Math.PI / 2],
-    [{ id: 'faelar', name: 'Faëlar', title: 'Mercador de Arcos', model: 'Rogue', show: ['1H_Crossbow', 'Rogue_Cape'], shopList: 'geral', shopTitle: '🏹 Arcos de Aelindra', look: { race: 'elfo', face: 'astuto', hair: { style: 'coque', color: 'castanho' } },
-      hello: 'Madeira de árvore-mãe, corda de seda de aranha-da-lua. Nada atira mais longe.' }, 13, -4, -Math.PI / 2],
-    [{ id: 'nimriel', name: 'Nimriel', title: 'Tecelã', model: 'Mage', show: ['Mage_Cape'], look: { race: 'elfo', sex: 'f', face: 'alegre', hair: { style: 'coque', color: 'ruivo' } },
-      lines: 'Os estandartes da cidade são tecidos com fios de folha prateada. Dizem que mudam de cor no outono.' }, -20, -10, 0.5],
-    [{ id: 'eldin', name: 'Eldin', title: 'Aprendiz de Druida', model: 'Rogue_Hooded', show: ['1H_Wand'], look: { race: 'elfo', face: 'gentil', hair: { style: 'curto', color: 'loiro' } },
-      lines: 'Suba a escada em volta da árvore-mãe! Lá de cima dá para ver o mar ao sul, num dia limpo.' }, -22, -16, 1.4],
-    [{ id: 'borin_vis', name: 'Borin', title: 'Anão perdido', model: 'Barbarian', look: { race: 'anao', face: 'astuto', hair: { style: 'careca', color: 'ruivo' }, beard: true },
-      lines: 'Árvores, árvores e mais árvores. Onde é que se arranja uma cerveja decente por aqui?!' }, 18, 16, -2.3],
-  ];
-  for (const [n, dx, dz, yaw] of npcs) W(n, dx, dz, yaw);
-}
+/* AELINDRA (elfos): agora em js3d/elfcity3d.js (a cidade na Árvore-Mãe) */
 
 /* =========================== PORTO DAS GAIVOTAS ===========================
    O porto (cais, navio, docas, farol, casas, mercado e bairro dos mercadores) fica em js3d/port3d.js (rodada 15).
@@ -1061,7 +939,6 @@ export function buildCities(ctx) {
   const anim = { userData: { update: t => { clothT.value = t; if (t - cullT < 0.5) return; cullT = t; const c = ctx.camera.position; if (c.x > HALF + 100) return; /* nas salas (o mundo agora vai até 630) */ for (const g of CULL) { const d = Math.hypot(g.position.x - c.x, g.position.z - c.z); g.visible = d < (g.userData.far || 380); } } } };
   ctx.roomAnims.push(anim); // vento nos estandartes e distância de desenho das cidades
   const dwarf = buildDwarfCity(ctx);
-  buildElfCity(ctx);
   // o Porto das Gaivotas é montado por buildPortCity/buildMerchants (js3d/port3d.js), chamados pelo main3d logo depois
   buildFrostHold(ctx);             // S-165: a Muralha Gélida e a Fortaleza da Vigília Negra
   return { refineBoard: dwarf.refineBoard };
