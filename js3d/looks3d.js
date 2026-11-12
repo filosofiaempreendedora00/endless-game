@@ -1811,9 +1811,9 @@ function robeSolve(K, P, lp, RAD, margin, rr, need, N, B) {
   const needAt = (y, a) => { let n = 0; const sa = Math.sin(a), ca = Math.cos(a); for (let q = 0; q < sp.length; q += 4) { const dy = y - sp[q + 2], R0 = sp[q + 3]; if (dy * dy >= R0 * R0) continue; const ox = sp[q], oz = sp[q + 1], dc = sa * ox + ca * oz, disc = R0 * R0 - dy * dy - ox * ox - oz * oz + dc * dc; if (disc > 0) { const t = dc + Math.sqrt(disc) + margin; if (t > n) n = t; } } return n; };
   const wrap = j => K.closed ? (j + cols) % cols : j, top = K.yb[0], bot = K.yb[(rows - 1) * cols], H = top - bot, { yy, raise, rz } = B;
   for (let j = 0; j < cols; j++) { // 1) altura (contínua) em que a perna passaria da folga do pano → a barra sobe até logo acima dela
-    raise[j] = 0; let pe = -1;
-    for (let i = 1; i < rows; i++) { const v = i * cols + j, e = needAt(K.yb[v], K.ang[v]) - K.rb[v] * (1 + RAD.cap);
-      if (e > 0) { const t = pe < 0 ? -pe / (e - pe) : 0, y = K.yb[v - cols] + (K.yb[v] - K.yb[v - cols]) * t; raise[j] = Math.min(RAD.raiseF * H, Math.max(0, y - K.yb[(rows - 1) * cols + j] + 0.02)); break; }
+    raise[j] = 0; let pe = -1; const bk = RAD.capB == null ? 0 : Math.min(1, Math.max(0, -Math.cos(K.ang[j]) * 1.6 - 0.1)), cap = RAD.cap + ((RAD.capB ?? RAD.cap) - RAD.cap) * bk, rf = RAD.raiseF + ((RAD.raiseB ?? RAD.raiseF) - RAD.raiseF) * bk; // S-384 (anão): ATRÁS a folga é menor e a barra sobe mais — o calcanhar chutado para trás sai por baixo do robe em vez de abrir uma "tenda" de pano
+    for (let i = 1; i < rows; i++) { const v = i * cols + j, e = needAt(K.yb[v], K.ang[v]) - K.rb[v] * (1 + cap);
+      if (e > 0) { const t = pe < 0 ? -pe / (e - pe) : 0, y = K.yb[v - cols] + (K.yb[v] - K.yb[v - cols]) * t; raise[j] = Math.min(rf * H, Math.max(0, y - K.yb[(rows - 1) * cols + j] + 0.02)); break; }
       pe = e; } }
   for (let j = 0; j < cols; j++) { let m = 0; for (let d = -14; d <= 14; d++) { const jj = wrap(j + d); if (jj < 0 || jj >= cols) continue; const e = raise[jj] * (1 - Math.abs(d) * K.dA * RAD.hk); if (e > m) m = e; } rz[j] = m; } // arco: sobe no meio e desce dos lados
   for (let pass = 0; pass < 3; pass++) { raise.set(rz); for (let j = 0; j < cols; j++) { const l = K.closed ? wrap(j - 1) : Math.max(0, j - 1), r = K.closed ? wrap(j + 1) : Math.min(cols - 1, j + 1); rz[j] = (raise[l] + raise[j] * 2 + raise[r]) / 4; } } // sem dentes na barra
@@ -2020,8 +2020,11 @@ function clothCape(root, fx, color, opt = {}) {
     const out = []; for (let i = 0; i < NX; i++) { const t = i / (NX - 1); out.push(mid.clone().add(rightV.clone().multiplyScalar((t - 0.5) * 2 * half)).add(back.clone().multiplyScalar(pinOff[i]))); } // S-337: presa logo atrás do AÇO das costas (medido), não dentro da armadura
     return { out, back, upv };
   };
-  const step = () => {
-    const now = performance.now(); let dt = Math.min(0.033, (now - last) / 1000); last = now; if (dt <= 0) dt = 0.016;
+  let lastT = null;
+  const step = (tt) => {
+    const now = performance.now(); let dt = (now - last) / 1000; last = now;
+    if (typeof tt === 'number' && isFinite(tt)) { if (lastT != null && tt > lastT) dt = tt - lastT; lastT = tt; } // S-384: passo pelo RELÓGIO DO JOGO (quadros simulados em sequência davam dt ≈ 0 → sem gravidade, a capa ficava dobrada)
+    dt = Math.min(0.033, dt); if (dt <= 0) dt = 0.016;
     const { out, back, upv } = pins();
     // S-297: teleporte, montaria, renascer ou quadro perdido → o pano não fica para trás esticado (recomeça pendurado nos ombros)
     if (inited) { const mid = out[NX >> 1], k0 = (NX >> 1) * 3, kb = ((NY - 1) * NX + (NX >> 1)) * 3; if (Math.hypot(mid.x - p[k0], mid.y - p[k0 + 1], mid.z - p[k0 + 2]) > 0.6 || Math.hypot(mid.x - p[kb], mid.y - p[kb + 1], mid.z - p[kb + 2]) > H * 1.6) inited = false; }
@@ -2038,9 +2041,12 @@ function clothCape(root, fx, color, opt = {}) {
     const link = (a, b, rl) => { const ka = a * 3, kb = b * 3, dx = p[kb] - p[ka], dy = p[kb + 1] - p[ka + 1], dz = p[kb + 2] - p[ka + 2], d = Math.hypot(dx, dy, dz) || 1e-6, df = (d - rl) / d * 0.5, pa = a < NX ? 0 : 1, pb = b < NX ? 0 : 1, s = pa + pb; if (!s) return; p[ka] += dx * df * (pa / s) * 2; p[ka + 1] += dy * df * (pa / s) * 2; p[ka + 2] += dz * df * (pa / s) * 2; p[kb] -= dx * df * (pb / s) * 2; p[kb + 1] -= dy * df * (pb / s) * 2; p[kb + 2] -= dz * df * (pb / s) * 2; };
     for (let it = 0; it < 5; it++) {
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const n = j * NX + i; if (i < NX - 1) link(n, n + 1, rest); if (j < NY - 1) link(n, n + NX, restY); if (i < NX - 1 && j < NY - 1) link(n, n + NX + 1, Math.hypot(rest, restY)); }
+      for (let j = 1; j < NY; j++) for (let i = 0; i + 2 < NX; i += 1) { const n = j * NX + i, ka = n * 3, kb = (n + 2) * 3; if (Math.hypot(p[kb] - p[ka], p[kb + 1] - p[ka + 1], p[kb + 2] - p[ka + 2]) < rest * 1.7) link(n, n + 2, rest * 1.7); } // S-384: o pano resiste a DOBRAR na largura (só empurra quando fecha demais) — correndo, a capa não vira mais uma tira dobrada; ainda se curva nas costas
       for (let n = NX; n < N; n++) { const k = n * 3; tmp.set(p[k], p[k + 1], p[k + 2]);
         for (const [a, b, r] of caps) { const ab = tmp2.copy(b).sub(a), t = Math.max(0, Math.min(1, tmp.clone().sub(a).dot(ab) / ab.lengthSq())), c = a.clone().add(ab.multiplyScalar(t)), d = tmp.clone().sub(c), dl = d.length(); if (dl < r) { d.multiplyScalar((r - dl) / (dl || 1)); tmp.add(d); } }
         for (const sk of skirts) pushOutSkirt(sk, tmp, 0.022);
+        { const i = n % NX, j = (n / NX) | 0, o = out[i], lat = (tmp.x - o.x) * rightV.x + (tmp.y - o.y) * rightV.y + (tmp.z - o.z) * rightV.z, lim = 0.035 + 0.009 * j; // S-384: a capa fica ATRÁS do corpo — não escorrega para o lado da perna nem gira de perfil ao correr
+          if (Math.abs(lat) > lim) tmp.addScaledVector(rightV, (Math.sign(lat) * lim - lat)); }
         p[k] = tmp.x; p[k + 1] = tmp.y; p[k + 2] = tmp.z; }
     }
     // escreve na malha (vértices no espaço do mundo; a malha anula a transformação do pai)
@@ -2049,7 +2055,7 @@ function clothCape(root, fx, color, opt = {}) {
     mesh.matrix.copy(root.matrixWorld).invert(); mesh.matrixWorldNeedsUpdate = true;
   };
   // a PlaneGeometry vem com a linha de cima primeiro (y = +0.5): a ordem casa com j = 0 em cima
-  fx.push(() => step());
+  fx.push(tt => step(tt));
   return mesh;
 }
 /* escudos feitos em código (S-195): redondo de madeira com aro e umbo de ferro, broquel de aço, escudo de cavaleiro */
@@ -2638,7 +2644,7 @@ function mgLegRad(root) {
         if (k === 2 && t > 0.75) acc[3].push(r); } }
     const p95 = a => { a.sort((x, y) => x - y); return a.length ? a[Math.floor(a.length * 0.95)] : 0; };
     const out = [Math.max(0.125, p95(acc[0]) + 0.01), Math.max(0.075, p95(acc[1]) + 0.012), Math.max(0.06, p95(acc[2]) + 0.01), Math.max(0.05, p95(acc[3]) + 0.008)];
-    out.spheres = 6; out.tent = 1.8; out.drop = 0.88; out.vtent = 1.4; out.cap = 0.5; out.raiseF = 0.22; out.hk = 1.4; return out; // robeSolve (S-383): perna em esferas; folga do pano limitada — a perna sai por baixo (barra sobe pouco, só ali) em vez de o robe virar sino // clothSkirt: perna em esferas (coxa erguida ao correr não fura o robe); pano mais rente a cada perna e que volta abaixo do joelho (nada de "caixa" ao correr)
+    out.spheres = 6; out.tent = 1.8; out.drop = 0.88; out.vtent = 1.4; out.cap = 0.5; out.raiseF = 0.22; out.hk = 1.4; if (root.userData.dwarf) { out.capB = 0; out.raiseB = 0.55; } return out; // robeSolve (S-383): perna em esferas; folga do pano limitada — a perna sai por baixo (barra sobe pouco, só ali) em vez de o robe virar sino // clothSkirt: perna em esferas (coxa erguida ao correr não fura o robe); pano mais rente a cada perna e que volta abaixo do joelho (nada de "caixa" ao correr)
   });
 }
 // mangas: de cima justa (por cima do ombro) e de baixo em SINO, mais funda atrás (cai para baixo quando o braço dobra), com punho
@@ -3693,7 +3699,7 @@ const ARMOR_BUILD = {
     if (!dw) for (const s of ['l', 'r']) { const th = bonePos(root, 'thigh_' + s), ca = bonePos(root, 'calf_' + s); // TASSETS de placa (3 lâminas) na frente/lado de cada coxa, até o meio da coxa
       lames(root, 'tasW' + s, ['thigh_' + s], /_Legs/, th, ca, 0.0, 0.46, 3, { sec: 26, off: 0.048, step: -0.004, smooth: 6, arc: [-1.2, 1.2], ridge: (t, a) => Math.max(0, Math.cos(a)) ** 8 * 0.005 }, steel, 'thigh_' + s, edge); }
     for (const s of ['l', 'r']) {
-      pauldronSet(root, steel, s, { size: 1.08, n: 2, k: 'wl3', trim: edge }); // ombreiras iguais de aço escuro (nenhuma clara demais)
+      pauldronSet(root, steel, s, dw ? { size: 1.24, n: 1, k: 'wl3d', trim: edge, arcK: 0.8, cap: 0.05 } : { size: 1.08, n: 2, k: 'wl3', trim: edge }); // ombreiras iguais de aço escuro (nenhuma clara demais) · S-384: no anão uma cúpula larga + espaldar e UMA lâmina só (as lâminas finas viravam frisos)
       armSet(root, leather, s, { noCouter: true, noFlare: true, vamb: steel }); // manga de couro + braçadeira de aço
       legSet(root, steel, s, { cuisse: false, poleyn: !dw, greave: dark, trim: edge }); // joelheira de aço (humano/elfo) + greva de couro
     }

@@ -329,24 +329,24 @@ function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo
   };
   body.customProgramCacheKey = () => 'wolf-body-' + SIG + '-' + fur;
   const shells = [];
-  const NL = fur > 1.3 ? 7 : 6;
+  const NL = fur > 1.3 ? 11 : 6, CB = fur > 1.3 ? 0.18 : 0.35, RD = fur > 1.3 ? 0.74 : 0.6; // S-384: lobo gigante (pelo longo) — mais camadas, menos escorregão do penteado e raiz menos escura: a juba de perto não forma mais "fileiras de escamas"
   for (let i = 1; i <= NL; i++) {
     const f = i / NL, m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1 });
     m.onBeforeCompile = sh => {
       coatUniforms(sh, C); sh.uniforms.uF = { value: f };
       sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
         vOP = position; vON = normal; float L0 = wFurLen0(position) * wK(position), h = L0 * ${INFL.toFixed(2)} + (wFurLen(position) * wK(position) - L0 * ${INFL.toFixed(2)}) * uF;
-        transformed += normal * max(h, 0.0) + wComb(position) * L0 * uF * uF * 0.35;`);
+        transformed += normal * max(h, 0.0) + wComb(position) * L0 * uF * uF * ${CB.toFixed(2)};`);
       sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + WOLF_STRAND_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
         float L = wFurLen(vOP) * wK(vOP);
         if (L < 0.004) discard;
-        float den = mix(240.0, 120.0, smoothstep(0.02, 0.07, L));                                // mechas grossas (pelo longo = mechas mais largas)
+        float den = mix(240.0, ${fur > 1.3 ? '175.0' : '120.0'}, smoothstep(0.02, 0.07, L));                                // mechas grossas (pelo longo = mechas mais largas)
         vec2 fc = wfCover(vOP, vON, wComb(vOP), den, uF);
         float a = max(fc.x, 1.0 - smoothstep(0.3, 0.55, uF));                                    // metade de dentro: subpelo inteiro, sem vão até a pele
         float ndv = abs(dot(normalize(vNormal), normalize(vViewPosition)));
         a *= mix(1.0, smoothstep(0.0, 0.2, ndv), uF * 0.3);                                      // silhueta: só a ponta das mechas afina
         if (a < 0.5) discard;                                                                    // corte seco (sem transparência = sem cara de holograma)
-        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.6, 1.0, uF) * (0.95 + 0.1 * fc.y); // raiz mais escura (oclusão), ponta na cor da pelagem`);
+        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(${RD.toFixed(2)}, 1.0, uF) * (0.95 + 0.1 * fc.y); // raiz mais escura (oclusão), ponta na cor da pelagem`);
     };
     m.customProgramCacheKey = () => 'wolf-shell-' + SIG + '-' + i + '-' + NL + '-' + fur;
     shells.push(m);

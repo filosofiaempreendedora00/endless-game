@@ -253,3 +253,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Magos precisam PARECER magos (robe longo, mangas largas, bordado, evolução clara) — referências Skyrim/RO/WoW; o Paladino é a régua de acabamento.
 - Arco: ele mesmo descreveu a solução (pé de trás/da frente conforme a mira) — trate as descrições físicas dele como especificação.
 - Ferramenta do Q é sagrada: recorte errado ("marquei o rosto e veio o pé") é bug de prioridade.
+
+### Acabamento das sobras (pedido "pode tratar esses pontos"), 2026-11-12
+- Ele aprova que eu mesmo liste as sobras e depois as trate ("confio em vc"); ao fechar uma rodada, liste com honestidade o que ficou pequeno ou não conferido: ele volta e pede.
+- Capa do Paladino: o "começava dobrada" não era só do teste. Correndo, a capa virava uma tira de lado, porque o pano não resistia a dobrar e escorregava para o lado da perna. Teste capa e pano SEMPRE correndo no jogo de verdade (personagem jogável, não só manequim parado).
+- Robe do anão: o pano não pode abrir "tenda" atrás; a barra pode subir onde o calcanhar chuta.
+- Lobo gigante: de perto, camadas de pelo longo viram "escamas". Mais camadas finas e mechas mais finas.
