@@ -6,7 +6,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 
 _Nenhuma._
 
-## Feitas (345)
+## Feitas (357)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2432,3 +2432,87 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** Existência de couro nas roupas dos Caçadores e inclusive quero que tivesse mais a presença dos Couros porém achei essa roupa bem estranha no sentido de terem os pedaços aleatórios grudados nas roupas ao invés de trabalhar de uma forma mais decente e profissional e diferente das roupas convencionais verdes achei na verdade esses Caçadores e afins muito parecidos com o personagem padrão e isso claramente é um problema a meu ver
 - ![print](img/S-345.png)
 - **Resposta do Claude:** O Caçador virou caçador de couro de verdade, bem diferente da roupa verde padrão: camurça e couro curtido em tons de terra, gibão com cordão, túnica com abas, cinto largo, braçadeiras de arqueiro e botas altas de rastreio, com o manto de pele moldado nos ombros e o arco por fora dele.
+
+### S-346 · Área do mapa: Área da tela (504×480 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:28:15 · **Mapa:** Vila de Alvorada (tile [813, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Os movimentos aqui do cavaleiro ainda estão bastante esquisitos Pode reparar que eles estão se movimentando de uma forma totalmente estranha e ainda sinto que dá para trabalhar um pouco mais um acabamento desta classe
+- ![print](img/S-346.png)
+- **Resposta do Claude:** Cavaleiro com postura nova em todas as raças: pés sob os ombros, tronco ereto e uma guarda firme com a espada longa nas duas mãos, à frente e na altura da cintura. Fora do combate a lâmina fica rente à perna, e não mais atravessada para trás. No anão as mãos ficaram mais baixas e junto ao corpo. A mesma guarda vale para Guerreiro, Paladino e Gatuno-Mestre.
+
+### S-347 · Área do mapa: Área da tela (702×614 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:29:25 · **Mapa:** Vila de Alvorada (tile [814, 9])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Sinto que talvez esse guerreiro deu até uma piorada repare por exemplo nos ombros desse anão repare como que parece que tá utilizando no corpo dele um latão e meio que os elementos dele não conversam muito bem entre si então sentir que o guerreiro ficou bem a quem do que deveria eu gostaria de ser que ele fosse um pouco inspirado numa espadachim do Ragnarok online e em outros guerreiros que tivessem sim armadura pode se esperar ninguém of Thrones Skyrim e outras classes mais claro trazendo algo um pouco menos elaborado no que tange a quantidade de Armadura do que as evoluções dele ou seja ele precisa ter um pouco menos de Armadura do que o Paladino e o Cavaleiro Mas claro que precisa ter algo que se encaixa muito bem no corpo dele
+- ![print](img/S-347.png)
+- **Resposta do Claude:** Guerreiro refeito no espírito do Espadachim e dos soldados de Skyrim e Game of Thrones, com menos armadura que o Cavaleiro e o Paladino: couraça de couro fervido fosco (acabou o "latão" de aço polido), gola de couro que liga a couraça às ombreiras, uma ombreira de ferro fosco e outra de couro (as duas justas), talabarte da espada cruzando o peito e escarcelas curtas sobre a fralda de malha. Tudo moldado no corpo das 3 raças.
+
+### S-348 · Área do mapa: Área da tela (514×875 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:30:41 · **Mapa:** Vila de Alvorada (tile [795, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação as roupas Desse gato no mestre até que eu gostei bastante das cores e dos detalhes nos ombros inclusive com essa parte que é meio que uma saia tudo isso eu gostei bastante acredito que realmente são mais alguns ajustes tanto na parte frontal quanto nesse troço esquisito nas costas que ficou claramente mal feito e mal trabalhado Então eu preciso que você refine um pouco essa parte das costas e também a frente dele tem melhorias a serem feitas no que tange a acabamento mesmo porém posso que a essência dessa roupa me agradou é mais um ajuste no ombro aqui e outro ali até que atinja algo mais trabalhado e que eu dei a nota 10 por enquanto eu diria que está uma nota sete e meio a 8 no máximo porque se essa parte de trás realmente entenderem muito
+- ![print](img/S-348.png)
+- **Resposta do Claude:** Gatuno-Mestre: o "troço" das costas virou um capuz caído de pano de verdade, com um rolo macio na base do pescoço e o capuz deitado sobre o casaco, com dobras. Na frente, as varetas em X viraram um boldrié largo com fivela, e a abertura do casaco ganhou debrum escuro. Cores, ombros e as abas da saia continuam iguais.
+
+### S-349 · Área do mapa: Área da tela (485×760 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:31:43 · **Mapa:** Vila de Alvorada (tile [790, 12])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse Executor vai bem na linha do feedback que eu dei para o gato no mestre Gostei da roupa gostei das cores porém existem melhorias a serem feitas nos detalhes mesmo tanto deste colete preto que ele utiliza quanto nessa parte do ombro poderia ser um pouco maior e mais Evidente mais prateada e mais chamativa e mais clara obviamente e mais imponente Claro sem ser em excesso porém claramente tem partes da roupa que estão com erros e problemas que podem ser facilmente percebidos em relação a acabamento e isso falando de forma frontal mas de forma nas costas também tem bastante problema Claro ali
+- ![print](img/S-349.png)
+- **Resposta do Claude:** Executor: o colete foi refeito, com costura central e debrum, sem peças da roupa de baixo furando na frente ou nas costas. A ombreira agora é uma peça só: maior, em aço prateado claro e polido, com crista, borda virada e rebites.
+
+### S-350 · Área do mapa: Área da tela (468×423 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:33:03 · **Mapa:** Vila de Alvorada (tile [789, 8])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Vou te dar uma colher de chá no sentido de que Sim aparentemente é mais difícil você acertar as roupas no anão porque ele tem um outro modelo enquanto que no elfo e nos humanos você acabou chegando bem mais próximo do que eu esperava porém eu gostaria que fosse um pouco mais simétrica essa roupa e não com um triângulo levemente alinhado para um dos lados e na verdade eu não gostei desse triângulo lá acredito que ele não se encaixou muito agora em relação ao colete acho bem bacana tanto no elfo quanto no humano como eu falei estão melhor aplicados mas ainda precisam de ajustes principalmente no anão garantindo que esse colete percorra toda a extensão dos ombros e sim os braços até podem ficar nessa cor verde desde que na parte frontal esse Verde também seja tampado em resumo também precisa de acabamento Assim como as outras classes porém um foco maior no colete dado que as pernas aparentemente pelo que tudo indica ficaram bacanas
+- ![print](img/S-350.png)
+- **Resposta do Claude:** Ladino: o colete ficou fechado e simétrico (placa central e três tiras com fivela) e cobre os ombros inteiros. O triângulo vermelho saiu (ficou só um lenço justo no pescoço) e o verde não aparece mais na frente nem nos ombros, só nos braços. Vale nas 3 raças, inclusive no anão.
+
+### S-351 · Área do mapa: Área da tela (273×113 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:33:38 · **Mapa:** Vila de Alvorada (tile [784, 5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu reparei que nenhum dos Elfos tem de fato uma orelha de elfo e eu gostaria que ela fosse suficientemente maior para que a gente pudesse bater o olho e nós soubéssemos que se trata de um elfo E claro o elfo também precisa ser caracterizado por ter feições faciais diferentes de um ser humano não podemos usar um modelo idêntico
+- ![print](img/S-351.png)
+- **Resposta do Claude:** Elfos com orelhas longas e pontudas, viradas para cima e para trás, que dá para ver de longe. O rosto também é próprio: mais fino e oval, queixo afilado, olhos amendoados puxados, maçãs do rosto altas, nariz fino e sobrancelhas arqueadas. Vale para jogador, NPCs e galeria, por cima do rosto escolhido no criador.
+
+### S-352 · Área do mapa: Área da tela (521×651 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:34:14 · **Mapa:** Vila de Alvorada (tile [786, 6])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Além dos feedbacks que já dei sobre o ladino senti que a forma de ataque dele não está bacana está bem esquisita para quem tem uma Adaga novamente quero que você se inspire naquele ladrão lá do Skyrim principalmente como também do UOL e outras referências que tenham animações melhores
+- ![print](img/S-352.png)
+- **Resposta do Claude:** Ladino com golpes de adaga no estilo do ladrão do Skyrim: guarda baixa com a mão livre à frente, estocada por baixo com o ombro, corte reverso e corte diagonal, com os pés juntos e uma leve agachada. O Executor continua com as estocadas de katar dele.
+
+### S-353 · Área do mapa: Área da tela (453×658 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:35:15 · **Mapa:** Vila de Alvorada (tile [784, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação as roupas em si acredito que foi o maior Grow Up Entre todos os seus ajustes talvez só gostaria de que a parte branca e a gola desta roupa estivesse mais condizente com o restante da roupa e não parecendo uma camiseta polo grudada com partes vinho então eu gostaria que você desse um acabamento melhor mas adianto que eu gostei bastante desses ombros e dessa parte frontal não estou vendo nas costas mas aproveite para dar apenas um acabamento melhor nesta roupa mas como eu falei está bem bacana
+- ![print](img/S-353.png)
+- **Resposta do Claude:** Bardo: a "camisa polo" sumiu. O tronco virou veludo vinho por dentro do gibão, e o linho aparece só numa gola de camisa saindo do gibão, com cordão e ponteiras douradas, e nos punhos. Nas costas, a capa subiu (fechou a "janela") e ganhou galão dourado.
+
+### S-354 · Área do mapa: Área da tela (409×469 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:36:13 · **Mapa:** Vila de Alvorada (tile [784, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Todas as animações de puxada de arco dos barrados ainda estão com problema e digo mais acredito que todas as animações de arco com todas as classes ainda estão a quem do que deveriam ser pois está bugando para caramba os braços dessas classes aquele bug das pernas melhorou porém o dos braços ainda é bastante Evidente principalmente que os braços ainda estão invadindo muitas vezes o peitoral e ou o ombro das classes reparei isso na raça anão e todas as outras raças também tem algum problema atrelado aos ar
+- ![print](img/S-354.png)
+- **Resposta do Claude:** Arco consertado em todas as classes e raças. A puxada era rápida demais enquanto o arco ainda subia, e entre um tiro e outro a mão ficava em meia-puxada, por isso o braço cruzava o peito. Agora o arco sobe antes, a mão vai até a bochecha fazendo um leve arco por fora do peito, e a flecha passa à frente do ombro. Também corrigi um erro que impedia a soltura da flecha de ser detectada.
+
+### S-355 · Área do mapa: Área da tela (484×457 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:37:17 · **Mapa:** Vila de Alvorada (tile [784, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação a roupa eu gostei muito e principalmente em relação às cores porém ainda sinto que falta melhorar o acabamento para que não fique essas partes cinzas meio que grudadas e aleatórias na roupa de forma com que ela não se integra bem a roupa como um todo eu gosto muito de ser uma leather ou seja algo mais focado no couro mas mesmo assim sinto que ainda Precisa de ajustes para ficar mais coerente o tudo e mais profissional e as animações de arco ainda estão bugadas assim como essa da besta não está ideal
+- ![print](img/S-355.png)
+- **Resposta do Claude:** Caçador: as placas cinzas de pele, a franja e o capuz saíram. No lugar entrou um manto curto de couro no mesmo tom do traje, com barra debruada, e uma gola de pele castanha. Besta: a coronha encosta no ombro e o trilho fica na altura da bochecha, em vez de no peito. O arco do Caçador segue a correção da S-354.
+
+### S-356 · Área do mapa: Área da tela (185×184 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:38:21 · **Mapa:** Vila de Alvorada (tile [806, -16])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostaria que essas linhas ele cuidais fossem menos sólidas e sim mais numa pegada mágica eu gostei que sai em bolinhas agora porém gostaria também que esse efeito ele cuidava se parecesse menos com uma lombriga e sim tivessem efeitos mais suaves e não tão sólidos em branco girando em volta do cajado
+- ![print](img/S-356.png)
+- **Resposta do Claude:** Cajado do Arquimago: os fios brancos sólidos que giravam como uma "lombriga" saíram. No lugar entraram três rastros de pontinhos de luz lilás e azul, que giram em volta da pedra e se apagam na cauda. Ficam mais fortes ao conjurar.
+
+### S-357 · Área do mapa: Área da tela (505×538 px)
+- **Status:** feito · **Quando:** 2026-11-11T20:39:52 · **Mapa:** Vila de Alvorada (tile [814, -5])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A barba do anão ainda está totalmente invadida pela armadura e repare que há vários detalhes na própria roupa que quando ele se movimenta acaba que vão ficando evidentes porém eu preciso que você dê um acabamento melhor em relação ao escudo e já está infinitamente melhor agora realmente são pequenos ajustes que precisam ser feitos e algo que eu percebi e não sei se é intencional ou não é que esse sol da armadura ele não está simétrico no peito eu não sei se foi intencional ou não mais confesso que a posição dele ficou um pouco esquisita penso talvez de você colocar na parte peitoral mais para cima e perto de um dos ombros talvez no ombro oposto ao braço do escudo seria a posição ideal para que o temporário pudesse ter esse sol presente na armadura
+- ![print](img/S-357.png)
+- **Resposta do Claude:** Paladino: o sol saiu do meio do peito e foi para o alto, perto do ombro da espada (oposto ao escudo). A barba do anão tem mais folga sobre a armadura e a ponta pousa curvada por cima dela, então não afunda nos golpes. O escudo ganhou um friso dourado arredondado contornando a lateral, que antes ficava crua.

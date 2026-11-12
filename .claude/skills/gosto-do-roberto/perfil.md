@@ -172,6 +172,8 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
 - Bicho deslizando sem passos; flor solta no chão; árvore na rocha; área cinza/vazia no mapa.
 - Combate de clicar e travar o alvo (ele quer mira e habilidade).
 - Emoji como ícone de item.
+- Aço polido envolvendo o tronco ("latão", S-347) e efeito mágico de geometria sólida branca ("lombriga", S-356).
+- Peça assimétrica sem motivo (ponta de lenço torta, emblema fora do lugar, S-350/S-357).
 - Equipamento "frankenstein" (peça que não encaixa no corpo) e chapéu flutuando.
 - Arma colada do lado de fora do punho fechado (S-292, S-304): o cabo passa por dentro da mão.
 - Borda do palco/vitrine cortando o pedestal ou o mascote (S-069, S-304).
@@ -191,3 +193,4 @@ Passe pelo que você tocou antes de dizer "feito":
 - [ ] A tela ou janela nova funciona com o Q (clique exato, área e print).
 - [ ] Sem perda de desempenho (luzes com `vlight`, grama em blocos).
 - [ ] O feedback foi generalizado para os elementos parecidos, e a `resposta` diz isso.
+- [ ] Roupa/armadura conferida também DURANTE golpes e puxada de arco (barba, braços e peças não atravessam em nenhum quadro), nas 3 raças.

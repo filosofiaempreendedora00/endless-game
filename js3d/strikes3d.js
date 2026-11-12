@@ -53,9 +53,10 @@ export const STRIKES = {
     { dur: 0.56, hit: 0.5, keys: [{ t: 0, r: [-0.3, -0.55, 0.45] }, { t: 0.3, r: [-0.5, 0.48, 0.15], yaw: -0.22, rp: [-0.4, 0.4, -0.6], rb: [0.1, 0.8, -0.6] }, { t: 0.55, r: [0.08, -0.38, 0.82], yaw: 0.2, lean: 0.16, rb: [0.45, -0.45, 0.75] }, { t: 0.78, r: [0.18, -0.6, 0.55], yaw: 0.15, lean: 0.1, rb: [0.55, -0.75, 0.3] }, { t: 1, r: [-0.3, -0.55, 0.45] }] },
     { dur: 0.6, hit: 0.5, lunge: 0.4, heavy: true, keys: [{ t: 0, l: [0.25, -0.3, 0.45] }, { t: 0.32, l: [0.32, -0.22, 0.12], yaw: 0.3, lean: -0.05, lp: [0.7, -0.4, -0.4] }, { t: 0.52, l: [0.05, -0.12, 0.98], yaw: -0.32, lean: 0.26 }, { t: 0.74, l: [0.06, -0.15, 0.9], yaw: -0.28, lean: 0.2 }, { t: 1, l: [0.25, -0.3, 0.45] }] },
   ],
-  adaga: [ // estocadas rápidas e corte reverso
-    { dur: 0.42, hit: 0.48, lunge: 0.2, keys: [{ t: 0, r: [-0.2, -0.45, 0.5] }, { t: 0.3, r: [-0.28, -0.32, 0.18], yaw: -0.22, rp: [-0.6, -0.4, -0.5] }, { t: 0.5, r: [-0.04, -0.2, 0.98], yaw: 0.18, lean: 0.2 }, { t: 1, r: [-0.2, -0.45, 0.5] }] },
-    { dur: 0.48, hit: 0.5, keys: [{ t: 0, r: [-0.2, -0.45, 0.5] }, { t: 0.3, r: [0.28, -0.05, 0.42], yaw: 0.32, rp: [-0.2, -0.7, -0.5] }, { t: 0.55, r: [-0.62, -0.25, 0.62], yaw: -0.28, lean: 0.12 }, { t: 0.78, r: [-0.72, -0.35, 0.42], yaw: -0.32 }, { t: 1, r: [-0.2, -0.45, 0.5] }] },
+  adaga: [ // S-352: adaga no estilo do ladrão do Skyrim — guarda baixa, mão livre à frente; estocada por baixo com o ombro, corte reverso e corte diagonal
+    { dur: 0.44, hit: 0.5, lunge: 0.28, keys: [{ t: 0, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }, { t: 0.28, r: [-0.34, -0.66, 0.1], l: [0.3, -0.38, 0.6], yaw: -0.32, lean: 0.02, rp: [-0.7, -0.5, -0.45], rb: [0.05, 0.2, 1] }, { t: 0.5, r: [-0.02, -0.32, 1.02], l: [0.34, -0.58, 0.22], yaw: 0.36, lean: 0.24, rb: [0.04, 0.12, 1] }, { t: 0.68, r: [-0.03, -0.34, 0.98], l: [0.34, -0.58, 0.24], yaw: 0.32, lean: 0.22, rb: [0.04, 0.1, 1] }, { t: 1, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }] },
+    { dur: 0.46, hit: 0.52, lunge: 0.12, keys: [{ t: 0, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }, { t: 0.3, r: [0.3, -0.12, 0.4], l: [0.4, -0.55, 0.3], yaw: 0.36, lean: 0.04, rp: [-0.35, -0.8, -0.35], rb: [0.85, 0.45, 0.25] }, { t: 0.55, r: [-0.58, -0.48, 0.66], l: [0.3, -0.45, 0.5], yaw: -0.38, lean: 0.16, rb: [-0.8, -0.35, 0.5] }, { t: 0.76, r: [-0.68, -0.6, 0.42], yaw: -0.4, lean: 0.12, rb: [-0.7, -0.6, 0.2] }, { t: 1, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }] },
+    { dur: 0.48, hit: 0.52, lunge: 0.18, keys: [{ t: 0, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }, { t: 0.3, r: [-0.52, 0.12, 0.28], l: [0.28, -0.42, 0.6], yaw: -0.36, lean: -0.02, rp: [-0.65, 0.0, -0.7], rb: [-0.25, 0.9, 0.2] }, { t: 0.55, r: [0.24, -0.46, 0.8], l: [0.36, -0.6, 0.28], yaw: 0.4, lean: 0.2, rb: [0.7, -0.5, 0.55] }, { t: 0.76, r: [0.3, -0.6, 0.6], yaw: 0.36, lean: 0.16, rb: [0.6, -0.7, 0.3] }, { t: 1, r: [-0.14, -0.62, 0.5], l: [0.26, -0.5, 0.52] }] },
   ],
   duas: [ // katar / duas adagas: estocadas alternadas, elegantes ("dança" do Algoz), sem abrir as pernas
     { dur: 0.42, hit: 0.46, lunge: 0.24, keys: [{ t: 0, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }, { t: 0.24, r: [-0.24, -0.26, 0.22], l: [0.15, -0.3, 0.62], yaw: -0.22, rp: [-0.6, -0.45, -0.5] }, { t: 0.44, r: [-0.01, -0.06, 1.08], l: [0.26, -0.36, 0.28], yaw: 0.34, lean: 0.24 }, { t: 0.62, r: [-0.02, -0.08, 1.04], l: [0.26, -0.36, 0.3], yaw: 0.3, lean: 0.2 }, { t: 1, r: [-0.18, -0.4, 0.55], l: [0.18, -0.4, 0.55] }] }, // P-021: braço quase reto à frente na altura do peito, ombro acompanhando, segura um instante
@@ -138,6 +139,46 @@ export function updateStrike(ch, dt, opts = {}) {
   if (!opts.skipR && rOff && B.hand_r) aimBlade(ch, B.hand_r, blend(B.lowerarm_r, B.hand_r, s.rbA, s.rbB), w * 0.85);
   if (!opts.skipL && lOff && !st.def.two && B.hand_l) aimBlade(ch, B.hand_l, blend(B.lowerarm_l, B.hand_l, s.lbA, s.lbB), w * 0.85);
   return true;
+}
+/* S-346/S-352: GUARDA e DESCANSO das armas de lâmina, no mesmo espaço do corpo dos golpes (vale para humano, elfo e anão).
+   - descanso (fora de combate): a lâmina pende para baixo e um pouco à frente, rente à perna (no clipe "Idle" ela ficava
+     atravessada na horizontal, apontando para trás);
+   - guarda: a mão da arma à frente do corpo, na altura do umbigo, com a ponta para a frente e para cima (Skyrim/WoW);
+     o Cavaleiro empunha a espada longa com as duas mãos (guarda média firme), o ladino fica baixo com a mão livre à frente.
+   Aplicado DEPOIS do mixer e da postura da classe e ANTES do golpe — o golpe parte da guarda e volta para ela. */
+export const GUARDS = {
+  espada: { r: [-0.12, -0.66, 0.5], rb: [0.14, 0.62, 1], rp: [-0.75, -0.55, -0.25] },
+  pesada: { r: [-0.1, -0.8, 0.42], rb: [0.1, 0.6, 1], two: true, lean: -0.06, rp: [-0.8, -0.5, -0.2] },
+  paladino: { r: [-0.2, -0.66, 0.42], rb: [0.1, 0.55, 1], rp: [-0.75, -0.55, -0.25] },
+  adaga: { r: [-0.14, -0.62, 0.5], rb: [0.18, 0.3, 1], l: [0.26, -0.5, 0.52], lb: [0.1, 0.6, 0.6], lp: [0.75, -0.55, -0.25], rp: [-0.75, -0.55, -0.3], lean: 0.08 },
+  sabre: { r: [-0.14, -0.62, 0.5], rb: [0.12, 0.6, 1], l: [0.28, -0.62, 0.4], lb: [0.0, 0.2, 1], rp: [-0.75, -0.55, -0.25], lp: [0.75, -0.55, -0.25] },
+};
+const REST_DIR = [-0.24, -0.8, 0.55]; // ponta para baixo/à frente, levemente para fora
+export function guardPose(ch, kind, o = {}) {
+  const G = GUARDS[kind]; if (!G || !ch || !ch.root) return;
+  const gw = Math.max(0, Math.min(1, o.guard || 0)), rw = Math.max(0, Math.min(1, o.rest || 0)) * (1 - gw);
+  if (gw < 0.01 && rw < 0.01) return;
+  const B = bonesOf(ch), body = ch.obj || ch.root; if (!B.spine_01 || !B.hand_r) return;
+  body.updateWorldMatrix(true, true); body.getWorldQuaternion(_qb); const bq = _qb.clone(), toW = v => new THREE.Vector3(v[0], v[1], v[2]).applyQuaternion(bq);
+  if (rw > 0.01) { // descanso: só o pulso (o braço segue o clipe), e a mão esquerda da adaga do Salteador também
+    aimBlade(ch, B.hand_r, toW(REST_DIR), rw * 0.9);
+    if (kind === 'sabre' && B.hand_l) aimBlade(ch, B.hand_l, toW([0.12, -0.78, 0.6]), rw * 0.9);
+  }
+  if (gw < 0.01) return;
+  if (G.lean) { const side = new THREE.Vector3(1, 0, 0).applyQuaternion(bq); rotAround(B.spine_01, side, G.lean * gw * 0.55); rotAround(B.spine_02, side, G.lean * gw * 0.45); }
+  const dw = ch.root.userData.dwarf; // anão: braço curto para o tronco — mãos um pouco mais baixas e junto ao corpo (senão a guarda sobe até o queixo)
+  const arm = (ua, la, ha, off, pole) => {
+    ua.getWorldPosition(_a); la.getWorldPosition(_b); ha.getWorldPosition(_c); const L = _a.distanceTo(_b) + _b.distanceTo(_c), sh = _a.clone(), o2 = dw ? [off[0], off[1] * 1.14, off[2] * 0.86] : off;
+    ik2(ua, la, ha, sh.clone().add(toW(o2).multiplyScalar(L)), sh.clone().add(toW(pole).multiplyScalar(L)), gw);
+  };
+  arm(B.upperarm_r, B.lowerarm_r, B.hand_r, G.r, G.rp || POLE_R);
+  aimBlade(ch, B.hand_r, toW(G.rb), gw);
+  if (G.two && B.hand_l) { // mão esquerda logo abaixo da direita, no mesmo cabo (do lado do pomo)
+    const ax = bladeAxis(ch, B.hand_r); B.hand_r.updateWorldMatrix(true, false); B.hand_r.getWorldPosition(_c);
+    const dir = ax ? ax.clone().applyQuaternion(B.hand_r.getWorldQuaternion(new THREE.Quaternion())) : toW([0, 1, 0]);
+    const T = _c.clone().addScaledVector(dir, -0.1).add(toW([0.025, 0, 0])), P = new THREE.Vector3(); B.upperarm_l.getWorldPosition(P); P.add(toW([0.6, -0.55, -0.2]));
+    ik2(B.upperarm_l, B.lowerarm_l, B.hand_l, T, P, gw * 0.95);
+  } else if (G.l && B.hand_l) { arm(B.upperarm_l, B.lowerarm_l, B.hand_l, G.l, G.lp || POLE_L); if (G.lb) aimBlade(ch, B.hand_l, toW(G.lb), gw * 0.8); }
 }
 // qual conjunto de golpes cada classe/arma usa
 export function strikeKind(cls, wtype, armed) {

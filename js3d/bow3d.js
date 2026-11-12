@@ -39,7 +39,7 @@ export function bowPose(me, o, ctx) {
   const bdt = o.dt != null ? Math.min(0.1, o.dt) : Math.min(0.1, Math.max(0, performance.now() / 1000 - (me._bt ?? performance.now() / 1000))); me._bt = performance.now() / 1000;
   const now = (me._clk = (me._clk ?? 0) + bdt);
   const spring = (key, target, k) => { if (me[key] === undefined) { me[key] = target; me[key + 'V'] = 0; } const v = me[key + 'V'] + ((target - me[key]) * k - 2 * Math.sqrt(k) * me[key + 'V']) * bdt; me[key + 'V'] = v; me[key] += v * bdt; return me[key]; };
-  const Aeff = Math.max(0, Math.min(1, spring('_bpA', o.aim, o.aim > (me._bpA ?? 0) ? 90 : 26))); // entra na mira rápido, sai macio
+  const Aeff = Math.max(0, Math.min(1, spring('_bpA', o.aim, o.aim > (me._bpA ?? 0) ? 220 : 26))); // S-354: ergue o arco bem rápido (antes, a puxada acontecia com o arco ainda subindo e a mão ficava no peito) // entra na mira rápido, sai macio
   const Weff = Math.max(0, Math.min(1, spring('_bpW', o.w < (me._bpW ?? 0) && Aeff > 0.18 ? (me._bpW ?? 1) : o.w, o.w > (me._bpW ?? 0) ? 70 : 18))); // só solta o braço depois de baixar a mira
   r.userData.bowState(Weff > 0.02 ? 'hand' : 'back');
   const nock = me._nockObj || (me._nockObj = (() => { const a = ctx.makeArrow(); a.visible = false; ctx.scene.add(a); return a; })());
@@ -55,7 +55,9 @@ export function bowPose(me, o, ctx) {
   const shL = sl.getWorldPosition(new THREE.Vector3()), shR = sr.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
   // braço do arco: em guarda baixo e à frente; mirando estendido para o alvo na altura do ombro
   const guardT = shL.clone().add(fwd.clone().multiplyScalar(0.34)).add(UP.clone().multiplyScalar(-0.36)).add(right.clone().multiplyScalar(0.12));
-  const aimT = shL.clone().add(fwd.clone().multiplyScalar(0.7)).add(UP.clone().multiplyScalar(0.03));
+  // S-354: mirando, a mão do arco sobe um pouco e vem para a frente do peito (lado da bochecha que ancora): assim a linha da flecha
+  // (e o caminho da mão que puxa) passa à frente e acima do ombro do arco, nunca por dentro dele (anão: ombros mais largos e baixos)
+  const dwarfB = !!r.userData.dwarf, aimT = shL.clone().add(fwd.clone().multiplyScalar(dwarfB ? 0.6 : 0.66)).add(UP.clone().multiplyScalar(dwarfB ? 0.1 : 0.08)).add(right.clone().multiplyScalar(dwarfB ? 0.19 : 0.16));
   ik2(sl, el, hl, guardT.lerp(aimT, A), shL.clone().add(UP.clone().multiplyScalar(-0.5)).add(right.clone().multiplyScalar(-0.3 - 0.25 * A)).add(fwd.clone().multiplyScalar(-0.1)), W);
   { // gira o punho para o arco ficar quase em pé (inclinado para a frente na guarda), corda voltada para o arqueiro
     bow.updateWorldMatrix(true, false); const bu = new THREE.Vector3(0, 1, 0).transformDirection(bow.matrixWorld);
@@ -81,7 +83,7 @@ export function bowPose(me, o, ctx) {
     let s = den > 1e-8 ? Math.max(0, Math.min(1, (b * f - c * e) / den)) : 0, t = (b * s + f) / e; if (t < 0) { t = 0; s = Math.max(0, Math.min(1, -c / a)); } else if (t > 1) { t = 1; s = Math.max(0, Math.min(1, (b - c) / a)); }
     return p0.clone().add(d1.multiplyScalar(s)).distanceTo(q0.clone().add(d2.multiplyScalar(t)));
   };
-  const drawK0 = Math.max(0, Math.min(1, o.draw)) * (0.2 + 0.8 * A);
+  const drawK0 = Math.max(0, Math.min(1, o.draw)) * (0.3 + 0.7 * A);
   let restUp = 0.055;
   for (let it = 0; it < 4; it++) { // confere a flecha encaixada na corda solta (guarda) E a flecha puxada: nenhuma passa pelo antebraço/pulso
     const R = grip.clone().add(by.clone().multiplyScalar(restUp)), Sx = R.clone().add(bz.clone().multiplyScalar(sz - gz)), T = Sx.clone().lerp(anchor, drawK0);
@@ -89,16 +91,20 @@ export function bowPose(me, o, ctx) {
   restUp = Math.min(restUp, 0.16);
   const restPt = grip.clone().add(by.clone().multiplyScalar(restUp)); // onde a flecha encosta no arco
   const strRest = restPt.clone().add(bz.clone().multiplyScalar(sz - gz)); // ponto de encaixe na corda solta, na mesma altura
-  const drawK = Math.max(0, Math.min(1, o.draw)) * (0.2 + 0.8 * A); // em guarda só encosta na corda
+  const drawK = Math.max(0, Math.min(1, o.draw)) * (0.3 + 0.7 * A); // em guarda só encosta na corda
   const tgt = strRest.clone().lerp(anchor, drawK);
   // mão suavizada (no espaço do corpo): puxa firme, e na soltura faz o "follow-through" (segue um pouco para trás ao lado do rosto,
   // dedos abrindo) e só então volta devagar para encaixar a próxima flecha — nada de salto de meio metro num quadro
-  const prev = me._lastDraw ?? o.draw; if (prev > 0.8 && o.draw < 0.12) me._relAt = now; // soltura = corda quase na âncora caindo a quase zero (voltar da meia-puxada para a guarda NÃO é soltura) me._lastDraw = o.draw;
+  const prev = me._lastDraw ?? o.draw; if (prev > 0.8 && o.draw < 0.12) me._relAt = now; // soltura = corda quase na âncora caindo a quase zero (voltar da meia-puxada para a guarda NÃO é soltura)
+  me._lastDraw = o.draw; // S-354: esta linha estava dentro do comentário — a soltura nunca era detectada
   const sinceRel = now - (me._relAt ?? -9);
   // S-333: depois de soltar, a mão NÃO volta até o arco: fica ao lado do rosto e desce macio até a meia-puxada (nova flecha já encaixada)
-  const reNock = sinceRel < 0.7 && A > 0.3, handDrawK = reNock ? Math.max(drawK, 0.55 * (0.2 + 0.8 * A)) : drawK;
+  const reNock = sinceRel < 0.7 && A > 0.3, handDrawK = reNock ? Math.max(drawK, 0.8 * (0.3 + 0.7 * A)) : drawK; // S-354: a mão fica perto do rosto entre um tiro e outro (a meia-puxada antiga deixava o antebraço no peito)
   const SP = me.obj || r.parent || r; SP.updateWorldMatrix(true, false); // espaço do PERSONAGEM (a raiz do esqueleto é animada e "pula" ao trocar de animação)
-  const tgtL = SP.worldToLocal(strRest.clone().lerp(anchor, handDrawK));
+  // S-354: a mão que puxa faz um leve arco PARA FORA do peito e para cima no meio do caminho (o caminho reto da corda até a bochecha
+  // passava rente ao peito/ombro, e com roupa volumosa ou o anão o antebraço entrava no corpo)
+  const bulge = Math.sin(Math.PI * Math.max(0, Math.min(1, handDrawK))) * W;
+  const tgtL = SP.worldToLocal(strRest.clone().lerp(anchor, handDrawK).add(rightA.clone().multiplyScalar((dwarf ? 0.1 : 0.08) * bulge)).add(UP.clone().multiplyScalar(0.035 * bulge)));
   if (!me._hpL) { me._hpL = tgtL.clone(); me._hpV = new THREE.Vector3(); }
   let want = tgtL, k;
   if (sinceRel < 0.16) { const back = anchor.clone().sub(restPt).normalize(); want = SP.worldToLocal(anchor.clone().add(back.multiplyScalar(0.07)).add(rightA.clone().multiplyScalar(0.035)).add(UP.clone().multiplyScalar(0.01))); k = 700; }
@@ -122,7 +128,7 @@ export function bowPose(me, o, ctx) {
 // atraso entre a puxada e a soltura, seguindo a velocidade de ataque (ASPD alto = puxa e solta rápido)
 export const bowRelease = aspdMs => Math.max(0.09, Math.min(0.25, aspdMs / 1000 * 0.55));
 // curva da corda ao longo de um tiro: puxa até a âncora, solta de uma vez, re-encaixa a próxima flecha
-export function bowDraw(since, rel, shooting) { if (!shooting) return 0.1; if (since < rel) return 0.35 + 0.65 * (since / rel); if (since < rel + 0.1) return 0.02; return Math.min(0.55, 0.02 + (since - rel - 0.1) * 3); }
+export function bowDraw(since, rel, shooting) { if (!shooting) return 0.1; if (since < rel) return 0.35 + 0.65 * (since / rel); if (since < rel + 0.1) return 0.02; return Math.min(0.8, 0.02 + (since - rel - 0.1) * 4); }
 
 /* S-325: BESTA do Caçador — segurada com as DUAS mãos: a direita no cabo de pistola (a besta está presa a ela), a esquerda apoiando a
    coronha por baixo. Em guarda fica na altura do quadril apontando para a frente e para baixo; mirando, a coronha vai ao ombro direito e
@@ -143,7 +149,13 @@ export function crossbowPose(me, o) {
   const shR = sr.getWorldPosition(new THREE.Vector3()), shL = sl.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
   // mão direita (cabo): guarda na altura do quadril à frente; mirando, logo abaixo da bochecha com a coronha no ombro; coice para trás/cima
   const guardT = shR.clone().add(fwd.clone().multiplyScalar(0.26)).add(UP.clone().multiplyScalar(-0.42)).add(right.clone().multiplyScalar(-0.05));
-  const aimT = head.clone().add(UP.clone().multiplyScalar(-0.17)).add(right.clone().multiplyScalar(0.06)).add(fwd.clone().multiplyScalar(0.12));
+  // S-355: mirando, a CORONHA encosta no "bolso" do ombro direito (um pouco para dentro da junta e à frente) e o trilho fica na altura
+  // da bochecha, apontando para o alvo — a mão do cabo é posta a partir dessa coronha (antes a besta ficava no peito e a coronha
+  // atravessava o tórax/braço, sobretudo no anão). Medidas no espaço da besta: coronha z ≈ −0,36, cabo da mão (0, −0,13, −0,15).
+  const dirAim = fwd.clone().add(UP.clone().multiplyScalar(0.02)).normalize(), ctr = shL.clone().sub(shR); ctr.y = 0; ctr.normalize();
+  const dwarfX = !!r.userData.dwarf, butt = shR.clone().add(fwd.clone().multiplyScalar(dwarfX ? 0.1 : 0.08)).add(UP.clone().multiplyScalar(dwarfX ? 0.03 : 0.015)).add(ctr.multiplyScalar(dwarfX ? 0.07 : 0.05));
+  const upAim = UP.clone().sub(dirAim.clone().multiplyScalar(UP.dot(dirAim))).normalize();
+  const aimT = butt.add(dirAim.clone().multiplyScalar(0.36 - 0.15)).add(upAim.multiplyScalar(-0.13 + 0.03));
   const T = guardT.lerp(aimT, A).add(fwd.clone().multiplyScalar(-0.06 * rc)).add(UP.clone().multiplyScalar(0.03 * rc));
   ik2(sr, er, hr, T, shR.clone().add(UP.clone().multiplyScalar(-0.5)).add(right.clone().multiplyScalar(0.35)).add(fwd.clone().multiplyScalar(-0.15)), W);
   // gira o punho para a besta apontar para o alvo (guarda: inclinada para baixo; coice: o bico sobe), trilho para cima

@@ -17,7 +17,7 @@ import { makePet } from './pets3d.js';
 import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
 import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
-import { startStrike, updateStrike, strikeKind, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
+import { startStrike, updateStrike, strikeKind, guardPose, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
 import { initSkillFx, playSkillFx, playSkillFxRemote, skillProjectile, skillHitDelay, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
 import { faceSculpt, FACE_FEATS, softenFace, hasKatar, dress, CLASS_LOOKS, friendlyFaces, RACES, applyRace, SKINS, RARITY, applySkin, HAIR_STYLES, HAIR_COLORS, DEFAULT_LOOK, applyHair, classHasHat, applyHat, hatCovers, FACE_TYPES, normalizeLook, npcHead, dressHuman, CLASS_OUTFIT, humanBorrow, dressNpcRole } from './looks3d.js';
 import { makeTreeTemplates } from './trees3d.js';
@@ -609,8 +609,8 @@ function galleryAnim(n, dt = 1 / 30) {
   if (n.root.userData.bowState) { // S-312: arqueiros da galeria — arco nas costas parado, na mão em guarda, de lado puxando até a boca nos golpes
     if (n._baseYaw === undefined) n._baseYaw = n.obj.rotation.y;
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
-    const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 10 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, rel = 0.3;
-    const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.55, (since - rel - 0.1) * 3);
+    const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 16 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, rel = 0.3; // S-354: ergue o arco mais rápido (puxava com o arco ainda subindo, a mão passava pelo peito)
+    const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.8, (since - rel - 0.1) * 4);
     n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -1.1 * A, 7);
     bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12), dt }, BOW_CTX);
   }
@@ -618,6 +618,8 @@ function galleryAnim(n, dt = 1 / 30) {
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
     instrumentPose(n, { w: sm('_instW', ph > 0 ? 1 : 0, 5), play: sm('_instP', ph === 2 ? 1 : 0.15, 6), t: S.time + n.gOff });
   }
+  if (n._gGuard === undefined) { const wid = GALLERY_WEAPON[n.cls], it = wid && ITEMS[wid]; n._gGuard = !n.sonic && !n.root.userData.bowState && !n.root.userData.xbowState ? strikeKind(n.cls, it ? it.wtype : null, !!it) : null; }
+  if (n._gGuard) { const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate)); guardPose(n, n._gGuard, { guard: sm('_gGW', ph > 0 ? 1 : 0, 6), rest: sm('_gRW', ph === 0 ? 1 : 0, 4) }); } // S-346/S-352
   updateStrike(n, dt, { skipR: /^(mago|arquimago)$/.test(n.cls), skipL: n.cls === 'sabio_elemental' }); // P-014
 }
 function buildArena() {
@@ -2094,7 +2096,7 @@ function legTwist(me, ang) {
 const CLASS_POSE = { // S-320/S-322: pernas quase juntas (nada de "perereca"/pernas escancaradas) — firmeza vem do tronco e dos braços
   aprendiz: { spread: 0.0, knee: 0.02, lean: 0.0 },
   guerreiro: { spread: 0.03, knee: 0.02, lean: 0.02, rArm: [0.05, 0, 0.05, 0], atk: [0.08, 0.05, 1] },                       // guarda média clássica (o clipe já é agachado)
-  cavaleiro_runico: { spread: 0.07, knee: 0.04, lean: 0.05, twist: 0.12, rArm: [0.30, 0.06, 0.26, -0.25], atk: [0.18, 0.14, 0.95] }, // guarda alta e agressiva, pés bem afastados
+  cavaleiro_runico: { spread: 0.02, knee: 0.03, lean: -0.02, twist: 0.10, atk: [0.16, 0.12, 0.95] }, // S-346: firme e ereto, espada longa nas duas mãos (guardPose 'pesada' em strikes3d), pés sob os ombros
   guardiao_sagrado: { spread: 0.05, knee: 0.03, lean: -0.05, twist: -0.06, rArm: [-0.12, 0.04, 0, 0.18], lArm: [0.42, -0.08, 0.30, 0], atk: [0.05, 0.04, 1] }, // ereto e firme, escudo à frente, espada baixa
   // magos: o braço do cajado (direito) e o do livro (esquerdo, Sábio) seguem o IK de holdStaff/holdBook em looks3d — aqui só tronco, pernas e a mão LIVRE
   mago: { spread: 0.03, knee: 0.02, lean: 0.04, lArm: [0.26, 0, 0.2, 0], atk: [0.06, 0.05, 1] },                           // mão livre à frente, conjurando
@@ -2103,7 +2105,7 @@ const CLASS_POSE = { // S-320/S-322: pernas quase juntas (nada de "perereca"/per
   arqueiro: { spread: 0.03, knee: 0.02, lean: 0.03 },                                                                       // (braços: postura de arco própria)
   cacador: { spread: 0.05, knee: 0.06, lean: 0.07, twist: 0.04 },                                                           // S-325: rastreador — joelhos soltos, tronco à frente, de tocaia (braços: arco/besta próprios)
   menestrel: { spread: 0.03, lean: -0.03, twist: 0.04 },                                                                    // solto e ereto
-  ladino: { spread: 0.05, knee: 0.04, lean: 0.05, rArm: [0.10, 0, 0.1, 0], atk: [0.10, 0.08, 1] },
+  ladino: { spread: -0.02, knee: 0.05, lean: 0.06, twist: 0.06, atk: [0.10, 0.08, 1.1] },                                 // S-352: guarda baixa de adaga (braços por guardPose em strikes3d), pés próximos, ombro da adaga levemente à frente
   lamina_sombria: { spread: -0.07, knee: -0.03, lean: -0.03, rArm: [0.06, 0, 0.08, 0], lArm: [0.06, 0, 0.08, 0], atk: [0.06, 0.16, 1.05] }, // S-322: imponente e elegante — pernas próximas, tronco ereto, lâminas junto ao corpo; o golpe gira o tronco (dança)
   saqueador: { spread: -0.03, knee: 0.0, lean: 0.02, twist: -0.08, rArm: [0.08, 0.06, 0.08, 0], atk: [0.08, 0.12, 1] },      // S-321: Salteador — meio de lado, ombro do sabre à frente, pernas próximas
 };
@@ -2186,7 +2188,7 @@ function archerPose(me, p, t, dt) {
   const fight = !S.riding && !S.casting && !S.sitting && (S._fighting || t < S.lockAnim), since = t - (S.lastAtk || -9), rel = bowRelease(p);
   const shooting = fight && (S.fire || S.autoAttack || since < 0.9);
   const sm = (k, v, rate) => (me[k] = (me[k] ?? 0) + (v - (me[k] ?? 0)) * Math.min(1, dt * rate));
-  const W = sm('_aimW', fight ? 1 : 0, 8), A = sm('_aimA', shooting ? 1 : 0, shooting ? 10 : 4), draw = bowDraw(since, rel, shooting);
+  const W = sm('_aimW', fight ? 1 : 0, 8), A = sm('_aimA', shooting ? 1 : 0, shooting ? 16 : 4), draw = bowDraw(since, rel, shooting); // S-354: arco sobe antes da puxada
   me._draw = since >= rel && since < rel + 0.1 ? draw : (me._draw ?? 0.1) + (draw - (me._draw ?? 0.1)) * Math.min(1, dt * 25); // a soltura é instantânea, a puxada é suave
   const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
   sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
@@ -2353,6 +2355,13 @@ function updatePlayer(dt) {
       applyClassPose(me, p.cls, legK, bodyK, armK, atkK);
     }
     levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bardPose(me, p, t, dt); /* S-324: instrumento */
+    { // S-346/S-352: guarda de lâmina (mão à frente, ponta para cima; Cavaleiro com as duas mãos) e lâmina pendendo rente à perna fora de combate
+      const it = weaponInfo(p), gk = !p.d.ranged && !p.d.magicAuto && !p.d.sonic ? strikeKind(p.cls, it ? it.wtype : null, !!(p.equip && p.equip.arma)) : null;
+      const free = !S.riding && !S.sitting && !S.swim && !p.dead, on = free && S._fighting && !S.casting && P.ground;
+      const gg = (key, want, rate) => (S[key] = (S[key] || 0) + (want - (S[key] || 0)) * Math.min(1, dt * rate));
+      const gw = gg('_guardW', on ? 1 : 0, 6), rw = gg('_restW', free && !on ? 1 : 0, 4);
+      if (gk) guardPose(me, gk, { guard: gw, rest: rw });
+    }
     updateStrike(me, dt, { skipR: /^(mago|arquimago)$/.test(p.cls), skipL: p.cls === 'sabio_elemental' }); // P-014: golpe sob medida por cima de tudo (cajado/livro ficam com o IK deles) // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);

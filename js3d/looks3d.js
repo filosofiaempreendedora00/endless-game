@@ -148,8 +148,9 @@ const EXTRAS = {
     const mk = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
     const fil = [], head = new THREE.Group();
     const attach = () => { const staff = root.userData.items && root.userData.items['2H_Staff']; if (!staff) return; head.position.y = staff.userData.headY ?? staff.userData.gripY / 0.58 + 0.075; head.scale.setScalar(1.25); staff.add(head); }; // o cajado é montado depois dos efeitos
-    for (let k = 0; k < 3; k++) { const pts = []; for (let j = 0; j <= 30; j++) { const u = j / 30, a = u * Math.PI * 4 + k * 2.09, r = 0.035 + Math.sin(u * Math.PI) * 0.045; pts.push(new THREE.Vector3(Math.cos(a) * r, (u - 0.5) * 0.22, Math.sin(a) * r)); }
-      const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.0028, 5, false), mk(k === 1 ? '#9fd0ff' : '#c89aff', 0.75)); head.add(m); fil.push(m); }
+    // S-356: no lugar dos fios sólidos ("lombriga"), três rastros de luz feitos de pontinhos suaves que giram e se apagam na cauda (cometas de névoa)
+    for (let k = 0; k < 3; k++) { const tr = []; for (let j = 0; j < 18; j++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: k === 1 ? '#9fc8ff' : '#c4a0ff', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending })); head.add(s); tr.push(s); } fil.push(tr); }
+    void mk;
     const aura = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowSpriteTex(), color: '#b08aff', transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending })); aura.scale.setScalar(0.22); head.add(aura);
     // mão livre (esquerda): brilho e centelhas que sobem e somem
     const hl = bone(root, 'hand_l'), handG = new THREE.Group(); if (hl) hl.add(handG); handG.position.set(0, 0.07, 0.02);
@@ -169,7 +170,9 @@ const EXTRAS = {
       { const u = (t / 2.6) % 1; pulse.scale.setScalar(0.06 + u * 0.32); pulse.material.opacity = (1 - u) ** 2 * (0.18 + 0.3 * cast); }
       const an = (root.userData.anim && root.userData.anim.name) || '', want = /Spell|Shoot|Cast/.test(an) || performance.now() - (root.userData.ovT || -1e9) < 600 ? 1 : 0.25;
       cast += (want - cast) * 0.08;
-      fil.forEach((m, k) => { m.rotation.y = t * (1.6 + k * 0.5) * (k % 2 ? -1 : 1); m.material.opacity = 0.35 + 0.35 * cast + 0.1 * Math.sin(t * 3 + k); });
+      fil.forEach((tr, k) => { const dir = k % 2 ? -1 : 1, sp = 1.5 + k * 0.35, tilt = (k - 1) * 0.5, base = 0.26 + 0.3 * cast;
+        tr.forEach((s, j) => { const a = (t * sp - j * 0.11) * dir + k * 2.09, r = 0.06 + 0.012 * Math.sin(t * 0.7 + k), y = Math.sin(a * 0.5 + k) * 0.05 + Math.cos(a) * r * tilt, f = 1 - j / tr.length;
+          s.position.set(Math.cos(a) * r, y, Math.sin(a) * r); s.scale.setScalar(0.034 * (0.35 + 0.65 * f)); s.material.opacity = base * f * f * (0.8 + 0.2 * Math.sin(t * 5 + j)); }); });
       aura.material.opacity = 0.3 + 0.35 * cast + 0.08 * Math.sin(t * 2.3); hglow.material.opacity = 0.12 + 0.6 * cast; hglow.scale.setScalar(0.12 + 0.08 * cast + 0.02 * Math.sin(t * 6));
       sparks.forEach((s, k) => { const u = (t * 0.45 + k * 0.137) % 1, a = k * 2.4 + t * 1.3, r = 0.03 + u * 0.05; s.position.set(Math.cos(a) * r, u * 0.22, Math.sin(a) * r); s.material.opacity = Math.sin(u * Math.PI) * (0.35 + 0.5 * cast); });
     });
@@ -372,6 +375,10 @@ function faceParams(look, opt = {}) {
   P.faceW *= 1.3; P.nose *= 1.6; P.lips *= 1.6; P.eyes *= 1.4; P.brows *= 1.4; P.chin *= 1.3; // efeito visível nas barrinhas
   const k = look.race === 'anao' ? 0.6 : 1; // o anão já tem rosto esculpido (grosseiro): só nuances por cima
   for (const key of Object.keys(P)) P[key] = Math.max(-1.6, Math.min(1.6, P[key] * k));
+  // S-351: elfo com feições próprias (não é um humano de orelha pontuda): rosto fino e oval, queixo afilado, olhos amendoados
+  // puxados para cima, nariz fino e sobrancelhas altas e arqueadas — por cima do rosto escolhido no criador
+  P.elf = look.race === 'elfo' ? 1 : 0;
+  if (P.elf) { P.faceW = Math.min(P.faceW, 0.2) - 0.75; P.chin += 0.35; P.tilt = Math.max(P.tilt, 0) + 1.1; P.nose = Math.min(P.nose, 0.3) - 0.45; P.brows += 0.55; P.eyes = Math.max(P.eyes, -0.2) + 0.15; for (const key of Object.keys(P)) if (key !== 'elf') P[key] = Math.max(-1.7, Math.min(1.7, P[key])); }
   return P;
 }
 function faceLandmarks(head, eyes) {
@@ -392,9 +399,18 @@ const _g = u => Math.exp(-u * u), _sm = (a, b, x) => { const t = Math.min(1, Mat
 // campo de forma (parâmetros) — deslocamento em metros no espaço de repouso da cabeça
 function shapeField(L, P) {
   return (x, y, z) => {
-    if (y < L.chinY - 0.03 || y > L.ey + 0.05 || z < -0.035) return null;
-    const ax = Math.abs(x), s = x < 0 ? -1 : 1, front = _sm(-0.03, 0.03, z);
     let dx = 0, dy = 0, dz = 0;
+    if (P.elf) { // S-351: orelha élfica longa e pontuda (para cima e para trás), visível de longe; o lóbulo fica no lugar
+      const ax = Math.abs(x), s = x < 0 ? -1 : 1, ez = L.eyeZ - 0.1;
+      const w = _sm(0.066, 0.078, ax) * _sm(L.ey - 0.06, L.ey - 0.045, y) * (1 - _sm(L.ey + 0.03, L.ey + 0.045, y)) * _g((z - ez) / 0.05);
+      if (w > 0) { const t = Math.max(0, Math.min(1, (y - (L.ey - 0.022)) / 0.042)), tt = t * t * (1.4 - 0.4 * t), out = ax - 0.068;
+        dy += w * tt * 0.062; dz -= w * tt * 0.04; dx += s * w * (tt * 0.026 + out * 0.35 * t); }
+    }
+    if (y < L.chinY - 0.03 || y > L.ey + 0.05 || z < -0.035) return dx || dy || dz ? [dx, dy, dz] : null;
+    const ax = Math.abs(x), s = x < 0 ? -1 : 1, front = _sm(-0.03, 0.03, z);
+    if (P.elf) { // maçãs do rosto altas e marcadas, bochecha mais funda embaixo
+      dx += s * 0.0035 * _g((y - (L.ey - 0.018)) / 0.012) * _g((ax - 0.058) / 0.016) * front;
+      dx -= s * 0.003 * _g((y - (L.mouthY + 0.012)) / 0.014) * _g((ax - 0.05) / 0.016) * front; }
     // rosto: maçãs e mandíbula (largo/quadrado ↔ fino/oval)
     dx += s * 0.0055 * P.faceW * _g((y - (L.ey - 0.03)) / 0.026) * _g((ax - 0.062) / 0.03) * front;
     const jaw = _g((y - (L.chinY + 0.012)) / 0.022) * _sm(0.012, 0.05, ax) * _sm(-0.04, 0.02, z);
@@ -1929,6 +1945,9 @@ export function codeShield(kind = 'madeira') {
     const steel = AM.steel('#d9dde2', { metal: 0.93, rough: 0.24, env: 1.2 }), gold = AM.gold('#d4ac52'), lea = AM.leather('#4a2e1a');
     g.add(new THREE.Mesh(bend(new THREE.ExtrudeGeometry(heater(1), { depth: 0.022, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 3, curveSegments: 32 }), -0.02), steel)); // corpo
     const rim = heater(1.03); rim.holes.push(heater(0.9)); g.add(new THREE.Mesh(bend(new THREE.ExtrudeGeometry(rim, { depth: 0.01, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.004, bevelSegments: 3, curveSegments: 32 }), 0.008), gold)); // borda forjada
+    { // S-357: acabamento da borda — um friso dourado arredondado que dá a volta na LATERAL do escudo (antes a beira do aço ficava crua, cortada) e cobre a junta com o forro
+      const ep = heater(1.035).getSpacedPoints(96).slice(0, -1).map(p => new THREE.Vector3(p.x, p.y, -0.012 - p.x ** 2 * 0.5 - p.y ** 2 * 0.12));
+      const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ep, true, 'centripetal'), 192, 0.016, 12, true); g.add(new THREE.Mesh(tg, gold)); }
     const inner = heater(0.86); inner.holes.push(heater(0.83)); g.add(new THREE.Mesh(bend(new THREE.ExtrudeGeometry(inner, { depth: 0.004, bevelEnabled: false, curveSegments: 32 }), 0.012), gold)); // filete interno
     const pts = heater(0.965).getSpacedPoints(30); for (let k = 0; k < pts.length - 1; k++) { const p = pts[k], rv = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 12, 8), steel); rv.scale.z = 0.6; rv.position.set(p.x, p.y, 0.022 - p.x ** 2 * 0.5 - p.y ** 2 * 0.12); g.add(rv); } // rebites
     const star = (R, r, n, d, z, mat) => { const s = new THREE.Shape(); for (let k = 0; k < n * 2; k++) { const a = k / (n * 2) * Math.PI * 2 + Math.PI / 2, rr = k % 2 ? r : R; k ? s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr + 0.03) : s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr + 0.03); } s.closePath();
@@ -2119,7 +2138,7 @@ function furTex() {
   _furTex = new THREE.CanvasTexture(c); _furTex.wrapS = _furTex.wrapT = THREE.RepeatWrapping; _furTex.colorSpace = THREE.SRGBColorSpace; return _furTex;
 }
 function hunterGear(root) {
-  const fur = new THREE.MeshStandardMaterial({ color: '#b8b0a4', map: furTex(), roughness: 1, side: THREE.DoubleSide });
+  const fur = new THREE.MeshStandardMaterial({ color: '#b39477', map: furTex(), roughness: 1, side: THREE.DoubleSide }); // S-355: pele castanha quente (combina com o couro), não cinza
   const furTip = new THREE.MeshStandardMaterial({ color: '#d8d0c4', map: furTex(), alphaMap: furTex(), alphaTest: 0.45, transparent: false, roughness: 1, side: THREE.DoubleSide });
   const hide = new THREE.MeshStandardMaterial({ color: '#5a4430', map: metalTex('couro'), roughness: 0.92, side: THREE.DoubleSide });
   const leather = new THREE.MeshStandardMaterial({ color: '#3e2a1a', map: metalTex('couro'), roughness: 0.85 }), steel = new THREE.MeshStandardMaterial({ color: '#a7adb3', metalness: 0.85, roughness: 0.3 });
@@ -2138,16 +2157,15 @@ function hunterGear(root) {
   const sp3 = bonePos(root, 'spine_03'), nk = bonePos(root, 'neck_01');
   if (sp3 && nk) {
     const shoulders = ['spine_03', 'clavicle_l', 'clavicle_r', 'neck_01'];
-    // capa curta de pele ABERTA na frente (arco atrás e sobre os ombros), afinando até a base do pescoço, borda de baixo caída
-    const mk = (extra, key) => wrapCached(root, key, () => { const pts = sampleBody(root, shoulders), A = new THREE.Vector3(nk.x, sp3.y - 0.1, nk.z), B = new THREE.Vector3(nk.x, nk.y - 0.01, nk.z);
-      return wrapShell(pts, A, B, { bins: 10, sec: 40, off: 0.022 + extra, th: 0.022, smooth: 5, uvRep: 4, arc: [0.62, Math.PI * 2 - 0.62],
-        flare: t => (1 - t) * (1 - t) * (0.05 + extra * 0.5), ridge: (t, a) => (1 - t) * 0.016 * (0.5 + 0.5 * Math.sin(a * 13)) + 0.008 * Math.sin(a * 29 + 1.7) * (1 - t * 0.6) }); });
-    pinToBone(root, 'spine_03', new THREE.Mesh(mk(0, 'hunterMantle'), fur));
-    pinToBone(root, 'spine_03', new THREE.Mesh(mk(0.012, 'hunterMantleTip'), furTip)); // pelos soltos por fora (borda desfiada)
-    // capuz de couro caído atrás da nuca (só a metade de trás)
-    const hood = wrapCached(root, 'hunterHood', () => { const pts = sampleBody(root, ['neck_01', 'spine_03', 'Head']), A = new THREE.Vector3(nk.x, nk.y - 0.08, nk.z - 0.04), B = new THREE.Vector3(nk.x, nk.y + 0.06, nk.z - 0.06);
-      return wrapShell(pts, A, B, { bins: 6, sec: 24, off: 0.05, th: 0.01, smooth: 4, arc: [Math.PI - 1.25, Math.PI + 1.25], flare: t => (1 - t) * 0.03 + t * 0.02 }); });
-    pinToBone(root, 'spine_03', new THREE.Mesh(hood, hide));
+    // S-355: no lugar das placas cinzas de pele: MANTO CURTO DE COURO (mesmo couro do traje) sobre os ombros e o alto das costas,
+    // barra recortada em abas macias e debrum escuro, e uma GOLA DE PELE em rolo em volta do pescoço (pele castanha, nos tons do couro)
+    void shoulders; void furTip;
+    const mantle = wrapCached(root, 'hunterMantle2', () => { const pts = sampleBody(root, ['spine_02', 'spine_03', 'clavicle_l', 'clavicle_r', 'neck_01'], /_Body/).filter(p => !p.acc), A = new THREE.Vector3(nk.x, sp3.y - 0.12, nk.z), B = new THREE.Vector3(nk.x, nk.y - 0.03, nk.z);
+      return wrapShell(pts, A, B, { bins: 12, sec: 48, off: 0.034, th: 0.008, smooth: 6, uvRep: 3, arc: [1.0, Math.PI * 2 - 1.0],
+        flare: (t, a) => (1 - t) * (1 - t) * 0.03 + Math.max(0, Math.sin(a * 8)) * 0.004 * (1 - t), ridge: (t, a) => (t < 0.1 ? (0.1 - t) * 0.06 * (0.5 + 0.5 * Math.cos(a * 8)) : 0) }); });
+    pinToBone(root, 'spine_03', new THREE.Mesh(mantle, AM.leatherCloth('#5a4028')));
+    strapOnShell(root, mantle, AM.leatherCloth('#2e2016'), [0.02, 1.02], [0.02, Math.PI * 2 - 1.02], { extra: 0.034 + 0.008 + 0.03 + 0.003, w: 0.016, th: 0.005, n: 64, pin: 'spine_03' }); // debrum da barra
+    neckRoll(root, 'hunterFur2', fur, { over: [[mantle, 0.042]], roll: 0.034, gap0: 0.012, y: -0.015, drop: 0.03, front: 0.8, wob: 0.14, crumple: 0.14 });
   }
   // faca de esfola na bainha (quadril direito) e bolsa de caça (quadril esquerdo)
   const pv = bonePos(root, 'pelvis'), th = bonePos(root, 'thigh_r'), tl = bonePos(root, 'thigh_l');
@@ -2263,14 +2281,23 @@ EXTRAS.bardGear = function (root) {
   if (!root.userData.human) return;
   root.userData.outfitKey = root.userData.outfitKey || outfitKey(root);
   // S-344: traje INTEIRO — camisa de linho cru, mangas de veludo vinho até o punho (o braço todo vestido), meias-calças escuras e botas de camurça
-  costumeBase(root, { body: { color: '#e2d6bc', tex: 'linho' }, arms: { color: '#5a1826', tex: 'veludo', rough: 0.95 }, legs: { color: '#2b2433', tex: 'linho' }, feet: { color: '#3a2416', tex: 'camurca', rough: 0.72 } });
+  costumeBase(root, { body: { color: '#5a1826', tex: 'veludo', rough: 0.95 }, arms: { color: '#5a1826', tex: 'veludo', rough: 0.95 }, legs: { color: '#2b2433', tex: 'linho' }, feet: { color: '#3a2416', tex: 'camurca', rough: 0.72 } }); // S-353: forro do tronco em veludo vinho (o linho só aparece na gola e nos punhos — nada de "polo")
   root.userData.bowBackExtra = 0.06; // o arco nas costas fica por fora da capa curta (nada atravessando)
   const doublet = new THREE.MeshStandardMaterial({ map: bardSlashTex(), roughness: 0.85 }), velvet = new THREE.MeshStandardMaterial({ color: '#1f4a34', map: metalTex('couro'), roughness: 0.95, side: THREE.DoubleSide });
   const gold = std('#d8b45a', { metalness: 0.8, roughness: 0.3 }), leather = armorMat('#4a2a16', 'couro');
   // gibão justo no tronco (cortes verticais), com a barra um pouco abaixo da cintura
-  const gd = wrapCached(root, 'bardDoublet', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'pelvis'], /_Body/), top = bonePos(root, 'neck_01'), bot = bonePos(root, 'pelvis');
-    return wrapShell(pts, new THREE.Vector3(top.x, bot.y + 0.02, top.z), new THREE.Vector3(top.x, top.y - 0.04, top.z), { bins: 16, sec: 36, off: 0.012, th: 0.01, smooth: 4, uvRep: 3, flare: t => (t < 0.18 ? (0.18 - t) * 0.12 : 0) }); });
+  // S-353: o gibão mede também as clavículas (antes a camisa da roupa base furava o peito de cima e parecia uma "polo" grudada)
+  const gd = wrapCached(root, 'bardDoublet2', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'pelvis', 'clavicle_l', 'clavicle_r'], /_Body/).filter(p => !p.acc), top = bonePos(root, 'neck_01'), bot = bonePos(root, 'pelvis');
+    return wrapShell(pts, new THREE.Vector3(top.x, bot.y + 0.02, top.z), new THREE.Vector3(top.x, top.y - 0.045, top.z), { bins: 18, sec: 40, off: 0.014, th: 0.01, smooth: 6, uvRep: 3, flare: t => (t < 0.18 ? (0.18 - t) * 0.12 : 0) }); });
   pinToBone(root, 'spine_02', new THREE.Mesh(gd, doublet));
+  { // S-353: camisa de LINHO saindo de dentro do gibão — gola alta franzida e o cordão de amarrar com ponteiras douradas
+    const linenC = clothMat('#ece2cc', 0.9);
+    neckScarf(root, 'bardCollar5', linenC, { high: 0.5, puff: 0.01, off: 0.016, low: 0.0, bones: ['neck_01'], re: /_Body|SuperHero/ });
+    const tie = shellAt(gd, 0.985, 0, 0.014 + 0.01 + 0.006);
+    for (const s of [-1, 1]) { const p0 = tie.p.clone().add(new THREE.Vector3(s * 0.006, 0.004, 0)), p1 = p0.clone().add(new THREE.Vector3(s * 0.012, -0.035, 0.008)), p2 = p0.clone().add(new THREE.Vector3(s * 0.02, -0.075, 0.004));
+      pinToBone(root, 'spine_03', new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([p0, p1, p2]), 10, 0.0025, 6), linenC));
+      const ag = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.002, 0.014, 8), gold); ag.position.copy(p2).add(new THREE.Vector3(s * 0.001, -0.006, 0)); ag.rotation.z = s * 0.25; pinToBone(root, 'spine_03', ag); }
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 8), linenC); knot.position.copy(tie.p); pinToBone(root, 'spine_03', knot); }
   { const sp = bonePos(root, 'spine_02'), nk = bonePos(root, 'neck_01'), pv = bonePos(root, 'pelvis'); // botões dourados na frente
     const front = sampleBody(root, ['spine_02', 'spine_03'], /_Body/).reduce((m, p) => Math.max(m, p.z), 0);
     for (let k = 0; k < 6; k++) { const y = pv.y + 0.07 + k * (nk.y - pv.y - 0.14) / 5, b = new THREE.Mesh(new THREE.SphereGeometry(0.011, 12, 8), gold); b.position.set(sp.x, y, front + 0.03 - Math.abs(k - 3) * 0.002); pinToBone(root, k > 2 ? 'spine_03' : 'spine_02', b); } }
@@ -2282,11 +2309,16 @@ EXTRAS.bardGear = function (root) {
   }
   // capa curta de veludo sobre o ombro esquerdo (meia-volta: do peito esquerdo às costas), com barra dourada e broche
   const left = bonePos(root, 'upperarm_l').x > bonePos(root, 'upperarm_r').x ? 1 : -1;
-  const gc = wrapCached(root, 'bardCape2', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r'], /_Body/), top = bonePos(root, 'neck_01'), bot = bonePos(root, 'pelvis');
+  const gc = wrapCached(root, 'bardCape3', () => { const pts = sampleBody(root, ['spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r', 'pelvis'], /_Body/).filter(p => !p.acc), top = bonePos(root, 'neck_01'), bot = bonePos(root, 'pelvis');
     // ângulo 0 = frente, +π/2 = lado +X; a capa vai do ombro esquerdo (um pouco à frente) até o meio das costas, caindo até a cintura
     const a0 = left > 0 ? Math.PI * 0.28 : -Math.PI * 1.22, A = new THREE.Vector3(top.x, bot.y + 0.04, top.z), B = new THREE.Vector3(top.x, top.y + 0.01, top.z);
-    return wrapShell(pts, A, B, { t0: 0.0, t1: 1, bins: 16, sec: 40, arc: [a0, a0 + Math.PI * 0.94], off: 0.03, th: 0.007, smooth: 4, uvRep: 2, flare: (t, a) => (1 - t) * 0.035 + Math.sin(a * 7 + t * 3) * 0.006 * (1 - t) }); });
+    return wrapShell(pts, A, B, { t0: 0.0, t1: 1, bins: 16, sec: 40, arc: [a0, a0 + Math.PI * 0.94], off: 0.038, th: 0.007, smooth: 6, uvRep: 2, flare: (t, a) => (1 - t) * 0.035 + t * t * 0.03 + Math.sin(a * 7 + t * 3) * 0.006 * (1 - t) }); });
   pinToBone(root, 'spine_03', new THREE.Mesh(gc, velvet));
+  { // S-353: acabamento da capa nas costas — barra e beiradas com galão dourado (a capa deixa de ser uma placa lisa)
+    const a0 = left > 0 ? Math.PI * 0.28 : -Math.PI * 1.22, a1 = a0 + Math.PI * 0.94, galon = std('#c9a24a', { metalness: 0.6, roughness: 0.4, side: THREE.DoubleSide });
+    const capeEx = (t, a) => 0.038 + 0.0035 + (1 - t) * 0.035 + t * t * 0.03 + Math.sin(a * 7 + t * 3) * 0.006 * (1 - t) + 0.004;
+    strapOnShell(root, gc, galon, [0.0, a0 + 0.02], [0.0, a1 - 0.02], { extra: capeEx, w: 0.016, th: 0.009, n: 48, pin: 'spine_03' });
+    for (const a of [a0 + 0.012, a1 - 0.012]) strapOnShell(root, gc, galon, [0.0, a], [0.97, a], { extra: capeEx, w: 0.012, th: 0.008, n: 16, pin: 'spine_03' }); }
   { const sh = bonePos(root, 'clavicle_l') || bonePos(root, 'upperarm_l'), nk = bonePos(root, 'neck_01'), br = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 8, 20), gold); br.position.set((sh.x + nk.x) / 2, nk.y - 0.08, sh.z + 0.1); pinToBone(root, 'spine_03', br);
     const gem = new THREE.Mesh(new THREE.SphereGeometry(0.012, 12, 8), std('#2a8a5a', { metalness: 0.3, roughness: 0.15 })); gem.position.copy(br.position); gem.position.z += 0.006; pinToBone(root, 'spine_03', gem); }
   // cinto de couro com fivela e bolsinhas
@@ -2508,8 +2540,8 @@ function sheathOnBelt(root, leather, brass, dx, side = -1, tilt = 0.5) { // bain
   const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.09, 10), AM.leather('#241812')); hilt.position.copy(sh.position).add(new THREE.Vector3(Math.sin(tilt) * -0.16, Math.cos(tilt) * 0.16, 0)); hilt.rotation.z = tilt; pinToBone(root, 'pelvis', hilt);
   const pm = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), brass); pm.position.copy(hilt.position).add(new THREE.Vector3(Math.sin(tilt) * -0.05, Math.cos(tilt) * 0.05, 0)); pinToBone(root, 'pelvis', pm);
 }
-function chestStrap(root, mat, from, to, side = 1, r = 0.013) { // correia/cinto que cruza o peito (side 1) ou as costas (-1), assentada na superfície
-  const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10, x = from[0] + (to[0] - from[0]) * t, y = from[1] + (to[1] - from[1]) * t, z = bodySurf(root, ['spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r', 'pelvis'], x, y, side, 0.04); if (z !== null) pts.push(new THREE.Vector3(x, y, z + side * 0.03)); }
+function chestStrap(root, mat, from, to, side = 1, r = 0.013, lift = 0.03) { // correia/cinto que cruza o peito (side 1) ou as costas (-1), assentada na superfície
+  const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10, x = from[0] + (to[0] - from[0]) * t, y = from[1] + (to[1] - from[1]) * t, z = bodySurf(root, ['spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r', 'pelvis'], x, y, side, 0.04); if (z !== null) pts.push(new THREE.Vector3(x, y, z + side * lift)); }
   if (pts.length < 3) return; const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, r, 6);
   pinToBone(root, 'spine_02', new THREE.Mesh(g, mat));
 }
@@ -2532,7 +2564,7 @@ function vestOn(root, key, mat, o = {}) {
 // lenço/gola JUSTO em volta do pescoço (não um disco no peito); tip = ponta do lenço caindo na frente (bandana do gatuno)
 function neckScarf(root, key, mat, o = {}) {
   const nk = bonePos(root, 'neck_01'), hd = bonePos(root, 'Head') || AV3(nk, 0, 0.12, 0);
-  shellOn(root, key, ['neck_01', 'spine_03'], /_Body/, AV3(nk, 0, -0.06, 0), AV3(hd, 0, 0, 0), { t0: 0.05, t1: o.high ?? 0.55, bins: 5, sec: 32, off: o.off ?? 0.022, th: 0.016, smooth: 4, flare: (t) => (1 - t) * (o.puff ?? 0.035) }, mat, 'neck_01');
+  shellOn(root, key, o.bones || ['neck_01', 'spine_03'], o.re || /_Body/, AV3(nk, 0, o.low ?? -0.06, 0), AV3(hd, 0, 0, 0), { t0: 0.05, t1: o.high ?? 0.55, bins: 5, sec: 32, off: o.off ?? 0.022, th: 0.016, smooth: 4, flare: (t) => (1 - t) * (o.puff ?? 0.035) }, mat, 'neck_01');
   if (o.tip) { const z = bodySurf(root, ['spine_03', 'neck_01'], nk.x, nk.y - 0.08, 1) ?? nk.z + 0.08; const sh = new THREE.Shape(); sh.moveTo(-0.07, 0); sh.quadraticCurveTo(0, 0.01, 0.07, 0); sh.quadraticCurveTo(0.02, -0.07, 0, -0.13); sh.quadraticCurveTo(-0.02, -0.07, -0.07, 0);
     const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 2 }), mat); m.position.set(nk.x, nk.y - 0.045, z + 0.018); m.rotation.x = -0.25; pinToBone(root, 'spine_03', m); }
 }
@@ -2586,24 +2618,127 @@ function coatPanels(root, mat, hem, panels, o = {}) {
   const bot = o.toKnee ? knee.y + (o.kneeOff ?? 0.04) : Math.max(knee.y + 0.06, pv.y - (o.len ?? 0.3));
   for (const [a0, al] of panels) clothSkirt(root, gownGeo(root, { top: pv.y + (o.top ?? 0.05), bot, r0: hs.rx + (o.gap ?? 0.05), r1: o.r1 ?? 0.06, arc: [a0, al], seg: 18, pleats: o.pleats ?? 3, pleatAmp: o.pleatAmp ?? 0.008, sz: Math.min(1, Math.max(0.75, (hs.rz + 0.05) / (hs.rx + 0.05))), seed: a0 + 3, hemRows: 1 }), hem ? [mat, hem] : mat, 0.05);
 }
+// S-348/S-350: ponto (e normal) na superfície de uma casca feita por wrapShell — t ao longo do eixo da peça (t0..t1), a = ângulo (0 = frente).
+// Serve para assentar correias, debruns e fechos EXATAMENTE sobre o colete/gibão (nem flutuando, nem atravessando)
+function shellAt(g, t, a, extra = 0) {
+  const U = g.userData, f = Math.max(0, Math.min(U.bins, (t - U.t0) / (U.t1 - U.t0) * U.bins)), i0 = Math.floor(f), i1 = Math.min(U.bins, i0 + 1), w = f - i0;
+  const fj = ((a / (Math.PI * 2)) * U.sec % U.sec + U.sec) % U.sec, j0 = Math.floor(fj), j1 = (j0 + 1) % U.sec, wj = fj - j0;
+  const rr = i => U.R[i][j0] * (1 - wj) + U.R[i][j1] * wj, r = rr(i0) * (1 - w) + rr(i1) * w + extra;
+  const cx = U.C[i0][0] * (1 - w) + U.C[i1][0] * w, cy = U.C[i0][1] * (1 - w) + U.C[i1][1] * w, n = U.e1.clone().multiplyScalar(Math.cos(a)).add(U.e2.clone().multiplyScalar(Math.sin(a)));
+  return { p: U.A.clone().add(U.u.clone().multiplyScalar(t * U.len)).add(U.e1.clone().multiplyScalar(cx)).add(U.e2.clone().multiplyScalar(cy)).addScaledVector(n, r), n };
+}
+// fita chata (correia, debrum) ao longo de pontos com a normal de fora de cada um — seção arredondada, nada de "vareta"
+function ribbonGeo(pts, nrm, w, th = 0.006) {
+  const pos = [], uv = [], idx = [], n = pts.length, s = new THREE.Vector3(), tg = new THREE.Vector3();
+  for (let k = 0; k < n; k++) { tg.copy(pts[Math.min(n - 1, k + 1)]).sub(pts[Math.max(0, k - 1)]).normalize(); s.crossVectors(tg, nrm[k]).normalize().multiplyScalar(w / 2); const h = nrm[k].clone().multiplyScalar(th / 2);
+    for (const [a, b, c] of [[1, 1, 0], [-1, 1, 0.25], [-1, -1, 0.5], [1, -1, 0.75]]) { const q = pts[k].clone().addScaledVector(s, a * (b > 0 ? 0.92 : 1)).addScaledVector(h, b); pos.push(q.x, q.y, q.z); uv.push(k / Math.max(1, n - 1) * 3, c); } }
+  for (let k = 0; k < n - 1; k++) for (let f = 0; f < 4; f++) { const a = k * 4 + f, b = k * 4 + (f + 1) % 4; idx.push(a, a + 4, b, b, a + 4, b + 4); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+// correia/debrum assentado na casca g, de from [t, a] até to [t, a]
+function strapOnShell(root, g, mat, from, to, o = {}) {
+  const N = o.n || 18, pts = [], nrm = [];
+  for (let k = 0; k <= N; k++) { const f = k / N, t = from[0] + (to[0] - from[0]) * f, a = from[1] + (to[1] - from[1]) * f, q = shellAt(g, t, a, typeof o.extra === 'function' ? o.extra(t, a) : (o.extra ?? 0.03)); pts.push(q.p); nrm.push(q.n); }
+  const m = pinToBone(root, o.pin || 'spine_02', new THREE.Mesh(ribbonGeo(pts, nrm, o.w ?? 0.03, o.th ?? 0.006), mat)); m.userData.pts = pts; m.userData.nrm = nrm; return m;
+}
+// fivela pequena deitada sobre a correia (ponto p, normal n, direção da correia d)
+function strapBuckle(root, mat, p, n, d, sc = 0.6, pin = 'spine_02') {
+  const m = new THREE.Mesh(buckleGeo('simples'), mat); m.scale.setScalar(sc); const x = d.clone().normalize(), z = n.clone().normalize(), y = new THREE.Vector3().crossVectors(z, x).normalize(); x.crossVectors(y, z);
+  m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); m.position.copy(p).addScaledVector(z, 0.003); return pinToBone(root, pin, m);
+}
+/* S-348: capuz CAÍDO de pano de verdade — a boca do capuz vira um rolo mole em volta da base do pescoço e o "saco" do capuz
+   deita nas costas como uma almofada de pano: contorno em U, volume no meio, dobras macias que descem para a ponta, borda arredondada
+   (as duas camadas do pano se encontram na costura). Medido no corpo de cada raça (anão incluso) e preso à espinha. */
+function fallenHood(root, mat, o = {}) {
+  const nk = bonePos(root, 'neck_01'), hd = bonePos(root, 'Head') || AV3(nk, 0, 0.14, 0), s3 = bonePos(root, 'spine_03'), uaL = bonePos(root, 'upperarm_l'), uaR = bonePos(root, 'upperarm_r');
+  if (!nk || !s3 || !uaL || !uaR) return;
+  // 1) boca do capuz: rolo de pano frouxo e grosso em volta da base do pescoço (mais baixo na frente, mais cheio atrás), com pregas
+  neckRoll(root, 'hoodRoll3', mat, { roll: 0.03, gap0: 0.014, front: 0.78, over: o.on ? [[o.on, o.onEx ?? 0.03]] : [] });
+  hoodBag(root, mat, o);
+}
+// rolo grosso e macio em volta da base do pescoço (boca de capuz caído, gola de pele): assenta no corpo medido em cada direção
+function neckRoll(root, key, mat, o = {}) {
+  const nk = bonePos(root, 'neck_01'); if (!nk) return null;
+  const roll = wrapCached(root, key, () => {
+    const pts = sampleBody(root, ['neck_01', 'spine_03', 'clavicle_l', 'clavicle_r'], /_Body|SuperHero/).filter(p => !p.acc), N = 56, M = 18, base = []; // o pescoço é da malha do corpo de pele
+    // justo no PESCOÇO (raio medido só nos pontos do pescoço) e APOIADO no trapézio/peito: em cada direção o rolo desce até encostar no corpo, nunca afunda nem vira um aro largo
+    const neck = sampleBody(root, ['neck_01'], /_Body|SuperHero/).filter(p => !p.acc), torso = sampleBody(root, ['spine_03', 'clavicle_l', 'clavicle_r'], /_Body|SuperHero/).filter(p => !p.acc && p.y < nk.y + 0.04), rOf = (a) => (o.roll ?? 0.026) * ((o.front ?? 0.62) + (1.12 - (o.front ?? 0.62)) * Math.max(0, -Math.cos(a))) * (1 + (o.wob ?? 0.1) * Math.sin(a * 7 + 0.4));
+    for (let k = 0; k < N; k++) { const a = k / N * Math.PI * 2, dx = Math.sin(a), dz = Math.cos(a), r = rOf(a); let R0 = 0;
+      for (const q of neck) { if (Math.abs(q.y - nk.y) > 0.035) continue; const vx = q.x - nk.x, vz = q.z - nk.z, d = vx * dx + vz * dz; if (Math.abs(vx * dz - vz * dx) < 0.02 && d > R0) R0 = d; }
+      const rad = (R0 || 0.06) + (o.gap0 ?? 0.014) + r * 0.85; let top = -1e9;
+      for (const q of torso) { const vx = q.x - nk.x, vz = q.z - nk.z, d = vx * dx + vz * dz; if (d > rad - r * 1.1 && d < rad + r * 1.1 && Math.abs(vx * dz - vz * dx) < 0.03 && q.y > top) top = q.y; }
+      let R = rad, Y = Math.min(nk.y + 0.045, Math.max(nk.y + (o.y ?? -0.02) - Math.max(0, dz) * (o.drop ?? 0.03), top + (o.clear ?? 0.022) + r * 0.7));
+      for (const [g, ex] of o.over || []) { const q = shellAt(g, g.userData.t1, a, ex), d = (q.p.x - nk.x) * dx + (q.p.z - nk.z) * dz; R = Math.min(rad + 0.03, Math.max(R, d - r * 0.9)); Y = Math.max(Y, q.p.y + r * 0.55); } // apoiado na borda de cima da peça de baixo (gola do casaco, manto), sem abrir num aro largo
+      base.push([R, Y]); }
+    for (let pass = 0; pass < 5; pass++) { const b2 = base.map(b => b.slice()); for (let k = 0; k < N; k++) for (const c of [0, 1]) b2[k][c] = (base[(k + N - 1) % N][c] + base[k][c] * 2 + base[(k + 1) % N][c]) / 4; for (let k = 0; k < N; k++) base[k] = b2[k]; }
+    const pos = [], idx = [], uv = [];
+    for (let k = 0; k < N; k++) { const a = k / N * Math.PI * 2, n = new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), r = rOf(a);
+      const c = new THREE.Vector3(nk.x, base[k][1], nk.z).addScaledVector(n, base[k][0]);
+      for (let j = 0; j < M; j++) { const th = j / M * Math.PI * 2, rr = r * (1 + (o.crumple ?? 0.08) * Math.sin(th * 3 + a * 9)), q = c.clone().addScaledVector(n, Math.cos(th) * rr).add(new THREE.Vector3(0, Math.sin(th) * rr * 0.78, 0)); pos.push(q.x, q.y, q.z); uv.push(k / N * 6, j / M); } }
+    for (let k = 0; k < N; k++) for (let j = 0; j < M; j++) { const k2 = (k + 1) % N, j2 = (j + 1) % M, a = k * M + j, b = k2 * M + j, c = k * M + j2, d = k2 * M + j2; idx.push(a, c, b, b, c, d); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals(); return geo; });
+  return pinToBone(root, 'spine_03', new THREE.Mesh(roll, mat));
+}
+// o saco do capuz deitado nas costas (do tamanho de uma cabeça: igual em todas as raças)
+function hoodBag(root, mat, o = {}) {
+  const nk = bonePos(root, 'neck_01'), s3 = bonePos(root, 'spine_03'), uaL = bonePos(root, 'upperarm_l'), uaR = bonePos(root, 'upperarm_r');
+  const g = wrapCached(root, 'hoodBag3' + (o.on ? 'c' : ''), () => {
+    const pts = sampleBody(root, ['spine_02', 'spine_03', 'neck_01', 'clavicle_l', 'clavicle_r'], /_Body/).filter(p => !p.acc && p.z < s3.z + 0.02);
+    const zAt = (x, y) => { for (const tol of [0.022, 0.04, 0.07]) { let m = null; for (const q of pts) if (Math.abs(q.x - x) < tol && Math.abs(q.y - y) < tol && (m === null || q.z < m)) m = q.z; if (m !== null) return m; } return s3.z - 0.12; };
+    const W0 = Math.min(0.135, Math.abs(uaL.x - uaR.x) * 0.37), HH = o.len ?? 0.2, top = nk.y - 0.038, NU = 16, NV = 16, cx = nk.x, gap = o.gap ?? 0.046;
+    const half = v => W0 * Math.pow(Math.max(0, 1 - Math.pow(v, 2.3)), 0.62) * (1 + 0.1 * Math.sin(v * Math.PI)); // contorno em U, com uma pontinha (a ponta do capuz)
+    const Z = []; for (let i = 0; i <= NV; i++) { const v = i / NV, row = []; for (let j = 0; j <= NU; j++) row.push(zAt(cx + (j / NU * 2 - 1) * half(v), top - v * HH)); Z.push(row); }
+    for (let pass = 0; pass < 4; pass++) { const N2 = Z.map(r => r.slice()); for (let i = 0; i <= NV; i++) for (let j = 0; j <= NU; j++) { const nb = [Z[i][j], Z[Math.max(0, i - 1)][j], Z[Math.min(NV, i + 1)][j], Z[i][Math.max(0, j - 1)], Z[i][Math.min(NU, j + 1)]]; N2[i][j] = Math.min(Z[i][j], nb.reduce((s, x) => s + x, 0) / 5); } for (let i = 0; i <= NV; i++) Z[i] = N2[i]; }
+    const pos = [], uv = [], idx = [], at = (i, j, outer) => { const v = i / NV, u = j / NU * 2 - 1, y = top - v * HH, x = cx + u * half(v), e = (1 - u * u);
+      const bulge = outer ? (0.008 + 0.05 * Math.pow(Math.sin(Math.PI * Math.min(1, 0.22 + v * 1.0)), 0.75)) * Math.pow(Math.max(0, e), 0.5) * (1 - Math.pow(v, 5))
+        + (0.009 * Math.sin(u * (1 - v * 0.55) * Math.PI * 3.2 + 0.6) * Math.sin(Math.PI * Math.min(1, v * 1.3)) + 0.012 * Math.exp(-(((v - 0.3) / 0.09) ** 2)) - 0.006 * Math.exp(-(((v - 0.42) / 0.05) ** 2))) * Math.max(0, e) : 0; // volume + dobras que descem para a ponta + uma prega de peso
+      if (o.on) { const U = o.on.userData, t = ((y - U.A.y) / U.u.y) / U.len, ax = U.A.clone().addScaledVector(U.u, t * U.len), rb = Math.max(0.08, shellAt(o.on, t, Math.PI, 0).p.distanceTo(ax)); // assentado no casaco (medida exata da peça de baixo)
+        const q = shellAt(o.on, t, Math.PI + u * half(v) / rb, (o.onEx ?? 0.03) + 0.006 + bulge - v * v * 0.008); return [q.p.x, q.p.y, q.p.z]; }
+      return [x, y, Z[i][j] - gap - bulge + v * v * 0.012]; };
+    const W = NU + 1, base2 = (NV + 1) * W;
+    for (let i = 0; i <= NV; i++) for (let j = 0; j <= NU; j++) { const q = at(i, j, true); pos.push(...q); uv.push(j / NU * 2, i / NV * 2); }
+    const inner = []; for (let i = 0; i <= NV; i++) for (let j = 0; j <= NU; j++) { if (j === 0 || j === NU || i === NV) { inner.push(i * W + j); continue; } const q = at(i, j, false); pos.push(...q); uv.push(j / NU * 2, i / NV * 2); inner.push(pos.length / 3 - 1); }
+    for (let i = 0; i < NV; i++) for (let j = 0; j < NU; j++) { const a = i * W + j, b = a + 1, c = a + W, d = c + 1; idx.push(a, b, c, b, d, c); const A2 = inner[a], B2 = inner[b], C2 = inner[c], D2 = inner[d]; idx.push(A2, C2, B2, B2, C2, D2); }
+    // borda de cima (sob o rolo da gola): fecha as duas camadas
+    for (let j = 0; j < NU; j++) { const a = j, b = j + 1, c = inner[j], d = inner[j + 1]; idx.push(a, c, b, b, c, d); }
+    void base2; const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals(); return geo;
+  });
+  pinToBone(root, 'spine_03', new THREE.Mesh(g, mat));
+}
 const ROGUE_BUILD = {
   gatuno(root) {
     rogueRecolor(root, '#3b3a30', '#2c2620', '#4a3a2a');
     const leather = AM.leather('#5a3a24'), dark = AM.leather('#2e2018'), scarf = clothMat('#7a2a22'), brass = AM.gold('#9a7a42');
-    vestOn(root, 'vestG', leather, { open: 0.34 });                       // colete de couro justo, aberto na frente (camisa à mostra)
-    { const s2 = bonePos(root, 'spine_02'); for (let k = 0; k < 3; k++) { const y = s2.y + 0.11 - k * 0.09, z = bodySurf(root, ['spine_02', 'spine_03', 'spine_01'], s2.x, y, 1); if (z === null) continue; for (const sx of [-1, 1]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.03, 8), brass); t.rotation.z = Math.PI / 2; t.position.set(s2.x + sx * 0.055, y, z + 0.02); pinToBone(root, 'spine_02', t); } } } // fivelinhas do colete
-    neckScarf(root, 'scarfG', scarf, { tip: true });                         // lenço enrolado no pescoço, ponta caindo na frente
+    // S-350: colete de couro FECHADO na frente (o verde da camisa só nos braços), simétrico, cobrindo o ombro inteiro
+    const vg = vestOn(root, 'vestG2', leather, { off: 0.016 }).geometry, ex = 0.016 + 0.007;
+    costumeBase(root, { body: { color: '#4a3222', tex: 'camurca' } }); // o tronco da roupa base (ombros inclusos) vira o forro de camurça do colete: nada de verde em cima dos ombros; os braços continuam verdes
+    strapOnShell(root, vg, dark, [0.03, 0], [0.985, 0], { extra: ex + 0.001, w: 0.016, th: 0.005, n: 20 }); // costura/placa central do fecho
+    for (const t of [0.74, 0.52, 0.3]) { const st = strapOnShell(root, vg, dark, [t, -0.24], [t, 0.24], { extra: ex + 0.003, w: 0.022, th: 0.006, n: 10 }), P = st.userData.pts, N = st.userData.nrm; // três tiras com fivela fechando o colete
+      strapBuckle(root, brass, P[5], N[5], P[6].clone().sub(P[4]), 0.5); }
+    neckScarf(root, 'scarfG10', scarf, { high: 0.52, puff: 0.008, off: 0.022, low: 0.012, bones: ['neck_01'], re: /_Body|SuperHero/ });  // lenço justo no pescoço, simétrico (sem a ponta torta e sem aba nas costas)
     beltSet(root, dark, brass); beltPouches(root, dark, [[0.11, 1, 0.07, 0.07], [-0.13, 1, 0.06, 0.06], [0.14, -1, 0.08, 0.075]]);
     sheathOnBelt(root, dark, brass, -0.05, -1, 1.2);                       // adaga reserva atravessada nas costas
     for (const s of ['l', 'r']) bracerOn(root, dark, s);                   // faixas de couro nos antebraços
   },
   algoz(root, fx) {
-    rogueRecolor(root, '#1d1b22', '#15131a', '#1e1a1c');
-    const leather = AM.leather('#2a2228'), steel = AM.steel('#6e7480', { metal: 0.9, rough: 0.38 }), crimson = '#5a1824', brass = AM.gold('#8a7a5a');
-    vestOn(root, 'vestE', leather, { off: 0.016 });                        // couraça de couro escuro, lisa e justa
+    // S-349: traje inteiro (a roupa base vira o forro escuro: sem o verde no anão e sem as peças da roupa base furando o colete)
+    costumeBase(root, { body: { color: '#1e1b22', tex: 'linho' }, arms: { color: '#1c1a21', tex: 'linho' }, legs: { color: '#16141a', tex: 'linho' }, feet: { color: '#1e1a1c', tex: 'camurca', rough: 0.72 } });
+    const leather = AM.leather('#2a2228'), steel = AM.steel('#c9d0da', { metal: 0.88, rough: 0.26, env: 1.35 }), crimson = '#5a1824', brass = AM.gold('#8a7a5a');
+    const ve = vestOn(root, 'vestE2', leather, { off: 0.02 }).geometry, ex = 0.02 + 0.007;   // couraça de couro escuro, lisa e justa
+    { const trim = AM.leatherCloth('#141116'); // acabamento: costura central e debrum na barra (frente e costas), em couro mais escuro
+      strapOnShell(root, ve, trim, [0.03, 0], [0.97, 0], { extra: ex + 0.001, w: 0.012, th: 0.004, n: 20 });
+      strapOnShell(root, ve, trim, [0.97, Math.PI], [0.03, Math.PI], { extra: ex + 0.001, w: 0.012, th: 0.004, n: 20 });
+      strapOnShell(root, ve, trim, [0.035, -Math.PI], [0.035, Math.PI], { extra: ex + 0.004, w: 0.02, th: 0.006, n: 64 }); }
     neckScarf(root, 'collarE', clothMat('#24202a'), { high: 0.75, puff: 0.02, off: 0.018 }); // gola alta de pano, justa
-    pauldronSet(root, steel, 'l', { size: 0.85, n: 2, k: 'ex' });          // uma ombreira discreta (lado de guarda)
-    for (const s of ['l', 'r']) { sleeveOn(root, clothMat('#1f1c24'), s); bracerOn(root, leather, s); }
+    { // S-349: OMBREIRA de aço claro, grande e limpa (lado de guarda): cúpula lisa com crista, duas lâminas por baixo e borda virada em aço mais escuro com rebites
+      const s = 'l', ua = bonePos(root, 'upperarm_' + s), la = bonePos(root, 'lowerarm_' + s), c = ua.x > 0 ? -Math.PI / 2 : Math.PI / 2, dk = AM.steel('#7c8592', { metal: 0.9, rough: 0.32 });
+      const fl = t => Math.max(0, t - 0.62) * 0.05 + (t < 0.12 ? (0.12 - t) * 0.04 : 0), T1 = 0.27; // uma peça só, sem lâminas soltas (no anão viravam "garras")
+      const dome = shellOn(root, 'exDome2', ['upperarm_' + s], /_(Body|Arms)/, ua, la, { t0: -0.16, t1: T1, bins: 12, sec: 40, off: 0.04, th: 0.014, smooth: 8, arc: [c - 2.0, c + 2.0],
+        ridge: (t, a) => Math.max(0, Math.cos(a - c)) ** 10 * 0.012 * Math.max(0, Math.sin(Math.min(1, t * 1.1) * Math.PI)), flare: fl }, steel, 'upperarm_' + s).geometry;
+      const tn = a => (a + 0.16) / (T1 + 0.16); // t absoluto → t da casca (0..1)
+      strapOnShell(root, dome, dk, [T1, c - 1.95], [T1, c + 1.95], { extra: () => 0.04 + 0.014 + fl(tn(T1)) + 0.002, w: 0.018, th: 0.01, n: 36, pin: 'upperarm_' + s }); // borda virada      for (const a of [c - 1.3, c - 0.45, c + 0.45, c + 1.3]) { const q = shellAt(dome, T1 - 0.035, a, 0.04 + 0.014 + fl(tn(T1 - 0.035)) + 0.002), r = new THREE.Mesh(new THREE.SphereGeometry(0.0055, 12, 8), dk); r.scale.set(1, 1, 0.6); r.position.copy(q.p); r.lookAt(q.p.clone().add(q.n)); pinToBone(root, 'upperarm_' + s, r); }
+    }
+    for (const s of ['l', 'r']) bracerOn(root, leather, s);
     beltSet(root, AM.leather('#1a1418'), brass);
     surcoatFlaps(root, crimson, '#2a1a1e', 'nenhum', 0.5);                // abas carmim longas na cintura (a "saia" do Algoz)
     void fx;
@@ -2611,25 +2746,22 @@ const ROGUE_BUILD = {
   salteador(root, fx) {
     // S-343: traje inteiro (não acessórios sobre o boneco): camisa e mangas de linho escuro, calça e botas de camurça, por cima um CASACO LONGO de couro
     costumeBase(root, { body: { color: '#3a2c22', tex: 'camurca' }, arms: { color: '#2c2824', tex: 'linho' }, legs: { color: '#24201c', tex: 'linho' }, feet: { color: '#241a12', tex: 'camurca', rough: 0.72 } });
-    const coat = AM.leather('#5e4028'), dark = AM.leather('#2e2018'), hood = clothMat('#3a3a32'), sash = clothMat('#8a2420'), brass = AM.gold('#a8884a');
-    vestOn(root, 'vestS', coat, { off: 0.016, low: -0.12, open: 0.2 });   // casaco de couro justo no tronco, fechado quase até a gola
+    const coat = AM.leather('#5e4028'), dark = AM.leather('#2e2018'), hood = clothMat('#5c5748', 0.95), sash = clothMat('#8a2420'), brass = AM.gold('#a8884a');
+    const vs = vestOn(root, 'vestS', coat, { off: 0.016, low: -0.12, open: 0.2 }).geometry;   // casaco de couro justo no tronco, fechado quase até a gola
     // abas do casaco até o joelho (frente aberta, fendas dos lados e atrás para montar e lutar) — acompanham as pernas
     coatPanels(root, AM.leatherCloth('#5a3c26'), AM.leatherCloth('#2a1c12'), [[0.24, 1.22], [1.6, 1.42], [3.26, 1.42], [4.82, 1.22]], { toKnee: true, kneeOff: 0.02, gap: 0.045, top: 0.03, pleats: 2, pleatAmp: 0.006 });
-    neckScarf(root, 'collarS', coat, { high: 0.62, puff: 0.03, off: 0.02 }); // gola alta de couro
     pauldronSet(root, AM.leather('#4a3020'), 'l', { size: 0.92, n: 2, k: 'wr' }); // ombreira de couro trabalhado num ombro só
     const pv = bonePos(root, 'pelvis');                                    // faixa vermelha na cintura (Assassin's Creed) por baixo do cinto
     shellOn(root, 'sash', ['pelvis', 'spine_01'], /_(Body|Legs)/, AV3(pv, 0, 0.02, 0), AV3(pv, 0, 0.17, 0), { bins: 3, sec: 40, off: 0.028, th: 0.01, smooth: 5 }, sash, 'pelvis');
     beltSet(root, dark, brass);
-    { const nk = bonePos(root, 'neck_01'), zb = bodySurf(root, ['spine_03', 'neck_01'], nk.x, nk.y - 0.1, -1) ?? nk.z - 0.1; // capuz CAÍDO nas costas: a "concha" do capuz deitada atrás da nuca + a borda enrolada na gola
-      // painel em gota (a ponta do capuz para baixo), curvado como as costas e com um leve volume de pano
-      const sh = new THREE.Shape(); sh.moveTo(-0.14, 0); sh.quadraticCurveTo(0, 0.035, 0.14, 0); sh.bezierCurveTo(0.14, -0.1, 0.06, -0.2, 0, -0.27); sh.bezierCurveTo(-0.06, -0.2, -0.14, -0.1, -0.14, 0);
-      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.01, bevelSegments: 3, curveSegments: 14 });
-      { const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i); P.setZ(i, P.getZ(i) - x * x * 1.6 + Math.sin(Math.min(1, -y / 0.27) * Math.PI) * 0.025 * (1 - Math.abs(x) / 0.15)); } g.computeVertexNormals(); }
-      const m = new THREE.Mesh(g, hood); m.position.set(nk.x, nk.y - 0.06, zb - 0.012); m.rotation.y = Math.PI; m.rotation.x = 0.12; pinToBone(root, 'spine_03', m);
-      const fold = new THREE.Mesh(new THREE.TorusGeometry(0.115, 0.03, 10, 28, Math.PI * 1.25), hood); fold.position.set(nk.x, nk.y - 0.03, (zb + nk.z) / 2 - 0.005); fold.rotation.set(Math.PI / 2 + 0.25, 0, Math.PI * 0.875); fold.scale.set(1, 1.15, 0.8); pinToBone(root, 'spine_03', fold); }
-    const sh = bonePos(root, 'clavicle_l'), shr = bonePos(root, 'clavicle_r'), hip = pv;  // dois cintos cruzados no peito
-    chestStrap(root, dark, [sh.x + 0.03, sh.y - 0.02], [hip.x - 0.13, hip.y + 0.1], 1); chestStrap(root, dark, [shr.x - 0.03, shr.y - 0.02], [hip.x + 0.13, hip.y + 0.1], 1);
-    chestStrap(root, dark, [sh.x + 0.03, sh.y - 0.02], [hip.x - 0.13, hip.y + 0.1], -1); chestStrap(root, dark, [shr.x - 0.03, shr.y - 0.02], [hip.x + 0.13, hip.y + 0.1], -1);
+    fallenHood(root, hood, { on: vs, onEx: 0.016 + 0.007 });               // S-348: capuz CAÍDO de pano (rolo na gola + saco do capuz deitado nas costas)
+    { const L = bonePos(root, 'upperarm_l').x > bonePos(root, 'upperarm_r').x ? 1 : -1, ex = 0.016 + 0.007 + 0.004, strapM = AM.leatherCloth('#2a1c14');
+      // debrum de couro escuro nas duas bordas da abertura do casaco (acabamento, nada de corte cru)
+      for (const s of [1, -1]) strapOnShell(root, vs, strapM, [0.02, s * 0.215], [0.99, s * 0.215], { extra: ex - 0.002, w: 0.014, th: 0.005, n: 20 });
+      // UM boldrié largo do ombro esquerdo ao quadril direito (frente) e o mesmo pelas costas — no lugar do "X" de varetas
+      const fr = strapOnShell(root, vs, strapM, [0.985, L * 0.6], [0.07, -L * 0.62], { extra: ex, w: 0.036, th: 0.007 });
+      strapOnShell(root, vs, strapM, [0.985, Math.PI - L * 0.6], [0.07, Math.PI + L * 0.62], { extra: ex, w: 0.036, th: 0.007 });
+      { const P = fr.userData.pts, N = fr.userData.nrm, k = 6; strapBuckle(root, brass, P[k], N[k], P[k + 1].clone().sub(P[k - 1]), 0.62); } }
     beltPouches(root, dark, [[0.13, 1, 0.065, 0.07], [-0.15, -1, 0.07, 0.07]]);
     for (const s of ['l', 'r']) { bracerOn(root, dark, s); bootShaft(root, 'salBoot', s, AM.leather('#2a1c12'), { cuff: 0.2 }); } // braçadeiras e botas altas de cano dobrado
     void fx; // sem capa: o capuz caído nas costas fica à mostra (Assassin's Creed / mercenários do Skyrim)
@@ -2885,14 +3017,18 @@ function surcoatFlaps(root, base, trim, emblem, len = 0.36) {
   for (const a0 of [-0.5, Math.PI - 0.5]) clothSkirt(root, gownGeo(root, { top: pv.y + 0.07, bot: Math.max(knee.y - 0.02, pv.y - len), r0: hs.rx + 0.075, r1: 0.05, arc: [a0, 1.0], seg: 16, pleats: 5, pleatAmp: 0.012, sz: Math.min(1, Math.max(0.75, (hs.rz + 0.07) / (hs.rx + 0.075))), seed: a0, hemRows: 1 }), [cloth, hem], 0.05);
 }
 // emblema em relevo no peito (sol dourado do Paladino, leão da casa do Cavaleiro)
-function chestEmblem(root, mat, kind = 'sol', size = 0.11) {
-  const s2 = bonePos(root, 'spine_03'); let fz = -1e9; for (const q of sampleBody(root, ['spine_03', 'spine_02'], /_Body/)) if (Math.abs(q.y - s2.y) < 0.05 && Math.abs(q.x - s2.x) < 0.05) fz = Math.max(fz, q.z);
+function chestEmblem(root, mat, kind = 'sol', size = 0.11, at = null) {
+  const s2 = bonePos(root, 'spine_03').clone();
+  if (at === 'peito_d') { // S-357: no alto do peito, perto do ombro do braço da espada (oposto ao escudo), como um brasão de peito
+    const cr = bonePos(root, 'clavicle_r'), cl = bonePos(root, 'clavicle_l'), mid = cl && cr ? (cl.y + cr.y) / 2 : s2.y + 0.1;
+    if (cr) { s2.x += (cr.x - s2.x) * 0.55; s2.y = s2.y + (mid - s2.y) * 0.55; } }
+  let fz = -1e9; for (const q of sampleBody(root, ['spine_03', 'spine_02'], /_Body/)) if (Math.abs(q.y - s2.y) < 0.04 && Math.abs(q.x - s2.x) < 0.035) fz = Math.max(fz, q.z);
   const sh = new THREE.Shape(), R = size / 2;
   if (kind === 'sol') { for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, rr = k % 2 ? R * 0.62 : R; k ? sh.lineTo(Math.sin(a) * rr, Math.cos(a) * rr) : sh.moveTo(0, rr); } sh.closePath(); }
   else { sh.moveTo(0, R); sh.lineTo(R * 0.85, R * 0.55); sh.lineTo(R * 0.7, -R * 0.5); sh.lineTo(0, -R); sh.lineTo(-R * 0.7, -R * 0.5); sh.lineTo(-R * 0.85, R * 0.55); sh.closePath(); } // escudete
   const g = new THREE.ExtrudeGeometry(sh, { depth: 0.006, bevelEnabled: true, bevelThickness: 0.003, bevelSize: 0.003, bevelSegments: 2, curveSegments: 6 });
-  const m = new THREE.Mesh(g, mat); m.position.set(s2.x, s2.y + 0.01, (fz > -1e8 ? fz : s2.z + 0.13) + 0.046); pinToBone(root, 'spine_02', m);
-  if (kind === 'sol') { const c = new THREE.Mesh(new THREE.SphereGeometry(R * 0.38, 20, 12), mat); c.scale.set(1, 1, 0.45); c.position.copy(m.position).add(new THREE.Vector3(0, 0, 0.012)); pinToBone(root, 'spine_02', c); }
+  const m = new THREE.Mesh(g, mat); m.position.set(s2.x, s2.y + 0.01, (fz > -1e8 ? fz : s2.z + 0.13) + 0.046); m.rotation.x = at ? -0.22 : 0; pinToBone(root, at ? 'spine_03' : 'spine_02', m);
+  if (kind === 'sol') { const c = new THREE.Mesh(new THREE.SphereGeometry(R * 0.38, 20, 12), mat); c.scale.set(1, 1, 0.45); c.rotation.x = m.rotation.x; c.position.copy(m.position).add(new THREE.Vector3(0, 0, 0.012)); pinToBone(root, at ? 'spine_03' : 'spine_02', c); }
 }
 // por baixo das placas: cota de malha no tronco/braços e calça escura (sem a camisa verde da roupa base)
 // S-328: máscara por vértice das MÃOS (peso nos ossos hand/dedos) — a malha não cobre as mãos: ali vira luva de couro
@@ -2955,15 +3091,21 @@ const ARMOR_BUILD = {
   // Guerreiro: couro batido sobre cota de malha, peitoral de ferro rebitado, uma ombreira de ferro (braço do escudo) e outra de couro
   // S-328: Guerreiro coerente (sem "Frankenstein"): gibão de malha, peitoral de ferro rebitado, uma ombreira de ferro e outra de couro (como ele gostou),
   // braçadeiras e luvas de COURO (nada de malha nas mãos), FRALDA DE MALHA com barra de couro no lugar das abas de "papelão", grevas de couro e botas
+  // S-347: refeito no espírito do Espadachim (RO) e dos soldados de Skyrim/GoT — MENOS armadura que o Cavaleiro e o Paladino, tudo da mesma
+  // família e moldado no corpo: couraça de COURO fervido (fosca, nada de "latão" de aço polido), mantelete de couro unindo gola e ombros,
+  // UMA ombreira de ferro fosco no braço do escudo e outra de couro, talabarte da espada cruzando o peito, fralda de malha curta com escarcelas de couro
   leve(root) {
-    const iron = AM.steel('#9a9ea4', { rivets: true, metal: 0.82, rough: 0.55 }), leather = AM.leather('#6a4a30'), dark = AM.leather('#3e2a1c'), brass = AM.gold('#a8884a');
-    underLayer(root, '#8a6c4a', '#4a3a2a', '#3e2a1c', { body: 0.006, arms: 0.006, legs: 0.006 }, 'acolchoado'); // S-341: gibão ACOLCHOADO (tecido grosso em gomos) no tronco e braços — a malha não fica mais exposta
-    gorgetSet(root, AM.mail('#8a8e94'), { k: 'wm', mantle: false }); // malha só na gola (camal curto)
-    breastplate(root, iron, { k: 'w', backOpen: true });
-    mailSkirt(root, AM.mailCloth('#7e8288'), AM.leatherCloth('#3e2a1c'), { len: 0.27, off: 0.026 });
-    pauldronSet(root, iron, 'l', { size: 1.05, n: 2, k: 'w' }); pauldronSet(root, leather, 'r', { size: 0.9, n: 2, k: 'wr' });
+    const iron = AM.steel('#7c8086', { rivets: true, metal: 0.72, rough: 0.62, env: 0.7 }), cuir = AM.leather('#5e3f27'), leather = AM.leather('#6a4a30'), dark = AM.leather('#3a281a'), brass = AM.gold('#a8884a');
+    underLayer(root, '#7a6a52', '#4a3a2a', '#3e2a1c', { body: 0.006, arms: 0.006, legs: 0.006 }, 'acolchoado'); // gibão acolchoado (tecido grosso em gomos) por baixo
+    breastplate(root, cuir, { k: 'wl', off: 0.02 });                       // couraça de couro fervido, frente e costas
+    gorgetSet(root, leather, { k: 'wl' });                                  // gola + mantelete de couro: liga a couraça às ombreiras (as peças "conversam")
+    mailSkirt(root, AM.mailCloth('#74787e'), AM.leatherCloth('#3a281a'), { len: 0.22, off: 0.026 });
+    fauldTassets(root, dark, { k: 'wl', short: true, n: 1, tassets: true }); // faixa de couro na cintura e escarcelas curtas nas coxas
+    pauldronSet(root, iron, 'l', { size: 0.96, n: 2, k: 'wl' }); pauldronSet(root, AM.leather('#46301e'), 'r', { size: 0.86, n: 1, k: 'wlr' }); // ombreiras justas (nada de "rolos" saltando)
     for (const s of ['l', 'r']) { armSet(root, leather, s, { noRere: true, noCouter: true }); legSet(root, leather, s, { cuisse: false, poleyn: false, greave: dark }); }
     beltSet(root, dark, brass, 'simples');
+    { const cl = bonePos(root, 'clavicle_l'), pv = bonePos(root, 'pelvis'), strap = AM.leather('#2a1a10'); // talabarte: do ombro esquerdo ao quadril direito, na frente e nas costas
+      chestStrap(root, strap, [cl.x + 0.02, cl.y - 0.03], [pv.x - 0.14, pv.y + 0.12], 1, 0.017, 0.052); chestStrap(root, strap, [cl.x + 0.02, cl.y - 0.03], [pv.x - 0.14, pv.y + 0.12], -1, 0.017, 0.052); }
   },
   // S-327: Cavaleiro de aço ENEGRECIDO fosco (mais escuro que o Paladino, sem azul e sem "latão"), bordas polidas, escarpe de placas no pé, abas vermelhas da casa
   placas(root) {
@@ -2984,7 +3126,7 @@ const ARMOR_BUILD = {
     mailSkirt(root, AM.mailCloth('#a0a6ae'), AM.leatherCloth('#4a3424'), { len: 0.26 });
     fauldTassets(root, steel, { k: 'p', n: 2, tassets: true, trim: gold, short: true });
     for (const s of ['l', 'r']) { pauldronSet(root, steel, s, { size: 1.12, n: 3, k: 'p', trim: gold }); armSet(root, steel, s, { gauntlet: steel, trim: gold }); legSet(root, steel, s, { sabaton: steel, trim: gold }); }
-    beltSet(root, leather, gold, 'sol'); chestEmblem(root, gold, 'sol', 0.12); surcoatFlaps(root, '#f4efe2', '#c9a24a', 'sol', 0.42);
+    beltSet(root, leather, gold, 'sol'); chestEmblem(root, gold, 'sol', 0.095, 'peito_d'); surcoatFlaps(root, '#f4efe2', '#c9a24a', 'sol', 0.42);
     clothCape(root, fx, '#ece4d2');
   },
 };
@@ -3025,19 +3167,20 @@ function seatBeard(root) {
     for (let i = 0; i < P.count; i += step) { o.getVertexPosition(i, v); o.localToWorld(v); if (bz.containsPoint(v) && v.clone().sub(o0).dot(upW) < neckH) addPt(v.clone()); }
   });
   const frontAt = p => { const d = p.clone().sub(o0), a = d.dot(rightW), b = d.dot(upW); let best = -Infinity; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const g = grid.get(key(a + da * CELL, b + db * CELL)); if (g !== undefined && g > best) best = g; } return best === -Infinity ? null : best; };
+  const GAP = plates.length ? 0.03 : 0.011; // S-357: folga maior sobre a armadura — ao inclinar a cabeça nos golpes a barba não entra na placa
   for (const b of beards) {
     b.skeleton.update(); b.geometry = b.geometry.clone();
     const pos = b.geometry.attributes.position, si = b.geometry.attributes.skinIndex, sw = b.geometry.attributes.skinWeight, bm = b.skeleton.boneMatrices; let moved = 0;
     for (let i = 0; i < pos.count; i++) {
       b.getVertexPosition(i, v); b.localToWorld(v);
       let need = -1;
-      if (plates.length) { _bR.set(v.clone().sub(fwd.clone().multiplyScalar(0.4)), fwd); _bR.far = 0.6; const hits = _bR.intersectObjects(plates, false); if (hits.length) need = hits[hits.length - 1].point.clone().sub(v).dot(fwd) + 0.011; }
-      { const f = frontAt(v); if (f != null) need = Math.max(need, f - v.clone().sub(o0).dot(fwd) + 0.011); } // roupa sem armadura (e o que a armadura não cobre)
+      if (plates.length) { _bR.set(v.clone().sub(fwd.clone().multiplyScalar(0.4)), fwd); _bR.far = 0.6; const hits = _bR.intersectObjects(plates, false); if (hits.length) need = hits[hits.length - 1].point.clone().sub(v).dot(fwd) + GAP; }
+      { const f = frontAt(v); if (f != null) need = Math.max(need, f - v.clone().sub(o0).dot(fwd) + GAP); } // roupa sem armadura (e o que a armadura não cobre)
       if (need <= 0) continue; // já está por fora
       // matriz linear da pele neste vértice: meshWorld · bindInverse · Σ w·boneMatrix · bind
       S.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (!w) continue; const e = M.fromArray(bm, si.getComponent(i, k) * 16).elements; for (let q = 0; q < 16; q++) S.elements[q] += e[q] * w; }
       M.copy(b.matrixWorld).multiply(b.bindMatrixInverse).multiply(S).multiply(b.bindMatrix); A3.setFromMatrix4(M); const det = A3.determinant(); if (Math.abs(det) < 1e-9) continue;
-      const d = fwd.clone().multiplyScalar(Math.min(need, 0.12)).applyMatrix3(A3.invert());
+      const nd = Math.min(need, 0.12), d = fwd.clone().multiplyScalar(nd).add(upW.clone().multiplyScalar(plates.length ? nd * 0.45 : 0)).applyMatrix3(A3.invert()); // S-357: com armadura, a ponta da barba também sobe um pouco (repousa curvada sobre a placa, sem afundar nos golpes)
       pos.setXYZ(i, pos.getX(i) + d.x, pos.getY(i) + d.y, pos.getZ(i) + d.z); moved++;
     }
     if (moved) { pos.needsUpdate = true; b.geometry.computeVertexNormals(); b.userData.seated = moved; }

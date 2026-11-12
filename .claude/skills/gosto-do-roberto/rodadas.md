@@ -227,3 +227,12 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Ele criou um "laboratório" na Arena para revisar classe por classe: quer cada classe com identidade de MMO real (RO para sistema/conceito; Skyrim, WoW e Assassin's Creed para estética). Rejeita "gambiarra", "latão", "Frankenstein", "perereca", "Jack Estripador".
 - Gosta de prata+dourado no Paladino, ombro metálico+couro no Guerreiro; quer acabamento (lâminas limpas, pés de armadura, mãos com luva), não só forma.
 - Bug de raiz achado: ajustes pós-animação acumulando quando o clipe deixa ossos parados — sempre restaurar a pose pura antes do mixer.
+
+### Rodada de acabamento das classes (S-346 a S-357), 2026-11-11
+- Continuação do laboratório da Arena: ele dá NOTA ("7,5 a 8") e quer 10 — elogia o que acertamos (cores, ombros, saia, frente) e aponta o acabamento que falta. Preserve o que ele elogiou e mexa só no resto.
+- Reincidências: arco (braço atravessando peito/ombro, "ainda") e barba do anão dentro da armadura — a correção anterior só valia parado; teste também NOS GOLPES (cabeça inclinada) e na puxada inteira, não num quadro.
+- "Latão": aço polido em volta do tronco do anão vira lata. Classe base = couro fosco e peças justas que "conversam" (gola/mantelete ligando couraça e ombros); armadura mais pesada só nas evoluções.
+- Simetria importa: peça torta para um lado sem motivo (ponta de lenço, sol no peito) incomoda; se for assimétrico, que seja de propósito e heráldico (brasão no alto do peito, oposto ao escudo).
+- Raças precisam de identidade de rosto, não só de escala: elfo = orelha longa visível de longe + rosto fino/olhos puxados.
+- Efeito mágico = partículas suaves e translúcidas; geometria sólida branca ("lombriga") é antipadrão.
+- Animações: referências explícitas Skyrim (ladrão com adaga) e "outras com animações melhores"; postura de cavaleiro firme, lâmina rente à perna em repouso.
