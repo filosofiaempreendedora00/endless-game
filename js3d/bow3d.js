@@ -21,6 +21,52 @@ function ik2(a, b, c, T, pole, w) { // IK de 2 ossos (ombro → cotovelo → pun
   rotBoneTo(a, _b.clone().sub(_a), B2.clone().sub(_a));
   b.getWorldPosition(_b); c.getWorldPosition(_c); rotBoneTo(b, _c.clone().sub(_b), tgt.clone().sub(_b));
 }
+/* S-359/S-369: medidas do rosto de cada personagem, no espaço do osso da cabeça (+x esquerda, +y cima, +z frente), feitas uma vez a
+   partir dos vértices da cabeça/barba (vale para humano, elfo e anão, com ou sem barba): escala do rosto, ponto da âncora (canto da
+   boca/queixo, lado direito) e um mapa (y, z) → x mais à direita da superfície, para a mão nunca entrar no rosto. */
+const FB = { y0: -0.12, z0: -0.16, n: 30, st: 0.015 };
+function faceOf(r, hd) {
+  if (r.userData._face && r.userData._face.hd === hd) return r.userData._face;
+  r.updateMatrixWorld(true);
+  const grid = new Float32Array(FB.n * FB.n).fill(-9), v = new THREE.Vector3(); let front = 0;
+  r.traverse(o => {
+    if (!o.isSkinnedMesh || !o.visible || !o.skeleton || /hair|cabelo|brow|eye|olho|hat|helm/i.test(o.name)) return;
+    const hi = o.skeleton.bones.indexOf(hd), SI = o.geometry.attributes.skinIndex, SW = o.geometry.attributes.skinWeight; if (hi < 0 || !SI) return;
+    const core = !/beard|barba/i.test(o.name);
+    for (let i = 0; i < SI.count; i++) {
+      let w = 0; for (let k = 0; k < 4; k++) if (SI.getComponent(i, k) === hi) w += SW.getComponent(i, k); if (w < 0.5) continue;
+      o.getVertexPosition(i, v); o.localToWorld(v); hd.worldToLocal(v);
+      if (core && w > 0.9 && Math.abs(v.x) < 0.03 && v.z > front) front = v.z;
+      const iy = Math.floor((v.y - FB.y0) / FB.st), iz = Math.floor((v.z - FB.z0) / FB.st); if (iy < 0 || iz < 0 || iy >= FB.n || iz >= FB.n) continue;
+      const j = iy * FB.n + iz; grid[j] = Math.max(grid[j], -v.x); // guarda o quanto a superfície vai para a DIREITA (−x)
+    }
+  });
+  const s = Math.max(0.85, Math.min(1.5, (front || 0.129) / 0.129)), dw = !!r.userData.dwarf;
+  // âncora: corda no canto direito da boca/queixo, rente à pele (anão: a barba cobre o queixo — a corda passa por fora dela)
+  const F = { hd, s, grid, ax: (dw ? 0.06 : 0.032) * s, ay: (dw ? 0.045 : 0.04) * s, az: (dw ? 0.115 : 0.112) * s };
+  return (r.userData._face = F);
+}
+function faceMinX(F, y, z) { // x (espaço da cabeça) da superfície do lado direito perto de (y, z); 9 = sem rosto ali
+  const iy = Math.floor((y - FB.y0) / FB.st), iz = Math.floor((z - FB.z0) / FB.st); let m = -9;
+  for (let a = iy - 1; a <= iy + 1; a++) for (let b = iz - 1; b <= iz + 1; b++) { if (a < 0 || b < 0 || a >= FB.n || b >= FB.n) continue; m = Math.max(m, F.grid[a * FB.n + b]); }
+  return m <= -8.9 ? 9 : -m;
+}
+// mão direita orientada: dedos (do punho ao nó do dedo médio) para `fing`, palma para `palm` (mistura w)
+function orientHand(r, hr, fing, palm, w) {
+  if (w <= 0.001) return;
+  const L = hr.userData._hb || (hr.userData._hb = (() => { const m = r.getObjectByName('middle_01_r'), t = r.getObjectByName('thumb_01_r'); if (!m || !t) return null;
+    const f = m.position.clone().normalize(), th = t.position.clone(); th.sub(f.clone().multiplyScalar(th.dot(f))).normalize(); const n = new THREE.Vector3().crossVectors(f, th).negate().normalize(); // mão direita: palma = −(dedos × polegar)
+    return new THREE.Matrix4().makeBasis(f, n, new THREE.Vector3().crossVectors(f, n)); })());
+  if (!L) return;
+  const f = fing.clone().normalize(), n = palm.clone().sub(f.clone().multiplyScalar(palm.dot(f))).normalize();
+  const Wm = new THREE.Matrix4().makeBasis(f, n, new THREE.Vector3().crossVectors(f, n));
+  const qW = new THREE.Quaternion().setFromRotationMatrix(Wm.multiply(L.clone().transpose()));
+  hr.getWorldQuaternion(_q2); _q2.slerp(qW, w); setWorldQuat(hr, _q2.clone());
+}
+function contactPt(r) { // onde a corda engancha: entre a 2ª e a 3ª falange do indicador e do médio
+  const b = ['index_02_r', 'index_03_r', 'middle_02_r', 'middle_03_r'].map(n => r.getObjectByName(n)); if (b.some(x => !x)) return null;
+  const p = b.map(x => x.getWorldPosition(new THREE.Vector3())); return p[0].add(p[1]).add(p[2]).add(p[3]).multiplyScalar(0.25);
+}
 // corda: some a corda reta e desenha as duas metades das pontas do arco até os dedos que puxam
 function stringFx(bow, pull, on) {
   const str = bow.userData.strMesh || (bow.userData.strMesh = (() => { let m = null; bow.traverse(o => { if (!m && o.isMesh && o.geometry && o.geometry.type === 'CylinderGeometry' && o.geometry.parameters.radiusTop < 0.003) m = o; }); return m; })());
@@ -73,8 +119,12 @@ export function bowPose(me, o, ctx) {
   const grip = new THREE.Vector3(0, 0, gz).applyMatrix4(bow.matrixWorld), bz = new THREE.Vector3(0, 0, 1).transformDirection(bow.matrixWorld), by = new THREE.Vector3(0, 1, 0).transformDirection(bow.matrixWorld);
   const rightA = new THREE.Vector3().crossVectors(fwd, UP).normalize(); // direita de quem mira (lado da bochecha que recebe a corda)
   // a âncora: canto da boca, do lado direito do rosto (a corda passa rente à bochecha, nunca por dentro da cabeça)
-  const dwarf = !!r.userData.dwarf, faceSide = dwarf ? 0.115 : 0.09; // a bochecha fica a ~9 cm do eixo da cabeça (anão: cabeça e barba mais largas)
-  const anchor = head.clone().add(UP.clone().multiplyScalar(dwarf ? -0.05 : -0.07)).add(fwd.clone().multiplyScalar(0.06)).add(rightA.clone().multiplyScalar(faceSide));
+  // S-359/S-369: a âncora agora sai do ROSTO medido (no espaço do osso da cabeça, que já olha para o alvo): os dedos da corda
+  // ficam no canto da boca/queixo, do lado direito — antes a âncora ficava 7 cm abaixo e 9 cm ao lado do osso (no pescoço) e a
+  // trava anti-cabeça empurrava a mão para longe: o braço ficava aberto ao lado e a mão parecia sumir
+  const dwarf = !!r.userData.dwarf, F = faceOf(r, hd);
+  hd.updateWorldMatrix(true, false);
+  const anchor = hd.localToWorld(new THREE.Vector3(-F.ax, F.ay, F.az));
   // S-333: a flecha apoia EM CIMA do punho do arco (no indicador), não no meio da empunhadura: sobe o quanto for preciso para não
   // passar por dentro da mão nem do antebraço (o anão tem antebraço bem mais grosso)
   const elP = el.getWorldPosition(new THREE.Vector3()), hlP = hl.getWorldPosition(new THREE.Vector3()), armR = r.userData.dwarf ? 0.068 : 0.05;
@@ -113,15 +163,27 @@ export function bowPose(me, o, ctx) {
   { const acc = want.clone().sub(me._hpL).multiplyScalar(k).sub(me._hpV.clone().multiplyScalar(2 * Math.sqrt(k))); me._hpV.add(acc.multiplyScalar(bdt)); me._hpL.add(me._hpV.clone().multiplyScalar(bdt)); }
   const pull = SP.localToWorld(me._hpL.clone());
   const holding = o.draw > 0.04 && sinceRel > 0.14; // dedos na corda (fora da janela da soltura)
-  const nockPt = holding ? pull : strRest, adir = restPt.clone().sub(nockPt); const alen = adir.length(); adir.normalize();
-  // punho atrás dos dedos MAS para fora do rosto (dorso da mão contra a mandíbula, não dentro dela)
-  const handT = pull.clone().add(adir.clone().multiplyScalar(-0.045)).add(rightA.clone().multiplyScalar(0.035)).add(UP.clone().multiplyScalar(-0.02));
-  const headC = head.clone().add(fwd.clone().multiplyScalar(0.03)); // centro da cabeça no plano (o osso fica na nuca)
-  { const headR = (r.userData.dwarf ? 0.135 : 0.115) + 0.04, v = handT.clone().sub(headC); const wY = Math.max(0, Math.min(1, (v.y + 0.24) / 0.1)) * Math.max(0, Math.min(1, (0.38 - v.y) / 0.1)); v.y = 0; const dh = v.length(); if (dh < headR) handT.add(rightA.clone().multiplyScalar((headR - dh) * wY)); } // entra gradual (sem "estalo" quando a mão passa pela altura do queixo) // nunca entra na cabeça/barba
+  let adir = restPt.clone().sub(holding ? pull : strRest).normalize();
+  // S-359/S-369: a MÃO inteira é posta pelos dedos. A mão direita fica "de aperto de mão": palma voltada para o rosto, dedos para o
+  // arco (um pouco para baixo), dorso para fora; o punho é corrigido até o ponto de contato dos dedos (entre a 2ª e a 3ª falange do
+  // indicador e do médio, onde a corda engancha) cair em cima do ponto da corda; e a mão nunca entra no rosto/barba (mapa medido).
   const poleR = shR.clone().add(UP.clone().multiplyScalar(-0.45 + 0.8 * A)).add(fwd.clone().multiplyScalar(-0.2 - 0.5 * A)).add(rightA.clone().multiplyScalar(0.3)); // cotovelo alto e para trás mirando
-  ik2(sr, er, hr, handT, poleR, W);
-  { hr.updateWorldMatrix(true, false); const hy = new THREE.Vector3(0, 1, 0).transformDirection(hr.matrixWorld); rotBoneTo(hr, hy, hy.clone().lerp(adir, 0.6 * W).normalize()); } // dedos na direção da flecha
-  stringFx(bow, holding ? pull : null, W > 0.3 && holding);
+  const fingW = adir.clone().add(UP.clone().multiplyScalar(-0.12)).normalize(), palmW = rightA.clone().negate(); palmW.sub(fingW.clone().multiplyScalar(palmW.dot(fingW))).normalize();
+  const wristT = pull.clone().addScaledVector(fingW, -0.075).addScaledVector(palmW, -0.02);
+  const hx = new THREE.Vector3(1, 0, 0).transformDirection(hd.matrixWorld); // "esquerda" da cabeça no mundo
+  const q0 = [sr, er, hr].map(b => b.quaternion.clone()), reset = () => { [sr, er, hr].forEach((b, i) => b.quaternion.copy(q0[i])); sr.updateWorldMatrix(false, true); }; // cada passada parte da mesma pose (o peso W não se acumula)
+  for (let it = 0; it < 3; it++) {
+    reset(); ik2(sr, er, hr, wristT, poleR, W); orientHand(r, hr, fingW, palmW, W);
+    const C = contactPt(r); if (!C) break;
+    wristT.addScaledVector(pull.clone().sub(C), W);
+    // nada de mão dentro do rosto: o centro da mão (entre o punho e os dedos) fica à direita da superfície medida da cabeça
+    const hc = hd.worldToLocal(hr.getWorldPosition(new THREE.Vector3()).lerp(C, 0.5)), lim = faceMinX(F, hc.y, hc.z) - (dwarf ? 0.04 : 0.032);
+    if (hc.x > lim) wristT.addScaledVector(hx, (lim - hc.x) * W);
+  }
+  reset(); ik2(sr, er, hr, wristT, poleR, W); orientHand(r, hr, fingW, palmW, W);
+  const fingers = contactPt(r) || pull; // onde os dedos estão DE VERDADE: a corda e a flecha saem daqui
+  const nockPt = holding ? fingers : strRest; adir = restPt.clone().sub(nockPt); const alen = adir.length(); adir.normalize();
+  stringFx(bow, holding ? fingers : null, W > 0.3 && holding);
   nock.visible = !!o.nock && W > 0.55 && alen > 0.05;
   if (nock.visible) { nock.position.copy(nockPt).add(adir.clone().multiplyScalar(0.37)); nock.lookAt(nock.position.clone().add(adir)); }
 }

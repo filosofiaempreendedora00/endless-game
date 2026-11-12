@@ -561,7 +561,7 @@ function renderLoja() {
 const ARENA_I = { name: 'Arena de Aethra', x: 800, z: 0, w: 46, d: 46, h: 8, round: 21 };
 /* S-311: laboratório de roupas na Arena (só o administrador vê) — todas as classes × raças em volta do círculo,
    com a arma padrão da classe e um ciclo de animações (parado → pose de luta → dois golpes) para revisar uma por uma */
-const GALLERY_WEAPON = { aprendiz: 'adaga_simples', guerreiro: 'espada_curta', mago: 'cajado_de_salgueiro', arqueiro: 'arco_curto', ladino: 'adaga_simples', cavaleiro_runico: 'espada_longa', guardiao_sagrado: 'espada_curta', arquimago: 'cajado_arcano', sabio_elemental: 'cajado_arcano', cacador: 'arco_composto', menestrel: 'arco_curto', lamina_sombria: 'katar_de_ferro', saqueador: 'espada_curta' };
+const GALLERY_WEAPON = { aprendiz: 'adaga_simples', guerreiro: 'espada_curta', mago: 'cajado_de_salgueiro', arqueiro: 'arco_curto', ladino: 'adaga_simples', cavaleiro_runico: 'espada_longa', guardiao_sagrado: 'espada_longa', arquimago: 'cajado_arcano', sabio_elemental: 'cajado_arcano', cacador: 'arco_composto', menestrel: 'arco_curto', lamina_sombria: 'katar_de_ferro', saqueador: 'espada_curta' };
 const GALLERY_ORDER = ['aprendiz', 'guerreiro', 'cavaleiro_runico', 'guardiao_sagrado', 'mago', 'arquimago', 'sabio_elemental', 'arqueiro', 'cacador', 'menestrel', 'ladino', 'lamina_sombria', 'saqueador'];
 let galleryBuilt = false;
 function ensureGallery() {
@@ -2004,6 +2004,10 @@ function makeHero(cls, look0 = {}, hatId = null, extra = {}) {
   h.root.userData.skin = new THREE.Color(SKIN_HEX[look.skin]);
   const wid = extra.weaponId, wopt = wid !== undefined ? { wtype: wid && ITEMS[wid] ? ITEMS[wid].wtype : 'nenhuma', weaponId: wid } : {}; // katar do Executor só com katar equipada
   const d = cls ? dressHuman(h, cls, MODELS, { offhand: extra.offhand, ...wopt }) : { style: '1h', update: () => { } };
+  { // S-362: a espada de uma mão mostra o tamanho do ITEM (wlen em data.js): a Espada Longa é bem maior que a curta — o golpe precisa de braço
+    const it = wid && ITEMS[wid], sw = it && it.wlen && h.root.userData.items && h.root.userData.items['1H_Sword'];
+    if (sw) { sw.scale.y *= it.wlen; sw.scale.x *= 1 + (it.wlen - 1) * 0.35; sw.scale.z *= 1 + (it.wlen - 1) * 0.35; sw.position.multiplyScalar(it.wlen); } // o cabo continua no punho (a lâmina corre no eixo y da peça)
+  }
   if (look.race === 'elfo') h.obj.scale.set(0.97, 1.04, 0.97); // anão: o corpo de anão de verdade vem do makeHuman (S-178)
   unsquashDwarf(h.root); // S-246: peças da roupa sem esticar nos ossos de anão
   { // P-015: rosto esculpido pelos parâmetros do look (NPC sem rosto definido: variado e fixo pelo id) + expressões e piscar
@@ -2362,7 +2366,7 @@ function updatePlayer(dt) {
       const gw = gg('_guardW', on ? 1 : 0, 6), rw = gg('_restW', free && !on ? 1 : 0, 4);
       if (gk) guardPose(me, gk, { guard: gw, rest: rw });
     }
-    updateStrike(me, dt, { skipR: /^(mago|arquimago)$/.test(p.cls), skipL: p.cls === 'sabio_elemental' }); // P-014: golpe sob medida por cima de tudo (cajado/livro ficam com o IK deles) // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
+    updateStrike(me, dt, { skipR: /^(mago|arquimago)$/.test(p.cls), skipL: p.cls === 'sabio_elemental', still: S.vel && !S.riding && !S.swim ? Math.max(0, 1 - Math.hypot(S.vel.x, S.vel.z) / 1.2) : 0 }); // S-362: parado, o golpe usa pernas/quadril/passo; correndo, as pernas ficam com a corrida // P-014: golpe sob medida por cima de tudo (cajado/livro ficam com o IK deles) // S-294: em guarda/atacando a cabeça fica erguida, olhando em frente (a pose de luta olhava para o chão)
   }
   if (me.lookFx) me.lookFx(t);
   if (me.song) me.song.userData.update(t, Object.keys(p.buffs).some(id => SONG_BUFFS.has(id)));

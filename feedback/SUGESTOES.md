@@ -6,7 +6,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 
 _Nenhuma._
 
-## Feitas (357)
+## Feitas (370)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2516,3 +2516,103 @@ Ainda sobre bestiário, é preciso que pro usuário nao-master, apareça os mons
 - **Sugestão:** A barba do anão ainda está totalmente invadida pela armadura e repare que há vários detalhes na própria roupa que quando ele se movimenta acaba que vão ficando evidentes porém eu preciso que você dê um acabamento melhor em relação ao escudo e já está infinitamente melhor agora realmente são pequenos ajustes que precisam ser feitos e algo que eu percebi e não sei se é intencional ou não é que esse sol da armadura ele não está simétrico no peito eu não sei se foi intencional ou não mais confesso que a posição dele ficou um pouco esquisita penso talvez de você colocar na parte peitoral mais para cima e perto de um dos ombros talvez no ombro oposto ao braço do escudo seria a posição ideal para que o temporário pudesse ter esse sol presente na armadura
 - ![print](img/S-357.png)
 - **Resposta do Claude:** Paladino: o sol saiu do meio do peito e foi para o alto, perto do ombro da espada (oposto ao escudo). A barba do anão tem mais folga sobre a armadura e a ponta pousa curvada por cima dela, então não afunda nos golpes. O escudo ganhou um friso dourado arredondado contornando a lateral, que antes ficava crua.
+
+### S-358 · Área do mapa: Área da tela (330×232 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:23:10 · **Mapa:** Vila de Alvorada (tile [793, -16])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A orelha ficou boa mas claramente o cabelo ficou esquisito aqui meio careca e também houve algum problema na gola que claramente prejudicou o acabamento
+- ![print](img/S-358.png)
+- **Resposta do Claude:** Cabelo dos elfos consertado: a deformação que alonga a orelha agora mede o crânio e só puxa a orelha. Antes ela puxava também a pele da têmpora, que furava o cabelo e deixava o elfo "meio careca". Gola: a gola alta da roupa de patrulheiro furava o pescoço e deixava manchas escuras. Agora ela é ajustada ao pescoço medido de cada personagem, e isso vale para todas as classes que usam essa roupa (também no humano e no anão).
+
+### S-359 · Área do mapa: Área da tela (652×660 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:23:59 · **Mapa:** Vila de Alvorada (tile [795, -17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Os movimentos do arco e flecha ainda estão nitidamente errados repare que o braço esquerdo desse modelo está correto porém o braço direito está bugado sem a mão e repare também na corda do arco ela está absolutamente bugada então a forma como ele puxa a corda e posiciona o braço direito de forma adequada é o maior gargalo dos Arqueiros atualmente
+- ![print](img/S-359.png)
+- **Resposta do Claude:** Arco refeito na mão direita. A âncora antiga ficava no pescoço e a mão era empurrada para fora, por isso parecia sumir. Agora o jogo mede o rosto de cada personagem e a mão fica "de aperto de mão", com a palma para o rosto e os dedos na corda junto ao canto da boca, sem entrar no rosto nem na barba. A corda e a flecha saem dos dedos de verdade: em "V" na guarda, na subida e na puxada, e retas na soltura. Vale para Arqueiro, Caçador e Bardo com arco, nas 3 raças.
+
+### S-360 · Área do mapa: Área da tela (329×336 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:24:49 · **Mapa:** Vila de Alvorada (tile [814, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostei dessa capa da parte de trás só não gostei do fato dela ficar entrando na outra capa ali embaixo e também sinto que a forma como ela é presa na armadura não está muito clara então a parte de cima dela faz com que ela aparente está voando os flutuando e isso claramente é um problema
+- ![print](img/S-360.png)
+- **Resposta do Claude:** Capa do Paladino: a aba de trás do tabardo saiu, porque a capa cobre as costas (antes uma entrava na outra). A capa agora fica claramente presa: tem um rolo de pano franzido na borda de cima, assentado nas costas, e dois broches dourados sobre as ombreiras.
+
+### S-361 · Área do mapa: Área da tela (360×208 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:25:08 · **Mapa:** Vila de Alvorada (tile [814, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A barba do anão ainda ficou esquisita Pois existe um pedaço de Armadura entre um pedaço da barba dele e o rosto e claro que isso não é desejável
+- ![print](img/S-361.png)
+- **Resposta do Claude:** Barba do anão: com barba, a gola da armadura não sobe mais na frente. Era ela o pedaço de placa entre o queixo e a barba. O mantelete também ficou mais baixo, e a barba pousa curvada direto sobre o peito, sem ficar afastada do rosto. Vale para todas as armaduras.
+
+### S-362 · Área do mapa: Área da tela (262×301 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:26:41 · **Mapa:** Vila de Alvorada (tile [817, 1])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação a roupa do Paladino está praticamente perfeito o que só está me o que só está me incomodando bastante ainda é a forma como ele esfera os golpes sinto que está extremamente artificial e o resto do corpo dele não se move em conjunto para o ataque eu gostaria também que a arma padrão fosse maior para que ele precisasse mover mais o braço para realizar o golpe e não fazer movimentos mínimos como se fosse uma Adaga então entenda que agora a parte estética já está nota 9.5 porém agora no Paladino é muito mais uma questão de movimento para desferir o golpe ainda há muito o que melhorar nesse sentido de movimentos de batalha
+- ![print](img/S-362.png)
+- **Resposta do Claude:** Paladino: os golpes agora usam o corpo inteiro, com giro do quadril, joelhos dobrando, passo do pé da frente, ombro acompanhando a mão e cabeça no alvo. O movimento passa direto pelo impacto, sem travar a cada pose. São três golpes: talho diagonal com preparação sobre o ombro, talho horizontal e empurrão de escudo. O escudo cobre a frente na preparação e recolhe no golpe. A arma padrão é a Espada Longa, mais comprida (1,24 m). O Guerreiro ganhou os mesmos golpes, com uma estocada no lugar do empurrão.
+
+### S-363 · Área do mapa: Área da tela (232×245 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:27:27 · **Mapa:** Vila de Alvorada (tile [817, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu reparei que o Cavaleiro anão quando usa as duas mãos para deferir um golpe parte do braço dele entra dentro do corpo e isso é um problema além obviamente da barba também está mal configurada até por fora da armadura não vejo o problema em a barba está fora da armadura só não pode ficar totalmente esquisito e mal encaixada entre o rosto e a armadura
+- ![print](img/S-363.png)
+- **Resposta do Claude:** Cavaleiro anão: o clipe de guarda torcia o peito uns 50°, e o braço curto do anão não alcançava o cabo por fora da armadura. Agora o peito fica reto, o cabo vai para onde os dois braços alcançam (à frente do peito) e mãos e cotovelos ficam sempre por fora do tronco medido, com a armadura incluída. A barba também foi corrigida (veja a S-361).
+
+### S-364 · Área do mapa: Área da tela (605×671 px) (sobre: Chat)
+- **Status:** feito · **Quando:** 2026-11-11T21:28:10 · **Mapa:** Vila de Alvorada (tile [813, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** A roupa de costas foi muito melhorada principalmente esses detalhes da parte mais de baixo porém ainda no anão Ficou tudo muito esquisito e mal encaixado eu vou conferir também como ficou essa roupa nas outras classes mas aqui realmente a gente vê que está tudo bagunçado com excesso de roupa e um X incompleto e vários problemas Claros com este print
+- ![print](img/S-364.png)
+- **Resposta do Claude:** Guerreiro anão menos "bagunçado": saíram o X incompleto, os rolos de couro no pescoço e as faixas empilhadas na barriga. A ombreira de couro virou uma peça só e justa. Ficaram a couraça de couro, a gola, a ombreira de ferro, o cinto, a fralda de malha e os detalhes de baixo de que você gostou.
+
+### S-365 · Área do mapa: Área da tela (557×628 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:29:08 · **Mapa:** Vila de Alvorada (tile [810, 11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação a armadura está bem melhor do que antes porém veja que um braço dele está completamente frango ou seja muito magrelo não sei porque e também a parte dos antebraços ali ficou um pouco esquisita parecendo meio que cotonetes e também existe um pouco ainda a ser melhorado nos ombros do guerreiro tanto na parte mais externa quanto próximo de fato a cabeça e aquilo que eu falei do zelfos é claro que você precisa conferir o cabelo dele para todas as classes para que não fique meio Careca em nenhuma delas
+- ![print](img/S-365.png)
+- **Resposta do Claude:** Guerreiro: os dois braços ganharam manga de couro (nada de braço "frango") e braçadeiras retas no lugar do "cotonete". Os ombros ficaram mais limpos, sem os rolos perto da cabeça. O cabelo dos elfos foi corrigido em todas as classes (veja a S-358).
+
+### S-366 · Área do mapa: Área da tela (619×805 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:31:27 · **Mapa:** Vila de Alvorada (tile [795, 17])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A roupa já melhorou infinitamente desde o meu último pedido Agora resta um problemas simples como esse ombro que fica meio que dentro da própria roupa O que é um pouco estranho a parte de trás que mais parece uma pochete nas costas e principalmente essa saiote ou melhor esse saiote que está aparentemente com alguns buracos não conectados a nenhuma peça e ficou folgado demais essa parte do saiote Então ela precisa estar melhor conectada ao resto da roupa porém reforço que estamos em uma versão que já está bem superior a anterior porém também precisam de mais alguns aperfeiçoamentos como por exemplo neste local vermelho que é tipo um cinto no qual também está meio comido e sobreposto parecendo bugs que devem ser melhorados grafico
+- ![print](img/S-366.png)
+- **Resposta do Claude:** Gatuno-Mestre:
+- ombreira nova numa peça só de couro moldado, por cima da costura do ombro (não fica mais dentro da roupa);
+- a "pochete" virou um capuz de pano achatado e assentado, com costura e dobras;
+- o saiote ficou justo, começa por baixo do cinto e tem duas camadas sobrepostas, sem buracos;
+- a faixa vermelha não fica mais "comida": passa limpa entre o casaco e o cinto.
+
+### S-367 · Área do mapa: Área da tela (379×411 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:32:21 · **Mapa:** Vila de Alvorada (tile [785, 8])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação aos ladinos aparentemente Ficaram bem legais agora a questão é mais os ataques de fato que ainda são um problema ficou muito artificial a forma como eles atacam e aqui no anão existem problemas em relação a parte de baixo da roupa da camisa que tem uma faixa meio marrom escura e uns pedaços ali mal acabados que também precisam ser realizados porém de forma geral acredito que estejamos de uma excelente linha até agora seria mais a nível aperfeiçoamento simples mesmo
+- ![print](img/S-367.png)
+- **Resposta do Claude:** Ladino: o colete desce até o quadril com barra debruada e cobre os pedaços da camisa que sobravam no anão. Ataques novos de adaga: estocada por baixo, corte reverso e corte diagonal, com o corpo baixando, passo à frente, quadril empurrando o ombro, mão livre puxando para trás e recuo rápido para a guarda. O Executor troca o quadril de lado a cada estocada.
+
+### S-368 · Área do mapa: Área da tela (648×632 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:33:33 · **Mapa:** Vila de Alvorada (tile [782, -4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gostei muito do bardo de frente e de lado porém essas costas totalmente chapadas em verde para mim não ficaram tão legais e também tem uma manchazinha perto da bunda que parece um cocô que está bem feio e preciso que tenha algum símbolo ou alguma coisa nessas coisas para dar mais profissionalismo a roupa como um todo entendendo o que de frente eu diria que ela está nota 10 e de costas está nota 3
+- ![print](img/S-368.png)
+- **Resposta do Claude:** Costas do Bardo: a "manchinha" (bolsinha) saiu. A capa agora é de veludo, com dobras que nascem nos ombros, galão dourado nas bordas e um bordado original no meio das costas: uma lira dourada dentro de um medalhão de folhas, mais uma barra de ramos bordados na bainha.
+
+### S-369 · Área do mapa: Área da tela (1170×663 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:34:31 · **Mapa:** Vila de Alvorada (tile [789, -7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Nesse print você enxerga várias evidências de problemas com a corda do Arco que precisam ser obviamente resolvidos não apenas em relação à corda do arco como também ao posicionamento da mão que deveria estar puxando a corda do arco aproveito também para que você reduza o tamanho desse saiote do caçador pois está excessivamente Largo e também está mal conectado com o restante da roupa precisei ser um pouco mais justo no corpo
+- ![print](img/S-369.png)
+- **Resposta do Claude:** Saiote do Caçador justo e fechado em volta do corpo, começando por baixo do cinto, com camadas sobrepostas. A faca e a bolsa ficam por fora. A corda e a mão do arco foram corrigidas (veja a S-359).
+
+### S-370 · Área do mapa: Área da tela (560×377 px)
+- **Status:** feito · **Quando:** 2026-11-11T21:36:25 · **Mapa:** Vila de Alvorada (tile [789, -7])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação ao logo ainda me incomodam profundamente a estética dessa cauda que parece feito de pixels E também o pelo das pernas e também os pelos que ficam em volta ali do pescoço pois ele está claramente parecendo algo um pouco tecnológico e não realista de fato eu entendo que em termos de formato de corpo e até de movimento esse lobo atingiu algo muito próximo da Excelência porém este pelo ainda está bastante esquisito e estranho e não natural e distante de todos os modelos de personagens que venham construindo Além disso acrescento o fato de que as patas dele ainda estão estranhas pois não vejo as unhas do lobo e sim os pés são como se fossem meias e isso é estranho e um último ponto é o rosto desse Lobo este rosto está absolutamente Tenebroso e jocoso pois a boca está completamente marcada e esse focinho pintado também está aparecendo algo que nem parece um lobo então esses são os pontos que eu gostaria que você trabalhasse com muito carinho para que ficasse de fato ao meu agrado
+- ![print](img/S-370.png)
+- **Resposta do Claude:** Lobo:
+- cauda de mechas macias e onduladas (acabaram os "pixels");
+- pelo curto e assentado nas pernas e juba penteada no pescoço;
+- patas com 4 dedos, almofadas e garras escuras curvas;
+- rosto novo: sem a linha marcada da boca, focinho sem pintura, nariz úmido em 3D e olhos âmbar com brilho.
+Vale também para os lobos do mapa. De longe ficou mais leve; de muito perto, um pouco mais pesado.

@@ -17612,5 +17612,618 @@
     "criadoEm": "2026-11-11T20:39:52",
     "imagem": "img/S-357.png",
     "resposta": "Paladino: o sol saiu do meio do peito e foi para o alto, perto do ombro da espada (oposto ao escudo). A barba do anão tem mais folga sobre a armadura e a ponta pousa curvada por cima dela, então não afunda nos golpes. O escudo ganhou um friso dourado arredondado contornando a lateral, que antes ficava crua."
+  },
+  {
+    "texto": "A orelha ficou boa mas claramente o cabelo ficou esquisito aqui meio careca e também houve algum problema na gola que claramente prejudicou o acabamento",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (330×232 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Arqueiro · Elfo",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        793,
+        -16
+      ],
+      "pos": [
+        793,
+        -16
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-358",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:23:10",
+    "imagem": "img/S-358.png",
+    "resposta": "Cabelo dos elfos consertado: a deformação que alonga a orelha agora mede o crânio e só puxa a orelha. Antes ela puxava também a pele da têmpora, que furava o cabelo e deixava o elfo \"meio careca\". Gola: a gola alta da roupa de patrulheiro furava o pescoço e deixava manchas escuras. Agora ela é ajustada ao pescoço medido de cada personagem, e isso vale para todas as classes que usam essa roupa (também no humano e no anão)."
+  },
+  {
+    "texto": "Os movimentos do arco e flecha ainda estão nitidamente errados repare que o braço esquerdo desse modelo está correto porém o braço direito está bugado sem a mão e repare também na corda do arco ela está absolutamente bugada então a forma como ele puxa a corda e posiciona o braço direito de forma adequada é o maior gargalo dos Arqueiros atualmente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (652×660 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Sábio Elemental · Anão",
+          "Arqueiro · Humano"
+        ],
+        "cenario": {},
+        "centro": "Arqueiro · Humano",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        795,
+        -17
+      ],
+      "pos": [
+        795,
+        -17
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-359",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:23:59",
+    "imagem": "img/S-359.png",
+    "resposta": "Arco refeito na mão direita. A âncora antiga ficava no pescoço e a mão era empurrada para fora, por isso parecia sumir. Agora o jogo mede o rosto de cada personagem e a mão fica \"de aperto de mão\", com a palma para o rosto e os dedos na corda junto ao canto da boca, sem entrar no rosto nem na barba. A corda e a flecha saem dos dedos de verdade: em \"V\" na guarda, na subida e na puxada, e retas na soltura. Vale para Arqueiro, Caçador e Bardo com arco, nas 3 raças."
+  },
+  {
+    "texto": "Eu gostei dessa capa da parte de trás só não gostei do fato dela ficar entrando na outra capa ali embaixo e também sinto que a forma como ela é presa na armadura não está muito clara então a parte de cima dela faz com que ela aparente está voando os flutuando e isso claramente é um problema",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (329×336 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        814,
+        -4
+      ],
+      "pos": [
+        814,
+        -4
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-360",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:24:49",
+    "imagem": "img/S-360.png",
+    "resposta": "Capa do Paladino: a aba de trás do tabardo saiu, porque a capa cobre as costas (antes uma entrava na outra). A capa agora fica claramente presa: tem um rolo de pano franzido na borda de cima, assentado nas costas, e dois broches dourados sobre as ombreiras."
+  },
+  {
+    "texto": "A barba do anão ainda ficou esquisita Pois existe um pedaço de Armadura entre um pedaço da barba dele e o rosto e claro que isso não é desejável",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (360×208 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Paladino · Anão"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        814,
+        -4
+      ],
+      "pos": [
+        814,
+        -4
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-361",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:25:08",
+    "imagem": "img/S-361.png",
+    "resposta": "Barba do anão: com barba, a gola da armadura não sobe mais na frente. Era ela o pedaço de placa entre o queixo e a barba. O mantelete também ficou mais baixo, e a barba pousa curvada direto sobre o peito, sem ficar afastada do rosto. Vale para todas as armaduras."
+  },
+  {
+    "texto": "Em relação a roupa do Paladino está praticamente perfeito o que só está me o que só está me incomodando bastante ainda é a forma como ele esfera os golpes sinto que está extremamente artificial e o resto do corpo dele não se move em conjunto para o ataque eu gostaria também que a arma padrão fosse maior para que ele precisasse mover mais o braço para realizar o golpe e não fazer movimentos mínimos como se fosse uma Adaga então entenda que agora a parte estética já está nota 9.5 porém agora no Paladino é muito mais uma questão de movimento para desferir o golpe ainda há muito o que melhorar nesse sentido de movimentos de batalha",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (262×301 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Paladino · Humano"
+        ],
+        "cenario": {},
+        "centro": "Paladino · Humano",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        817,
+        1
+      ],
+      "pos": [
+        817,
+        1
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-362",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:26:41",
+    "imagem": "img/S-362.png",
+    "resposta": "Paladino: os golpes agora usam o corpo inteiro, com giro do quadril, joelhos dobrando, passo do pé da frente, ombro acompanhando a mão e cabeça no alvo. O movimento passa direto pelo impacto, sem travar a cada pose. São três golpes: talho diagonal com preparação sobre o ombro, talho horizontal e empurrão de escudo. O escudo cobre a frente na preparação e recolhe no golpe. A arma padrão é a Espada Longa, mais comprida (1,24 m). O Guerreiro ganhou os mesmos golpes, com uma estocada no lugar do empurrão."
+  },
+  {
+    "texto": "Eu reparei que o Cavaleiro anão quando usa as duas mãos para deferir um golpe parte do braço dele entra dentro do corpo e isso é um problema além obviamente da barba também está mal configurada até por fora da armadura não vejo o problema em a barba está fora da armadura só não pode ficar totalmente esquisito e mal encaixada entre o rosto e a armadura",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (232×245 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Cavaleiro · Anão"
+        ],
+        "cenario": {},
+        "centro": "Cavaleiro · Anão",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        817,
+        4
+      ],
+      "pos": [
+        817,
+        4
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-363",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:27:27",
+    "imagem": "img/S-363.png",
+    "resposta": "Cavaleiro anão: o clipe de guarda torcia o peito uns 50°, e o braço curto do anão não alcançava o cabo por fora da armadura. Agora o peito fica reto, o cabo vai para onde os dois braços alcançam (à frente do peito) e mãos e cotovelos ficam sempre por fora do tronco medido, com a armadura incluída. A barba também foi corrigida (veja a S-361)."
+  },
+  {
+    "texto": "A roupa de costas foi muito melhorada principalmente esses detalhes da parte mais de baixo porém ainda no anão Ficou tudo muito esquisito e mal encaixado eu vou conferir também como ficou essa roupa nas outras classes mas aqui realmente a gente vê que está tudo bagunçado com excesso de roupa e um X incompleto e vários problemas Claros com este print",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (605×671 px) (sobre: Chat)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Guerreiro · Anão"
+        ],
+        "cenario": {},
+        "centro": "Guerreiro · Anão",
+        "versao": "3D",
+        "interface": [
+          "Chat"
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        813,
+        11
+      ],
+      "pos": [
+        813,
+        11
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-364",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:28:10",
+    "imagem": "img/S-364.png",
+    "resposta": "Guerreiro anão menos \"bagunçado\": saíram o X incompleto, os rolos de couro no pescoço e as faixas empilhadas na barriga. A ombreira de couro virou uma peça só e justa. Ficaram a couraça de couro, a gola, a ombreira de ferro, o cinto, a fralda de malha e os detalhes de baixo de que você gostou."
+  },
+  {
+    "texto": "Em relação a armadura está bem melhor do que antes porém veja que um braço dele está completamente frango ou seja muito magrelo não sei porque e também a parte dos antebraços ali ficou um pouco esquisita parecendo meio que cotonetes e também existe um pouco ainda a ser melhorado nos ombros do guerreiro tanto na parte mais externa quanto próximo de fato a cabeça e aquilo que eu falei do zelfos é claro que você precisa conferir o cabelo dele para todas as classes para que não fique meio Careca em nenhuma delas",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (557×628 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Guerreiro · Elfo"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        810,
+        11
+      ],
+      "pos": [
+        810,
+        11
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-365",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:29:08",
+    "imagem": "img/S-365.png",
+    "resposta": "Guerreiro: os dois braços ganharam manga de couro (nada de braço \"frango\") e braçadeiras retas no lugar do \"cotonete\". Os ombros ficaram mais limpos, sem os rolos perto da cabeça. O cabelo dos elfos foi corrigido em todas as classes (veja a S-358)."
+  },
+  {
+    "texto": "A roupa já melhorou infinitamente desde o meu último pedido Agora resta um problemas simples como esse ombro que fica meio que dentro da própria roupa O que é um pouco estranho a parte de trás que mais parece uma pochete nas costas e principalmente essa saiote ou melhor esse saiote que está aparentemente com alguns buracos não conectados a nenhuma peça e ficou folgado demais essa parte do saiote Então ela precisa estar melhor conectada ao resto da roupa porém reforço que estamos em uma versão que já está bem superior a anterior porém também precisam de mais alguns aperfeiçoamentos como por exemplo neste local vermelho que é tipo um cinto no qual também está meio comido e sobreposto parecendo bugs que devem ser melhorados grafico",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (619×805 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Gatuno-Mestre · Elfo"
+        ],
+        "cenario": {},
+        "centro": "Gatuno-Mestre · Elfo",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        795,
+        17
+      ],
+      "pos": [
+        795,
+        17
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-366",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:31:27",
+    "imagem": "img/S-366.png",
+    "resposta": "Gatuno-Mestre:\n- ombreira nova numa peça só de couro moldado, por cima da costura do ombro (não fica mais dentro da roupa);\n- a \"pochete\" virou um capuz de pano achatado e assentado, com costura e dobras;\n- o saiote ficou justo, começa por baixo do cinto e tem duas camadas sobrepostas, sem buracos;\n- a faixa vermelha não fica mais \"comida\": passa limpa entre o casaco e o cinto."
+  },
+  {
+    "texto": "Em relação aos ladinos aparentemente Ficaram bem legais agora a questão é mais os ataques de fato que ainda são um problema ficou muito artificial a forma como eles atacam e aqui no anão existem problemas em relação a parte de baixo da roupa da camisa que tem uma faixa meio marrom escura e uns pedaços ali mal acabados que também precisam ser realizados porém de forma geral acredito que estejamos de uma excelente linha até agora seria mais a nível aperfeiçoamento simples mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (379×411 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Ladino · Anão"
+        ],
+        "cenario": {},
+        "centro": "Ladino · Anão",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        785,
+        8
+      ],
+      "pos": [
+        785,
+        8
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-367",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:32:21",
+    "imagem": "img/S-367.png",
+    "resposta": "Ladino: o colete desce até o quadril com barra debruada e cobre os pedaços da camisa que sobravam no anão. Ataques novos de adaga: estocada por baixo, corte reverso e corte diagonal, com o corpo baixando, passo à frente, quadril empurrando o ombro, mão livre puxando para trás e recuo rápido para a guarda. O Executor troca o quadril de lado a cada estocada."
+  },
+  {
+    "texto": "Eu gostei muito do bardo de frente e de lado porém essas costas totalmente chapadas em verde para mim não ficaram tão legais e também tem uma manchazinha perto da bunda que parece um cocô que está bem feio e preciso que tenha algum símbolo ou alguma coisa nessas coisas para dar mais profissionalismo a roupa como um todo entendendo o que de frente eu diria que ela está nota 10 e de costas está nota 3",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (648×632 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Bardo · Elfo"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        782,
+        -4
+      ],
+      "pos": [
+        782,
+        -4
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-368",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:33:33",
+    "imagem": "img/S-368.png",
+    "resposta": "Costas do Bardo: a \"manchinha\" (bolsinha) saiu. A capa agora é de veludo, com dobras que nascem nos ombros, galão dourado nas bordas e um bordado original no meio das costas: uma lira dourada dentro de um medalhão de folhas, mais uma barra de ramos bordados na bainha."
+  },
+  {
+    "texto": "Nesse print você enxerga várias evidências de problemas com a corda do Arco que precisam ser obviamente resolvidos não apenas em relação à corda do arco como também ao posicionamento da mão que deveria estar puxando a corda do arco aproveito também para que você reduza o tamanho desse saiote do caçador pois está excessivamente Largo e também está mal conectado com o restante da roupa precisei ser um pouco mais justo no corpo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1170×663 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Arqueiro · Anão",
+          "Caçador · Humano",
+          "Caçador · Elfo"
+        ],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        789,
+        -7
+      ],
+      "pos": [
+        789,
+        -7
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-369",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:34:31",
+    "imagem": "img/S-369.png",
+    "resposta": "Saiote do Caçador justo e fechado em volta do corpo, começando por baixo do cinto, com camadas sobrepostas. A faca e a bolsa ficam por fora. A corda e a mão do arco foram corrigidas (veja a S-359)."
+  },
+  {
+    "texto": "Em relação ao logo ainda me incomodam profundamente a estética dessa cauda que parece feito de pixels E também o pelo das pernas e também os pelos que ficam em volta ali do pescoço pois ele está claramente parecendo algo um pouco tecnológico e não realista de fato eu entendo que em termos de formato de corpo e até de movimento esse lobo atingiu algo muito próximo da Excelência porém este pelo ainda está bastante esquisito e estranho e não natural e distante de todos os modelos de personagens que venham construindo Além disso acrescento o fato de que as patas dele ainda estão estranhas pois não vejo as unhas do lobo e sim os pés são como se fossem meias e isso é estranho e um último ponto é o rosto desse Lobo este rosto está absolutamente Tenebroso e jocoso pois a boca está completamente marcada e esse focinho pintado também está aparecendo algo que nem parece um lobo então esses são os pontos que eu gostaria que você trabalhasse com muito carinho para que ficasse de fato ao meu agrado",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (560×377 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Caçador · Humano"
+        ],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        789,
+        -7
+      ],
+      "pos": [
+        789,
+        -7
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 39,
+      "nivelClasse": 10,
+      "hp": "1650/1650",
+      "sp": "188/188"
+    },
+    "id": "S-370",
+    "status": "feito",
+    "criadoEm": "2026-11-11T21:36:25",
+    "imagem": "img/S-370.png",
+    "resposta": "Lobo:\n- cauda de mechas macias e onduladas (acabaram os \"pixels\");\n- pelo curto e assentado nas pernas e juba penteada no pescoço;\n- patas com 4 dedos, almofadas e garras escuras curvas;\n- rosto novo: sem a linha marcada da boca, focinho sem pintura, nariz úmido em 3D e olhos âmbar com brilho.\nVale também para os lobos do mapa. De longe ficou mais leve; de muito perto, um pouco mais pesado."
   }
 ]

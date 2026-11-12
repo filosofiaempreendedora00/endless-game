@@ -14,6 +14,7 @@
    ========================================================================= */
 import * as THREE from 'three';
 import { sdfSkinnedGeometry, sdfRig, SDF_NOISE_GLSL } from './mounts3d.js';
+import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 
 // ---------- campo de distância (cópia mínima, para achar a superfície ao encaixar olhos e nariz) ----------
 const len3 = (x, y, z) => Math.sqrt(x * x + y * y + z * z);
@@ -52,10 +53,11 @@ function wolfParts() {
   // cabeça: crânio, testa ("stop"), focinho longo, ponta do nariz, bochechas largas, mandíbula (osso próprio), orelhas
   E([0, 0.92, 0.615], [0.09, 0.082, 0.1], 'head', 0.05);
   E([0, 0.945, 0.675], [0.054, 0.044, 0.055], 'head', 0.04);
-  C([0, 0.903, 0.69], [0, 0.887, 0.85], 0.057, 0.039, 'head', 0.045); // focinho forte e comprido
+  C([0, 0.903, 0.69], [0, 0.887, 0.85], 0.057, 0.035, 'head', 0.045); // focinho forte e comprido, afinando para o nariz (S-370)
   E([0, 0.893, 0.76], [0.052, 0.047, 0.075], 'head', 0.05);
   E([0, 0.886, 0.862], [0.026, 0.02, 0.016], 'head', 0.02);
-  C([0, 0.857, 0.655], [0, 0.856, 0.84], 0.042, 0.026, 'jaw', 0.014);
+  C([0, 0.857, 0.655], [0, 0.856, 0.84], 0.042, 0.026, 'jaw', 0.034); // S-370: emenda macia com o focinho (antes um vinco escuro que "desenhava" a boca)
+  E([0, 0.853, 0.775], [0.02, 0.013, 0.04], 'jaw', 0.02); // S-370: queixo com um pouco de volume
   for (const s of [-1, 1]) {
     E([s * 0.064, 0.88, 0.6], [0.058, 0.068, 0.068], 'head', 0.05); // bochecha de pelo
     C([s * 0.044, 0.985, 0.617], [s * 0.06, 1.075, 0.602], 0.035, 0.006, 'ear' + s, 0.022); // orelha em ponta
@@ -67,8 +69,7 @@ function wolfParts() {
     E([s * 0.093, 0.33, 0.232], [0.039, 0.08, 0.041], 'fo' + s, 0.05);
     E([s * 0.09, 0.13, 0.262], [0.027, 0.031, 0.029], 'pa' + s, 0.024);
     C([s * 0.09, 0.13, 0.262], [s * 0.09, 0.044, 0.292], 0.023, 0.027, 'pa' + s, 0.024);
-    E([s * 0.09, 0.028, 0.307], [0.037, 0.026, 0.049], 'pa' + s, 0.03);
-    for (let q = 0; q < 4; q++) E([s * 0.09 + (q - 1.5) * 0.019, 0.02, 0.343 + (Math.abs(q - 1.5) < 1 ? 0.008 : 0)], [0.014, 0.016, 0.018], 'pa' + s, 0.012);
+    E([s * 0.09, 0.03, 0.296], [0.035, 0.026, 0.037], 'pa' + s, 0.03);
     // pata de trás: coxa larga, joelho para a frente, perna para trás até o jarrete alto, metatarso, pata e dedos
     E([s * 0.1, 0.6, -0.42], [0.074, 0.15, 0.13], 'th' + s, 0.08);
     C([s * 0.105, 0.62, -0.42], [s * 0.105, 0.44, -0.3], 0.094, 0.05, 'th' + s, 0.06);
@@ -76,14 +77,13 @@ function wolfParts() {
     E([s * 0.1, 0.37, -0.38], [0.041, 0.08, 0.05], 'sh' + s, 0.05);
     E([s * 0.1, 0.2, -0.522], [0.021, 0.03, 0.028], 'mt' + s, 0.02);
     C([s * 0.1, 0.2, -0.505], [s * 0.1, 0.044, -0.458], 0.025, 0.025, 'mt' + s, 0.024);
-    E([s * 0.1, 0.028, -0.445], [0.035, 0.026, 0.047], 'mt' + s, 0.03);
-    for (let q = 0; q < 4; q++) E([s * 0.1 + (q - 1.5) * 0.018, 0.02, -0.41 + (Math.abs(q - 1.5) < 1 ? 0.008 : 0)], [0.013, 0.015, 0.017], 'mt' + s, 0.012);
+    E([s * 0.1, 0.03, -0.456], [0.033, 0.026, 0.036], 'mt' + s, 0.03);
   }
   // cauda grossa, caída e afinando na ponta
-  C([0, 0.67, -0.54], [0, 0.575, -0.655], 0.042, 0.055, 't1', 0.05);
-  C([0, 0.575, -0.655], [0, 0.455, -0.705], 0.058, 0.066, 't2', 0.04);
-  C([0, 0.455, -0.705], [0, 0.335, -0.72], 0.066, 0.054, 't3', 0.04);
-  C([0, 0.335, -0.72], [0, 0.245, -0.71], 0.05, 0.016, 't4', 0.03);
+  C([0, 0.67, -0.54], [0, 0.575, -0.655], 0.044, 0.062, 't1', 0.05);
+  C([0, 0.575, -0.655], [0, 0.455, -0.705], 0.066, 0.078, 't2', 0.04);
+  C([0, 0.455, -0.705], [0, 0.335, -0.72], 0.078, 0.064, 't3', 0.04);
+  C([0, 0.335, -0.72], [0, 0.235, -0.708], 0.06, 0.018, 't4', 0.03);
   return P;
 }
 let PARTS = null, GEO = null, EYE = null, NOSE = null;
@@ -96,18 +96,98 @@ function wolfGeo() {
   return GEO;
 }
 
+// ---------- peças finas (S-370): olho, nariz, dedos e garras — geometria montada uma vez e reaproveitada ----------
+const lerpC = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+let EYE_GEO = null;
+function wolfEyeGeo() { // esfera com o polo para a frente (+z); cores por vértice: pupila, íris com fibras, aro escuro
+  if (EYE_GEO) return EYE_GEO;
+  const g = new THREE.SphereGeometry(0.0125, 36, 22); g.rotateX(Math.PI / 2);
+  const P = g.attributes.position, col = [];
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), y = P.getY(i), z = P.getZ(i), r = Math.acos(Math.max(-1, Math.min(1, z / 0.0125))) / (Math.PI / 2), a = Math.atan2(y, x);
+    const fib = 0.86 + 0.14 * Math.sin(a * 23 + Math.sin(a * 7) * 2) * Math.sin(a * 11 + 1.3) + 0.08 * Math.sin(a * 37);
+    let c = r < 0.34 ? [0.03, 0.025, 0.02] : r < 0.4 ? lerpC([0.03, 0.025, 0.02], [0.55, 0.3, 0.07], (r - 0.34) / 0.06)
+      : r < 0.62 ? lerpC([0.62, 0.36, 0.08], [0.86, 0.6, 0.2], (r - 0.4) / 0.22) : r < 0.84 ? lerpC([0.86, 0.6, 0.2], [0.66, 0.42, 0.12], (r - 0.62) / 0.22)
+      : r < 1 ? lerpC([0.66, 0.42, 0.12], [0.14, 0.08, 0.03], (r - 0.84) / 0.16) : [0.1, 0.06, 0.03];
+    if (r >= 0.38 && r < 0.95) c = c.map(v => v * fib);
+    col.push(...c);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return (EYE_GEO = g);
+}
+let NOSE_GEO = null;
+function wolfNoseGeo() {
+  if (NOSE_GEO) return NOSE_GEO;
+  const g = new THREE.SphereGeometry(1, 40, 28), P = g.attributes.position, col = [];
+  const G = (x, y, cx, cy, sx, sy) => Math.exp(-(((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2));
+  for (let i = 0; i < P.count; i++) {
+    let x = P.getX(i), y = P.getY(i), z = P.getZ(i), dark = 0;
+    if (z > 0) {
+      z *= 0.78;                                                                        // frente achatada (couro do nariz, não bola)
+      let dent = 0;
+      for (const sx of [-1, 1]) {
+        const nos = G(x, y, sx * 0.42, -0.12, 0.2, 0.24), slit = G(x, y, sx * 0.72, -0.42, 0.12, 0.1);
+        dent += 0.42 * nos + 0.25 * slit; dark = Math.max(dark, nos, slit * 0.8);         // narinas em vírgula: buraco + fenda para o lado
+      }
+      dent += 0.16 * Math.exp(-((x / 0.07) ** 2)) * Math.max(0, Math.min(1, -y * 2.5)); // sulco do meio, embaixo
+      z -= dent * z;
+    }
+    x *= 1 + 0.16 * y;                                                                  // mais largo em cima
+    P.setXYZ(i, x * 0.0178, y * 0.0112, z * 0.0118);
+    const v = 1 - dark * 0.75;
+    col.push(0.03 * v + 0.004, 0.024 * v + 0.004, 0.023 * v + 0.004);
+  }
+  g.computeVertexNormals(); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return (NOSE_GEO = g);
+}
+function clawGeo(len, r0, bend) { // garra curva: sai para a frente e desce, achatada dos lados, afinando até a ponta
+  const N = 7, RS = 8, R = len / bend, pos = [], col = [], idx = [];
+  for (let j = 0; j <= N; j++) {
+    const t = j / N, a = bend * t, cy = -R * (1 - Math.cos(a)), cz = R * Math.sin(a), r = r0 * Math.pow(1 - t, 0.8) + 0.00015;
+    const ny = Math.cos(a), nz = Math.sin(a), c = lerpC([0.11, 0.09, 0.08], [0.36, 0.32, 0.28], t * t);
+    for (let k = 0; k < RS; k++) { const u = k / RS * Math.PI * 2, cu = Math.cos(u) * r * 0.72, su = Math.sin(u) * r; pos.push(cu, cy + ny * su, cz + nz * su); col.push(...c); }
+  }
+  for (let j = 0; j < N; j++) for (let k = 0; k < RS; k++) { const a = j * RS + k, b = j * RS + (k + 1) % RS, c = a + RS, d = b + RS; idx.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+function toeGeo(rx, ry, rz) { // dedo: gota ovalada, achatada embaixo (almofada) e com a ponta um pouco mais fina
+  const g = new THREE.SphereGeometry(1, 14, 10), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (y < 0) y *= 0.62; const k = 1 - 0.18 * Math.max(0, z); P.setXYZ(i, x * rx * k, y * ry, z * rz); }
+  g.computeVertexNormals(); return g;
+}
+const PAWS = {};
+function pawGeo(k, s) { // em coordenadas do corpo em repouso (presas ao osso da pata pelo `at(.., 0, 0, 0)`)
+  const key = k + s; if (PAWS[key]) return PAWS[key];
+  const toes = [], claws = [], m = new THREE.Matrix4(), e = new THREE.Euler();
+  const x0 = s * (k === 'f' ? 0.09 : 0.1), zf = k === 'f' ? 0.336 : -0.418, sz = k === 'f' ? 1 : 0.94;
+  const add = (x, y, z, rx, ry, rz, yaw, cl, pitch = 0.28) => {
+    m.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(e.set(0, yaw, 0)), new THREE.Vector3(1, 1, 1));
+    toes.push(toeGeo(rx, ry, rz).applyMatrix4(m));
+    m.compose(new THREE.Vector3(x + Math.sin(yaw) * rz * 0.7, y + ry * 0.25, z + Math.cos(yaw) * rz * 0.7), new THREE.Quaternion().setFromEuler(e.set(pitch, yaw, 0, 'YXZ')), new THREE.Vector3(1, 1, 1));
+    claws.push(clawGeo(cl, 0.0038 * sz, 1.05).applyMatrix4(m));
+  };
+  for (let q = 0; q < 4; q++) {
+    const mid = q === 1 || q === 2, ox = (q - 1.5) * 0.0186 * sz, yaw = ox * 3.2;
+    add(x0 + ox, 0.02, zf + (mid ? 0.004 : -0.009) * sz, (mid ? 0.0105 : 0.0096) * sz, (mid ? 0.0118 : 0.0108) * sz, (mid ? 0.0168 : 0.015) * sz, yaw, (mid ? 0.02 : 0.018) * sz);
+  }
+  if (k === 'f') add(s * 0.064, 0.07, 0.282, 0.0068, 0.0085, 0.009, -s * 0.5, 0.009, 0.9); // "polegar" (ergô) alto, do lado de dentro
+  return (PAWS[key] = { toes: mergeGeometries(toes), claws: mergeGeometries(claws) });
+}
+
 // ---------- pelagem pintada (espaço do osso em repouso: o desenho fica preso ao corpo) ----------
 const COAT_GLSL = `
-uniform vec3 uBase, uLight, uDark, uTan, uEye;
+uniform vec3 uBase, uLight, uDark, uTan, uEye, uNose;
 float wHead(vec3 p){ return smoothstep(0.55, 0.6, p.z) * smoothstep(0.78, 0.82, p.y); }
 vec3 wCoat(vec3 p, vec3 n){
   float hd = wHead(p);
+  float soft = vn(p * 18.0);                                                                                           // S-370: bordas das manchas irregulares (nada de contorno "desenhado")
   float la = smoothstep(-0.15, -0.65, n.y) * (1.0 - step(0.78, p.y));                                                  // barriga e de baixo
   la = max(la, smoothstep(0.1, 0.04, abs(p.x)) * smoothstep(0.26, 0.34, p.z) * smoothstep(0.84, 0.74, p.y) * (1.0 - step(0.62, p.z))); // garganta e peito
-  la = max(la, hd * smoothstep(0.9, 0.866, p.y));                                                                      // queixo e mandíbula
-  la = max(la, hd * smoothstep(0.035, 0.06, abs(p.x)) * smoothstep(0.925, 0.885, p.y) * smoothstep(0.63, 0.69, p.z));   // máscara clara nas bochechas e laterais do focinho
-  la = max(la, hd * (1.0 - smoothstep(0.009, 0.016, length(vec3(abs(p.x) - 0.036, p.y - 0.957, p.z - 0.712)))) * 0.85); // pintas claras sobre os olhos
-  la = max(la, smoothstep(0.5, 0.3, p.y) * 0.7 * (1.0 - smoothstep(-0.58, -0.62, -p.z) * 0.0));                       // patas claras
+  la = max(la, hd * smoothstep(0.9, 0.862, p.y));                                                                      // queixo e mandíbula
+  la = max(la, hd * smoothstep(0.03, 0.065, abs(p.x) + (soft - 0.5) * 0.02) * smoothstep(0.93, 0.875, p.y) * smoothstep(0.62, 0.7, p.z) * 0.85); // máscara clara nas bochechas e lados do focinho, de borda macia
+  la = max(la, hd * (1.0 - smoothstep(0.008, 0.02, length(vec3(abs(p.x) - 0.036, p.y - 0.957, p.z - 0.712)))) * 0.6); // pintas claras sobre os olhos
+  la = max(la, smoothstep(0.5, 0.3, p.y) * 0.7);                                                                       // patas claras
   la = max(la, smoothstep(0.2, 0.9, -n.x * sign(p.x)) * smoothstep(0.62, 0.45, p.y) * 0.8);                             // lado de dentro das pernas
   vec3 col = mix(uBase, uTan, smoothstep(0.5, 0.75, vn(p * 4.0)) * 0.6 * smoothstep(0.8, 0.55, p.y)); // tons ocre nos flancos e nas pernas
   col = mix(col, uLight, clamp(la, 0.0, 1.0));
@@ -115,38 +195,60 @@ vec3 wCoat(vec3 p, vec3 n){
   float saddle = smoothstep(-0.25, 0.45, n.y) * smoothstep(0.6, 0.72, p.y) * step(p.z, 0.42) * step(-0.57, p.z);     // sela escura mesclada no dorso
   saddle = max(saddle, smoothstep(0.4, 0.9, n.y) * smoothstep(0.72, 0.8, p.y) * step(p.z, 0.58) * 0.85);              // nuca
   col = mix(col, uDark * (0.45 + 1.9 * griz * griz), saddle * 0.95);                                                   // pelos de ponta preta mesclados
-  col = mix(col, uDark, hd * smoothstep(0.022, 0.008, abs(p.x)) * smoothstep(0.893, 0.912, p.y) * smoothstep(0.69, 0.76, p.z) * 0.55); // listra escura no alto do focinho
+  float bridge = hd * smoothstep(0.034 + (soft - 0.5) * 0.012, 0.004, abs(p.x)) * smoothstep(0.882, 0.912, p.y) * smoothstep(0.64, 0.74, p.z) * (1.0 - smoothstep(0.835, 0.865, p.z));
+  col = mix(col, mix(uBase, uTan, 0.55) * (0.78 + 0.3 * griz), bridge * 0.75);                                         // dorso do focinho ocre-acinzentado, de borda macia (não uma listra pintada)
   float ear = hd * smoothstep(0.985, 1.0, p.y);
   col = mix(col, uDark * 0.8, ear * (smoothstep(1.03, 1.07, p.y) + smoothstep(0.0, -0.6, n.z) * 0.6) * 0.9);         // orelhas: costas e pontas escuras
   float tl = smoothstep(-0.555, -0.6, p.z) * (1.0 - step(0.7, p.y));
-  col = mix(col, uDark * 1.15, tl * smoothstep(-0.2, 0.7, n.y) * 0.6);                                                 // cauda: em cima escura
-  col = mix(col, uDark * 0.55, tl * smoothstep(0.31, 0.27, p.y));                                                      // ponta preta
-  col = mix(col, vec3(0.035), hd * smoothstep(0.86, 0.872, p.z) * step(0.866, p.y));                                   // nariz
-  { // S-332: lábios pretos finos que acompanham o focinho e descem em curva até o canto da boca (antes: listra larga e borrada)
-    float lipY = 0.868 - 0.011 * smoothstep(0.80, 0.70, p.z) - 0.004 * smoothstep(0.735, 0.705, p.z);
-    float lip = (1.0 - smoothstep(0.0018, 0.0042, abs(p.y - lipY))) * smoothstep(0.698, 0.712, p.z) * smoothstep(0.016, 0.024, abs(p.x));
-    float corner = 1.0 - smoothstep(0.004, 0.009, length(vec2(p.y - (0.868 - 0.015), p.z - 0.707)));
-    col = mix(col, vec3(0.045), hd * clamp(max(lip, corner * 0.9), 0.0, 1.0));
-    col = mix(col, uLight * 1.04, hd * smoothstep(0.0045, 0.012, lipY - p.y) * (1.0 - smoothstep(0.012, 0.03, lipY - p.y)) * smoothstep(0.72, 0.76, p.z) * 0.6); // queixo claro logo abaixo do lábio
+  col = mix(col, uDark * (0.7 + 1.2 * griz), tl * smoothstep(-0.2, 0.7, n.y) * 0.6);                                   // cauda: em cima escura, mesclada
+  col = mix(col, uDark * 0.55, tl * smoothstep(0.33, 0.26, p.y));                                                      // ponta preta
+  // S-370: focinho de lobo — couro do nariz só na ponta (a peça 3D faz o resto), lábio escuro fino só perto do canto da boca
+  col = mix(col, vec3(0.06, 0.05, 0.05), hd * (1.0 - smoothstep(0.016, 0.03, length((p - uNose) * vec3(0.95, 1.2, 0.7)))) * 0.9);
+  {
+    float lipY = 0.866 - 0.005 * smoothstep(0.80, 0.72, p.z);
+    float lip = (1.0 - smoothstep(0.0012, 0.0032, abs(p.y - lipY))) * smoothstep(0.70, 0.715, p.z) * (1.0 - smoothstep(0.74, 0.785, p.z)) * smoothstep(0.016, 0.026, abs(p.x));
+    float corner = 1.0 - smoothstep(0.003, 0.008, length(vec2(p.y - 0.861, p.z - 0.71)));
+    col = mix(col, vec3(0.09, 0.075, 0.07), hd * clamp(max(lip * 0.62, corner * 0.72), 0.0, 1.0));
   }
-  col = mix(col, vec3(0.05), hd * (1.0 - smoothstep(0.012, 0.022, length(vec3(abs(p.x), p.y, p.z) - uEye))));        // contorno escuro dos olhos
+  { // olhos amendoados: contorno escuro fino, puxado para o canto de dentro, e a "lágrima" escura descendo para o focinho
+    vec3 q = vec3(abs(p.x), p.y, p.z) - uEye; vec3 N = normalize(vec3(0.55, 0.06, 0.83)), T = normalize(vec3(0.83, 0.0, -0.55));
+    float tq = dot(q, T), e = length(vec3(tq / (1.45 + 0.35 * step(tq, 0.0)), q.y / 0.75, dot(q, N)));
+    col = mix(col, vec3(0.05), hd * (1.0 - smoothstep(0.0125, 0.0185, e)));
+    vec3 a0 = uEye - T * 0.016 - vec3(0.0, 0.004, 0.0), a1 = a0 + vec3(-0.004, -0.02, 0.024); vec3 pa = vec3(abs(p.x), p.y, p.z) - a0, ba = a1 - a0;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0), tear = 1.0 - smoothstep(0.002, 0.006 + 0.004 * h, length(pa - ba * h));
+    col = mix(col, uDark * 0.6, hd * tear * (1.0 - h) * 0.55);
+  }
   col = mix(col, col * vec3(1.06, 0.97, 0.85), smoothstep(0.36, 0.14, p.y));                                           // patas um pouco ocre
-  col = mix(col, vec3(0.06, 0.05, 0.05), smoothstep(0.022, 0.008, p.y));                                               // almofadas e garras
+  col = mix(col, col * vec3(0.8, 0.74, 0.66), smoothstep(0.07, 0.012, p.y) * (0.7 + 0.3 * soft));                      // dedos: tom de terra, não "meia" branca
+  col = mix(col, vec3(0.07, 0.06, 0.055), smoothstep(0.012, 0.004, p.y));                                              // almofadas (só por baixo)
   return col * (0.88 + 0.24 * griz);
 }
+// comprimento do pelo (em metros, no lobo comum). legs: 0 = corpo, 1 = perna/rosto (pelo curto e assentado mesmo no lobo gigante)
+float wLegs(vec3 p){ return max(smoothstep(0.42, 0.3, p.y) * step(abs(p.z + 0.08), 0.6), wHead(p) * smoothstep(0.68, 0.74, p.z)); }
 float wFurLen(vec3 p){
   float L = 0.017;
   float hd = wHead(p);
-  L = mix(L, 0.042, smoothstep(0.27, 0.36, p.z) * (1.0 - smoothstep(0.56, 0.62, p.z)) * smoothstep(0.58, 0.7, p.y));   // colar do pescoço
-  L = mix(L, 0.036, hd * smoothstep(0.045, 0.07, abs(p.x)) * smoothstep(0.92, 0.88, p.y) * (1.0 - smoothstep(0.64, 0.7, p.z))); // bochechas
-  L = mix(L, 0.048, smoothstep(-0.55, -0.6, p.z) * (1.0 - step(0.69, p.y)));                                             // cauda
-  L = mix(L, 0.03, smoothstep(-0.44, -0.5, p.z) * smoothstep(0.38, 0.48, p.y) * (1.0 - smoothstep(0.66, 0.7, p.y)));     // "calças" das coxas
-  L = mix(L, 0.025, smoothstep(0.62, 0.55, p.y) * smoothstep(-0.3, -0.7, 0.0));                                          // barriga
-  L *= mix(0.25, 1.0, smoothstep(0.18, 0.34, p.y));                                                                       // patas: pelo curto
-  L *= 1.0 - 0.85 * hd * smoothstep(0.69, 0.75, p.z);                                                                     // focinho: curto
+  L = mix(L, 0.044, smoothstep(0.26, 0.36, p.z) * (1.0 - smoothstep(0.56, 0.63, p.z)) * smoothstep(0.56, 0.7, p.y));   // colar do pescoço (juba)
+  L = mix(L, 0.034, hd * smoothstep(0.045, 0.07, abs(p.x)) * smoothstep(0.92, 0.88, p.y) * (1.0 - smoothstep(0.64, 0.7, p.z))); // bochechas
+  L = mix(L, 0.03, smoothstep(-0.55, -0.6, p.z) * (1.0 - step(0.69, p.y)));                                              // cauda (o volume já está na malha)
+  L = mix(L, 0.028, smoothstep(-0.44, -0.5, p.z) * smoothstep(0.38, 0.48, p.y) * (1.0 - smoothstep(0.66, 0.7, p.y)));    // "calças" das coxas
+  L = mix(L, 0.022, smoothstep(0.6, 0.5, p.y) * (1.0 - wLegs(p)));                                                      // barriga
+  L = mix(L, 0.0065, smoothstep(0.42, 0.3, p.y) * step(abs(p.z + 0.08), 0.6));                                           // pernas: pelo curto e assentado
+  L *= smoothstep(0.035, 0.11, p.y);                                                                                     // dedos: quase sem pelo (aparecem os dedos e as garras)
+  L *= 1.0 - 0.62 * hd * smoothstep(0.69, 0.75, p.z);                                                                     // focinho: curto e aveludado
   L *= 1.0 - 0.75 * hd * smoothstep(0.98, 1.0, p.y);                                                                      // orelhas
-  L *= smoothstep(0.016, 0.034, length(vec3(abs(p.x), p.y, p.z) - uEye));                                                // nada de pelo sobre os olhos
-  return L;
+  L *= 1.0 - hd * smoothstep(0.685, 0.715, p.z) * (1.0 - smoothstep(0.007, 0.018, abs(p.y - 0.865)));                  // S-370: sem pelo na emenda da boca (as camadas se cruzavam ali e desenhavam uma linha escura)
+  L *= smoothstep(0.018, 0.036, length(vec3(abs(p.x), p.y, p.z) - uEye));                                                // nada de pelo sobre os olhos
+  L *= 1.0 - hd * (1.0 - smoothstep(0.026, 0.05, length(p - uNose)));                                              // nem sobre o nariz
+  return L * (0.72 + 0.56 * vn(p * 21.0));                                                                               // tufos: comprimento irregular
+}
+// direção em que o pelo deita: para trás e para baixo no corpo, para baixo nas pernas e na cauda, para trás no rosto
+vec3 wComb(vec3 p){
+  vec3 c = vec3(0.0, -0.55, -0.85);
+  c = mix(c, vec3(0.0, -1.0, -0.15), smoothstep(0.5, 0.36, p.y) * step(abs(p.z + 0.08), 0.6));
+  c = mix(c, vec3(0.0, -0.85, -0.5), smoothstep(-0.56, -0.62, p.z) * (1.0 - step(0.7, p.y)));
+  c = mix(c, vec3(0.0, 0.15, -1.0), wHead(p));
+  return normalize(c);
 }`;
 /* S-332: fio de pelo redondo que afina até a ponta, projetado em TRÊS planos misturados pela normal (sem emendas
    onde o eixo dominante troca — era o que soltava "pedacinhos" na cauda) e com borda suave (fwidth) para a
@@ -163,8 +265,37 @@ float furCover(vec3 p, vec3 n, float den, float f){
   vec3 w = pow(abs(normalize(n)), vec3(4.0)); w /= (w.x + w.y + w.z + 1e-5);
   return furPlane(p.yz * den + vec2(0.37, 0.71), f, 1.0) * w.x + furPlane(p.zx * den + vec2(0.74, 0.42), f, 2.0) * w.y + furPlane(p.xy * den + vec2(0.11, 0.93), f, 3.0) * w.z;
 }`;
+/* S-332/S-370: fio de pelo projetado em TRÊS planos misturados pela normal, com borda suave (fwidth) para a
+   transparência por cobertura (alphaToCoverage + MSAA). S-370: o fio agora é uma MECHA alongada na direção em que o
+   pelo deita (antes era um pontinho redondo — de lado as camadas viravam "pixels"), cada fio tem o seu comprimento
+   (pontas irregulares) e os fios se juntam em tufos. Devolve (cobertura, sorteio do fio) para variar a cor fio a fio. */
+const WOLF_STRAND_GLSL = `
+float wfHash(vec2 c, float s){ return fract(sin(dot(c, vec2(12.9898, 78.233)) + s * 3.7) * 43758.5453); }
+vec2 wfPlane(vec2 q, vec2 cd, float f, float s){
+  float k = length(cd); vec2 d1 = k > 0.2 ? cd / k : vec2(1.0, 0.0);
+  vec2 d2 = vec2(-d1.y, d1.x);
+  q += vec2(sin(q.y * 0.21 + s * 1.7) + sin(q.y * 0.07 + q.x * 0.05), sin(q.x * 0.17 + s * 2.3) + sin(q.x * 0.06 - q.y * 0.04)) * 0.7; // mechas levemente onduladas (nada de riscos paralelos)
+  float st = mix(1.0, 2.3, smoothstep(0.2, 0.7, k));                                // mecha deitada = alongada no sentido do pelo
+  vec2 u = vec2(dot(q, d1) / st, dot(q, d2)); u.y += floor(u.x) * 0.5;               // fileiras desencontradas (sem grade)
+  vec2 c = floor(u); float h = wfHash(c, s), len = 0.55 + 0.45 * fract(h * 13.7);
+  if (f > len) return vec2(0.0, h);
+  vec2 fr = fract(u) - 0.5 - (vec2(fract(h * 91.7), fract(h * 57.3)) - 0.5) * 0.45;
+  fr.x -= f * 0.35 * (k > 0.2 ? 1.0 : 0.0);                                          // a ponta tomba para o sentido do pelo
+  float dd = length(fr), th = (1.0 - f / len * 0.82) * (0.48 + 0.2 * h), aa = max(fwidth(dd) * 1.2, 0.03);
+  return vec2(1.0 - smoothstep(th - aa, th + aa, dd), h);
+}
+vec2 wfCover(vec3 p, vec3 n, vec3 comb, float den, float f){
+  vec3 w = pow(abs(normalize(n)), vec3(4.0)); w /= (w.x + w.y + w.z + 1e-5);
+  vec2 r = vec2(0.0);                                                                // só os planos que contam (economia: quase sempre 1 ou 2)
+  if (w.x > 0.03) r += wfPlane(p.yz * den + vec2(0.37, 0.71), comb.yz, f, 1.0) * w.x;
+  if (w.y > 0.03) r += wfPlane(p.zx * den + vec2(0.74, 0.42), comb.zx, f, 2.0) * w.y;
+  if (w.z > 0.03) r += wfPlane(p.xy * den + vec2(0.11, 0.93), comb.xy, f, 3.0) * w.z;
+  return r;
+}`;
 const MATS = {};
-function coatUniforms(sh, C) { Object.assign(sh.uniforms, { uBase: { value: C.base }, uLight: { value: C.light }, uDark: { value: C.dark }, uTan: { value: C.tan }, uEye: { value: new THREE.Vector3(...EYE) } }); }
+// S-370: a chave do programa leva uma assinatura do código do shader (mudou o shader = programa novo; antes uma chave fixa reaproveitava o programa antigo)
+const SIG = (() => { let h = 0; const t = COAT_GLSL + WOLF_STRAND_GLSL; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); })();
+function coatUniforms(sh, C) { Object.assign(sh.uniforms, { uBase: { value: C.base }, uLight: { value: C.light }, uDark: { value: C.dark }, uTan: { value: C.tan }, uEye: { value: new THREE.Vector3(...EYE) }, uNose: { value: new THREE.Vector3(...NOSE) } }); }
 function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo (lobo gigante do Caçador = pelagem bem mais longa)
   const KEY = color + '|' + fur; if (MATS[KEY]) return MATS[KEY];
   const base = new THREE.Color(color), C = { base, light: base.clone().lerp(new THREE.Color('#efe6d4'), 0.72), dark: base.clone().multiplyScalar(0.22), tan: base.clone().lerp(new THREE.Color('#b8925e'), 0.55) };
@@ -174,31 +305,33 @@ function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo
     sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position; vON = normal;');
     sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON;\n' + SDF_NOISE_GLSL + COAT_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= wCoat(vOP, normalize(vON));');
   };
-  body.customProgramCacheKey = () => 'wolf-body';
+  body.customProgramCacheKey = () => 'wolf-body-' + SIG;
   // camadas de pelo: a mesma malha empurrada pela normal (antes da pele/ossos), fios penteados para trás e para baixo
   const shells = [];
-  const NL = 7;
+  const NL = fur > 1.3 ? 10 : 8; // S-370: mais camadas no pelo longo — de lado não aparecem mais os "degraus" entre elas
+  const K = `float wK(vec3 p){ return mix(${fur.toFixed(3)}, ${Math.min(fur, 1.15).toFixed(3)}, wLegs(p)); }\n`; // pelo longo no corpo; pernas e rosto continuam de lobo
   for (let i = 1; i <= NL; i++) {
     const f = i / NL, m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1 });
     m.alphaToCoverage = true; // borda dos fios suave com o MSAA, sem ordenar transparências
     m.onBeforeCompile = sh => {
       coatUniforms(sh, C); sh.uniforms.uF = { value: f };
-      sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-        vOP = position; vON = normal; float h = wFurLen(position) * uF * ${fur.toFixed(3)};
-        transformed += normal * h + vec3(0.0, -0.55, -0.85) * h * uF * 0.75;`);
-      sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + FUR_STRAND_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-        float L = wFurLen(vOP);
-        if (L < 0.0025) discard;
-        float den = mix(300.0, 120.0, smoothstep(0.02, 0.075, L * ${fur.toFixed(3)}));   // pelo longo (cauda, colar) = mechas mais grossas e contínuas
-        float a = furCover(vOP, vON, den, uF);
-        a = max(a, (1.0 - smoothstep(0.0, 0.32, uF)) * 0.85);                                  // subpelo denso junto da pele: sem buracos entre a pele e os fios
+      sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        vOP = position; vON = normal; float h = wFurLen(position) * wK(position) * uF;
+        transformed += normal * h + wComb(position) * h * uF * 0.8;`);
+      sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + WOLF_STRAND_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        float L = wFurLen(vOP) * wK(vOP);
+        if (L < 0.003) discard;
+        float den = mix(330.0, 150.0, smoothstep(0.02, 0.07, L));                               // pelo longo (juba, cauda) = mechas mais largas
+        vec2 fc = wfCover(vOP, vON, wComb(vOP), den, uF);
+        float a = fc.x;
+        a = max(a, (1.0 - smoothstep(0.0, 0.3, uF)) * 0.85);                                     // subpelo denso junto da pele: sem buracos entre a pele e os fios
         float ndv = abs(dot(normalize(vNormal), normalize(vViewPosition)));
-        a *= mix(1.0, smoothstep(0.04, 0.5, ndv), uF * 0.8);                                     // silhueta: camadas de fora se desfazem em franja macia
+        a *= mix(1.0, smoothstep(0.0, 0.3, ndv), uF * 0.55);                                     // silhueta: as camadas de fora afinam em franja macia
         if (a < 0.04) discard;
         diffuseColor.a = a;
-        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.6, 1.1, uF * uF * 0.4 + uF * 0.6) * (0.94 + 0.08 * vn(vOP * 90.0));`);
+        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.62, 1.08, uF * uF * 0.4 + uF * 0.6) * (0.86 + 0.28 * fc.y);`);
     };
-    m.customProgramCacheKey = () => 'wolf-shell-' + i + '-' + fur;
+    m.customProgramCacheKey = () => 'wolf-shell-' + SIG + '-' + i + '-' + NL + '-' + fur;
     shells.push(m);
   }
   return (MATS[KEY] = { body, shells });
@@ -218,38 +351,39 @@ export function realWolf(color = '#8a8f99', opts = {}) {
   const geo = wolfGeo(), M = wolfMats(color, opts.fur || 1);
   const rig = sdfRig(geo, WB, M.body), { at, bones } = rig, R = n => bones[n].rotation; body.add(rig.mesh);
   const shells = M.shells.map(m => { const s = new THREE.SkinnedMesh(geo, m); s.bind(rig.mesh.skeleton, rig.mesh.bindMatrix); s.frustumCulled = false; s.castShadow = false; s.receiveShadow = true; body.add(s); return s; });
-  let shellsOn = true;
-  rig.mesh.onBeforeRender = (r, sc, cam) => { const p = rig.mesh.getWorldPosition(_v); const on = cam.position.distanceTo(p) < 28; if (on !== shellsOn) { shellsOn = on; shells.forEach(s => s.visible = on); } }; // longe: só a malha pintada
+  let lod = 0;
+  rig.mesh.onBeforeRender = (r, sc, cam) => { // perto: todas as camadas de pelo; a meia distância, uma sim outra não (S-370: o pelo ficou mais denso de perto sem pesar de longe); longe: só a malha pintada
+    const d = cam.position.distanceTo(rig.mesh.getWorldPosition(_v)), want = d < 11 ? 0 : d < 28 ? 1 : 2;
+    if (want !== lod) { lod = want; shells.forEach((s, i) => s.visible = lod === 0 || (lod === 1 && (i & 1) === 1)); }
+  };
 
-  // olhos âmbar amendoados com contorno preto, pupila, brilho e pálpebra
-  const IRIS = new THREE.MeshStandardMaterial({ color: '#d9a03a', emissive: '#8a5010', emissiveIntensity: 0.15, roughness: 0.08 }), DARK = new THREE.MeshStandardMaterial({ color: '#0d0a0a', roughness: 0.35 });
-  const LID = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.6), roughness: 0.95 });
-  const lids = [];
+  // S-370: olhos vivos — íris âmbar com fibras e aro escuro, pupila redonda, córnea molhada (brilho de verdade da luz) e pálpebra
+  const IRIS = new THREE.MeshPhysicalMaterial({ color: '#ffffff', vertexColors: true, emissive: '#6a3a08', emissiveIntensity: 0.15, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.03 });
+  const LID = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.5), roughness: 0.95 });
+  const lids = [], eg0 = wolfEyeGeo();
   for (const s of [-1, 1]) {
     const eg = new THREE.Group(); eg.rotation.set(-0.08, s * 0.62, s * -0.18); at('head', eg, s * EYE[0], EYE[1], EYE[2] - 0.006);
-    const ir = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 20, 14), IRIS); ir.scale.set(1.3, 0.72, 0.4); eg.add(ir);
-    const pu = new THREE.Mesh(new THREE.SphereGeometry(0.0052, 12, 10), DARK); pu.scale.set(1, 1, 0.4); pu.position.z = 0.0052; eg.add(pu);
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(0.0022, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); hl.position.set(0.004, 0.004, 0.0065); eg.add(hl);
+    const ir = new THREE.Mesh(eg0, IRIS); ir.scale.set(1.32, 0.78, 0.42); eg.add(ir);
     const lid = new THREE.Mesh(new THREE.SphereGeometry(0.0165, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), LID); lid.scale.set(1.25, 0.05, 0.6); lid.position.y = 0.001; eg.add(lid); lids.push(lid);
   }
-  // nariz úmido com narinas
-  { const ng = new THREE.SphereGeometry(0.0175, 22, 16); ng.scale(1.25, 0.8, 0.62); // S-332: nariz menor e assentado (não uma bola saltada) const P = ng.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k), y = P.getY(k), z = P.getZ(k); if (z > 0.008 && y < 0.004 && Math.abs(Math.abs(x) - 0.009) < 0.006) P.setZ(k, z - 0.005); } ng.computeVertexNormals();
-    at('head', new THREE.Mesh(ng, new THREE.MeshStandardMaterial({ color: '#100c0c', roughness: 0.42 })), 0, NOSE[1] + 0.002, NOSE[2] - 0.013); } // úmido, mas sem brilho de bola de bilhar
+  // S-370: nariz de lobo — couro escuro e úmido, mais largo em cima, narinas em vírgula abertas para os lados e o sulco do meio
+  { const nm = new THREE.MeshPhysicalMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.55, clearcoat: 0.7, clearcoatRoughness: 0.28 });
+    const n = at('head', new THREE.Mesh(wolfNoseGeo(), nm), 0, NOSE[1] + 0.002, NOSE[2] - 0.0075); n.rotation.x = 0.1; }
   // boca: fundo escuro, língua, dentes (presas em cima e embaixo)
-  const TOOTH = new THREE.MeshStandardMaterial({ color: '#f1ebdc', roughness: 0.35 });
-  const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshStandardMaterial({ color: '#2a0d0d', roughness: 0.7 })); mouth.scale.set(0.026, 0.01, 0.075); at('head', mouth, 0, 0.866, 0.765);
-  const tongue = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshStandardMaterial({ color: '#c0566a', roughness: 0.45 })); tongue.scale.set(0.02, 0.006, 0.06); at('jaw', tongue, 0, 0.864, 0.79);
+  const TOOTH = new THREE.MeshStandardMaterial({ color: '#f1ebdc', roughness: 0.35 }), inMouth = []; // S-370: boca, língua e dentes só aparecem com a boca aberta (fechada, a borda deles vazava pela emenda e "desenhava" a boca)
+  const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshStandardMaterial({ color: '#2a0d0d', roughness: 0.7 })); mouth.scale.set(0.026, 0.01, 0.075); at('head', mouth, 0, 0.866, 0.765); inMouth.push(mouth);
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), new THREE.MeshStandardMaterial({ color: '#c0566a', roughness: 0.45 })); tongue.scale.set(0.02, 0.006, 0.06); at('jaw', tongue, 0, 0.864, 0.79); inMouth.push(tongue);
   for (const s of [-1, 1]) {
-    const up = new THREE.Mesh(new THREE.ConeGeometry(0.0048, 0.026, 10), TOOTH); up.rotation.x = Math.PI; at('head', up, s * 0.022, 0.86, 0.835);
-    const lo = new THREE.Mesh(new THREE.ConeGeometry(0.0042, 0.02, 10), TOOTH); at('jaw', lo, s * 0.018, 0.872, 0.812);
-    for (let k = 0; k < 3; k++) { const pm = new THREE.Mesh(new THREE.ConeGeometry(0.003, 0.01, 6), TOOTH); pm.rotation.x = Math.PI; at('head', pm, s * 0.027, 0.864, 0.8 - k * 0.022); }
+    const up = new THREE.Mesh(new THREE.ConeGeometry(0.0048, 0.026, 10), TOOTH); up.rotation.x = Math.PI; at('head', up, s * 0.022, 0.86, 0.835); inMouth.push(up);
+    const lo = new THREE.Mesh(new THREE.ConeGeometry(0.0042, 0.02, 10), TOOTH); at('jaw', lo, s * 0.018, 0.872, 0.812); inMouth.push(lo);
+    for (let k = 0; k < 3; k++) { const pm = new THREE.Mesh(new THREE.ConeGeometry(0.003, 0.01, 6), TOOTH); pm.rotation.x = Math.PI; at('head', pm, s * 0.027, 0.864, 0.8 - k * 0.022); inMouth.push(pm); }
   }
-  for (let k = 0; k < 4; k++) { const inc = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.008, 0.003), TOOTH); at('head', inc, (k - 1.5) * 0.0062, 0.864, 0.855 - Math.abs(k - 1.5) * 0.003); }
-  // garras escuras nas pontas dos dedos
-  const CLAW = new THREE.MeshStandardMaterial({ color: '#1c1714', roughness: 0.4 });
-  for (const s of [-1, 1]) for (let q = 0; q < 4; q++) {
-    const cf = new THREE.Mesh(new THREE.ConeGeometry(0.004, 0.016, 6), CLAW); cf.rotation.x = Math.PI / 2 + 0.6; at('pa' + s, cf, s * 0.09 + (q - 1.5) * 0.019, 0.016, 0.36 + (Math.abs(q - 1.5) < 1 ? 0.008 : 0));
-    const ch = new THREE.Mesh(new THREE.ConeGeometry(0.0038, 0.015, 6), CLAW); ch.rotation.x = Math.PI / 2 + 0.6; at('mt' + s, ch, s * 0.1 + (q - 1.5) * 0.018, 0.016, -0.394 + (Math.abs(q - 1.5) < 1 ? 0.008 : 0));
+  for (let k = 0; k < 4; k++) { const inc = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.008, 0.003), TOOTH); at('head', inc, (k - 1.5) * 0.0062, 0.864, 0.855 - Math.abs(k - 1.5) * 0.003); inMouth.push(inc); }
+  // S-370: dedos de verdade (4 por pata + o "polegar" alto na pata da frente), com almofadas por baixo e garras curvas
+  const CLAW = new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.38 });
+  for (const s of [-1, 1]) for (const k of ['f', 'h']) {
+    const bn = (k === 'f' ? 'pa' : 'mt') + s, P = pawGeo(k, s);
+    at(bn, new THREE.Mesh(P.toes, M.body), 0, 0, 0); at(bn, new THREE.Mesh(P.claws, CLAW), 0, 0, 0);
   }
   root.traverse(o => { if (o.isMesh && !o.isSkinnedMesh) o.castShadow = true; });
 
@@ -284,7 +418,7 @@ export function realWolf(color = '#8a8f99', opts = {}) {
   // estado
   const W = { walk: 0, trot: 0, gallop: 0 }, wp = new THREE.Vector3(), prev = new THREE.Vector3(), _q = new THREE.Quaternion(), _e = new THREE.Euler();
   let slope = 0, lift0 = 0, has = false, spd = 0, ph = 0, mv = 0, yaw0 = 0, yawRate = 0, lt = 0, at0 = -9, hitT = -9, hitDir = 1, sniff = 0, look = 0, blinkAt = 2, earTw = [0, 0], tailLag = 0, pant = 0;
-  const eyeMat = IRIS;
+  const eyeMat = IRIS; let mouthShown = true;
   const api = {
     root, eyeMat,
     attack() { at0 = lt; },
@@ -345,6 +479,7 @@ export function realWolf(color = '#8a8f99', opts = {}) {
       R('head').z = bite && bk > 0.42 && bk < 0.62 ? Math.sin((bk - 0.42) * 70) * 0.18 : 0; // sacode ao morder
       pant += (((trot + gal) * mv > 0.5 ? 1 : 0) - pant) * Math.min(1, dt * 0.8);
       R('jaw').x = open * 1.05 + pant * (0.2 + Math.sin(t * 9) * 0.04) + (1 - mv) * Math.max(0, Math.sin(t * 0.7)) * 0.03;
+      { const show = R('jaw').x > 0.035; if (show !== mouthShown) { mouthShown = show; for (const o of inMouth) o.visible = show; } }
       tongue.scale.z = 0.06 + pant * 0.025;
       // orelhas: em pé e atentas; deitam no galope e no bote; mexem sozinhas
       for (let k = 0; k < 2; k++) { const s = k ? 1 : -1; earTw[k] = Math.max(0, earTw[k] - dt * 4); if (Math.random() < dt * 0.25) earTw[k] = 1; R('ear' + s).x = -(gal * 0.7 * mv + Math.max(crouch, lunge) * 0.9 + flinch * 0.8) + earTw[k] * 0.25; R('ear' + s).z = s * (-earTw[k] * 0.3 - (gal * mv + crouch) * 0.25); R('ear' + s).y = s * look * 0.25; }
@@ -356,7 +491,7 @@ export function realWolf(color = '#8a8f99', opts = {}) {
       });
       // piscar
       let bl = 0; if (t > blinkAt) { const q = (t - blinkAt) / 0.13; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) blinkAt = t + 2.5 + Math.random() * 3.5; }
-      for (const l of lids) l.scale.y = Math.max(0.05, bl * 0.75, Math.max(crouch, lunge) * 0.3);
+      for (const l of lids) { l.scale.y = Math.max(bl * 0.75, Math.max(crouch, lunge) * 0.3); l.visible = l.scale.y > 0.06; } // aberta = escondida (antes a borda cortava o olho)
       IRIS.emissiveIntensity = 0.15 + Math.max(crouch, lunge) * 0.6;
     },
   };

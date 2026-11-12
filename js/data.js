@@ -363,7 +363,7 @@ const ITEMS = {
   adaga_simples: { name: 'Adaga Simples', type: 'arma', wtype: 'adaga', icon: '🗡️', price: 60, atk: 14, slots: 2, lv: 1 },
   adaga_afiada: { name: 'Adaga Afiada', type: 'arma', wtype: 'adaga', icon: '🗡️', price: 900, atk: 38, slots: 1, lv: 12, bonuses: { crit: 3 } },
   espada_curta: { name: 'Espada Curta', type: 'arma', wtype: 'espada', icon: '⚔️', price: 300, atk: 30, slots: 2, lv: 1 },
-  espada_longa: { name: 'Espada Longa', type: 'arma', wtype: 'espada', icon: '⚔️', price: 2200, atk: 70, slots: 1, lv: 15 },
+  espada_longa: { name: 'Espada Longa', type: 'arma', wtype: 'espada', icon: '⚔️', price: 2200, atk: 70, slots: 1, lv: 15, wlen: 1.24 }, // S-362: wlen = comprimento visual da lâmina (1 = espada padrão de uma mão)
   lamina_de_musgo: { name: 'Lâmina de Musgo', type: 'arma', wtype: 'espada', icon: '🌿', price: 9000, atk: 110, slots: 2, lv: 25, bonuses: { vit: 3, hpRegen: 10 }, desc: 'Viva. Cresce musgo em sua guarda.' },
   lanca_de_ferro: { name: 'Lança de Ferro', type: 'arma', wtype: 'lanca', icon: '🔱', price: 1500, atk: 58, slots: 1, lv: 8 },
   cajado_de_salgueiro: { name: 'Cajado de Salgueiro', type: 'arma', wtype: 'cajado', icon: '🪄', price: 300, atk: 10, matk: 25, slots: 2, lv: 1 },

@@ -236,3 +236,11 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Raças precisam de identidade de rosto, não só de escala: elfo = orelha longa visível de longe + rosto fino/olhos puxados.
 - Efeito mágico = partículas suaves e translúcidas; geometria sólida branca ("lombriga") é antipadrão.
 - Animações: referências explícitas Skyrim (ladrão com adaga) e "outras com animações melhores"; postura de cavaleiro firme, lâmina rente à perna em repouso.
+
+### Rodada de acabamento 2 (S-358 a S-370), 2026-11-11
+- Ele dá nota por vista ("de frente 10, de costas 3"): costas lisas/chapadas sem símbolo nem detalhe são reprovadas — toda roupa precisa de costas trabalhadas (bordado, dobras, debrum).
+- Uma correção não pode criar defeito vizinho: a orelha élfica puxou a têmpora e deixou o elfo "meio careca"; o afinamento do rosto puxou o pescoço para dentro da gola. Ao deformar malhas, isole a região (meça o crânio/pescoço) e confira o que está em volta (cabelo, gola).
+- Arco: a mão direita tem de aparecer, com os dedos na corda junto ao rosto; corda sempre ligada aos dedos. É "o maior gargalo dos Arqueiros".
+- Combate: "artificial" = só o braço se mexe. Golpe bom usa quadril, joelhos, passo, ombro e cabeça, e arma de tamanho real exige movimento amplo.
+- Peças precisam estar visivelmente PRESAS (capa com broches/rolo; saiote ligado ao cinto; nada "flutuando"), e nada de excesso de peças ("bagunçado", "X incompleto").
+- Lobo: pelo com cara "tecnológica" (pontos/pixels) e rosto pintado são rejeitados; patas precisam de dedos e unhas.
