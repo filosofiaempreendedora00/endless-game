@@ -244,3 +244,12 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Combate: "artificial" = só o braço se mexe. Golpe bom usa quadril, joelhos, passo, ombro e cabeça, e arma de tamanho real exige movimento amplo.
 - Peças precisam estar visivelmente PRESAS (capa com broches/rolo; saiote ligado ao cinto; nada "flutuando"), e nada de excesso de peças ("bagunçado", "X incompleto").
 - Lobo: pelo com cara "tecnológica" (pontos/pixels) e rosto pintado são rejeitados; patas precisam de dedos e unhas.
+
+### Rodada 3 de acabamento + câmera (S-371 a S-382), 2026-11-12
+- Pedido de controle: o CURSOR guia a câmera sempre (como na mira), mesmo parado — WoW/MMO com câmera viva. Q e janelas não podem disparar isso.
+- Reincidência: "o sol eu pedi no OMBRO DIREITO e foi ignorado" — eu tinha posto no alto do peito. Quando ele diz uma posição, siga ao pé da letra (ombreira, não peito).
+- Guerreiro "uma das piores": saiote + cintura fina leem como afeminado para ele; quer silhueta robusta (cintura reta, mais placas). Couro demais = "bagunça".
+- Ladinos: roupa folgada = "caimento tenebroso"; capuz caído virou padrão da linha do ladino.
+- Magos precisam PARECER magos (robe longo, mangas largas, bordado, evolução clara) — referências Skyrim/RO/WoW; o Paladino é a régua de acabamento.
+- Arco: ele mesmo descreveu a solução (pé de trás/da frente conforme a mira) — trate as descrições físicas dele como especificação.
+- Ferramenta do Q é sagrada: recorte errado ("marquei o rosto e veio o pé") é bug de prioridade.

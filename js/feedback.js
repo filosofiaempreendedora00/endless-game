@@ -328,10 +328,12 @@ const FB = {
       x = Math.max(0, x - pad); y = Math.max(0, y - pad);
       w = Math.min(VW - x, w + pad * 2); h = Math.min(VH - y, h + pad * 2);
       if (w < 20 || h < 20) return null;
-      const sc = Math.min(1, 640 / (w * DPR)) * DPR;
+      // S-380: escala REAL da tela do jogo (a qualidade gráfica muda a resolução; antes o recorte saía deslocado — marcava o rosto e vinha o pé)
+      const kx = canvas.width / (canvas.clientWidth || VW), ky = canvas.height / (canvas.clientHeight || VH);
+      const sc = Math.min(1, 640 / (w * kx)) * kx;
       const c = document.createElement('canvas');
-      c.width = Math.round(w * sc); c.height = Math.round(h * sc);
-      c.getContext('2d').drawImage(canvas, x * DPR, y * DPR, w * DPR, h * DPR, 0, 0, c.width, c.height);
+      c.width = Math.round(w * sc); c.height = Math.round(h * sc * ky / kx);
+      c.getContext('2d').drawImage(canvas, x * kx, y * ky, w * kx, h * ky, 0, 0, c.width, c.height);
       const url = c.toDataURL('image/png');
       this.captureUi(c, x, y, w, h, url);
       return url;

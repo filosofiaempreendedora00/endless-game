@@ -74,16 +74,18 @@ function wolfParts() {
     E([s * 0.1, 0.6, -0.42], [0.074, 0.15, 0.13], 'th' + s, 0.08);
     C([s * 0.105, 0.62, -0.42], [s * 0.105, 0.44, -0.3], 0.094, 0.05, 'th' + s, 0.06);
     C([s * 0.1, 0.44, -0.31], [s * 0.1, 0.2, -0.505], 0.049, 0.025, 'sh' + s, 0.04);
+    E([s * 0.088, 0.53, -0.29], [0.052, 0.075, 0.075], 'th' + s, 0.09); // S-381: prega do flanco liga o joelho à barriga (o joelho não fica uma "bola" solta)
     E([s * 0.1, 0.37, -0.38], [0.041, 0.08, 0.05], 'sh' + s, 0.05);
     E([s * 0.1, 0.2, -0.522], [0.021, 0.03, 0.028], 'mt' + s, 0.02);
     C([s * 0.1, 0.2, -0.505], [s * 0.1, 0.044, -0.458], 0.025, 0.025, 'mt' + s, 0.024);
     E([s * 0.1, 0.03, -0.456], [0.033, 0.026, 0.036], 'mt' + s, 0.03);
   }
   // cauda grossa, caída e afinando na ponta
-  C([0, 0.67, -0.54], [0, 0.575, -0.655], 0.044, 0.062, 't1', 0.05);
-  C([0, 0.575, -0.655], [0, 0.455, -0.705], 0.066, 0.078, 't2', 0.04);
-  C([0, 0.455, -0.705], [0, 0.335, -0.72], 0.078, 0.064, 't3', 0.04);
-  C([0, 0.335, -0.72], [0, 0.235, -0.708], 0.06, 0.018, 't4', 0.03);
+  // S-381: cauda de volume CHEIO (o "pincel" de pelo é a própria malha; as camadas só fazem a franja curta por cima)
+  C([0, 0.67, -0.54], [0, 0.575, -0.655], 0.05, 0.07, 't1', 0.06);
+  C([0, 0.575, -0.655], [0, 0.455, -0.705], 0.074, 0.088, 't2', 0.05);
+  C([0, 0.455, -0.705], [0, 0.335, -0.72], 0.088, 0.074, 't3', 0.05);
+  C([0, 0.335, -0.72], [0, 0.215, -0.703], 0.07, 0.016, 't4', 0.05); // afina até a ponta (sem "bola" no fim)
   return P;
 }
 let PARTS = null, GEO = null, EYE = null, NOSE = null;
@@ -179,6 +181,14 @@ function pawGeo(k, s) { // em coordenadas do corpo em repouso (presas ao osso da
 const COAT_GLSL = `
 uniform vec3 uBase, uLight, uDark, uTan, uEye, uNose;
 float wHead(vec3 p){ return smoothstep(0.55, 0.6, p.z) * smoothstep(0.78, 0.82, p.y); }
+// direção em que o pelo deita: para trás e para baixo no corpo, para baixo nas pernas e na cauda, para trás no rosto
+vec3 wComb(vec3 p){
+  vec3 c = vec3(0.0, -0.55, -0.85);
+  c = mix(c, vec3(0.0, -1.0, -0.15), smoothstep(0.5, 0.36, p.y) * step(abs(p.z + 0.08), 0.6));
+  c = mix(c, vec3(0.0, -0.85, -0.5), smoothstep(-0.56, -0.62, p.z) * (1.0 - step(0.7, p.y)));
+  c = mix(c, vec3(0.0, 0.15, -1.0), wHead(p));
+  return normalize(c);
+}
 vec3 wCoat(vec3 p, vec3 n){
   float hd = wHead(p);
   float soft = vn(p * 18.0);                                                                                           // S-370: bordas das manchas irregulares (nada de contorno "desenhado")
@@ -191,17 +201,18 @@ vec3 wCoat(vec3 p, vec3 n){
   la = max(la, smoothstep(0.2, 0.9, -n.x * sign(p.x)) * smoothstep(0.62, 0.45, p.y) * 0.8);                             // lado de dentro das pernas
   vec3 col = mix(uBase, uTan, smoothstep(0.5, 0.75, vn(p * 4.0)) * 0.6 * smoothstep(0.8, 0.55, p.y)); // tons ocre nos flancos e nas pernas
   col = mix(col, uLight, clamp(la, 0.0, 1.0));
-  float griz = vn(p * vec3(150.0, 150.0, 60.0));
-  float saddle = smoothstep(-0.25, 0.45, n.y) * smoothstep(0.6, 0.72, p.y) * step(p.z, 0.42) * step(-0.57, p.z);     // sela escura mesclada no dorso
-  saddle = max(saddle, smoothstep(0.4, 0.9, n.y) * smoothstep(0.72, 0.8, p.y) * step(p.z, 0.58) * 0.85);              // nuca
-  col = mix(col, uDark * (0.45 + 1.9 * griz * griz), saddle * 0.95);                                                   // pelos de ponta preta mesclados
+  vec3 gq = p * 120.0; vec3 cb = wComb(p); gq -= cb * dot(gq, cb) * 0.85;
+  float griz = vn(gq) * 0.75 + vn(p * 23.0) * 0.25;                                                                  // S-381: pontas escuras em MECHAS (esticadas no sentido do pelo), não pontinhos
+  float saddle = smoothstep(-0.25, 0.45, n.y) * smoothstep(0.6, 0.72, p.y) * smoothstep(0.5, 0.34, p.z + (soft - 0.5) * 0.06) * smoothstep(-0.63, -0.52, p.z); // sela escura mesclada no dorso (S-381: bordas macias, sem linha reta)
+  saddle = max(saddle, smoothstep(0.4, 0.9, n.y) * smoothstep(0.72, 0.8, p.y) * smoothstep(0.64, 0.52, p.z) * 0.85);  // nuca
+  col = mix(col, uDark * (0.6 + 1.2 * griz), saddle * 0.9);                                                            // pelos de ponta preta mesclados
   float bridge = hd * smoothstep(0.034 + (soft - 0.5) * 0.012, 0.004, abs(p.x)) * smoothstep(0.882, 0.912, p.y) * smoothstep(0.64, 0.74, p.z) * (1.0 - smoothstep(0.835, 0.865, p.z));
   col = mix(col, mix(uBase, uTan, 0.55) * (0.78 + 0.3 * griz), bridge * 0.75);                                         // dorso do focinho ocre-acinzentado, de borda macia (não uma listra pintada)
   float ear = hd * smoothstep(0.985, 1.0, p.y);
   col = mix(col, uDark * 0.8, ear * (smoothstep(1.03, 1.07, p.y) + smoothstep(0.0, -0.6, n.z) * 0.6) * 0.9);         // orelhas: costas e pontas escuras
-  float tl = smoothstep(-0.555, -0.6, p.z) * (1.0 - step(0.7, p.y));
+  float tl = smoothstep(-0.555, -0.6, p.z) * (1.0 - smoothstep(0.66, 0.72, p.y));
   col = mix(col, uDark * (0.7 + 1.2 * griz), tl * smoothstep(-0.2, 0.7, n.y) * 0.6);                                   // cauda: em cima escura, mesclada
-  col = mix(col, uDark * 0.55, tl * smoothstep(0.33, 0.26, p.y));                                                      // ponta preta
+  col = mix(col, uDark * (0.7 + 0.6 * griz), tl * smoothstep(0.32, 0.24, p.y + (soft - 0.5) * 0.03) * 0.85);              // ponta escura, mesclada (S-381: não um "pompom" preto)
   // S-370: focinho de lobo — couro do nariz só na ponta (a peça 3D faz o resto), lábio escuro fino só perto do canto da boca
   col = mix(col, vec3(0.06, 0.05, 0.05), hd * (1.0 - smoothstep(0.016, 0.03, length((p - uNose) * vec3(0.95, 1.2, 0.7)))) * 0.9);
   {
@@ -221,16 +232,16 @@ vec3 wCoat(vec3 p, vec3 n){
   col = mix(col, col * vec3(1.06, 0.97, 0.85), smoothstep(0.36, 0.14, p.y));                                           // patas um pouco ocre
   col = mix(col, col * vec3(0.8, 0.74, 0.66), smoothstep(0.07, 0.012, p.y) * (0.7 + 0.3 * soft));                      // dedos: tom de terra, não "meia" branca
   col = mix(col, vec3(0.07, 0.06, 0.055), smoothstep(0.012, 0.004, p.y));                                              // almofadas (só por baixo)
-  return col * (0.88 + 0.24 * griz);
+  return col * (0.9 + 0.2 * griz);
 }
 // comprimento do pelo (em metros, no lobo comum). legs: 0 = corpo, 1 = perna/rosto (pelo curto e assentado mesmo no lobo gigante)
 float wLegs(vec3 p){ return max(smoothstep(0.42, 0.3, p.y) * step(abs(p.z + 0.08), 0.6), wHead(p) * smoothstep(0.68, 0.74, p.z)); }
-float wFurLen(vec3 p){
+float wFurLen0(vec3 p){
   float L = 0.017;
   float hd = wHead(p);
   L = mix(L, 0.044, smoothstep(0.26, 0.36, p.z) * (1.0 - smoothstep(0.56, 0.63, p.z)) * smoothstep(0.56, 0.7, p.y));   // colar do pescoço (juba)
   L = mix(L, 0.034, hd * smoothstep(0.045, 0.07, abs(p.x)) * smoothstep(0.92, 0.88, p.y) * (1.0 - smoothstep(0.64, 0.7, p.z))); // bochechas
-  L = mix(L, 0.03, smoothstep(-0.55, -0.6, p.z) * (1.0 - step(0.69, p.y)));                                              // cauda (o volume já está na malha)
+  L = mix(L, 0.026, smoothstep(-0.55, -0.6, p.z) * (1.0 - step(0.69, p.y)));                                             // cauda (o volume já está na malha)
   L = mix(L, 0.028, smoothstep(-0.44, -0.5, p.z) * smoothstep(0.38, 0.48, p.y) * (1.0 - smoothstep(0.66, 0.7, p.y)));    // "calças" das coxas
   L = mix(L, 0.022, smoothstep(0.6, 0.5, p.y) * (1.0 - wLegs(p)));                                                      // barriga
   L = mix(L, 0.0065, smoothstep(0.42, 0.3, p.y) * step(abs(p.z + 0.08), 0.6));                                           // pernas: pelo curto e assentado
@@ -240,16 +251,12 @@ float wFurLen(vec3 p){
   L *= 1.0 - hd * smoothstep(0.685, 0.715, p.z) * (1.0 - smoothstep(0.007, 0.018, abs(p.y - 0.865)));                  // S-370: sem pelo na emenda da boca (as camadas se cruzavam ali e desenhavam uma linha escura)
   L *= smoothstep(0.018, 0.036, length(vec3(abs(p.x), p.y, p.z) - uEye));                                                // nada de pelo sobre os olhos
   L *= 1.0 - hd * (1.0 - smoothstep(0.026, 0.05, length(p - uNose)));                                              // nem sobre o nariz
-  return L * (0.72 + 0.56 * vn(p * 21.0));                                                                               // tufos: comprimento irregular
+  return L;
 }
-// direção em que o pelo deita: para trás e para baixo no corpo, para baixo nas pernas e na cauda, para trás no rosto
-vec3 wComb(vec3 p){
-  vec3 c = vec3(0.0, -0.55, -0.85);
-  c = mix(c, vec3(0.0, -1.0, -0.15), smoothstep(0.5, 0.36, p.y) * step(abs(p.z + 0.08), 0.6));
-  c = mix(c, vec3(0.0, -0.85, -0.5), smoothstep(-0.56, -0.62, p.z) * (1.0 - step(0.7, p.y)));
-  c = mix(c, vec3(0.0, 0.15, -1.0), wHead(p));
-  return normalize(c);
-}`;
+float wFurLen(vec3 p){ return wFurLen0(p) * (0.8 + 0.4 * vn(p * 21.0)); }                                               // tufos: comprimento irregular (S-381: menos variação = sem fios soltos)
+// S-381: mecha em relevo na pele (normal perturbada): ruído esticado no sentido do pelo, para a base já parecer pelagem
+float wFurH(vec3 p, vec3 comb){ vec3 q = p * 230.0; q -= comb * dot(q, comb) * 0.82; return vn(q) * 0.65 + vn(q * 2.3 + 7.1) * 0.35; }
+`;
 /* S-332: fio de pelo redondo que afina até a ponta, projetado em TRÊS planos misturados pela normal (sem emendas
    onde o eixo dominante troca — era o que soltava "pedacinhos" na cauda) e com borda suave (fwidth) para a
    transparência por cobertura (alphaToCoverage + MSAA): nada de quadradinhos nem silhueta em degraus. */
@@ -275,13 +282,13 @@ vec2 wfPlane(vec2 q, vec2 cd, float f, float s){
   float k = length(cd); vec2 d1 = k > 0.2 ? cd / k : vec2(1.0, 0.0);
   vec2 d2 = vec2(-d1.y, d1.x);
   q += vec2(sin(q.y * 0.21 + s * 1.7) + sin(q.y * 0.07 + q.x * 0.05), sin(q.x * 0.17 + s * 2.3) + sin(q.x * 0.06 - q.y * 0.04)) * 0.7; // mechas levemente onduladas (nada de riscos paralelos)
-  float st = mix(1.0, 2.3, smoothstep(0.2, 0.7, k));                                // mecha deitada = alongada no sentido do pelo
+  float st = mix(1.0, 3.0, smoothstep(0.2, 0.7, k));                                // S-381: mechas mais compridas (de perto não viram "escamas")                                // mecha deitada = alongada no sentido do pelo
   vec2 u = vec2(dot(q, d1) / st, dot(q, d2)); u.y += floor(u.x) * 0.5;               // fileiras desencontradas (sem grade)
-  vec2 c = floor(u); float h = wfHash(c, s), len = 0.55 + 0.45 * fract(h * 13.7);
+  vec2 c = floor(u); float h = wfHash(c, s), len = 0.72 + 0.28 * fract(h * 13.7);
   if (f > len) return vec2(0.0, h);
-  vec2 fr = fract(u) - 0.5 - (vec2(fract(h * 91.7), fract(h * 57.3)) - 0.5) * 0.45;
+  vec2 fr = fract(u) - 0.5 - (vec2(fract(h * 91.7), fract(h * 57.3)) - 0.5) * 0.6;
   fr.x -= f * 0.35 * (k > 0.2 ? 1.0 : 0.0);                                          // a ponta tomba para o sentido do pelo
-  float dd = length(fr), th = (1.0 - f / len * 0.82) * (0.48 + 0.2 * h), aa = max(fwidth(dd) * 1.2, 0.03);
+  float dd = length(fr), th = (1.0 - f / len * 0.6) * (0.6 + 0.16 * h), aa = max(fwidth(dd) * 1.2, 0.03); // S-381: mechas grossas que se tocam
   return vec2(1.0 - smoothstep(th - aa, th + aa, dd), h);
 }
 vec2 wfCover(vec3 p, vec3 n, vec3 comb, float den, float f){
@@ -299,37 +306,47 @@ function coatUniforms(sh, C) { Object.assign(sh.uniforms, { uBase: { value: C.ba
 function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo (lobo gigante do Caçador = pelagem bem mais longa)
   const KEY = color + '|' + fur; if (MATS[KEY]) return MATS[KEY];
   const base = new THREE.Color(color), C = { base, light: base.clone().lerp(new THREE.Color('#efe6d4'), 0.72), dark: base.clone().multiplyScalar(0.22), tan: base.clone().lerp(new THREE.Color('#b8925e'), 0.55) };
+  const K = `float wK(vec3 p){ return mix(${fur.toFixed(3)}, ${Math.min(fur, 1.15).toFixed(3)}, wLegs(p)); }\n`; // pelo longo no corpo; pernas e rosto continuam de lobo
+  /* S-381: pelagem SÓLIDA. Antes: 8–10 camadas finas e semitransparentes com fios em pontinhos — de lado e na cauda viravam
+     fatias e "pedacinhos soltos" com vão entre eles, com cara de holograma. Agora: (1) a malha da pele é INFLADA por metade do
+     comprimento do pelo (o volume — juba, bochechas, cauda, calças — é corpo opaco de verdade) e tem mechas em relevo (normal
+     perturbada) e o tom escuro da raiz; (2) só a metade de fora do pelo é feita por camadas: poucas, coladas umas nas outras, a
+     de dentro inteira (subpelo sem vãos), mechas grossas que se tocam, corte por alphaTest (nada de transparência nem brilho),
+     cor escurecendo para a raiz; (3) o penteado desloca pouco as camadas (antes elas escorregavam para fora da ponta da cauda). */
+  const INFL = 0.5;
   const body = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9 });
   body.onBeforeCompile = sh => {
     coatUniforms(sh, C);
-    sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position; vON = normal;');
-    sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON;\n' + SDF_NOISE_GLSL + COAT_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= wCoat(vOP, normalize(vON));');
+    sh.vertexShader = 'varying vec3 vOP; varying vec3 vON;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vOP = position; vON = normal; transformed += normal * wFurLen0(position) * wK(position) * ${INFL.toFixed(2)};`);
+    sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + '\n' + sh.fragmentShader
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float Lb = wFurLen0(vOP) * wK(vOP), fh = wFurH(vOP, wComb(vOP)), fk = smoothstep(0.004, 0.02, Lb);
+        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(1.0, 0.74 + 0.3 * fh, fk);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if (fk > 0.01) { vec2 dH = vec2(dFdx(fh), dFdy(fh)); vec3 dpx = dFdx(-vViewPosition), dpy = dFdy(-vViewPosition); vec3 R1 = cross(dpy, normal), R2 = cross(normal, dpx); float det = dot(dpx, R1);
+          normal = normalize(abs(det) * normal - sign(det) * (dH.x * R1 + dH.y * R2) * 0.002 * fk); }`);
   };
-  body.customProgramCacheKey = () => 'wolf-body-' + SIG;
-  // camadas de pelo: a mesma malha empurrada pela normal (antes da pele/ossos), fios penteados para trás e para baixo
+  body.customProgramCacheKey = () => 'wolf-body-' + SIG + '-' + fur;
   const shells = [];
-  const NL = fur > 1.3 ? 10 : 8; // S-370: mais camadas no pelo longo — de lado não aparecem mais os "degraus" entre elas
-  const K = `float wK(vec3 p){ return mix(${fur.toFixed(3)}, ${Math.min(fur, 1.15).toFixed(3)}, wLegs(p)); }\n`; // pelo longo no corpo; pernas e rosto continuam de lobo
+  const NL = fur > 1.3 ? 7 : 6;
   for (let i = 1; i <= NL; i++) {
     const f = i / NL, m = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1 });
-    m.alphaToCoverage = true; // borda dos fios suave com o MSAA, sem ordenar transparências
     m.onBeforeCompile = sh => {
       coatUniforms(sh, C); sh.uniforms.uF = { value: f };
       sh.vertexShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + '\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
-        vOP = position; vON = normal; float h = wFurLen(position) * wK(position) * uF;
-        transformed += normal * h + wComb(position) * h * uF * 0.8;`);
+        vOP = position; vON = normal; float L0 = wFurLen0(position) * wK(position), h = L0 * ${INFL.toFixed(2)} + (wFurLen(position) * wK(position) - L0 * ${INFL.toFixed(2)}) * uF;
+        transformed += normal * max(h, 0.0) + wComb(position) * L0 * uF * uF * 0.35;`);
       sh.fragmentShader = 'varying vec3 vOP; varying vec3 vON; uniform float uF;\n' + SDF_NOISE_GLSL + COAT_GLSL + K + WOLF_STRAND_GLSL + '\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
         float L = wFurLen(vOP) * wK(vOP);
-        if (L < 0.003) discard;
-        float den = mix(330.0, 150.0, smoothstep(0.02, 0.07, L));                               // pelo longo (juba, cauda) = mechas mais largas
+        if (L < 0.004) discard;
+        float den = mix(240.0, 120.0, smoothstep(0.02, 0.07, L));                                // mechas grossas (pelo longo = mechas mais largas)
         vec2 fc = wfCover(vOP, vON, wComb(vOP), den, uF);
-        float a = fc.x;
-        a = max(a, (1.0 - smoothstep(0.0, 0.3, uF)) * 0.85);                                     // subpelo denso junto da pele: sem buracos entre a pele e os fios
+        float a = max(fc.x, 1.0 - smoothstep(0.3, 0.55, uF));                                    // metade de dentro: subpelo inteiro, sem vão até a pele
         float ndv = abs(dot(normalize(vNormal), normalize(vViewPosition)));
-        a *= mix(1.0, smoothstep(0.0, 0.3, ndv), uF * 0.55);                                     // silhueta: as camadas de fora afinam em franja macia
-        if (a < 0.04) discard;
-        diffuseColor.a = a;
-        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.62, 1.08, uF * uF * 0.4 + uF * 0.6) * (0.86 + 0.28 * fc.y);`);
+        a *= mix(1.0, smoothstep(0.0, 0.2, ndv), uF * 0.3);                                      // silhueta: só a ponta das mechas afina
+        if (a < 0.5) discard;                                                                    // corte seco (sem transparência = sem cara de holograma)
+        diffuseColor.rgb *= wCoat(vOP, normalize(vON)) * mix(0.6, 1.0, uF) * (0.95 + 0.1 * fc.y); // raiz mais escura (oclusão), ponta na cor da pelagem`);
     };
     m.customProgramCacheKey = () => 'wolf-shell-' + SIG + '-' + i + '-' + NL + '-' + fur;
     shells.push(m);

@@ -15,7 +15,7 @@ import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, make
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
 import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
-import { bowPose, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
+import { bowPose, archerLegs, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
 import { startStrike, updateStrike, strikeKind, guardPose, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
 import { initSkillFx, playSkillFx, playSkillFxRemote, skillProjectile, skillHitDelay, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
@@ -615,7 +615,9 @@ function galleryAnim(n, dt = 1 / 30) {
     const W = sm('_aimW', ph > 0 ? 1 : 0, 6), A = sm('_aimA', ph === 2 ? 1 : 0, ph === 2 ? 16 : 4), since = ph === 2 ? t - (t < 6.4 ? 5.2 : 6.4) : 9, rel = 0.3; // S-354: ergue o arco mais rápido (puxava com o arco ainda subindo, a mão passava pelo peito)
     const draw = ph !== 2 ? 0.1 : since < rel ? 0.35 + 0.65 * since / rel : since < rel + 0.1 ? 0.02 : Math.min(0.8, (since - rel - 0.1) * 4);
     n.obj.rotation.y = n._baseYaw + sm('_bowTwist', -1.1 * A, 7);
+    headUp(n, 1); // S-379: cabeça erguida antes de a mão ancorar no rosto
     bowPose(n, { w: W, aim: A, draw, yaw: n._baseYaw, twist: n._bowTwist, nock: !(ph === 2 && since >= rel && since < rel + 0.12), dt }, BOW_CTX);
+    archerLegs(n, { k: A * W, yaw: n._baseYaw, dt }); // S-379: pés plantados de lado para o alvo
   }
   if (n.root.userData.instrument) { // S-324: bardo com instrumento — nas costas parado, nas mãos pronto na pose de luta, tocando nos "golpes"
     const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate));
@@ -624,6 +626,18 @@ function galleryAnim(n, dt = 1 / 30) {
   if (n._gGuard === undefined) { const wid = GALLERY_WEAPON[n.cls], it = wid && ITEMS[wid]; n._gGuard = !n.sonic && !n.root.userData.bowState && !n.root.userData.xbowState ? strikeKind(n.cls, it ? it.wtype : null, !!it) : null; }
   if (n._gGuard) { const sm = (k, v, rate) => (n[k] = (n[k] ?? 0) + (v - (n[k] ?? 0)) * Math.min(1, dt * rate)); guardPose(n, n._gGuard, { guard: sm('_gGW', ph > 0 ? 1 : 0, 6), rest: sm('_gRW', ph === 0 ? 1 : 0, 4) }); } // S-346/S-352
   updateStrike(n, dt, { skipR: /^(mago|arquimago)$/.test(n.cls), skipL: n.cls === 'sabio_elemental' }); // P-014
+  if (!n.root.userData.bowState) headUp(n, ph === 2 ? 0.6 : 1); // S-379: cabeça erguida, olhando em frente (o Idle deixava os manequins olhando para o chão)
+}
+// S-379: ergue a cabeça até o rosto olhar na horizontal (pescoço 35%, cabeça o resto), sem mexer no giro para os lados
+const _hu = new THREE.Vector3(), _huq = new THREE.Quaternion(), _huq2 = new THREE.Quaternion();
+function headUp(me, k) {
+  const r = me.root, hd = me._head || (me._head = r.getObjectByName('Head')), nk = me._neck || (me._neck = r.getObjectByName('neck_01')); if (!hd || k < 0.01) return;
+  for (const [b, f] of [[nk, 0.35], [hd, 1]]) {
+    if (!b) continue; hd.updateWorldMatrix(true, false); _hu.set(0, 0, 1).transformDirection(hd.matrixWorld);
+    const h = Math.hypot(_hu.x, _hu.z); if (h < 0.2) return; const want = _hu.clone().set(_hu.x, _hu.y * (1 - k * f), _hu.z).normalize();
+    _huq.setFromUnitVectors(_hu, want); b.getWorldQuaternion(_huq2).premultiply(_huq); b.parent.updateWorldMatrix(true, false);
+    b.quaternion.copy(b.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(_huq2)); b.updateWorldMatrix(false, true);
+  }
 }
 function buildArena() {
   const A = ARENA_I, g = new THREE.Group(); g.position.set(A.x, 0, A.z); scene.add(g);
@@ -2188,10 +2202,10 @@ function archerPose(me, p, t, dt) {
     sm('_bowTwist', -0.55 * A * still * W, 7); // besta: meio de lado (ombro direito atrás, coronha no ombro)
     if (me._nockObj) me._nockObj.visible = false;
     crossbowPose(me, { w: W, aim: A, recoil: cy.recoil, reload: cy.reload, cocked: cy.cocked, yaw: S.pos.yaw, twist: me._bowTwist });
-    return;
+    me._bowLegK = 0; return;
   }
   const has = p.d.ranged && !p.d.magicAuto && me.root.userData.items && me.root.userData.items.bow;
-  if (!has) { if (me._nockObj) me._nockObj.visible = false; return; }
+  if (!has) { if (me._nockObj) me._nockObj.visible = false; me._bowLegK = 0; return; }
   const fight = !S.riding && !S.casting && !S.sitting && (S._fighting || t < S.lockAnim), since = t - (S.lastAtk || -9), rel = bowRelease(p);
   const shooting = fight && (S.fire || S.autoAttack || since < 0.9);
   const sm = (k, v, rate) => (me[k] = (me[k] ?? 0) + (v - (me[k] ?? 0)) * Math.min(1, dt * rate));
@@ -2199,6 +2213,7 @@ function archerPose(me, p, t, dt) {
   me._draw = since >= rel && since < rel + 0.1 ? draw : (me._draw ?? 0.1) + (draw - (me._draw ?? 0.1)) * Math.min(1, dt * 25); // a soltura é instantânea, a puxada é suave
   const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
   sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
+  me._bowLegK = A * W * Math.max(0, 1 - spd / 0.5) * (S.riding || S.swim || !S.pos.ground ? 0 : 1); // S-379: pés de arqueiro só parado no chão (andando, as pernas são da animação)
   bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12), dt }, BOW_CTX);
 }
 /* S-324: Bardo com instrumento — fora de combate nas costas; em guarda nas mãos, pronto; tocando (ataque ou canção) dedilha
@@ -2476,6 +2491,7 @@ function updatePlayer(dt) {
   // S-151: o corpo gira para o lado em que anda (andar de lado vira corrida na diagonal; para trás, passos de ré de verdade)
   { const moving = mi.any && !S.riding && P.ground && !isAction() && !S.fire; const want = moving ? (mi.fwd > 0 ? mi.strafe * -0.6 : mi.fwd < 0 ? mi.strafe * 0.5 : mi.strafe * -Math.PI / 2) : 0; S.bodyTwist = angLerp(S.bodyTwist || 0, want, Math.min(1, dt * 10)); }
   me.obj.rotation.y = P.yaw + (S.bodyTwist || 0) + (me._bowTwist || 0); // S-312: arqueiro mirando fica de lado para o alvo
+  archerLegs(me, { k: me._bowLegK || 0, yaw: P.yaw, dt }); // S-379: pés plantados de lado para o alvo; passo de ajuste quando a mira gira
   if (S.riding) riderPose(me, S.riding, { t, gait: Math.min(1, Math.hypot(S.vel.x, S.vel.z) / 6) }); // S-242: sentado de verdade na sela
   // animação
   const fighting = !S.riding && inCombat(t); S._fighting = fighting;
@@ -3395,7 +3411,7 @@ addEventListener('mousemove', e => {
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
   // S-234 + pedido de 2026-11-11: o CURSOR é o foco da câmera — mexer o mouse gira a câmera devagar ("peso" das Configurações), segurando o ataque
   // ou não, andando ou parado. Só sobre o mundo (não sobre janelas, barra ou menus) e sem botão de arrastar apertado (esses já giram a câmera).
-  const freeLook = !S.fire && e.target === canvas && !mouse.left && !mouse.right && !mouse.mid && !S.menuOpen && !S.flight;
+  const freeLook = !S.fire && e.target === canvas && !mouse.left && !mouse.right && !mouse.mid && !S.menuOpen && !S.flight && !(typeof FB !== 'undefined' && (FB.picking || FB.box)); // marcando ou escrevendo uma sugestão (Q): a câmera fica parada
   if ((S.fire || freeLook) && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'pesado'], mx = clamp(e.movementX, -60, 60), my = clamp(e.movementY, -60, 60); S.cam.yaw -= mx * w; S.cam.pitch = clamp(S.cam.pitch + my * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
   if (mouse.mid) { S.lookYaw -= e.movementX * 0.006; S.cam.pitch = clamp(S.cam.pitch + e.movementY * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; return; }
   if (!mouse.left && !mouse.right) return;
