@@ -152,6 +152,12 @@ Ele não quer gráfico de ponta. Quer formas **orgânicas e críveis**, sem cara
   - Anatomia crível e muito detalhe (pelo, casco, pele), sem cara de outro jogo.
   - O ataque básico combina com o animal (raposa morde como lobo); poderes elementais chegam como habilidade ao evoluir.
   - O mascote é um ser vivo no combate: tem vida, cansa e pode desmaiar.
+  - **Rosto de bicho (S-396, "cara de bunda")**: ele julga o animal pela CARA, e pede referência real (lobo de verdade, direwolf de cinema). O que faz um rosto ler como a espécie:
+    - silhueta do crânio (testa e "stop", focinho alto ou fino, maçãs largas);
+    - olhos com a forma e a inclinação da espécie (amendoado, canto de fora mais alto), contorno escuro e assentados numa órbita: olho redondo e caído = cara triste de roedor;
+    - máscara de cores da espécie (claro embaixo da linha dos olhos, testa escura);
+    - lábio escuro e boca que abre sem pele esticada;
+    - patas como uma massa só com dedos, nunca contas soltas.
 
 ### 21. Jogar sem tropeços: bug claro é prioridade ★★★★★
 - Evidências: "buguei aqui, fiquei preso, isso não pode acontecer" (S-300), "bugou demais ele aqui pra lá e pra cá travadão" (S-310), personagem dando voltas sozinho (S-331), duas músicas (S-032), nomes de longe (S-096), janela voltando ao topo (S-101), recorte errado do Q (S-380), e o pedido de 2026-11-12: "no navio eu ficava meio que dando uns teleportes", "identifica bugs claros pra que a gente possa resolver?".

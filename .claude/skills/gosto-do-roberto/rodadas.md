@@ -299,3 +299,17 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - **Golpes (S-403)**: o "lunge" de cada golpe ia grudando o personagem no alvo. Todo deslocamento de golpe respeita o alcance da arma.
 - **Bug meu pego no teste**: uma inserção cortou o fim de uma função (looks3d).
   - `node --check` não valida ES module. Use `node --input-type=module --check < arquivo` em todos os js3d antes de testar.
+
+## S-396, 2ª passada (2026-11-13): rosto e patas do lobo, sessão dedicada
+- **Pedido**: "cara de bunda", "dedos bolotas", "olhe no rosto de um dire wolf". A 1ª passada (formas no mesmo campo grosso) ainda dava um cão de focinho liso com olhinhos dourados.
+- **Causas de fundo**:
+  - Resolução: a grade de 1,35 cm não comporta sobrancelha, órbita e lábio numa cabeça de ~25 cm. Solução: malha em várias resoluções (cabeça e patas em grade fina, emenda escondida sob a juba e o pelo da perna).
+  - Olho: ficava enterrado na curva do rosto (só a pupila aparecia) e com o canto de fora CAÍDO (expressão triste de roedor). Agora é uma cúpula amendoada assentada numa órbita escavada, orientada pela normal do rosto, com o canto de fora mais alto, delineado escuro e a pálpebra de cima marcada.
+  - Boca: pele contínua faz uma "bolsa de pelicano" ao abrir. Solução: fenda escavada + pele abaixo do lábio presa à mandíbula + boca fechada um pouco acima (`JAW0`). Sem isso, a fenda virava um "sorriso" aberto.
+  - Dedos: quatro dedos e almofada viraram uma massa só (smin), com sulcos escavados e garras escuras na ponta.
+- **Testes**:
+  - Laboratório `wolflab.html` (só na cópia de teste): bem mais rápido que entrar no jogo.
+  - `__api.shot` desenha uma vez só: o nível de detalhe do pelo vem da câmera ANTERIOR. Fotografe duas vezes, senão o lobo sai sem pelo na foto.
+  - Com o painel oculto, `__api.qa()` completo trava em música e câmera das salas (timers parados). Rode com `{music:false, rooms:false}`.
+- **Custo**: a malha foi de 18 mil para 34 mil vértices (cabeça 0,53 cm, patas 0,56 cm).
+
