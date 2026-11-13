@@ -101,6 +101,15 @@ varying vec3 vWPos; varying vec3 vWNor;
 float th(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float tn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(th(i), th(i + vec2(1,0)), f.x), mix(th(i + vec2(0,1)), th(i + vec2(1,1)), f.x), f.y); }
 float tfbm(vec2 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 5; k++) { v += a * tn(p); p *= 2.03; a *= 0.5; } return v; }`)
+      // caça-bugs 2026-11-13: a textura do chão é projetada de cima (x, z); nos paredões ela esticava em riscos verticais.
+      // Nas encostas ela agora é projetada pelos três lados (triplanar), com a mesma escala do chão (repeat 70 a cada 300 m)
+      .replace('#include <map_fragment>', `#ifdef USE_MAP
+  { vec3 an = abs(normalize(vWNor)); vec4 tx;
+    if (an.y > 0.86) tx = texture2D(map, vMapUv);
+    else { vec3 bw = pow(an, vec3(4.0)); bw /= (bw.x + bw.y + bw.z); float k = 70.0 / 300.0;
+      tx = texture2D(map, vWPos.zy * k) * bw.x + texture2D(map, vWPos.xz * k) * bw.y + texture2D(map, vWPos.xy * k) * bw.z; }
+    diffuseColor *= tx; }
+#endif`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 {
   vec3 N = normalize(vWNor); float steep = 1.0 - smoothstep(0.55, 0.86, N.y);
@@ -129,6 +138,20 @@ float tfbm(vec2 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 5; k++) { v += a
   mat.needsUpdate = true;
 }
 { let tm = null; terrain.traverse(o => { if (!tm && o.isMesh) tm = o.material; }); if (tm) terrainDetail(tm, 1); }
+// caça-bugs 2026-11-13: a cordilheira do horizonte (a 650–900 m, sem névoa) aparecia como uma FAIXA FLUTUANDO no céu: o chão entre ela e o
+// jogador já some na névoa (420 m), então o pé dela ficava solto sobre a cor do céu (pior do alto das montanhas). Agora ela recebe a névoa
+// por altura: o pé é da cor da névoa (emenda com o chão sumido) e o alto fica azulado de distância, como cordilheira de verdade.
+function hazeFar(mat) {
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = sh => {
+    if (prev) prev(sh);
+    sh.uniforms.uHazeC = { value: scene.fog.color }; // a MESMA cor da névoa (muda com a hora e a região)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vHzY;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvHzY = (modelMatrix * vec4(transformed, 1.0)).y;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uHazeC; varying float vHzY;')
+      .replace('#include <colorspace_fragment>', '#include <colorspace_fragment>\ngl_FragColor.rgb = mix(gl_FragColor.rgb, uHazeC, 1.0 - smoothstep(-5.0, 120.0, vHzY) * 0.5);');
+  };
+  mat.needsUpdate = true;
+}
 scene.add(buildWater());
 scene.add(buildSea()); // S-117: o mar do litoral (canto sudeste); expansão: + Costa Turquesa (leste) e Costa Brumosa (norte)
 scene.add(buildWater(OASIS, oasisDist, 60)); // expansão: lagoa rasa do oásis do Grande Areal
@@ -213,13 +236,22 @@ const extraPick = []; // estruturas grandes feitas em código (paliçada...) que
 // cenário longe some (menos chamadas de desenho); marcos gigantes continuam visíveis de longe
 let sceneryT = 0;
 // salas, masmorra, arena e castelo ficam longe do mundo (x > HALF+100): só desenha quando você está lá dentro
-let interiorObjs = null, interiorShown = null;
+let interiorObjs = null, interiorShown = null, interiorSeen = new WeakSet(), interiorScanT = -9;
 function cullInteriors() {
-  if (!interiorObjs) {
-    interiorObjs = [];
+  // caça-bugs 2026-11-13: a lista era feita UMA vez; o que nascia depois (a Arena, em x = 800) ficava sempre à vista e aparecia
+  // como um "disco voador" sobre o mar, visto da Costa Turquesa. Agora os objetos novos da cena entram na lista (de 1 em 1 s, só os novos)
+  if (!interiorObjs || S.time - interiorScanT > 1) {
+    interiorObjs = interiorObjs || []; interiorScanT = S.time;
     const skip = new Set([...S.monsters.map(m => m.obj), ...S.npcs.map(n => n.obj), S.me && S.me.obj, S.pet && S.pet.obj]);
     const b = new THREE.Box3(), c = new THREE.Vector3();
-    for (const o of scene.children) { if (skip.has(o) || o.isLight || o.isCamera || o.visible === false || o.userData.noRender) continue; /* não liga de volta o que nasceu escondido (bloqueadores de câmera) */ b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c); if (c.x > HALF + 100 && b.min.x > HALF + 50) interiorObjs.push(o); }
+    for (const o of scene.children) {
+      if (interiorSeen.has(o) || o.visible === false) continue; // escondido agora (ex.: durante a vitrine): olha de novo quando aparecer
+      interiorSeen.add(o);
+      if (skip.has(o) || o.isLight || o.isCamera || o.userData.noRender) continue; /* não liga de volta o que nasceu escondido (bloqueadores de câmera) */
+      let skinned = false; o.traverse(q => { if (q.isSkinnedMesh) skinned = true; }); if (skinned) continue; // gente e bichos (rivais da Arena, monstros) têm visibilidade própria
+      b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c);
+      if (c.x > HALF + 100 && b.min.x > HALF + 50) { interiorObjs.push(o); if (interiorShown !== null) o.visible = interiorShown; }
+    }
   }
   const inside = camera.position.x > HALF + 100;
   if (inside === interiorShown) return; interiorShown = inside;
@@ -1089,7 +1121,7 @@ async function buildWorld() { // P-010: monta aos pedaços (worldYield cede a ve
     place((zoneWeight('geada', x, z) > 0.3 ? ['pinesnow_0', 'pinesnow_1', 'pinesnow_2', 'pinesnow_3'] : ['pine_0', 'pine_2', 'pine_3', 'pinedark_0', 'pinedark_1', 'pinedark_2'])[Math.floor(rng() * (zoneWeight('geada', x, z) > 0.3 ? 4 : 6))], x, z, { scale: 0.9 + rng() * 0.6, solid: Math.max(Math.abs(x), Math.abs(z)) < PLAY_LIMIT, sink: 0.3 }); n++;
   }
   await worldYield('Montanhas e céu');
-  { const dm = buildDistantMountains(); S.distantMtn = dm; dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
+  { const dm = buildDistantMountains(); S.distantMtn = dm; dm.traverse(o => { if (o.isMesh && !o.material.userData.td) { o.material.userData.td = true; terrainDetail(o.material, 0.6); hazeFar(o.material); } }); scene.add(dm); } // auditoria: montanhas do horizonte com rocha
   // nuvens (auditoria): nada de bolotas de desenho — cúmulos macios feitos de vários "puffs" com textura de névoa,
   // base mais escura e topo iluminado pelo sol, que viram sempre para a câmera e andam devagar com o vento
   { // P-010: os ~650 "puffs" eram um Sprite cada = uma chamada de desenho cada; agora 3 InstancedMesh (um por faixa de opacidade), virados para a câmera a cada quadro

@@ -391,5 +391,30 @@
     "status": "proposta",
     "respondidoEm": "2026-11-11T14:37:37",
     "motivo": "Pausado pelo Roberto em 2026-11-11: não avançar no online/IP por enquanto."
+  },
+  {
+    "id": "P-029",
+    "titulo": "Cristas das montanhas mais naturais",
+    "detalhe": "No alto das serras o relevo tem centenas de 'agulhas' de 3 a 5 m (o ruído fino das cristas) e fica serrilhado quando visto de perto ou de cima. A proposta é suavizar só esse ruído fino nas partes altas, mantendo os picos grandes e os paredões. Mexe no relevo das montanhas (nada nas cidades).",
+    "principios": [
+      "1. realismo estilizado",
+      "2. física e coerência"
+    ],
+    "evidencias": [
+      "caça-bugs 2026-11-13: 'o topo das montanhas é muito estranho'"
+    ],
+    "status": "proposta"
+  },
+  {
+    "id": "P-030",
+    "titulo": "Casas do porto e de Pedrafunda sem paredes encavaladas",
+    "detalhe": "O verificador novo acha 10 pares de casas cujas paredes se cruzam de 1 a 3 m (casas em fileira do Porto das Gaivotas, casas de anão, estábulo × feira na vila). Algumas parecem geminadas de propósito; a proposta é afastar só as que se atravessam de verdade.",
+    "principios": [
+      "2. física e coerência"
+    ],
+    "evidencias": [
+      "caça-bugs 2026-11-13 (prédios encavalados)"
+    ],
+    "status": "proposta"
   }
 ]

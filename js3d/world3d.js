@@ -71,7 +71,15 @@ export function harborW(x, z) { const { s, t } = harborST(x, z); return (1 - smo
 export function coastBelt(x, z) { return smooth(115, 185, Math.hypot(x - PORT.x, z - PORT.z)); }
 export function harborXZ(s, t) { return { x: HARBOR.x + HARBOR.ux * s + HARBOR.uz * t, z: HARBOR.z + HARBOR.uz * s - HARBOR.ux * t }; }
 // costa irregular de um mar (o mar do porto continua com a mesma conta de antes: k = 1); longe da costa não precisa do detalhe
-function seaRaw(s, x, z) { const dx = x - s.x, dz = z - s.z, d = Math.hypot(dx, dz) - s.r; if (d > 160) return d; const a = Math.atan2(dz, dx), k = s.r / 300; return d - 18 * Math.sin(a * 7 * k + 1.3) - 10.5 * Math.sin(a * 13 * k + 0.4); }
+function seaRaw(s, x, z) {
+  const dx = x - s.x, dz = z - s.z, d = Math.hypot(dx, dz) - s.r; if (d > 160) return d;
+  const a = Math.atan2(dz, dx), k = s.r / 300, N = t => 18 * Math.sin(t * 7 * k + 1.3) + 10.5 * Math.sin(t * 13 * k + 0.4);
+  let n = N(a);
+  // caça-bugs 2026-11-13: com frequências não inteiras (Costa Turquesa), a costa dava um DEGRAU de 18 m onde o ângulo pula de +180° para -180°
+  // (linha reta no mar e na praia em z = -20). Perto da emenda, a costa vai suave até a média dos dois lados — o resto do litoral não muda.
+  if (Math.abs(7 * k - Math.round(7 * k)) > 1e-6 || Math.abs(13 * k - Math.round(13 * k)) > 1e-6) { const w = smooth(Math.PI - 0.15, Math.PI, Math.abs(a)); if (w > 0) n = n * (1 - w) + (N(Math.PI) + N(-Math.PI)) / 2 * w; }
+  return d - n;
+}
 let lastSea = SEA; // o mar mais perto na última chamada de seaDist (seaAt/seaPush/heightAt usam)
 export function seaDist(x, z) { // > 0 em terra, < 0 no mar (metros até a linha da praia) — o mais perto dos mares
   let sd = 1e9; for (const s of SEAS) { const d = seaRaw(s, x, z); if (d < sd) { sd = d; lastSea = s; } }
@@ -394,8 +402,9 @@ function detailTexture() {
 }
 // O terreno é dividido em blocos de 90 m. Todos começam com pouca resolução (rápido de montar);
 // os blocos perto do jogador ganham resolução alta aos poucos (um pedacinho por quadro, sem travar).
-// Cada bloco tem uma "saia" de 2 m para baixo nas bordas: não aparecem frestas entre resoluções diferentes.
-const TILE = 90, NT = Math.round(HALF * 2 / TILE), LO = 24, HI = 64, HI_R = 150, LO_R = 240;
+// Cada bloco tem uma "saia" de 10 m para baixo nas bordas: não aparecem frestas entre resoluções diferentes.
+const TILE = 90, NT = Math.round(HALF * 2 / TILE), LO = 24, HI = 64, HI_R = 150, LO_R = 240, SKIRT = 10;
+export const TERRAIN_LOD = { TILE, LO, HI, SKIRT }; // o verificador (qa3d) mede as frestas entre resoluções com estes números
 const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });
 const tiles = [];
 function* tileBuilder(t, seg) {
@@ -412,7 +421,7 @@ function* tileBuilder(t, seg) {
       const c = groundColor(x, z, h, slope); col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
       const edge = i === 0 || j === 0 || i === n - 1 || j === n - 1;
       const cx = Math.min(t.x0 + TILE, Math.max(t.x0, x)), cz = Math.min(t.z0 + TILE, Math.max(t.z0, z));
-      pos[k * 3] = cx; pos[k * 3 + 1] = edge ? h - 2 : h; pos[k * 3 + 2] = cz;
+      pos[k * 3] = cx; pos[k * 3 + 1] = edge ? h - SKIRT : h; pos[k * 3 + 2] = cz; // caça-bugs 2026-11-13: saia de 10 m (nas encostas a diferença entre as resoluções passava de 2 m e abria frestas de céu na montanha, até 7,7 m)
       uv[k * 2] = cx / 300; uv[k * 2 + 1] = cz / 300; // mesma densidade da textura de antes
     }
     if (seg === HI && (j & 3) === 3) yield;
@@ -529,7 +538,7 @@ export function buildWater(L = LAKE, distFn = lakeDist, seg = 110) { // expansã
 const SEA_COLORS = new Map([[SEA, [[0.22, 0.62, 0.60], [0.03, 0.22, 0.40]]], [SEA_TROPIC, [[0.30, 0.84, 0.77], [0.04, 0.40, 0.56]]], [SEA_NORTH, [[0.27, 0.42, 0.45], [0.05, 0.14, 0.21]]]]);
 // planos de água (retângulos sem sobreposição) que cobrem o mar de cada costa, até um pouco além da borda do mundo
 // (mantidos abaixo de x = HALF + 70: a Arena e as salas ficam em x > HALF + 100)
-const SEA_RECTS = [[150, 700, 150, 700], [430, 700, -400, 150], [-440, 470, -720, -480]];
+export const SEA_RECTS = [[150, 700, 150, 700], [430, 700, -400, 150], [-440, 470, -720, -480]];
 let seaMat = null;
 export function buildSea() {
   const g = new THREE.Group();
@@ -541,7 +550,7 @@ function seaPlane(x0, x1, z0, z1) {
   const geo = new THREE.PlaneGeometry(W, D, Math.round(W / STEP), Math.round(D / STEP)); geo.rotateX(-Math.PI / 2);
   const p = geo.attributes.position, depth = new Float32Array(p.count), mask = new Float32Array(p.count), shal = new Float32Array(p.count * 3), deep = new Float32Array(p.count * 3);
   for (let i = 0; i < p.count; i++) {
-    const x = cx + p.getX(i), z = cz + p.getZ(i); depth[i] = SEA.level - heightAt(x, z); mask[i] = 1 - smooth(-2, 6, seaDist(x, z));
+    const x = cx + p.getX(i), z = cz + p.getZ(i); depth[i] = SEA.level - heightAt(x, z); mask[i] = seaMaskAt(x, z); // caça-bugs 2026-11-13: a bacia escavada do porto (junto ao cais) ficava fora da máscara do mar: um canal seco de 3 m de fundura onde se "nadava" sem água
     let dm = 1e9; const ds = SEAS.map(s => { const d = Math.hypot(x - s.x, z - s.z) - s.r; dm = Math.min(dm, d); return d; });
     let tw = 0; const a = [0, 0, 0], b = [0, 0, 0];
     SEAS.forEach((s, k) => { const w = Math.exp(-(ds[k] - dm) / 35), [cs, cd] = SEA_COLORS.get(s); tw += w; for (let c = 0; c < 3; c++) { a[c] += cs[c] * w; b[c] += cd[c] * w; } });
@@ -647,6 +656,9 @@ export function buildIceFloes(rng) {
   return im;
 }
 // o jogador e os monstros não entram no mar fundo (devolve a posição empurrada de volta para a praia)
+// quanto a água do mar aparece neste ponto (0 = nada, 1 = cheia) — a MESMA conta do desenho (seaPlane) e do verificador (qa3d)
+// caça-bugs 2026-11-13: a bacia escavada do porto (junto ao cais) ficava fora da máscara: um canal seco de 3 m de fundura onde se "nadava" sem água
+export function seaMaskAt(x, z) { const sd = seaDist(x, z); return Math.max(1 - smooth(-2, 6, sd), smooth(0.3, 0.7, harborW(x, z)) * (1 - smooth(10, 16, sd))); }
 export function seaPush(x, z, maxDepth = 8) { // maxDepth = metros mar adentro (≈ 1 m de fundura)
   const sd = seaDist(x, z); if (sd > -maxDepth) return null;
   const sea = lastSea, dx = x - sea.x, dz = z - sea.z, d = Math.hypot(dx, dz) || 1, k = (-maxDepth - sd) / d; // empurra para longe do centro do mar mais perto

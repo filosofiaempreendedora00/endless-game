@@ -813,7 +813,7 @@ function frostExpansion(ctx, C, r, wd, dk, st) {
     for (const s of [-1, 1]) brazier(ctx, E + 3.4, gY(E + 3.4, 26 + s * 3.2), 26 + s * 3.2, s > 0, 11 + s);
   }
   // casas novas: algumas maiores, em L ou de dois andares
-  for (const [x, z, ry, w, d, h, o] of [[-344, 32, 0.04, 6.5, 10, 3.4, {}], [-331, 34, Math.PI / 2, 7, 9, 3.2, { floors: 2 }], [-354, -9, Math.PI, 6.5, 8, 3.2, { wing: 4.2 }], [-333, -10, Math.PI, 7, 6.5, 3.2, {}], [-372, 66, 0, 7, 7.5, 3.0, { floors: 2 }], [-388, 40, Math.PI / 2, 6, 7.5, 3.2, { wing: 3.8 }]])
+  for (const [x, z, ry, w, d, h, o] of [[-344, 32, 0.04, 6.5, 10, 3.4, {}], [-331, 34, Math.PI / 2, 7, 9, 3.2, { floors: 2 }], [-354, -9, Math.PI, 6.5, 8, 3.2, { wing: 4.2 }], [-333, -10, Math.PI, 7, 6.5, 3.2, {}], [-372, 66, 0, 7, 7.5, 3.0, { floors: 2 }], [-384, -7, Math.PI / 2, 6, 7.5, 3.2, { wing: 3.8 }]]) // caça-bugs 2026-11-13: esta casa estava em (-388, 40), DENTRO do alojamento (telhado atravessando telhado)
     frostHouse(ctx, x, z, ry, w, d, h, st, dk, wd, r, o);
   // o Torreão (dá para entrar) e o seu interior
   const door = frostKeep(ctx, -332, 4, -Math.PI / 2, st, dk, wd, r);
@@ -866,7 +866,7 @@ function buildFrostHold(ctx) {
   const hall = (asset, x, z, ry, w, d, h, chimney) => { const K = new Kit();
     K.box(w + 0.6, 0.8, d + 0.6, st, 0, 0, 0); K.box(w, h, d, wd, 0, 0.4 + h / 2, 0);
     for (const sx of [-1, 1]) for (let k = -2; k <= 2; k++) K.box(0.3, h, 0.3, dk, sx * w / 2, 0.4 + h / 2, k * d / 4);
-    snowRoof(K, w + 0.4, d + 0.6, h * 0.75, M.slate(), 0, 0.4 + h, 0, Math.PI / 2);
+    snowRoof(K, d + 0.6, w + 0.4, h * 0.75, M.slate(), 0, 0.4 + h, 0, Math.PI / 2); // caça-bugs 2026-11-13: girado 90° sem trocar largura × fundo, o telhado ficava ATRAVESSADO no salão (sobrando no ar dos lados e deixando as pontas descobertas)
     K.box(1.8, 2.6, 0.2, dk, w / 2 + 0.02, 1.7, 0, Math.PI / 2); for (const sz of [-d / 3, d / 3]) { K.box(0.6, 0.55, 0.1, M.glass(), w / 2 + 0.02, 2.5, sz, Math.PI / 2); K.box(0.9, 0.12, 0.2, dk, w / 2 + 0.06, 2.2, sz, Math.PI / 2); K.box(0.08, 0.6, 0.16, dk, w / 2 + 0.07, 2.5, sz, Math.PI / 2); }
     if (chimney) { K.box(1.3, h + 3, 1.3, st, -w / 4, 0.4 + (h + 3) / 2, d / 2 - 1.2); }
     icicles(K, r, -d / 2, d / 2, 0.45 + h, w / 2 + 0.45, Math.PI / 2, 14); icicles(K, r, -d / 2, d / 2, 0.45 + h, -w / 2 - 0.45, Math.PI / 2, 14);

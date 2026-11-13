@@ -11,6 +11,7 @@
    - música: trocar de zona, entrar/sair de casa, arena e masmorra → só uma música por vez
    ========================================================================= */
 import * as THREE from 'three';
+import { heightAt, seaDist, seaMaskAt, waterLevelAt, lakeDist, LAKE, SEA, SEA_RECTS, TERRAIN_LOD, HALF } from './world3d.js';
 
 const SKIP = /^(cloud|mountain|lily|barco|veleiro|navio|galeao|calcamento|neve|ponte|cais|quebra_mar|redes|mar|prancha|estaleiro|lago|bote)/;
 const TREE = /^(oak|oakdark|pine|pinedark|pinesnow|tree|trees|palmeira|palm_|arvore)/;
@@ -372,8 +373,62 @@ export async function checkRoomCamera(ctx, wait = ms => new Promise(r => setTime
   return out;
 }
 
+
+/* ===== caça-bugs 2026-11-13: sondas do passeio pelo mundo (relevo, água, prédios encavalados, salas vazando) =====
+   Nasceram de bugs que o Roberto via e o verificador não pegava: frestas de céu nas montanhas, canal seco no porto,
+   a Arena (x = 800) aparecendo como disco voador sobre o mar, uma casa dentro do alojamento da Vigília. */
+// frestas entre a resolução baixa e a alta do terreno: maior que a "saia" dos blocos = dá para ver o céu pela montanha
+export function checkTerrain() {
+  const { TILE, LO, HI, SKIRT } = TERRAIN_LOD, out = [], lin = (step, t) => { const i = Math.floor(t / step); return [i * step, (i + 1) * step, t / step - i]; };
+  for (let e = -HALF + TILE; e < HALF; e += TILE) for (const ax of ['x', 'z']) {
+    let worst = null;
+    for (let s = -HALF; s < HALF; s += 1) {
+      const P = u => ax === 'x' ? heightAt(e, u) : heightAt(u, e);
+      const [a0, a1, f] = lin(TILE / LO, s + HALF), [b0, b1, g] = lin(TILE / HI, s + HALF);
+      const d = Math.abs(P(a0 - HALF) * (1 - f) + P(a1 - HALF) * f - (P(b0 - HALF) * (1 - g) + P(b1 - HALF) * g));
+      if (d > SKIRT * 0.9 && (!worst || d > worst.d)) worst = { d, x: ax === 'x' ? e : s, z: ax === 'x' ? s : e };
+    }
+    if (worst) out.push({ tipo: 'fresta no relevo', gravidade: 'alta', objeto: 'terreno', x: worst.x, z: worst.z, detalhe: `resoluções diferem ${worst.d.toFixed(1)} m (saia de ${SKIRT} m)` });
+  }
+  return out;
+}
+// água: buraco no mar (fundo abaixo do nível, sem plano de água) e nado em água invisível
+export function checkWater() {
+  const out = [], inR = (x, z) => SEA_RECTS.some(([x0, x1, z0, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1), near = (t, x, z) => out.some(o => o.tipo === t && Math.hypot(o.x - x, o.z - z) < 25);
+  for (let x = -HALF; x <= HALF; x += 4) for (let z = -HALF; z <= HALF; z += 4) {
+    const h = heightAt(x, z), dep = SEA.level - h, m = seaMaskAt(x, z);
+    if (m > 0.5 && dep > 0.3 && !inR(x, z) && !near('mar sem água', x, z)) out.push({ tipo: 'mar sem água', gravidade: Math.max(Math.abs(x), Math.abs(z)) < 605 ? 'alta' : 'baixa', objeto: 'mar', x, z, detalhe: `fundo ${dep.toFixed(1)} m abaixo da água, fora dos planos do mar` });
+    const wl = waterLevelAt(x, z);
+    if (wl !== null && h < wl - 1.1 && m < 0.3 && lakeDist(x, z) > LAKE.r && !near('nado sem água', x, z)) out.push({ tipo: 'nado sem água', gravidade: 'alta', objeto: 'mar', x, z, detalhe: `nada aqui (fundo ${(wl - h).toFixed(1)} m), mas a água quase não aparece (${(m * 100).toFixed(0)}%)` });
+  }
+  return out;
+}
+// prédios encavalados: pegadas giradas (caixa no espaço do objeto) que se cruzam mais de 1 m
+const HOUSE = /^(home|tavern|church|blacksmith|market|windmill|casa|taverna|ferraria|igreja|estabulo|salao|templo|armazem|guilda|alojamento|arsenal|corvaria|torreao|loja|mercado|forja|capela|celeiro|moinho|estalagem)/;
+export function checkOverlaps(ctx) {
+  const L = [], out = [];
+  for (const o of ctx.placed) { const a = o.userData.asset || ''; if (!HOUSE.test(a) || o.position.x > HALF + 100) continue; const b = localBox(o); if (b.isEmpty()) continue;
+    L.push({ a, x: o.position.x, z: o.position.z, cs: [[b.min.x, b.min.z], [b.max.x, b.min.z], [b.max.x, b.max.z], [b.min.x, b.max.z]].map(([u, v]) => { const p = new THREE.Vector3(u, 0, v).applyMatrix4(o.matrixWorld); return [p.x, p.z]; }) }); }
+  const axes = p => [0, 1].map(i => { const dx = p[i + 1][0] - p[i][0], dz = p[i + 1][1] - p[i][1], l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l]; });
+  const proj = (p, n) => { let a = 1e9, b = -1e9; for (const [x, z] of p) { const d = x * n[0] + z * n[1]; a = Math.min(a, d); b = Math.max(b, d); } return [a, b]; };
+  const pen = (A, B) => { let m = 1e9; for (const n of [...axes(A), ...axes(B)]) { const [a0, a1] = proj(A, n), [b0, b1] = proj(B, n), o = Math.min(a1, b1) - Math.max(a0, b0); if (o <= 0) return 0; m = Math.min(m, o); } return m; };
+  for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+    if (Math.hypot(L[i].x - L[j].x, L[i].z - L[j].z) > 60) continue; const p = pen(L[i].cs, L[j].cs);
+    if (p > 1) out.push({ tipo: 'prédios encavalados', gravidade: p > 4 ? 'alta' : 'baixa', objeto: `${L[i].a} × ${L[j].a}`, x: (L[i].x + L[j].x) / 2, z: (L[i].z + L[j].z) / 2, detalhe: `as pegadas se cruzam ${p.toFixed(1)} m (telhado/beiral juntos podem ser de propósito)` });
+  }
+  return out;
+}
+// salas e Arena (x > HALF + 100) à vista com a câmera no mundo
+export function checkRoomLeak(ctx) {
+  if (ctx.camera.position.x > HALF + 100) return []; const out = [], b = new THREE.Box3();
+  for (const o of ctx.scene.children) { if (!o.visible || o.isLight || o.isCamera || o === ctx.S.distantMtn) continue; let sk = false; o.traverse(q => { if (q.isSkinnedMesh) sk = true; }); if (sk) continue;
+    b.setFromObject(o); if (b.isEmpty() || b.min.x < HALF + 50) continue; const c = b.getCenter(new THREE.Vector3());
+    out.push({ tipo: 'sala à vista do mundo', gravidade: 'alta', objeto: o.name || o.userData.asset || o.type, x: c.x, z: c.z, detalhe: 'objeto de sala/Arena visível com a câmera do lado de fora (aparece flutuando no horizonte)' }); }
+  return out;
+}
+
 export async function runQA(ctx, opts = {}) {
-  const t0 = performance.now(), mundo = [...checkWorld(ctx), ...checkPlay(ctx)], pers = opts.chars === false ? [] : checkCharacters(ctx);
+  const t0 = performance.now(), mundo = [...checkWorld(ctx), ...checkPlay(ctx), ...(opts.terrain === false ? [] : [...checkTerrain(), ...checkWater()]), ...checkOverlaps(ctx), ...checkRoomLeak(ctx)], pers = opts.chars === false ? [] : checkCharacters(ctx);
   const musica = opts.music === false ? [] : await checkMusic(ctx);
   const cam = opts.rooms === false ? [] : await checkRoomCamera(ctx);
   const all = [...mundo, ...pers, ...musica, ...cam], ord = { alta: 0, media: 1, baixa: 2 };

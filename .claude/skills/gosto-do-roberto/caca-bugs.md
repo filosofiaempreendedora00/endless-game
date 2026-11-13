@@ -78,6 +78,34 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
 - NPC no meio da passarela atrapalha a passagem: deixe-o perto do guarda-corpo.
 - A porta da Árvore-Mãe se alcança pelo corredor entre as raízes (vindo do norte). As raízes são muro de propósito; não é bug.
 
+### 2026-11-13: passeio pelo mundo (montanhas, água, cidades), pedido "mapear de forma inteligente"
+- **Pedido**: "o topo das montanhas é muito estranho", "vários pontos esquisitos", "sem eu ter de conferir cada pixel".
+- **Como achamos** (roteiro que funcionou; repita nas próximas caçadas):
+  1. Fotos automáticas de cima e de lado (picos mais altos, cada cidade, cada borda do mundo, costa) com uma câmera própria. O céu precisa acompanhar a câmera da foto e o `far` tem de ser o do jogo (1700). O `__api.shot` usa 900 e o céu fica no jogador: daí manchas pretas falsas.
+  2. **Foto de cima (vista de planta) de cada cidade e do mundo inteiro.** Ela revela de cara telhado atravessado, prédio encavalado e costa com linha reta.
+  3. Sondas numéricas: costa e água × planos do mar, frestas entre as resoluções do terreno, pegadas de prédios que se cruzam, ângulo das estradas, agulhas no relevo.
+  4. Caminhante: tecla W real com `__sim`, de cada cidade e região, em 8 direções. Mede salto por quadro, queda abaixo do chão, preso de verdade (`trulyStuck`) e dano.
+- **Corrigidos**:
+  - **Faixa de montanhas flutuando no céu**. A cordilheira do horizonte não tinha névoa e o chão até ela já sumia na névoa, então o pé dela ficava solto sobre a cor do céu (pior do alto). Agora ela recebe névoa por altura (`hazeFar` no main3d).
+  - **Disco voador sobre o mar da Costa Turquesa**: era a Arena (x = 800). `cullInteriors` montava a lista de objetos de sala uma vez só, e o que estava escondido nesse momento (durante a vitrine) ficava de fora para sempre. Agora objetos novos ou que reaparecem entram na lista.
+  - **Frestas de céu na montanha** entre a resolução baixa e a alta do terreno: diferença de até 7,7 m contra uma saia de 2 m. A saia agora tem 10 m (`TERRAIN_LOD.SKIRT`).
+  - **Riscos verticais esticados nos paredões**: a textura era projetada só de cima. Nas encostas ela agora é triplanar (em `terrainDetail`).
+  - **Canal seco no porto**: a bacia escavada junto ao cais ficava fora da máscara do mar e dava para nadar sem água. A máscara única agora é `seaMaskAt`.
+  - **Degrau de 18 m na praia da Costa Turquesa** (linha reta em z = -20): o contorno da costa usa o ângulo, que pula de +180° para -180°. A emenda agora é suavizada (`seaRaw`).
+  - **Vigília Negra**:
+    - uma casa estava dentro do alojamento; mudou de lugar;
+    - os 3 salões tinham o telhado girado 90° (o `snowRoof` girado sem trocar largura × fundo).
+- **Checagens novas no `__api.qa()`**: `checkTerrain` (frestas), `checkWater` (mar sem água e nado em água invisível), `checkOverlaps` (prédios encavalados) e `checkRoomLeak` (sala ou Arena à vista do mundo). Testadas: a Arena forçada a aparecer é acusada.
+- **Ficou para decidir (propostas)**:
+  - P-029: as cristas serrilhadas, com ~600 "agulhas" de 3–5 m no alto das serras;
+  - P-030: casas geminadas que se cruzam de 1–3 m (porto, Pedrafunda, vila).
+- **Pequenos, não corrigidos**:
+  - trancos de 0,6–0,7 m num quadro ao contornar quinas, em Pedraclara (310, 5) e no Santuário (16, -402);
+  - Marta dentro do balde do poço da vila;
+  - um Esqueleto Vigia que às vezes nasce dentro de objeto na masmorra.
+- **Pegadinha da ferramenta**: com o painel do navegador oculto, `setTimeout` em cadeia é estrangulado (1 por minuto). Rode um lote por chamada, de ~20 s no máximo cada.
+
 ### Falsos alarmes conhecidos
 - **Gudrun e Irmão Hulda** (Pedrafunda) ficam 1,35 m acima do chão de propósito, na base da estátua e no degrau do templo. Dá para conversar com eles de baixo.
+- "Prédios encavalados" baixos (até ~3 m) em casas em fileira do porto e de Pedrafunda podem ser geminadas de propósito (P-030).
 - "NPC dentro de objeto" para NPCs sentados ou atrás de balcão (Dona Rosa, Velho Gui, Rei Aldemar, Irmão Caio, Ilka...): o círculo de colisão do móvel os cobre, mas o jogador conversa normalmente.
