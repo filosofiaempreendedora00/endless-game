@@ -100,6 +100,23 @@ const QUESTS = {
     text: 'As raízes de Sylvaren vão até a <b>Mata das Araras</b>, a leste. O capitão Sylvar diz que os <b>Golens de Musgo</b> as estão arrancando para comer a seiva. Derrote <b>3 Golens de Musgo</b> e traga <b>4 Pedras de Musgo</b> para a Arquivista ver de onde eles vieram.',
     done: 'Pedra de musgo com veios de seiva viva... Os golens não acordaram sozinhos: alguém os mandou. Vou registrar isto nas Crônicas das Folhas. Sylvaren já sonha mais tranquila, graças a você. Leve este manto: as penas são da copa, e o vento delas ainda vai te reconhecer.',
     obj: [{ kill: 'golem_musgo', n: 3 }, { collect: 'pedra_musgo', n: 4 }], reward: { expPct: 0.16, zeny: 2500, items: [['manto_penas', 1], ['pocao_azul', 4]] } },
+  // ---------- Pedrafunda: "O Eco no Fundo" (2026-11-13, etapa 3 da fortaleza) ----------
+  dw1: { name: 'Batidas que não são nossas', giver: 'durgan', turnIn: 'thyra', lv: 20, chain: 'O Eco no Fundo',
+    text: 'Os mineiros ouvem batidas lá no fundo das galerias, e não são de picareta anã. Desça até os trilhos do Grande Salão e fale com a <b>capataz Thyra</b>. Ninguém conhece aquelas galerias melhor que ela.',
+    done: 'O Rei te mandou? Então ele está mais preocupado do que deixa transparecer. Eu ouvi as batidas também: três, uma pausa, três de novo. Como alguém batendo numa porta.',
+    obj: [{ talk: 'thyra' }], reward: { expPct: 0.1, zeny: 400 } },
+  dw2: { name: 'Ouvido na pedra', giver: 'thyra', turnIn: 'orvik', lv: 20, requires: 'dw1', chain: 'O Eco no Fundo',
+    text: 'Vá até a <b>galeria funda</b>, a boca escura na parede oeste, além dos trilhos, perto do trono. Encoste o ouvido na pedra e espere. Depois conte o que ouviu ao <b>Mestre Orvik</b>, na loja de runas perto da entrada.',
+    done: 'Três batidas, pausa, três batidas... e um zumbido por baixo, como uma runa acordando? Pelas barbas dos Reis. Isso não é animal nenhum. É uma runa de chamado, e das antigas.',
+    obj: [{ goto: 'galeria_funda', x: 2676, z: -38, r: 6, mapX: -288, mapZ: -352, label: 'a galeria funda do Grande Salão' }, { talk: 'orvik' }], reward: { expPct: 0.12, zeny: 700, items: [['pocao_azul', 2]] } },
+  dw3: { name: 'Asas que fugiram do escuro', giver: 'orvik', turnIn: 'brom', lv: 22, requires: 'dw2', chain: 'O Eco no Fundo',
+    text: 'Quando uma runa de chamado acorda, tudo o que vive no escuro foge dela. Os <b>Morcegos de Cripta</b> que agora infestam as Ruínas de Kael vieram de baixo da montanha. Derrote <b>8</b> deles e traga <b>4 Asas de Morcego</b>: o <b>Mestre Brom</b> sabe forjar um selo com elas para calar a runa.',
+    done: 'Asas de morcego de cripta, ainda com o cheiro do fundo... Isto serve. Vou bater o selo na bigorna grande: o pilão faz o trabalho pesado, eu faço as runas.',
+    obj: [{ kill: 'morcego_cripta', n: 8 }, { collect: 'asa_morcego', n: 4 }], reward: { expPct: 0.15, zeny: 1500, items: [['ferrolume', 1]] } },
+  dw4: { name: 'O selo do Rei', giver: 'brom', turnIn: 'durgan', lv: 22, requires: 'dw3', chain: 'O Eco no Fundo',
+    text: 'O selo está pronto e ainda quente. Leve-o ao <b>Rei Dúrgan</b>, no trono. Só o Rei pode mandar descer e fechar a galeria funda.',
+    done: 'Um selo do Brom com as runas do Orvik... e trazido por um forasteiro. Os Reis lá fora sorririam se ainda soubessem. Vamos calar o chamado por ora. Mas alguém lá embaixo bateu naquela porta, e uma porta que alguém bate do outro lado... um dia se abre. Fique com este elmo: ele foi do meu pai.',
+    obj: [{ talk: 'durgan' }], reward: { expPct: 0.18, zeny: 3000, items: [['elmo_de_ferro', 1], ['pedra_egide', 1]] } },
 };
 const QUEST_GIVERS_NPC = { // NPC novo da história principal (S-126) — colocado na praça da vila pelo main3d
   teodoro: { id: 'teodoro', name: 'Ancião Teodoro', title: 'Guardião de Alvorada', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', face: 'sabio', hair: { style: 'curto', color: 'grisalho' }, beard: true } },
@@ -120,7 +137,7 @@ function questMarker(p, npcId) {
   return '';
 }
 function objText(o) { if (o.goto) return `Ir até ${o.label || o.goto}`; if (o.kill) return `Derrotar ${MONSTERS[o.kill] ? MONSTERS[o.kill].name : o.kill}`; if (o.collect) return `Coletar ${ITEMS[o.collect] ? ITEMS[o.collect].name : o.collect}`; return `Falar com ${QUEST_NPC_NAMES[o.talk] || o.talk}`; }
-const QUEST_NPC_NAMES = { thalion: 'Ancião Thalion', aranel: 'Arquivista Aranel', naerith: 'Naerith', isis: 'Ísis', teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
+const QUEST_NPC_NAMES = { durgan: 'Rei Dúrgan', thyra: 'Thyra', orvik: 'Mestre Orvik', brom: 'Mestre Brom', thalion: 'Ancião Thalion', aranel: 'Arquivista Aranel', naerith: 'Naerith', isis: 'Ísis', teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
 function questRewardText(p, q) {
   const r = q.reward || {}, parts = [];
   const exp = questExp(q); if (exp) parts.push(`<b class="gold">${exp.toLocaleString('pt-BR')} EXP</b>`);

@@ -7,7 +7,7 @@
    Tudo é juntado por material (poucas chamadas de desenho) e some de longe.
    ========================================================================= */
 import * as THREE from 'three';
-import { buildKingsGate, buildCliffDwellings, buildLavaChannels, chamferPillar, buildGreatHall } from './dwarfhold3d.js';
+import { buildKingsGate, buildCliffDwellings, buildLavaChannels, chamferPillar, buildGreatHall, buildHallLife } from './dwarfhold3d.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 import { realFlame } from './flame3d.js';
@@ -475,6 +475,7 @@ function buildDwarfCity(ctx) {
   // etapa 2: o portão abre para o GRANDE SALÃO (sala em x = 2700): abismo com ponte, a Grande Forja, trilhos, salão de festa e o trono
   const GH = ctx.INTERIORS && ctx.addDoorPortal ? buildGreatHall(ctx, HOLD) : null;
   if (GH) ctx.addDoorPortal('grande_salao', C.x, C.z - 64 + 0.9, 0, KG.gate.y);
+  if (GH) buildHallLife(ctx, HOLD, GH); // etapa 3: lojas nas galerias, a festa, a forja e os mineiros
   buildCliffDwellings(ctx, HOLD); // terraços dos clãs talhados no paredão, em volta da cidade (menos na estrada do sul e na fachada)
   buildLavaChannels(ctx, HOLD, { x: 4.6, z0: 30, z1: 55 });
   // ---------- cidade baixa: casas de pedra em anéis, de frente para a ágora; a taverna "Bigorna Bêbada" a leste ----------

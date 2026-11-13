@@ -372,3 +372,13 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - plataforma → portão → salão → ponte, com tentativa de pular no abismo pelos lados (bloqueado);
   - rampa até o trono, conversa com o Rei sentado e saída de volta para a plataforma a 6,7 m;
   - câmera em 6 pontos × 8 direções sem sair da sala.
+
+### Pedrafunda, etapa 3 (2026-11-13): a gente do Salão
+- **Escala anã em tudo**: balcão de 1,1 m escondia o lojista anão (1,37 m), que só mostrava a cabeça. Móveis de anão têm 0,8 m. Confira sempre a foto com o NPC ATRÁS do móvel.
+- **Pose sentada vira de costas**: a `Sit_Chair_Idle` olha 180° ao contrário do yaw. Folki ficou de costas para a mesa até somar π (vale para todo NPC sentado novo).
+- **Camadas de cenário**: a luz da loja ficou atrás da placa escura da galeria (0,3 m de espessura). Só aparecia nas galerias perto da entrada, onde a placa não existia. Ao sobrepor, meça a espessura do que já está lá.
+- **Testes**:
+  - missão dw1→dw4 inteira pelo diálogo (aceitar e concluir em cada NPC);
+  - as cinco lojas abrem (8/6/6/4 itens) e a cura funciona;
+  - chega-se a pé a todos os balcões.
+- **Pegadinha da ferramenta**: a pasta temporária de testes (scratchpad) foi limpa no meio da sessão. Recrie a cópia com rsync, refaça a rota de fotos do servidor de teste e crie um personagem novo (o banco de teste também some).

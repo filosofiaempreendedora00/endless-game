@@ -290,6 +290,68 @@ export function buildGreatHall(ctx, H, { id = 'grande_salao', x: IX = 2700, z: I
   for (const [lx, lz, hx, hz] of wb) col(lx, lz, hx, hz, id);
   for (const [lx, ly, lz, c, it, dist] of lights) { const L = vlight(c, it, dist, 1.3); L.position.set(IX + lx, ly, IZ + lz); ctx.scene.add(L); }
   const N = (n, x, z, yaw, anim, y = 0) => { const npc = ctx.roomNpc(n, IX + x, IZ + z, yaw, anim); if (y) { npc.obj.position.y = y; npc.deckY = y; } return npc; };
-  return { I, N, TY, hd, CH };
+  return { I, N, TY, hd, hw, CH, IX, IZ, trapSolid, trapFrame };
 }
 let _p2 = {}; function P2(k, c) { return _p2[k] || (_p2[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 })); }
+
+/* =========================================================================
+   ETAPA 3 — A GENTE DO SALÃO: lojas nas galerias das paredes, festa, forja, mineiros
+   Cada loja é uma das galerias escuras da parede, agora acesa por dentro (prateleiras com mercadoria),
+   com balcão de pedra, placa de ferro pendurada e o dono atrás do balcão.
+   ========================================================================= */
+const _dsign = {};
+function dwarfSign(kind, title) { // placa de ferro escuro com o símbolo em ouro e o nome
+  if (_dsign[kind]) return _dsign[kind];
+  const c = document.createElement('canvas'); c.width = 256; c.height = 192; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 192); gr.addColorStop(0, '#3a3430'); gr.addColorStop(1, '#221e1b'); g.fillStyle = gr; g.fillRect(0, 0, 256, 192);
+  g.strokeStyle = '#8a6a2a'; g.lineWidth = 8; g.strokeRect(6, 6, 244, 180); for (const [x, y] of [[18, 18], [238, 18], [18, 174], [238, 174]]) { g.fillStyle = '#6a5a4a'; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); }
+  g.strokeStyle = '#d8a83a'; g.fillStyle = '#d8a83a'; g.lineWidth = 7; g.lineCap = 'round'; g.lineJoin = 'round'; g.save(); g.translate(128, 74);
+  if (kind === 'armas') { g.beginPath(); g.moveTo(-40, 40); g.lineTo(30, -30); g.stroke(); g.beginPath(); g.moveTo(40, 40); g.lineTo(-30, -30); g.stroke(); g.beginPath(); g.moveTo(30, -30); g.quadraticCurveTo(50, -50, 44, -14); g.closePath(); g.fill(); g.beginPath(); g.moveTo(-30, -30); g.lineTo(-44, -44); g.stroke(); }
+  else if (kind === 'cerveja') { g.strokeRect(-26, -30, 44, 66); g.beginPath(); g.moveTo(18, -16); g.quadraticCurveTo(44, -10, 40, 10); g.quadraticCurveTo(38, 26, 18, 26); g.stroke(); g.beginPath(); g.moveTo(-30, -30); g.quadraticCurveTo(-20, -48, 0, -40); g.quadraticCurveTo(14, -50, 24, -32); g.stroke(); }
+  else if (kind === 'gema') { g.beginPath(); g.moveTo(-36, -16); g.lineTo(-18, -36); g.lineTo(18, -36); g.lineTo(36, -16); g.lineTo(0, 42); g.closePath(); g.stroke(); g.beginPath(); g.moveTo(-36, -16); g.lineTo(36, -16); g.moveTo(-18, -36); g.lineTo(-8, -16); g.lineTo(0, 42); g.lineTo(8, -16); g.lineTo(18, -36); g.stroke(); }
+  else if (kind === 'runa') { g.beginPath(); g.moveTo(-10, -44); g.lineTo(-10, 44); g.moveTo(-10, -30); g.lineTo(22, -8); g.lineTo(-10, 14); g.moveTo(-10, 14); g.lineTo(26, 44); g.stroke(); g.beginPath(); g.arc(0, 0, 54, 0, 7); g.lineWidth = 3; g.stroke(); }
+  else if (kind === 'chama') { g.beginPath(); g.moveTo(0, -46); g.quadraticCurveTo(34, -6, 22, 26); g.quadraticCurveTo(10, 44, 0, 44); g.quadraticCurveTo(-10, 44, -22, 26); g.quadraticCurveTo(-34, -6, 0, -46); g.stroke(); g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(14, 12, 8, 28); g.quadraticCurveTo(0, 36, -8, 28); g.quadraticCurveTo(-14, 12, 0, -6); g.fill(); }
+  g.restore(); g.fillStyle = '#e8d8a8'; g.font = 'bold 22px Georgia, serif'; g.textAlign = 'center'; g.fillText(title, 128, 170, 236);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return (_dsign[kind] = new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, metalness: 0.3, emissive: '#2a1a08', emissiveIntensity: 0.4, side: THREE.DoubleSide }));
+}
+let _shopGlow = null; function shopGlow() { if (_shopGlow) return _shopGlow; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#1a0e06'); gr.addColorStop(0.6, '#6a3a14'); gr.addColorStop(1, '#c87a2e'); g.fillStyle = gr; g.fillRect(0, 0, 64, 128); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (_shopGlow = new THREE.MeshBasicMaterial({ map: t })); }
+const WARES = { armas: ['#a9adb3', '#6a4a2a', '#a9adb3'], cerveja: ['#6a4a2a', '#8a5a2a', '#c89a4a'], gema: ['#c8302a', '#2a6ac8', '#3ac88a', '#e8c84a'], runa: ['#ff8a3a', '#6ab8ff', '#e8e2d2'], chama: ['#ff8a3a', '#ffd86a', '#c8302a'] };
+export function buildHallLife(ctx, H, GH) {
+  const { Kit, M, runeGlyph } = H, { N, IX, IZ, hw, TY, trapSolid } = GH, cv = M.dwarfCarve(), iron = M.iron(), wd = M.darkWood(), K = new Kit();
+  const col = (lx, lz, hx, hz, name) => ctx.colliders.push({ x: IX + lx, z: IZ + lz, r: Math.max(hx, hz), box: true, hx, hz, rot: 0, name });
+  const shop = (sx, z, kind, title, npc) => {
+    const wx = sx * (hw - 0.8), ry = sx * -Math.PI / 2; // a galeria (na parede), virada para o meio do salão — na frente da placa escura da galeria (que tem 0,3 m de espessura)
+    { const g = trapSolid(5.8, 4.2, 8.8, 0.08), uv = g.attributes.uv, P = g.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (P.getX(i) + 2.9) / 5.8, P.getY(i) / 8.8); K.add(g, shopGlow(), wx, 0, z, ry); }
+    for (const y of [1.6, 3.0, 4.4]) { K.box(0.5, 0.08, 4.6 - y * 0.25, iron, wx - sx * 0.25, y, z); const c = WARES[kind]; for (let k = 0; k < 6; k++) { const zz = z - 1.8 + y * 0.1 + k * (3.6 - y * 0.2) / 5; if (kind === 'armas') K.box(0.08, 1.0, 0.12, P2('w' + k % 3, c[k % 3]), wx - sx * 0.3, y + 0.55, zz, 0, 0, 0.1); else K.add(new THREE.SphereGeometry(kind === 'cerveja' ? 0.2 : 0.12, 12, 8), P2('g' + kind + k % c.length, c[k % c.length]), wx - sx * 0.3, y + (kind === 'cerveja' ? 0.24 : 0.15), zz, 0, 0, 0, 1, kind === 'cerveja' ? 1.4 : 1, 1); } }
+    const cx = sx * (hw - 3.1); K.box(1.0, 0.78, 4.6, cv, cx, 0.39, z); K.box(1.3, 0.12, 4.9, cv, cx, 0.84, z); for (let k = 0; k < 4; k++) runeGlyph(K, cx - sx * 0.51, 0.62, z - 1.5 + k, 0.32, k * 5 + z); // balcão na altura de anão (o de 1,1 m escondia o lojista)
+    col(cx, z, 0.75, 2.45, 'balcão'); col(sx * (hw - 1.4), z - 2.9, 1.0, 0.3, 'galeria'); col(sx * (hw - 1.4), z + 2.9, 1.0, 0.3, 'galeria');
+    { const sy = 5.6, KS = new Kit(); KS.box(2.6, 1.95, 0.05, dwarfSign(kind, title), 0, 0, 0); KS.cyl(0.025, 0.025, 1.2, iron, -1.0, 1.55, 0, 4); KS.cyl(0.025, 0.025, 1.2, iron, 1.0, 1.55, 0, 4); KS.box(3.0, 0.12, 0.12, iron, 0, 2.15, 0); const g = KS.build(); g.position.set(IX + sx * (hw - 3.6), sy, IZ + z); g.rotation.y = ry; ctx.scene.add(g); } // placa grande pendurada na frente da galeria
+    const L = vlight('#ffb060', 3, 10, 1.5); L.position.set(IX + sx * (hw - 2), 3.5, IZ + z); ctx.scene.add(L);
+    N(npc, sx * (hw - 2.15), z, ry);
+  };
+  const dw = (face, hair, color, beard = true, sex) => ({ race: 'anao', face, hair: { style: hair, color }, beard: sex === 'f' ? false : beard, ...(sex ? { sex } : {}) });
+  shop(-1, 26, 'armas', 'Armas do Gorm', { id: 'gorm', name: 'Gorm', title: 'Armeiro do Salão', model: 'Barbarian', show: ['2H_Axe'], look: dw('valente', 'raspado', 'preto'),
+    shopList: ['espada_curta', 'espada_longa', 'lanca_de_ferro', 'cota_de_malha', 'elmo_de_ferro', 'broquel_ferro', 'botas_couro', 'luvas_couro'], shopTitle: '⚔️ Armas do Gorm', hello: 'Aço de Pedrafunda: forjado na Grande Forja e temperado no abismo. Se quebrar, a culpa é sua.' });
+  shop(-1, 42, 'cerveja', 'Barris do Ottar', { id: 'ottar', name: 'Ottar', title: 'Mestre-Cervejeiro', model: 'Barbarian', show: ['Mug'], look: dw('alegre', 'curto', 'ruivo'),
+    shopList: ['carne_assada', 'mel', 'pocao_vermelha', 'maca', 'pera', 'uvas'], shopTitle: '🍺 Barris do Ottar', hello: 'Cerveja de cogumelo das cavernas e assado de javali! A cerveja não vendo: ela se bebe aqui, na mesa, cantando.' });
+  shop(1, 26, 'gema', 'Gemas da Hilde', { id: 'hilde', name: 'Hilde', title: 'Lapidária', model: 'Mage', look: dw('astuto', 'coque', 'preto', false, 'f'),
+    shopList: ['anel_de_forca', 'brinco_sabio', 'tiara_arcana', 'coroa_de_bronze', 'monoculo', 'oculos_redondos'], shopTitle: '💎 Gemas da Hilde', hello: 'Cada pedra tem um defeito escondido. O bom lapidário não esconde o defeito: corta a pedra em volta dele.' });
+  shop(1, 42, 'runa', 'Runas do Orvik', { id: 'orvik', name: 'Mestre Orvik', title: 'Mestre das Runas', model: 'Mage', show: ['Spellbook_open'], look: dw('sereno', 'longo', 'branco'),
+    shopList: ['ferrolume', 'pedra_egide', 'pocao_azul', 'pergaminho_retorno'], shopTitle: '🔥 Runas do Orvik', hello: 'Ferrolume e pedra-égide: o Brakar lá fora só refina o que eu benzo aqui dentro. Não conte isso a ele.' });
+  shop(1, -38, 'chama', 'Chama da Forja', { id: 'sigrun', name: 'Irmã Sigrun', title: 'Sacerdotisa da Forja', model: 'Mage', heals: true, look: dw('gentil', 'longo', 'loiro', false, 'f') });
+  // a festa: anões sentados nos bancos, uma skald cantando em pé, alguém brindando
+  const seat = (id, name, title, x, z, yaw, look, lines, show) => N({ id, name, title, model: 'Barbarian', show: show || ['Mug'], look, lines }, x, z, yaw + Math.PI, 'Sit_Chair_Idle', 0.08); // a pose sentada olha para trás do ângulo pedido: +180° para ficar de frente para a mesa
+  seat('folki', 'Folki', 'Mineiro de folga', -4.9, 31.5, -Math.PI / 2, dw('alegre', 'curto', 'castanho'), 'Três dias cavando, um dia aqui. Achei um veio de ferrolume do tamanho de um boi! Tá bom, de um bezerro.');
+  seat('runa_b', 'Runa', 'Tecelã de cota de malha', -8.1, 36.0, Math.PI / 2, dw('gentil', 'coque', 'ruivo', false, 'f'), 'Dez mil anéis por cota. Eu conto cantando, senão perco a conta no sétimo mil.');
+  seat('bofrik', 'Bofrik', 'Avô do clã Pedra-Rubra', 4.9, 38.5, Math.PI / 2, dw('sereno', 'longo', 'branco'), 'No meu tempo o abismo era um buraquinho. Aí um tio meu derrubou a vagoneta lá dentro... e foi cavando para buscar.');
+  seat('gilda', 'Gilda', 'Guarda de folga', 8.1, 33.0, -Math.PI / 2, dw('valente', 'curto', 'preto', false, 'f'), 'Ninguém senta no lugar do Rei nas mesas. Nem quando ele não vem. Principalmente quando ele não vem.');
+  N({ id: 'hrafna', name: 'Hrafna', title: 'Skald do Salão', model: 'Rogue', look: dw('alegre', 'longo', 'loiro', false, 'f'),
+    lines: '♪ Bate o martelo, ferve o metal, desce a picareta até o final... ♪\nEssa tem mil versos. Volte amanhã para ouvir o segundo.' }, 0, 30.5, Math.PI);
+  // forja e trilhos: quem trabalha
+  N({ id: 'dagny', name: 'Dagny', title: 'Ferreira da Grande Forja', model: 'Barbarian', show: ['1H_Axe'], look: dw('valente', 'coque', 'castanho', false, 'f'),
+    lines: 'A tina de têmpera tem água do degelo dos picos. Aço quente nela canta mais alto que a Hrafna.' }, 16.4, -2.4, Math.PI * 0.75);
+  for (const [i, z] of [[0, -40], [1, -12]]) N({ id: 'mineiro_' + i, name: i ? 'Karn' : 'Brunhild', title: 'Mineiro das Galerias', model: 'Barbarian', show: ['1H_Axe'], look: i ? dw('astuto', 'curto', 'castanho') : dw('valente', 'raspado', 'ruivo', false, 'f'),
+    lines: i ? 'Ouviu isso? Não? Ótimo. Eu também não ouvi nada. Nada mesmo.' : 'Desci mais fundo que qualquer um esta semana. Lá embaixo a pedra está quente... e não é da lava.' }, -20.4, z, -Math.PI / 2);
+  { const g = K.build(); g.position.set(IX, 0, IZ); ctx.scene.add(g); } void TY;
+}

@@ -88,7 +88,11 @@ Quando ele pedir para aplicar as sugestões:
     - Pilares colossais, abismo com lava e ponte sem corrimão (barreira invisível na beirada), Grande Forja com martelo-pilão e roda dentada animados, trilhos com a vagoneta, mesas de festa e o trono com dois ancestrais de pedra.
     - O Rei Dúrgan está no trono.
     - **Clima de sala**: `I.mood` (luz e névoa próprias, aplicadas no main3d).
-  - **Próxima etapa**: 3 = gente, lojas e a missão "O Eco no Fundo".
+  - **Etapa 3: a gente do Salão** (`buildHallLife`).
+    - Cinco lojas nas galerias das paredes, com placa de ferro (`dwarfSign`), prateleiras acesas e balcão na altura de anão: Gorm (armas), Ottar (comida), Hilde (joias), Orvik (materiais de refino) e Irmã Sigrun (cura).
+    - Festa com anões sentados, a skald Hrafna, a ferreira Dagny e mineiros nos trilhos.
+    - Missões dw1–dw4 ("O Eco no Fundo", em js/quests.js): Rei → Thyra → galeria funda → Orvik → morcegos de cripta → Brom → Rei.
+  - **Pose sentada (`Sit_Chair_Idle`) fica virada 180° do yaw pedido**: some π para o NPC olhar para a mesa.
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar
