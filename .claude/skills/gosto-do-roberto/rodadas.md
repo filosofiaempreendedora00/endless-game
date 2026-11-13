@@ -341,3 +341,22 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Se ficar num andar diferente, bem perto, por 3 s, aparece ao seu lado.
   - Portas e saídas levam o mascote na altura certa.
   - Testado: rampa inteira descendo e subindo (0 quadros fora da rampa), ponte e plataforma (a 1,6 m de você) e entrada e saída de sala.
+
+## Pedido direto (2026-11-13): Pedrafunda "impressionante", inspirada na literatura sobre anões — etapa 1
+- **Diagnóstico**: a cidade era **grega** (ágora, acrópole, estoa, tholos, frontão). Por isso parecia "normalinha e apagada": arquitetura de humano com anões dentro.
+- **O que faz uma cidade ser anã** (arquétipo, nunca cópia):
+  - mora dentro da montanha;
+  - tudo colossal e geométrico (retas, chanfros, trapézios, degraus), nada de coluna redonda;
+  - ancestrais esculpidos em escala gigante;
+  - fogo e metal: lava, bronze, runas acesas;
+  - clãs morando no paredão.
+- **Estátua gigante de personagem**: use um personagem de verdade do jogo, posado e virado pedra (`stoneHero`), em vez de montar com cones e esferas.
+  - Pegadinha: a arma só aparece se o MODELO tiver a peça. O `2H_Axe` é do Barbarian, o `2H_Sword` é do Knight.
+  - A pose `Idle` com a arma ficou solene. A `Sword_Idle` abria os braços como quem vai agarrar.
+- **Erros da 1ª versão (pegos nas fotos)**:
+  - **Casinhas soltas na encosta parecem caixas coladas.** A frente ficou DENTRO da rocha e só as molduras apareciam. O certo: poucos blocos grandes (terraços) com a frente toda no ar, o fundo enterrado e o muro de arrimo descendo até a parte mais baixa da encosta sob o bloco.
+  - **A muralha antiga passava na frente da fachada** e as torres tampavam os Reis. Ao norte, a muralha agora se abre e encosta nas pontas da fachada. Na hora, um sinal trocado fez o muro de ligação atravessar a plataforma; o caminhante pegou o bloqueio.
+  - **A lava em caixa parecia uma tábua laranja.** Agora é uma fita que ondula e se alarga embaixo.
+- **Testado andando**:
+  - da ágora ao terraço de cima (6,7 m), à plataforma e ao portão;
+  - pelos dois lados até as muretas, pelas bordas da frente (não cai) e sobre a grelha das canaletas de lava.

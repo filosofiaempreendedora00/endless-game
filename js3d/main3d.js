@@ -1323,7 +1323,7 @@ async function buildFrontier() { // P-010: em etapas (worldYield)
   addDoorPortal('catacumbas', TEMPLE.x, TEMPLE.z + 12.6, 0);
   await worldYield('Pedrafunda, Aelindra e a Vigília');
   // ---------- S-117: cidades das raças (anões, elfos, porto) e S-118: o Castelo de Valcinza ----------
-  { const cityCtx = { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera, roomNpc, addDoorPortal, portals, INTERIORS, makePortal };
+  { const cityCtx = { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera, roomNpc, addDoorPortal, portals, INTERIORS, makePortal, stoneHero };
     S.cities = buildCities(cityCtx); // S-274: salas com porta também nas cidades
     buildAelindra(cityCtx); } // Aelindra: a cidade na Árvore-Mãe (elfcity3d)
   if (FROST.stable) { // S-260: cavalos presos nas baias do Estábulo da Vigília, com cabresto amarrado e feno espalhado
@@ -2088,6 +2088,16 @@ function makeNpcHero(n) {
   unsquashDwarf(ch.root);
   try { softenFace(ch.root, { k: 1.5 }); } catch (e) { } // S-307: rosto convidativo (sobrancelha relaxada, olhos abertos, sorriso leve)
   return ch;
+}
+// estátua de pedra feita de um personagem de verdade (Pedrafunda, 2026-11-13): pose congelada e tudo (roupa, rosto, barba, arma) vira pedra lavrada
+// — nada de cones e esferas: os Reis do portão têm o corpo, a armadura e a barba de um anão do jogo, só que com 24 m
+let _stoneMat = null;
+function stoneHero(n, { scale = 16, anim = 'Sword_Idle', t = 0.6 } = {}) {
+  const ch = makeNpcHero(n); ch.anim.play(anim, { speed: 1 }); for (let i = 0; i < 12; i++) ch.anim.update(t / 12);
+  if (!_stoneMat) { _stoneMat = new THREE.MeshStandardMaterial({ color: '#6a645a', roughness: 0.95, metalness: 0 }); terrainDetail(_stoneMat, 0.5); }
+  ch.obj.traverse(o => { if (o.isMesh) { o.material = Array.isArray(o.material) ? o.material.map(() => _stoneMat) : _stoneMat; o.castShadow = o.receiveShadow = true; if (o.isSkinnedMesh) o.frustumCulled = false; } });
+  ch.obj.scale.multiplyScalar(scale); ch.obj.updateMatrixWorld(true);
+  return ch.obj;
 }
 const offOf = p => (p && p.equip && p.equip.escudo && p.equip.escudo.id) || null; // S-202: escudo só aparece se estiver equipado
 function buildPlayerModel() {
@@ -4206,7 +4216,7 @@ function admPois() {
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
 }
-const qaCtx = () => ({ renderer, scene, camera, galleryAnim, ensureGallery, S, placed, colliders, groundAt, resolve, trulyStuck, portals, waterLevelAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, hurtMonster, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
+const qaCtx = () => ({ renderer, scene, camera, galleryAnim, ensureGallery, S, placed, colliders, groundAt, resolve, trulyStuck, portals, waterLevelAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), stoneHero, enterInterior, leaveInterior, makeHero, hurtMonster, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
 function adminRender() {
   const p = S.p; if (!p) return;
   const body = UI.body('admin'), pois = admPois();

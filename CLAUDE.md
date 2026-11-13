@@ -79,6 +79,12 @@ Quando ele pedir para aplicar as sugestões:
   - No chão: casas-folha (`leafHouse`/`leafRoof`), Mercado das Folhas, Fonte da Lua, pedras-lua, Portal das Raízes, bosque de árvores gigantes prateadas (`giantTree`/`canopyGeo` com as folhas de trees3d), cogumelos que brilham e vaga-lumes.
   - Há NPCs em cima dos andares (`Wn(..., y)`), e o `interact` exige |Δy| < 3,5 m.
   - **Colisão com `y0/y1` fora das salas é relativa ao terreno** (`RES_Y`).
+- **Pedrafunda, a Fortaleza Sob os Picos** (2026-11-13, etapa 1 de 3): `js3d/dwarfhold3d.js`, chamado por `buildDwarfCity` (cities3d).
+  - **Fachada dos Reis** (`buildKingsGate`): paredão norte esculpido, portão trapezoidal de bronze com selo de runas, cascata de lava (`lavaMat`/`LAVA_T`), elevador de corrente e plataforma a 6,6 m (DECKS).
+  - **Reis de pedra**: anões de verdade do jogo, posados e virados pedra com `ctx.stoneHero` (main3d).
+  - **Terraços dos clãs** talhados no paredão (`buildCliffDwellings`) e canaletas de lava com grelha na rua (`buildLavaChannels`).
+  - **Saiu o grego**: pilares chanfrados (`chamferPillar`), telhado em degraus no templo e Círculo dos Ancestrais no lugar do tholos. A muralha se abre ao norte e encosta na fachada.
+  - **Próximas etapas**: 2 = Grande Salão por trás do portão; 3 = gente, lojas e a missão "O Eco no Fundo".
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar

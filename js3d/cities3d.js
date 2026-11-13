@@ -7,6 +7,7 @@
    Tudo é juntado por material (poucas chamadas de desenho) e some de longe.
    ========================================================================= */
 import * as THREE from 'three';
+import { buildKingsGate, buildCliffDwellings, buildLavaChannels, chamferPillar } from './dwarfhold3d.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 import { realFlame } from './flame3d.js';
@@ -353,22 +354,26 @@ function dwarfTemple() { // templo da Forja: estilóbata em degraus, colunata, f
   const K = new Kit(), cv = M.dwarfCarve(), st = M.dwarfStone(), W = 14, D = 14;
   for (let k = 0; k < 3; k++) K.box(W + 3 - k * 1.0, 0.45, D + 3 - k * 1.0, cv, 0, 0.22 + k * 0.45, 0);
   const y0 = 1.35, H = 7.5;
-  for (let i = 0; i < 6; i++) for (const z of [-D / 2 + 0.6, D / 2 - 0.6]) { const x = -W / 2 + 0.6 + i * (W - 1.2) / 5; K.box(1.3, 0.4, 1.3, cv, x, y0 + 0.2, z); K.cyl(0.5, 0.58, H, cv, x, y0 + 0.4 + H / 2, z, 16); K.box(1.4, 0.45, 1.4, cv, x, y0 + 0.62 + H, z); }
-  for (let i = 1; i < 5; i++) for (const x of [-W / 2 + 0.6, W / 2 - 0.6]) { const z = -D / 2 + 0.6 + i * (D - 1.2) / 5; K.box(1.3, 0.4, 1.3, cv, x, y0 + 0.2, z); K.cyl(0.5, 0.58, H, cv, x, y0 + 0.4 + H / 2, z, 16); K.box(1.4, 0.45, 1.4, cv, x, y0 + 0.62 + H, z); }
+  // 2026-11-13: pilares quadrados chanfrados com base e capitel em degraus (no lugar das colunas redondas gregas)
+  const pil = (x, z) => { K.box(1.5, 0.4, 1.5, cv, x, y0 + 0.2, z); K.add(chamferPillar(1.1, 1.1, H, 0.22), cv, x, y0 + 0.4, z); K.box(1.5, 0.35, 1.5, cv, x, y0 + 0.55 + H, z); K.box(1.8, 0.3, 1.8, cv, x, y0 + 0.85 + H, z); };
+  for (let i = 0; i < 6; i++) for (const z of [-D / 2 + 0.6, D / 2 - 0.6]) pil(-W / 2 + 0.6 + i * (W - 1.2) / 5, z);
+  for (let i = 1; i < 5; i++) for (const x of [-W / 2 + 0.6, W / 2 - 0.6]) pil(x, -D / 2 + 0.6 + i * (D - 1.2) / 5);
   K.box(W - 4, H, D - 5, st, 0, y0 + H / 2, -1); // cela
   K.box(W + 0.6, 1.4, D + 0.6, cv, 0, y0 + H + 1.5, 0); // entablamento
   for (let k = 0; k < 18; k++) runeGlyph(K, -W / 2 + 0.8 + k * 0.75, y0 + H + 1.5, D / 2 + 0.32, 0.55, k * 3 + 1); // friso de runas
-  gable(K, W + 0.6, D + 0.6, 3.2, M.copper(), 0, y0 + H + 2.2, 0, Math.PI / 2, 0.4);
+  for (let k = 0; k < 3; k++) K.box(W + 0.2 - k * 3.2, 0.9, D + 0.2 - k * 3.2, k % 2 ? st : cv, 0, y0 + H + 2.65 + k * 0.9, 0); K.box(W - 9.4, 0.5, D - 9.4, M.copper(), 0, y0 + H + 5.35, 0); // telhado em degraus (zigurate), com tampa de bronze
   K.box(3.0, 4.6, 0.3, M.darkWood(), 0, y0 + 2.3, D / 2 - 3.4); K.add(new THREE.PlaneGeometry(2.2, 3.6), doorGlow(), 0, y0 + 1.9, D / 2 - 3.24); // S-394: porta aberta para o salão aceso (antes: retângulo laranja liso)
   return K;
 }
-function dwarfTholos() { // santuário dos Ancestrais: círculo de colunas com cúpula de bronze e uma estátua de antepassado
-  const K = new Kit(), cv = M.dwarfCarve();
+function dwarfTholos() { // 2026-11-13: Círculo dos Ancestrais — estelas de pedra com runas acesas em volta do fogo eterno (antes: templo redondo de colunas, grego)
+  const K = new Kit(), cv = M.dwarfCarve(), st = M.dwarfStone();
   for (let k = 0; k < 3; k++) K.cyl(7.5 - k * 0.6, 7.5 - k * 0.6, 0.45, cv, 0, 0.22 + k * 0.45, 0, 40);
-  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; K.cyl(0.42, 0.5, 6, cv, Math.cos(a) * 5.6, 1.35 + 3, Math.sin(a) * 5.6, 14); K.box(1.1, 0.4, 1.1, cv, Math.cos(a) * 5.6, 7.55, Math.sin(a) * 5.6, -a); }
-  K.cyl(6.4, 6.4, 1.0, cv, 0, 8.2, 0, 40, 0, 0, 0, true); K.cyl(6.3, 6.3, 0.2, cv, 0, 7.75, 0, 40);
-  K.add(new THREE.SphereGeometry(6.2, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), M.copper(), 0, 8.6, 0, 0, 0, 0, 1, 0.55, 1);
-  const s = dwarfStatue(77); for (const { mat, geos } of s.parts.values()) for (const g of geos) { const c = g.clone(); c.scale(0.36, 0.36, 0.36); c.translate(0, 1.35, 0); K.add(c, mat); }
+  for (let i = 0; i < 12; i++) { if (i === 3) continue; const a = i / 12 * Math.PI * 2, x = Math.cos(a) * 5.6, z = Math.sin(a) * 5.6, ry = Math.atan2(-x, -z), h = 5.2 + ((i * 7) % 5) * 0.35;
+    const g = chamferPillar(1.5, 0.6, h, 0.2); g.rotateY(ry); K.add(g, st, x, 1.35, z); // estela de frente para o fogo
+    K.add(new THREE.ConeGeometry(0.95, 0.9, 4), cv, x, 1.35 + h + 0.4, z, ry + Math.PI / 4, 0, 0, 1, 1, 0.45); // topo em ponta (pirâmide achatada)
+    for (let k = 0; k < 4; k++) runeGlyph(K, x - Math.sin(ry) * 0.31 + Math.cos(ry) * 0.12, 2.6 + k * 0.95, z - Math.cos(ry) * 0.31 - Math.sin(ry) * 0.12, 0.6, i * 4 + k); }
+  K.add(new THREE.LatheGeometry([[0.01, 0], [1.1, 0], [0.7, 0.3], [0.6, 0.7], [1.4, 1.0], [1.6, 1.25], [1.45, 1.3], [0.01, 1.05]].map(([a, b]) => new THREE.Vector2(a, b)), 28), cv, 0, 1.35, 0); // taça do fogo eterno
+  for (let k = 0; k < 14; k++) { const a = k * 2.4, rr = 0.25 + (k % 3) * 0.35; K.add(new THREE.DodecahedronGeometry(0.18, 1), k % 3 ? M.ember() : st, Math.cos(a) * rr, 2.55, Math.sin(a) * rr, k); }
   return K;
 }
 function terrace(K, w, d, h, mat, cap) { // plataforma de pedra com talude, cornija e friso
@@ -386,7 +391,7 @@ function buildDwarfCity(ctx) {
   const RW = 58, HW = 13, gate = Math.PI / 2;
   { const K = new Kit(), N = 84;
     for (let i = 0; i < N; i++) {
-      const a = (i + 0.5) / N * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.21) continue; // vão do portão
+      const a = (i + 0.5) / N * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.21 || Math.PI - da < 0.62) continue; // vão do portão; ao norte a muralha some (a Fachada dos Reis e o paredão fecham a cidade)
       const x = Math.cos(a) * RW, z = Math.sin(a) * RW, ry = -a - Math.PI / 2, seg = Math.PI * 2 * RW / N + 0.15, y = gY(C.x + x, C.z + z) - base;
       K.box(seg, HW, 4.2, st, x, y + HW / 2 - 0.5, z, ry); K.box(seg, 3.4, 6.2, st, x + Math.cos(a) * 0.9, y + 1.0, z + Math.sin(a) * 0.9, ry); // muro e talude na base (lado de fora)
       K.box(seg, 0.5, 4.8, cv, x, y + HW - 0.2, z, ry);
@@ -394,13 +399,17 @@ function buildDwarfCity(ctx) {
       ctx.colliders.push({ x: C.x + x, z: C.z + z, r: 2.7, name: 'muralha_pedrafunda' });
     }
     for (let t = 0; t < 10; t++) { // torres redondas e atarracadas
-      const a = gate + (t + 0.5) / 10 * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.45) continue;
+      const a = gate + (t + 0.5) / 10 * Math.PI * 2; let da = Math.abs(((a - gate + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (da < 0.45 || Math.PI - da < 0.75) continue;
       const x = Math.cos(a) * (RW + 0.5), z = Math.sin(a) * (RW + 0.5), y = gY(C.x + x, C.z + z) - base;
       K.cyl(5.2, 5.8, HW + 6, st, x, y + (HW + 6) / 2 - 0.5, z, 24); K.cyl(5.9, 5.9, 0.7, cv, x, y + HW + 5.6, z, 24);
       for (let m = 0; m < 12; m++) { const b = m / 12 * Math.PI * 2; if (m % 2) K.box(1.6, 1.5, 0.9, cv, x + Math.cos(b) * 5.5, y + HW + 6.6, z + Math.sin(b) * 5.5, -b + Math.PI / 2); }
       for (let m = 0; m < 3; m++) { const b = a + Math.PI + (m - 1) * 0.5; K.box(0.35, 1.6, 0.2, M.glass(), x + Math.cos(b) * 5.3, y + HW + 1 + m * 0.2, z + Math.sin(b) * 5.3, -b + Math.PI / 2); } // seteiras acesas
       ctx.colliders.push({ x: C.x + x, z: C.z + z, r: 6, name: 'torre_pedrafunda' });
     }
+    for (const sx of [-1, 1]) { // ao norte, a muralha vira e vai encostar nas pontas da Fachada dos Reis (fecha a cidade)
+      const a0 = gate + Math.PI + sx * 0.62, x0 = Math.cos(a0) * RW, z0 = Math.sin(a0) * RW, x1 = sx * 43, z1 = -63, dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), ry = Math.atan2(-dz, dx), mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, y = gY(C.x + mx, C.z + mz) - base;
+      K.box(L + 2, HW, 4.2, st, mx, y + HW / 2 - 0.5, mz, ry); K.box(L + 2, 0.5, 4.8, cv, mx, y + HW - 0.2, mz, ry); for (let k = 0; k < Math.floor(L / 2.6); k++) { const t = (k + 0.5) / Math.floor(L / 2.6); if (k % 2 === 0) K.box(1.4, 1.5, 0.9, cv, x0 + dx * t, y + HW + 0.7, z0 + dz * t, ry); }
+      ctx.colliders.push({ x: C.x + mx, z: C.z + mz, r: L / 2 + 1, box: true, hx: L / 2 + 1, hz: 2.1, rot: ry, name: 'muralha_pedrafunda' }); }
     put(ctx, K, 'muralha_pedrafunda', C.x, C.z, 0, { y: base, occ: false });
   }
   // ---------- portão monumental (torres quadradas, arco de aduelas, portas de bronze abertas) ----------
@@ -421,14 +430,14 @@ function buildDwarfCity(ctx) {
   { const K = new Kit(); for (let z = 30; z < RW - 4; z += 1.6) for (let x = -3.6; x < 3.6; x += 1.8) K.box(1.74 + r() * 0.05, 0.12, 1.54, cv, x + 0.9 + ((z / 1.6) % 2 ? 0.45 : 0), 0.06, z + 0.8, 0, 0, (r() - 0.5) * 0.02);
     const [x, z] = at(0, 0); put(ctx, K, 'rua_pedrafunda', x, z, 0, { y: base, occ: false }); }
   for (const sx of [-1, 1]) { const s = dwarfStatue(5 + sx); const [x, z] = at(sx * 10.5, 44); put(ctx, s, 'estatua_anao', x, z, sx > 0 ? -Math.PI / 2 + 0.3 : Math.PI / 2 - 0.3, { y: base, box: [[0, 0, 2.3, 2.3]] }); }
-  for (const z of [34, 50]) for (const sx of [-1, 1]) { const [x, zz] = at(sx * 5.2, z); brazier(ctx, x, base, zz, z === 50, sx * z); }
+  for (const z of [34, 50]) for (const sx of [-1, 1]) { const [x, zz] = at(sx * 6.6, z); brazier(ctx, x, base, zz, z === 50, sx * z); } // fora das canaletas de lava
   // ---------- ágora: forja de lava no meio, pórtico (estoa) a oeste, ferraria do Brakar a leste ----------
   const AG = { x: 0, z: 16 };
   { const K = new Kit(); K.cyl(4.4, 4.8, 0.9, cv, 0, 0.3, 0, 32); K.cyl(3.6, 3.6, 0.1, coalBed(), 0, 0.72, 0, 32); for (let k = 0; k < 40; k++) { const a = k * 2.399, rr = Math.sqrt((k + 0.5) / 40) * 3.2; K.add(new THREE.DodecahedronGeometry(0.16 + (k % 5) * 0.04, 1), k % 3 ? M.dwarfStone() : M.ember(), Math.cos(a) * rr, 0.8, Math.sin(a) * rr, k); } // S-393: brasas e carvão por cima do leito for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.8, 2.2, 0.8, cv, Math.cos(a) * 4.6, 1.1, Math.sin(a) * 4.6, -a); }
     const [x, z] = at(AG.x, AG.z); const g = put(ctx, K, 'forja_da_praca', x, z, 0, { y: base, box: [[0, 0, 4.8, 4.8]] }); const L = vlight('#ff7a2a', 6, 18, 1.5); L.position.set(0, 2, 0); g.add(L); const f = flame(3.2, 9); f.position.y = 0.7; g.add(f); ctx.roomAnims.push(f); }
   { const K = new Kit(), L = 26, D = 7; // estoa: muro do fundo, colunata e telhado de bronze, com bancos de pedra
     K.box(0.9, 6, L, st, -D / 2, 3, 0); K.box(D + 0.4, 0.4, L + 0.4, cv, 0, 0.2, 0);
-    for (let i = 0; i < 10; i++) { const z = -L / 2 + 0.8 + i * (L - 1.6) / 9; K.cyl(0.38, 0.45, 5.4, cv, D / 2 - 0.5, 3.1, z, 14); K.box(1, 0.35, 1, cv, D / 2 - 0.5, 5.9, z); }
+    for (let i = 0; i < 10; i++) { const z = -L / 2 + 0.8 + i * (L - 1.6) / 9; K.add(chamferPillar(0.9, 0.9, 5.4, 0.18), cv, D / 2 - 0.5, 0.4, z); K.box(1.2, 0.35, 1.2, cv, D / 2 - 0.5, 5.9, z); K.box(1.2, 0.35, 1.2, cv, D / 2 - 0.5, 0.55, z); } // pilares chanfrados (antes, colunas redondas gregas)
     K.box(D + 1, 0.8, L + 1, cv, 0, 6.4, 0); { const sh = new THREE.Shape(); sh.moveTo(-D / 2 - 0.6, 0); sh.lineTo(D / 2 + 0.6, 0); sh.lineTo(-D / 2 - 0.6, 1.8); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: L + 1.2, bevelEnabled: false }); g.translate(0, 6.8, -(L + 1.2) / 2); K.add(g, M.copper()); }
     for (let k = 0; k < 3; k++) K.box(0.8, 0.5, 3.2, cv, -D / 2 + 1.0, 0.65, -8 + k * 8);
     const [x, z] = at(-19, AG.z); put(ctx, K, 'estoa_pedrafunda', x, z, 0, { y: base, box: [[-D / 2, 0, 0.6, L / 2], [D / 2 - 0.5, -L / 2 + 0.8, 0.5, 0.5], [D / 2 - 0.5, L / 2 - 0.8, 0.5, 0.5]] }); }
@@ -453,25 +462,18 @@ function buildDwarfCity(ctx) {
       { x: C.x, z: C.z + T2.z1, yaw: 0, w: T2.w, len: T2.z0 - T2.z1, y: base + T2.h, tag: 'pedrafunda' }, { x: C.x, z: C.z + T1.z1, yaw: 0, w: T1.w, len: T1.z0 - T1.z1, y: base + T1.h, tag: 'pedrafunda' });
     const edge = (x0, x1, zz) => { const cx = (x0 + x1) / 2, hx = (x1 - x0) / 2; ctx.colliders.push({ x: C.x + cx, z: C.z + zz, r: Math.max(hx, 0.6), box: true, hx, hz: 0.6, rot: 0, name: 'acropole_pedrafunda' }); };
     const side = (xx, z0, z1) => { const cz = (z0 + z1) / 2, hz = Math.abs(z1 - z0) / 2; ctx.colliders.push({ x: C.x + xx, z: C.z + cz, r: Math.max(hz, 0.6), box: true, hx: 0.6, hz, rot: 0, name: 'acropole_pedrafunda' }); };
-    edge(-T1.w / 2, -6.4, T1.z0); edge(6.4, T1.w / 2, T1.z0); side(-T1.w / 2, T1.z0, T1.z1); side(T1.w / 2, T1.z0, T1.z1); edge(-T1.w / 2, T1.w / 2, T1.z1);
+    edge(-T1.w / 2, -6.4, T1.z0); edge(6.4, T1.w / 2, T1.z0); side(-T1.w / 2, T1.z0, T1.z1); side(T1.w / 2, T1.z0, T1.z1); edge(-T1.w / 2, -T2.w / 2, T1.z1); edge(T2.w / 2, T1.w / 2, T1.z1); // o meio do fundo segue para o terraço de cima e a plataforma dos Reis
     edge(-T2.w / 2, -5.4, T2.z0); edge(5.4, T2.w / 2, T2.z0); side(-T2.w / 2, T2.z0, T2.z1); side(T2.w / 2, T2.z0, T2.z1);
     for (const sx of [-1, 1]) { side(sx * 6.4, T1.z0, T1.z0 + 8); side(sx * 5.4, T2.z0, T2.z0 + 8); } // corrimãos das escadas
   }
   { const [x, z] = at(15.5, -18); put(ctx, dwarfTemple(), 'templo_da_forja', x, z, 0, { y: base + T1.h, box: [[0, 0, 7.6, 7.6]] }); const L = vlight('#ff8a3a', 3, 10, 1.6); L.position.set(x, base + T1.h + 3, z + 5); ctx.scene.add(L); }
-  { const [x, z] = at(-15.5, -19); put(ctx, dwarfTholos(), 'santuario_ancestrais', x, z, 0, { y: base + T1.h }); for (let i = 0; i < 12; i++) { if (i === 3) continue; const a = i / 12 * Math.PI * 2; ctx.colliders.push({ x: x + Math.cos(a) * 5.6, z: z + Math.sin(a) * 5.6, r: 0.6 }); } ctx.colliders.push({ x, z, r: 1.6 }); }
-  // Salão do Rei-Sob-a-Pedra no terraço de cima (fachada de colunas e frontão)
-  { const K = new Kit();
-    K.box(30, 3, 10, st, 0, 1.5, 0); for (let k = 0; k < 5; k++) K.box(26 - k * 1.6, 0.5, 2, cv, 0, 0.25 + k * 0.5, 6 - k * 0.6);
-    for (let k = 0; k < 6; k++) { const x = -11 + k * 4.4; K.box(2.2, 1.0, 2.2, cv, x, 3.5, 2); K.cyl(0.85, 0.95, 12, cv, x, 10, 2, 16); K.box(2.4, 1.1, 2.4, cv, x, 16.6, 2); }
-    K.box(28, 2.2, 4, cv, 0, 18.3, 2); { const sh = new THREE.Shape(); sh.moveTo(-14, 0); sh.lineTo(14, 0); sh.lineTo(0, 6); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }); g.translate(0, 19.4, 0.5); K.add(g, st); }
-    K.box(26, 20, 10, st, 0, 10, -5); K.box(7, 9, 0.6, M.darkWood(), 0, 7.5, -0.1); archBlocks(K, 7, 1.0, 1.2, cv, 0, 12, 0, 0, 11);
-    for (let k = 0; k < 7; k++) runeGlyph(K, -3 + k, 10.2, 0.25, 0.5, k + 2);
-    for (let k = 0; k < 11; k++) runeGlyph(K, -3 + k * 0.6, 21.8, 3.55, 0.7, k * 5);
-    gable(K, 26, 10, 4, M.copper(), 0, 20, -5, 0, 0.4);
-    const [x, z] = at(0, -38.5); put(ctx, K, 'salao_anao', x, z, 0, { y: base + T2.h - 0.2, box: [[0, -4, 13.5, 5.5]] });
-    for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.4, 8); b.position.set(x + sx * 6.6, base + T2.h + 15.5, z + 3.6); ctx.scene.add(b); }
-    for (const sx of [-1, 1]) brazier(ctx, x + sx * 9, base + T2.h, z + 9, sx > 0, sx * 7);
-  }
+  { const [x, z] = at(-15.5, -19); put(ctx, dwarfTholos(), 'santuario_ancestrais', x, z, 0, { y: base + T1.h }); { const f = flame(1.5, 31); f.position.set(x, base + T1.h + 2.55, z); ctx.scene.add(f); ctx.roomAnims.push(f); const L = vlight('#ff8a3a', 4, 14, 1.5); L.position.set(x, base + T1.h + 4, z); ctx.scene.add(L); } for (let i = 0; i < 12; i++) { if (i === 3) continue; const a = i / 12 * Math.PI * 2; ctx.colliders.push({ x: x + Math.cos(a) * 5.6, z: z + Math.sin(a) * 5.6, r: 0.6 }); } ctx.colliders.push({ x, z, r: 1.6 }); }
+  // 2026-11-13 (etapa 1 da fortaleza): no lugar do Salão de colunas e frontão (grego demais), a FACHADA DOS REIS esculpida no paredão do norte,
+  // com dois Reis de pedra de 24 m, o portão de bronze com o selo de runas, cascata de lava e o elevador de corrente (dwarfhold3d)
+  const HOLD = { C, base, Kit, M, runeGlyph, addDeck: d => DECKS.unshift(d), put, brazier, makeBanner };
+  const KG = buildKingsGate(ctx, HOLD, { FZ: -64, PY: T2.h });
+  buildCliffDwellings(ctx, HOLD); // terraços dos clãs talhados no paredão, em volta da cidade (menos na estrada do sul e na fachada)
+  buildLavaChannels(ctx, HOLD, { x: 4.6, z0: 30, z1: 55 });
   // ---------- cidade baixa: casas de pedra em anéis, de frente para a ágora; a taverna "Bigorna Bêbada" a leste ----------
   const HOUSES = [[355, 34], [10, 34], [350, 47], [5, 47], [20, 48], [58, 37], [70, 48], [50, 49], [114, 38], [124, 49], [107, 49], [170, 34], [185, 34], [160, 47], [175, 47], [190, 48], [200, 36]];
   const houseAt = {};
@@ -512,10 +514,10 @@ function buildDwarfCity(ctx) {
     lines: 'Cerveja de cogumelo das cavernas, a melhor do mundo! Quem diz o contrário nunca provou.\nO Brakar? Já quebrou mais espada do que consertou — mas as que aguentam ficam lendárias.' }, x, z, tav.ry); } // na porta da taverna
   { W({ id: 'oldra', name: 'Oldra', title: 'Mineira', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'astuto', hair: { style: 'curto', color: 'castanho' } },
     lines: 'O minério que o Brakar usa sai das galerias lá do fundo. Brilha no escuro, sabia? A gente chama de "pedra-fagulha".' }, MINE[0] + 1.2, MINE[1] + 2.4, face(MINE[0] + 1.2, MINE[1] + 2.4, MINE[0] + 1.2, MINE[1])); } // ao lado da carroça
-  { const [x, z] = at(0, -30.6); W({ id: 'durgan', name: 'Rei Dúrgan', title: 'Senhor de Pedrafunda', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
-    lines: 'Meu povo cava a montanha há mil invernos. Os picos à nossa volta são os mais altos de Aethra: nada passa por eles sem a nossa permissão.\nDizem que lá no sul, nos Campos de Valcinza, os humanos ergueram um castelo enorme... Pedra mole, pedra de planície.' }, x, z, 0, base + T2.h); } // diante da escadaria do Salão, de costas para ele
-  for (const sx of [-1, 1]) { const [x, z] = at(sx * 4.4, -31.4); W({ id: 'guarda_rei_' + (sx > 0 ? 'l' : 'o'), name: 'Guarda Real', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: sx > 0 ? 'preto' : 'ruivo' }, beard: true },
-    lines: 'Nenhum passo além sem a palavra do Rei.' }, x, z, 0, base + T2.h); }
+  { const x = KG.gate.x, z = KG.gate.z; W({ id: 'durgan', name: 'Rei Dúrgan', title: 'Senhor de Pedrafunda', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
+    lines: 'Os dois Reis de pedra são Hroggar e Bardun, os primeiros a abrir a montanha. Foram talhados por mil cinzéis durante três gerações, e cada um segura a arma com que morreu.\nAtrás deste portão fica o Grande Salão. O selo de runas só se abre para quem a montanha aceita... e ela anda inquieta.\nNos Campos de Valcinza, os humanos ergueram um castelo enorme. Pedra mole, pedra de planície.' }, x, z, 0, KG.gate.y); } // diante do portão dos Reis // diante da escadaria do Salão, de costas para ele
+  for (const sx of [-1, 1]) { const x = KG.gate.x + sx * 4.4, z = KG.gate.z - 0.8; W({ id: 'guarda_rei_' + (sx > 0 ? 'l' : 'o'), name: 'Guarda Real', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: sx > 0 ? 'preto' : 'ruivo' }, beard: true },
+    lines: 'Nenhum passo além sem a palavra do Rei.' }, x, z, 0, KG.gate.y); }
   { const [x, z] = at(-15.5, -16); W({ id: 'gudrun', name: 'Gudrun', title: 'Anciã do Clã', model: 'Mage', look: { race: 'anao', sex: 'f', face: 'sabio', hair: { style: 'longo', color: 'branco' } },
     lines: 'Nossos avós ergueram estes muros quando o mundo ainda era jovem. Cada runa no santuário conta uma história.' }, x, z, 0, base + T1.h + 1.35); } // diante da estátua do ancestral
   { const [x, z] = at(15.5, -11.4); W({ id: 'sacerdote_forja', name: 'Irmão Hulda', title: 'Sacerdote da Forja', model: 'Mage', look: { race: 'anao', face: 'sereno', hair: { style: 'careca', color: 'grisalho' }, beard: true },
