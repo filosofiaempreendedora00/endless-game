@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { realWolf } from './wolf3d.js';
 
-export const DIREWOLF = { scale: 1.5, color: '#a5a8ac', fur: 1.75, run: 7.2, reach: 1.25, biteEvery: 1.5, follow: [1.5, -1.1] };
+export const DIREWOLF = { scale: 1.5, color: '#878b91', /* S-396: cinza mais fechado — a máscara clara do rosto e o contorno escuro dos olhos aparecem */ fur: 1.75, run: 7.2, reach: 1.25, biteEvery: 1.5, follow: [1.5, -1.1] };
 
 export function makeDirewolf(color = DIREWOLF.color) {
   const w = realWolf(color, { fur: DIREWOLF.fur });

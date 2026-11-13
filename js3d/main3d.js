@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/SkeletonUtils.js';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
-import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, waterLevelAt, PORT, DWARF, ELF, CASTLE, treeAllowed, OASIS, oasisDist, ICE_LAKES, buildWaterfall, buildIceFloes, seaDist, seaAt, SEA_TROPIC, SEA_NORTH } from './world3d.js';
+import { ZONES, VILLAGE, LAKE, PLAY_LIMIT, HALF, CITY2, FROZEN, TEMPLE, CAMPS, heightAt, zoneAt, zoneWeight, roadDist, buildTerrain, updateTerrain, terrainNear, buildWater, buildSky, buildGrass, cullGrass, groundColor, updateNature, mountainMask, buildDistantMountains, lakeDist, lakeShape, buildReeds, lilyPadGeometry, buildSea, seaPush, waterLevelAt, PORT, DWARF, ELF, CASTLE, treeAllowed, OASIS, oasisDist, ICE_LAKES, buildWaterfall, buildIceFloes, seaDist, seaAt, SEA_TROPIC, SEA_NORTH, waterSky } from './world3d.js';
 import { buildCities, deckAt, FROST, Kit as CKit, M as CM, archBlocks as cArch } from './cities3d.js';
 import { buildPortCity, buildMerchants, villageHouse, villageTavern, villageStable, villageChurch, palmModel } from './port3d.js';
 import { buildCastle, castleMap } from './castle3d.js';
@@ -24,7 +24,7 @@ import { makeTreeTemplates } from './trees3d.js';
 import { initWeather, updateWeather, setWeatherLight } from './weather3d.js';
 import { initFauna, updateFauna, faunaEnabled, setFaunaEnabled, faunaStats } from './fauna3d.js'; // P-024: vida ambiente sutil (pássaros, borboletas, vaga-lumes, peixes)
 import { initBossFight, bossTick, updateBossFights, bossOnDeath, bossActive, BOSS_SCRIPT } from './bossfight3d.js'; // P-022: chefes com fases, avisos no chão, lacaios, barra e música
-import { initDayNight, updateDayNight, tintFog, isNight, dayNightHours } from './daynight3d.js'; // P-020: dia e noite pelo relógio do jogo
+import { initDayNight, updateDayNight, tintFog, isNight, dayNightHours, dayNightState } from './daynight3d.js'; // P-020: dia e noite pelo relógio do jogo
 import { initTutorial, startTutorial, updateTutorial, tutorialCamera, restartTutorial, tutorialActive } from './tutorial3d.js'; // P-018: primeiros passos do jogador novo
 import { initRoutines, updateRoutines, gameClock, gameMinutes, routineNow } from './routines3d.js';
 import { biome as ambBiome, seaDist as ambSeaDist } from './world3d.js'; // P-025: sons de ambiente (zona/chão) // P-017: NPCs com rotina pela hora do jogo
@@ -34,6 +34,7 @@ import { ensureLogin, accountBadge } from './account3d.js'; // online fase 2: co
 import { buildCatacombs as buildDungeon,FLOORS, DUNGEON_SPAWNS, dungeonSpawn, dungeonMap, dungeonCull } from './dungeon3d.js';
 import { runQA, showQA, checkCharsDeep, showQAChars } from './qa3d.js'; // P-003/P-004: verificador do mundo e da música · P-012: dos personagens
 import { buildAelindra } from './elfcity3d.js';
+import { realFlame } from './flame3d.js';
 import { INTERIORS, buildRoomShell, table, bench, counter, fireplace, hayBale, stall, lantern, makePortal, makeTarget, makeFruitStand, looseHay, hayStack } from './interiors3d.js';
 import { MOUNTS, MOUNT_SPEED, makeMount } from './mounts3d.js';
 import { riderPose } from './ride3d.js';
@@ -791,8 +792,7 @@ function makeWallTorch(seed = 0) {
   for (let k = 0; k < 4; k++) { const w = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 16), cloth); w.rotation.x = Math.PI / 2 + 0.18; w.position.set(0, 0.42 + k * 0.035, 0.33 + k * 0.006); g.add(w); }
   // chama em três camadas (núcleo claro, corpo laranja, ponta avermelhada), aditivas
   const fl = new THREE.Group(); fl.position.set(0, 0.6, 0.345); g.add(fl);
-  const layer = (r, h, c, o, y) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false })); m.scale.set(1, h, 1); m.position.y = y; fl.add(m); return m; };
-  layer(0.11, 2.4, '#ff5a1a', 0.45, 0.12); layer(0.08, 2.2, '#ffa040', 0.7, 0.1); layer(0.045, 2.0, '#fff2b0', 0.95, 0.06);
+  const rf = realFlame(0.5, seed); fl.add(rf); fl.userData.rf = rf; // S-393: a mesma chama de fogo do resto do jogo
   fl.userData.seed = seed * 1.7; arenaFlames.push(fl);
   return g;
 }
@@ -914,7 +914,7 @@ function removeRival(rv) { scene.remove(rv.obj); const hi = hitboxes.findIndex(h
 function updateArena(dt) {
   const A = S.arena; if (!A) return;
   if (S.time - A.last > 0.12) arenaSync();
-  for (const f of arenaFlames) { const sd = f.userData.seed || f.id; f.scale.set(1 + Math.sin(S.time * 17 + sd) * 0.08, 0.85 + Math.sin(S.time * 11 + sd) * 0.15 + Math.sin(S.time * 23 + sd * 2) * 0.07, 1); f.rotation.z = Math.sin(S.time * 7 + sd) * 0.08; }
+  for (const f of arenaFlames) { if (f.userData.rf) { f.userData.rf.userData.update(S.time); continue; } const sd = f.userData.seed || f.id; f.scale.set(1 + Math.sin(S.time * 17 + sd) * 0.08, 0.85 + Math.sin(S.time * 11 + sd) * 0.15 + Math.sin(S.time * 23 + sd * 2) * 0.07, 1); f.rotation.z = Math.sin(S.time * 7 + sd) * 0.08; }
   for (const rv of A.rivals.values()) {
     const k = 1 - Math.exp(-dt * 12);
     rv.x += (rv.tx - rv.x) * k; rv.z += (rv.tz - rv.z) * k; rv.yaw = angLerp(rv.yaw, rv.tyaw ?? rv.yaw, k);
@@ -1388,10 +1388,13 @@ const CLASS_ATTACK = {
   arqueiro: { clips: ['Pistol_Shoot'], sound: 'bow', speed: 0.9, aim: 'Pistol_Aim_Neutral' }, cacador: { clips: ['Pistol_Shoot'], sound: 'bow', speed: 1.0, aim: 'Pistol_Aim_Neutral' }, menestrel: { clips: ['Spell_Simple_Shoot'], sound: 'bow', speed: 1.1 },
   mago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.0 }, arquimago: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.1 }, sabio_elemental: { clips: ['Spell_Simple_Shoot'], sound: 'magic', speed: 1.05 },
 };
+// S-403: o Paladino só usa o golpe de escudo (empurrão com a mão esquerda) se tiver ESCUDO equipado; sem escudo, com a espada na mão,
+// todos os golpes são de espada (antes o 3º golpe virava um soco de mão vazia). Vale também para a guarda.
+function strikeOf(p, wt, armed) { const k = strikeKind(p.cls, wt, armed); return k === 'paladino' && !(p.equip && p.equip.escudo) ? 'espada' : k; }
 function attackAnim(p, me) {
   if (p.d.sonic) { S.lastAtk = S.time; S.overlayAtk = true; return { sound: instrSound(p), sonic: true }; } // S-324: com instrumento o "golpe" é o dedilhado (braços por IK em bardPose), sem clipe de corpo inteiro
   { // P-014: golpe sob medida pela arma/classe (trajetória das mãos + tronco, depois do mixer); as pernas seguem a animação de base
-    const it = weaponInfo(p), wt = it ? it.wtype : null, armed = !!(p.equip && p.equip.arma), kind = !p.d.ranged && !p.d.magicAuto ? strikeKind(p.cls, wt, armed) : null;
+    const it = weaponInfo(p), wt = it ? it.wtype : null, armed = !!(p.equip && p.equip.arma), kind = !p.d.ranged && !p.d.magicAuto ? strikeOf(p, wt, armed) : null;
     if (kind) {
       const r = startStrike(me, kind, { delay: p.d.aspd / 1000, speed: ((CLASS_POSE[p.cls] || {}).atk || [0, 0, 1])[2] }); S.lastAtk = S.time; S.overlayAtk = true;
       if (r && r.lunge) S.lunge = { t: S.time, d: r.lunge };
@@ -1480,7 +1483,7 @@ function setView(v) {
 }
 function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]); }
 // quem está na mira: raio do centro da tela; para corpo a corpo, um cone generoso à frente
-const aimRay = new THREE.Raycaster();
+const aimRay = new THREE.Raycaster(); aimRay.camera = camera;
 // S-141: no modo clássico a mira é o CURSOR do mouse (estilo Skyrim, sem alvo travado); nos modos de ação, o centro da tela
 const mouseNdc = new THREE.Vector2(0, 0), NDC0 = new THREE.Vector2(0, 0);
 const AIM_WEIGHT = { total: 0.0042, leve: 0.0035, medio: 0.0022, pesado: 0.0012, travado: 0 }; // S-234: quanto a câmera gira ao mexer o mouse · S-385: 'total' = como FPS (padrão)
@@ -2365,7 +2368,11 @@ const _fv = new THREE.Vector3(); let feet = null;
 function playerFootsteps(dt) {
   if (typeof Ambience === 'undefined' || !S.me || !S.pos) return;
   const P = S.pos, spd = Math.hypot(S.vel ? S.vel.x : 0, S.vel ? S.vel.z : 0);
-  if (!P.ground || spd < 0.4 || S.flying || S.swim) { if (feet) for (const f of feet) f.up = false; return; }
+  if (S.swim && !S.flying) { // S-404: nadando, braçadas no ritmo do nado (mais rápidas quanto mais rápido); parado na água, marulho de vez em quando
+    if (spd > 0.4) { S.swimT = (S.swimT || 0) + dt * (0.75 + spd * 0.09); if (S.swimT >= 1) { S.swimT -= 1; Ambience.swim(Math.min(1.2, 0.7 + spd * 0.08)); } }
+    else { S.treadT = (S.treadT || 0) + dt; if (S.treadT > 2.3) { S.treadT = 0; Ambience.swim(0.8, true); } }
+    if (feet) for (const f of feet) f.up = false; return; }
+  if (!P.ground || spd < 0.4 || S.flying) { if (feet) for (const f of feet) f.up = false; return; }
   if (S.riding) { S.hoofT = (S.hoofT || 0) + dt * spd / 1.5; if (S.hoofT >= 1) { S.hoofT -= 1; Ambience.step('cascos', Math.min(1, 0.5 + spd / 14)); } return; }
   if (!feet || feet.me !== S.me) { const r = S.me.root; feet = [r.getObjectByName('foot_l'), r.getObjectByName('foot_r')].filter(Boolean).map(b => ({ b, min: 1, up: false })); feet.me = S.me; if (!feet.length) return; }
   const oy = S.me.obj.position.y, surf = groundSurface(P.x, P.z), back = S.moveRel != null ? Math.abs(S.moveRel) > 2 : (moveInput().fwd < 0);
@@ -2408,7 +2415,7 @@ function updatePlayer(dt) {
     }
     levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bowZoom(me, dt); bardPose(me, p, t, dt); /* S-324: instrumento */
     { // S-346/S-352: guarda de lâmina (mão à frente, ponta para cima; Cavaleiro com as duas mãos) e lâmina pendendo rente à perna fora de combate
-      const it = weaponInfo(p), gk = !p.d.ranged && !p.d.magicAuto && !p.d.sonic ? strikeKind(p.cls, it ? it.wtype : null, !!(p.equip && p.equip.arma)) : null;
+      const it = weaponInfo(p), gk = !p.d.ranged && !p.d.magicAuto && !p.d.sonic ? strikeOf(p, it ? it.wtype : null, !!(p.equip && p.equip.arma)) : null;
       const free = !S.riding && !S.sitting && !S.swim && !p.dead, on = free && S._fighting && !S.casting && P.ground;
       const gg = (key, want, rate) => (S[key] = (S[key] || 0) + (want - (S[key] || 0)) * Math.min(1, dt * rate));
       const gw = gg('_guardW', on ? 1 : 0, 6), rw = gg('_restW', free && !on ? 1 : 0, 4);
@@ -2485,7 +2492,8 @@ function updatePlayer(dt) {
       if (gs > SLOPE_MAX * 1.15) { const k = Math.min(6, (gs - SLOPE_MAX) * 8) * dt; r = resolve(r.x - gx / gs * k, r.z - gz / gs * k, 0.45); if (!S.slideMsg || S.time - S.slideMsg > 4) { S.slideMsg = S.time; msgOnce('slope', 'Íngreme demais para subir.'); } }
     }
   }
-  if (S.lunge && S.time - S.lunge.t < 0.2) { const k = S.lunge.d / 0.2 * dt, q = resolve(r.x + Math.sin(P.yaw) * k, r.z + Math.cos(P.yaw) * k, 0.45); r = q; } // avanço do golpe pesado
+  if (S.lunge && S.time - S.lunge.t < 0.2) { let k = S.lunge.d / 0.2 * dt; const tg = S.target && !S.target.dead && !S.target.isNpc ? S.target : null; if (tg) { const room = Math.hypot(tg.x - r.x, tg.z - r.z) - Math.max(0.6, attackReach(p, tg) - 0.35); k = Math.max(0, Math.min(k, room)); } // S-403: o avanço do golpe nunca passa da distância de alcance da arma (antes, golpe a golpe, o herói ia grudando no alvo)
+    if (k > 0) { const q = resolve(r.x + Math.sin(P.yaw) * k, r.z + Math.cos(P.yaw) * k, 0.45); r = q; } } // avanço do golpe pesado
   { // S-300: nunca ficar preso — tentando andar e sem sair do lugar por 0,7 s, procura o ponto livre mais perto (na direção desejada) e sai por ali
     const want = Math.hypot(vx, vz) * dt, got = Math.hypot(r.x - P.x, r.z - P.z);
     // encostar numa parede NÃO é estar preso (antes, empurrar uma parede fazia o herói "teleportar" 0,5 m de tempos em tempos — ex.: no convés do navio)
@@ -3134,6 +3142,7 @@ function updatePlates() {
 /* =========================== Alvo e cliques =========================== */
 const raycaster = new THREE.Raycaster();
 const camRay = new THREE.Raycaster();
+raycaster.camera = camRay.camera = camera; // S-393: sprites (brasas, chamas) dentro de objetos não podem travar o raio (three exige a câmera para testá-los)
 function pick(cx, cy) {
   const v = new THREE.Vector2(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
   raycaster.setFromCamera(v, camera);
@@ -3625,7 +3634,7 @@ function draw(dt) {
       if (tt < 1) camPos.lerpVectors(head, camPos, tt); } }
     // perto do herói pela CAIXA do objeto (paredes de salas/masmorras são montadas com o grupo na origem: a posição não diz onde estão)
     const near = occluders.filter(o => { let b = o.userData._ob; if (!b) { b = o.userData._ob = new THREE.Box3().setFromObject(o); if (b.isEmpty()) b.set(o.position, o.position); let tri = 0; o.traverse(m => { if (m.isMesh && m.geometry) tri += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; }); o.userData._heavy = tri > 60000; if (o.userData._heavy) console.warn('[câmera] oclusor pesado ignorado (use caixa invisível):', o.userData.asset || o.name, Math.round(tri), 'faces'); } if (o.userData._heavy) return false; return P.x > b.min.x - 30 && P.x < b.max.x + 30 && P.z > b.min.z - 30 && P.z < b.max.z + 30; });
-    const hit = camRay.intersectObjects(near, true)[0];
+    const hit = camRay.intersectObjects(near, true).find(h => !h.object.isSprite && !(h.object.material && h.object.material.blending === THREE.AdditiveBlending)); // fogo, brasas e brilhos não empurram a câmera
     if (hit && hit.distance - 0.3 < camPos.distanceTo(head)) camPos.copy(head).addScaledVector(dir, Math.max(0.6, hit.distance - 0.3));
     camera.position.copy(camPos); camera.lookAt(head);
     if (isAction()) { // 1ª pessoa / por cima do ombro: a câmera aponta para a mira (S-094)
@@ -3645,7 +3654,8 @@ function draw(dt) {
       // o sol "vazava" pelo teto em faixas diagonais — no fundo do salão do trono, no Salão das Lâminas, na cozinha do castelo)
       const I = S.interior, roofed = !!(I && !I.round && I.w && I.d), wide = roofed ? Math.min(90, Math.max(20, Math.hypot(I.w, I.d) / 2 + 6)) : 38, sc = sun.shadow.camera;
       if (sc.right !== wide) { Object.assign(sc, { left: -wide, right: wide, top: wide, bottom: -wide }); sc.updateProjectionMatrix(); }
-      updateDayNight(dt, roofed ? { x: I.x, y: 0, z: I.z } : P, !!S.interior || P.x > HALF + 100); } // P-020: sol/lua, céu, luzes da noite (a luz direcional segue o sol de dia e a lua à noite)
+      updateDayNight(dt, roofed ? { x: I.x, y: 0, z: I.z } : P, !!S.interior || P.x > HALF + 100); } // P-020
+    { const nk = dayNightState().night; waterSky.value.setRGB(0.53 - 0.42 * nk, 0.72 - 0.56 * nk, 0.88 - 0.6 * nk); } // S-392: o reflexo do céu na água escurece à noite (fica um azul de luar): sol/lua, céu, luzes da noite (a luz direcional segue o sol de dia e a lua à noite)
     if ((S._dnMus = (S._dnMus || 0) + dt) > 1) { S._dnMus = 0; // P-020: trilha calma de noite ao ar livre (uma música por vez; salas e masmorras têm a delas)
       const outside = !S.interior && P.x <= HALF + 100, zm = S.zone && S.zone.music, want = outside && zm ? (isNight() && NIGHT_MUSIC.has(zm) ? 'noite' : zm) : null;
       if (want && Sound.ctx && Sound.songId !== want && !bossActive()) Sound.playSong(want); } // P-022: durante a luta de chefe a música de luta manda
@@ -3717,7 +3727,7 @@ function makeStage(cv) {
     for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; x.save(); x.translate(R + Math.cos(a) * 187, R + Math.sin(a) * 187); x.rotate(a + Math.PI / 2); x.fillText(runes[k % runes.length], 0, 0); x.restore(); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; const pad = new THREE.Mesh(new THREE.CircleGeometry(1.15, 96), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); pad.rotation.x = -Math.PI / 2; pad.position.y = 0.002; pad.renderOrder = -1; sc.add(pad); }
   let zoomAt = new THREE.Vector3(0, 0, 0); // S-149: ponto para onde a rodinha aproxima (onde está o cursor)
-  const zr = new THREE.Raycaster();
+  const zr = new THREE.Raycaster(); zr.camera = camera;
   let cur = null, pet = null, yaw = 0.35, vel = 0, drag = false, lastX = 0, t = 0, last = performance.now(), alive = true, zoom = 0, zoomT = 0, idleT = 0;
   let fit = { cx: 0, cy: 0.75, dist: 3.8, face: 1.02 }, keyTurn = 0;
   cv.onpointerdown = e => { drag = true; lastX = e.clientX; vel = 0; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; };

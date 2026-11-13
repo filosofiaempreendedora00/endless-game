@@ -283,3 +283,19 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - **Aprendizado (S-390)**: textura com linhas finas parece "riscado". Árvore mágica = superfície lisa com relevo + luz em pontos/manchas + elementos pendentes que balançam (referência que ele deu: a árvore da vida do Avatar).
 - **Aprendizado (S-386/S-387)**: o lugar certo de cada vegetação importa (nada de pinheiro na porta do templo, nada de carvalho na areia, coqueiro longe da beira).
 - **Antipadrão meu**: montar um grupo em (x0, z0) com peças já em coordenadas da cidade. Antes de entregar, confira sempre se o visual bate com a colisão (caixa do objeto × colisores).
+
+## Rodada S-392 a S-405 (2026-11-13) — foco no ARCO
+- **Arco (S-397/S-400), reincidência antiga**: a causa de fundo não era a pose, era a MATEMÁTICA da suavização.
+  - A mola de Euler (dt·2√k > 1) explodia abaixo de ~50 FPS e jogava a mão 80 cm para trás ou para cima da cabeça. Por isso aparecia "no PvP" e parecia aleatório.
+  - Lição: toda mola com k alto usa o passo exato (`cdStep` em bow3d) e é testada a 15, 30 e 60 FPS.
+  - No Skyrim, andando e atirando, só o tronco fica de lado.
+  - Os outros jogadores precisam receber o estado do arco pela rede (antes tocavam o clipe de pistola).
+- **Fogo (S-393)**: chama de shader única (`flame3d.js`) no lugar de sprites em gota, que viravam adesivo à noite.
+- **Runas (S-394)**: traço + barra parece cruz ou adaga. Glifo de verdade tem haste com ramos inclinados.
+- **Água (S-392)**: ondas quase paralelas formam listras. Reflexo do céu fixo brilha à noite.
+- **Lobo (S-396)**: o pelo longo na cabeça arredonda a cara. O rosto de lobo precisa de focinho, sobrancelha, olhos marcados e testa escura.
+  - Ficou melhor, mas ainda não no nível pedido: candidato a uma sessão dedicada com referência.
+- **Capa (S-402)**: capa de verdade cobre os ombros, abre em "A" e é presa na frente (broches e corrente). Faixa estreita presa numa linha reta parece cortina.
+- **Golpes (S-403)**: o "lunge" de cada golpe ia grudando o personagem no alvo. Todo deslocamento de golpe respeita o alcance da arma.
+- **Bug meu pego no teste**: uma inserção cortou o fim de uma função (looks3d).
+  - `node --check` não valida ES module. Use `node --input-type=module --check < arquivo` em todos os js3d antes de testar.

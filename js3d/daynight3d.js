@@ -20,7 +20,7 @@ import { gameMinutes } from './routines3d.js';
 
 // quadros-chave por hora: céu (topo/horizonte), tinta da névoa, luz principal, hemisfério, exposição e "noite" (0 = dia, 1 = noite: acende as luzes)
 const K = (h, top, hor, fog, sunC, sunI, hs, hg, hi, exp, night, cloud) => ({ h, top: new THREE.Color(top), hor: new THREE.Color(hor), fog: new THREE.Color(fog), sunC: new THREE.Color(sunC), sunI, hs: new THREE.Color(hs), hg: new THREE.Color(hg), hi, exp, night, cloud: new THREE.Color(cloud) });
-const NIGHT = ['#060a1a', '#18213e', '#59647e', '#9db4ee', 0.45, '#5b6b9a', '#1b2230', 0.62, 1.0, 1, '#4a5470'];
+const NIGHT = ['#0a1024', '#1e2a4e', '#66748f', '#aec4f2', 0.95, '#7484b6', '#283246', 1.0, 1.1, 1, '#566282']; // S-395: noite de lua cheia — escura no clima, mas dá para ver o caminho (luar azulado mais forte, céu e chão menos pretos)
 const DAY = ['#4f9be8', '#cfe7ff', '#cfe7ff', '#fff1d0', 2.4, '#d8ecff', '#5a6b3a', 1.1, 1.05, 0, '#ffffff'];
 const KEYS = [
   K(0, ...NIGHT),
@@ -168,7 +168,7 @@ export function updateDayNight(dt, focus, inside) {
   st.stars.material.uniforms.uA.value = Math.max(0, (s.night - 0.45) / 0.55);
   // nuvens e clima tingidos
   const cl = C.getClouds && C.getClouds(); if (cl) for (const L of cl) L.im.material.color.copy(s.cloud);
-  st.lightK = 1 - s.night * 0.62;
+  st.lightK = 1 - s.night * 0.45; // S-395: a noite escurecia o resto (clima, partículas) demais
   if (C.setWeatherLight) C.setWeatherLight(new THREE.Color(st.lightK, st.lightK, Math.min(1, st.lightK + s.night * 0.12)));
   applyLights(s.night, false);
   skyBodies();

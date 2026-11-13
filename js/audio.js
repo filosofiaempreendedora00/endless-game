@@ -496,6 +496,17 @@ const AmbSynth = {
     for (let k = 0; k < n; k++) { const tt = t + Math.random() * 0.25, s = this._n(c, buf, tt, 0.012), hp = c.createBiquadFilter(), g = c.createGain(); hp.type = 'highpass'; hp.frequency.value = 2500 + Math.random() * 2000;
       g.gain.setValueAtTime(0.06 * v * (0.5 + Math.random()), tt); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.012); s.connect(hp); hp.connect(g); g.connect(dest); this._end([s, hp, g], s); }
   },
+  // ---- S-404: braçada na água (como nadar no Skyrim/GTA): o "puxão" da água (ruído que sobe de grave para médio), o respingo da mão
+  // saindo da água (chiado curto) e gotas caindo; parado na água, só um marulho baixo ----
+  swim(c, dest, t, buf, v = 1, tread = false) {
+    const shot = (tt, d, type, f0, f1, q, a) => { const s = this._n(c, buf, tt, d), fl = c.createBiquadFilter(), g = c.createGain(); fl.type = type; fl.frequency.setValueAtTime(f0, tt); fl.frequency.exponentialRampToValueAtTime(f1, tt + d); if (q) fl.Q.value = q;
+      g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(a * v, tt + Math.min(0.05, d * 0.3)); g.gain.exponentialRampToValueAtTime(0.0001, tt + d); s.connect(fl); fl.connect(g); g.connect(dest); this._end([s, fl, g], s); };
+    if (tread) { shot(t, 0.6, 'lowpass', 380, 700, 0, 0.11); shot(t + 0.15, 0.35, 'bandpass', 900, 1400, 1.2, 0.035); return; }
+    shot(t, 0.42, 'bandpass', 420, 1500, 1.1, 0.2);            // a mão puxando a água
+    shot(t + 0.05, 0.3, 'lowpass', 260, 520, 0, 0.16);         // o corpo deslizando (grave)
+    shot(t + 0.34, 0.16, 'highpass', 2600, 4200, 0, 0.07);     // a mão sai da água: respingo
+    for (let k = 0; k < 4; k++) shot(t + 0.42 + Math.random() * 0.3, 0.05, 'bandpass', 1800 + Math.random() * 2400, 2200 + Math.random() * 2000, 4, 0.05); // gotas
+  },
   // ---- passos por tipo de chão (eventos curtos, ruído moldado) ----
   step(c, dest, t, buf, surf, v = 1) {
     const S = { grama: [[2600, 'bandpass', 0.8, 0.07, 0.10], [5000, 'highpass', 0, 0.04, 0.03]], terra: [[420, 'lowpass', 0, 0.06, 0.20], [1600, 'bandpass', 1, 0.03, 0.05]],
@@ -548,5 +559,6 @@ const Ambience = {
   silence() { if (!this.ok) return; const t = Sound.ctx.currentTime; for (const b of Object.values(this.beds)) b.g.gain.setTargetAtTime(0, t, 0.3); this.next = {}; },
   // passos: vão no canal de EFEITOS (respeita o volume de efeitos)
   step(surf, v = 1) { const c = Sound.ctx; if (!c || !Sound.enabled || Sound.testCopy || document.hidden || !Sound.sfx) return; if (!this.buf) this.buf = AmbSynth.bed(c); AmbSynth.step(c, Sound.sfx, c.currentTime + 0.005, this.buf, surf, v); },
+  swim(v = 1, tread = false) { const c = Sound.ctx; if (!c || !Sound.enabled || Sound.testCopy || document.hidden || !Sound.sfx) return; if (!this.buf) this.buf = AmbSynth.bed(c); AmbSynth.swim(c, Sound.sfx, c.currentTime + 0.005, this.buf, v, tread); }, // S-404
 };
 Ambience.load();

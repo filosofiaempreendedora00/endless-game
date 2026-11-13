@@ -51,16 +51,17 @@ function wolfParts() {
   E([0, 0.79, 0.4], [0.135, 0.155, 0.14], 'neck', 0.1);
   E([0, 0.65, 0.355], [0.095, 0.12, 0.085], 'chest', 0.08);
   // cabeça: crânio, testa ("stop"), focinho longo, ponta do nariz, bochechas largas, mandíbula (osso próprio), orelhas
-  E([0, 0.92, 0.615], [0.09, 0.082, 0.1], 'head', 0.05);
-  E([0, 0.945, 0.675], [0.054, 0.044, 0.055], 'head', 0.04);
-  C([0, 0.903, 0.69], [0, 0.887, 0.85], 0.057, 0.035, 'head', 0.045); // focinho forte e comprido, afinando para o nariz (S-370)
-  E([0, 0.893, 0.76], [0.052, 0.047, 0.075], 'head', 0.05);
+  E([0, 0.92, 0.612], [0.087, 0.079, 0.103], 'head', 0.05); // S-396: crânio em cunha
+  E([0, 0.948, 0.678], [0.05, 0.046, 0.056], 'head', 0.035); // testa com "stop" marcado
+  C([0, 0.905, 0.69], [0, 0.889, 0.852], 0.058, 0.037, 'head', 0.045); // S-396: focinho forte e alto (sem ponta fina de roedor) // focinho forte e comprido, afinando para o nariz (S-370)
+  E([0, 0.894, 0.762], [0.052, 0.052, 0.076], 'head', 0.05);
   E([0, 0.886, 0.862], [0.026, 0.02, 0.016], 'head', 0.02);
   C([0, 0.857, 0.655], [0, 0.856, 0.84], 0.042, 0.026, 'jaw', 0.034); // S-370: emenda macia com o focinho (antes um vinco escuro que "desenhava" a boca)
   E([0, 0.853, 0.775], [0.02, 0.013, 0.04], 'jaw', 0.02); // S-370: queixo com um pouco de volume
   for (const s of [-1, 1]) {
-    E([s * 0.064, 0.88, 0.6], [0.058, 0.068, 0.068], 'head', 0.05); // bochecha de pelo
-    C([s * 0.044, 0.985, 0.617], [s * 0.06, 1.075, 0.602], 0.035, 0.006, 'ear' + s, 0.022); // orelha em ponta
+    E([s * 0.06, 0.884, 0.598], [0.053, 0.062, 0.065], 'head', 0.05); // bochecha (S-396: menos inchada)
+    E([s * 0.034, 0.951, 0.688], [0.03, 0.015, 0.024], 'head', 0.03); // S-396: arco da sobrancelha sobre o olho (olhar intenso de lobo, não de roedor)
+    C([s * 0.044, 0.985, 0.617], [s * 0.062, 1.095, 0.6], 0.038, 0.006, 'ear' + s, 0.022); // orelha em ponta, alta e atenta (S-396)
     // pata da frente: escápula, braço até o cotovelo (para trás), antebraço, punho, metacarpo quase vertical, pata e dedos
     E([s * 0.1, 0.62, 0.26], [0.058, 0.13, 0.1], 'up' + s, 0.07);
     C([s * 0.1, 0.58, 0.27], [s * 0.095, 0.42, 0.21], 0.064, 0.045, 'up' + s, 0.05);
@@ -170,8 +171,8 @@ function pawGeo(k, s) { // em coordenadas do corpo em repouso (presas ao osso da
     claws.push(clawGeo(cl, 0.0038 * sz, 1.05).applyMatrix4(m));
   };
   for (let q = 0; q < 4; q++) {
-    const mid = q === 1 || q === 2, ox = (q - 1.5) * 0.0186 * sz, yaw = ox * 3.2;
-    add(x0 + ox, 0.02, zf + (mid ? 0.004 : -0.009) * sz, (mid ? 0.0105 : 0.0096) * sz, (mid ? 0.0118 : 0.0108) * sz, (mid ? 0.0168 : 0.015) * sz, yaw, (mid ? 0.02 : 0.018) * sz);
+    const mid = q === 1 || q === 2, ox = (q - 1.5) * 0.0168 * sz, yaw = ox * 3.2; // S-396: dedos juntos (formam a pata), não contas separadas
+    add(x0 + ox, 0.013, zf + (mid ? 0.004 : -0.009) * sz, (mid ? 0.0086 : 0.008) * sz, (mid ? 0.0062 : 0.0058) * sz, (mid ? 0.019 : 0.017) * sz, yaw, (mid ? 0.02 : 0.018) * sz); // S-396: mais compridos e baixos
   }
   if (k === 'f') add(s * 0.064, 0.07, 0.282, 0.0068, 0.0085, 0.009, -s * 0.5, 0.009, 0.9); // "polegar" (ergô) alto, do lado de dentro
   return (PAWS[key] = { toes: mergeGeometries(toes), claws: mergeGeometries(claws) });
@@ -207,7 +208,9 @@ vec3 wCoat(vec3 p, vec3 n){
   saddle = max(saddle, smoothstep(0.4, 0.9, n.y) * smoothstep(0.72, 0.8, p.y) * smoothstep(0.64, 0.52, p.z) * 0.85);  // nuca
   col = mix(col, uDark * (0.6 + 1.2 * griz), saddle * 0.9);                                                            // pelos de ponta preta mesclados
   float bridge = hd * smoothstep(0.034 + (soft - 0.5) * 0.012, 0.004, abs(p.x)) * smoothstep(0.882, 0.912, p.y) * smoothstep(0.64, 0.74, p.z) * (1.0 - smoothstep(0.835, 0.865, p.z));
-  col = mix(col, mix(uBase, uTan, 0.55) * (0.78 + 0.3 * griz), bridge * 0.75);                                         // dorso do focinho ocre-acinzentado, de borda macia (não uma listra pintada)
+  col = mix(col, mix(uBase, uDark, 0.3) * (0.78 + 0.3 * griz), bridge * 0.75);
+  float crown = hd * smoothstep(0.925, 0.962, p.y + (soft - 0.5) * 0.01) * (1.0 - smoothstep(0.7, 0.745, p.z)); // S-396: testa e alto da cabeça escuros, como no lobo cinzento
+  col = mix(col, uDark * (0.9 + 1.0 * griz), crown * 0.6);                                         // dorso do focinho ocre-acinzentado, de borda macia (não uma listra pintada)
   float ear = hd * smoothstep(0.985, 1.0, p.y);
   col = mix(col, uDark * 0.8, ear * (smoothstep(1.03, 1.07, p.y) + smoothstep(0.0, -0.6, n.z) * 0.6) * 0.9);         // orelhas: costas e pontas escuras
   float tl = smoothstep(-0.555, -0.6, p.z) * (1.0 - smoothstep(0.66, 0.72, p.y));
@@ -230,7 +233,7 @@ vec3 wCoat(vec3 p, vec3 n){
     col = mix(col, uDark * 0.6, hd * tear * (1.0 - h) * 0.55);
   }
   col = mix(col, col * vec3(1.06, 0.97, 0.85), smoothstep(0.36, 0.14, p.y));                                           // patas um pouco ocre
-  col = mix(col, col * vec3(0.8, 0.74, 0.66), smoothstep(0.07, 0.012, p.y) * (0.7 + 0.3 * soft));                      // dedos: tom de terra, não "meia" branca
+  col = mix(col, col * vec3(0.66, 0.6, 0.52), smoothstep(0.07, 0.012, p.y) * (0.7 + 0.3 * soft));                      // dedos: tom de terra, não "meia" branca
   col = mix(col, vec3(0.07, 0.06, 0.055), smoothstep(0.012, 0.004, p.y));                                              // almofadas (só por baixo)
   return col * (0.9 + 0.2 * griz);
 }
@@ -240,12 +243,13 @@ float wFurLen0(vec3 p){
   float L = 0.017;
   float hd = wHead(p);
   L = mix(L, 0.044, smoothstep(0.26, 0.36, p.z) * (1.0 - smoothstep(0.56, 0.63, p.z)) * smoothstep(0.56, 0.7, p.y));   // colar do pescoço (juba)
-  L = mix(L, 0.034, hd * smoothstep(0.045, 0.07, abs(p.x)) * smoothstep(0.92, 0.88, p.y) * (1.0 - smoothstep(0.64, 0.7, p.z))); // bochechas
+  L = mix(L, 0.024, hd * (1.0 - smoothstep(0.66, 0.72, p.z)) * smoothstep(0.86, 0.9, p.y)); // S-396: crânio e testa com pelo de verdade (o focinho fica curto)
+  L = mix(L, 0.03, hd * smoothstep(0.045, 0.07, abs(p.x)) * smoothstep(0.92, 0.88, p.y) * (1.0 - smoothstep(0.64, 0.7, p.z))); // bochechas (S-396: mais curtas, rosto de lobo e não de bola)
   L = mix(L, 0.026, smoothstep(-0.55, -0.6, p.z) * (1.0 - step(0.69, p.y)));                                             // cauda (o volume já está na malha)
   L = mix(L, 0.028, smoothstep(-0.44, -0.5, p.z) * smoothstep(0.38, 0.48, p.y) * (1.0 - smoothstep(0.66, 0.7, p.y)));    // "calças" das coxas
   L = mix(L, 0.022, smoothstep(0.6, 0.5, p.y) * (1.0 - wLegs(p)));                                                      // barriga
   L = mix(L, 0.0065, smoothstep(0.42, 0.3, p.y) * step(abs(p.z + 0.08), 0.6));                                           // pernas: pelo curto e assentado
-  L *= smoothstep(0.035, 0.11, p.y);                                                                                     // dedos: quase sem pelo (aparecem os dedos e as garras)
+  L = mix(0.012, L, smoothstep(0.035, 0.11, p.y));                                                                     // dedos: pelo curtinho por cima (S-396: sem as "bolotas" lisas), aparecem as garras
   L *= 1.0 - 0.62 * hd * smoothstep(0.69, 0.75, p.z);                                                                     // focinho: curto e aveludado
   L *= 1.0 - 0.75 * hd * smoothstep(0.98, 1.0, p.y);                                                                      // orelhas
   L *= 1.0 - hd * smoothstep(0.685, 0.715, p.z) * (1.0 - smoothstep(0.007, 0.018, abs(p.y - 0.865)));                  // S-370: sem pelo na emenda da boca (as camadas se cruzavam ali e desenhavam uma linha escura)
@@ -306,7 +310,8 @@ function coatUniforms(sh, C) { Object.assign(sh.uniforms, { uBase: { value: C.ba
 function wolfMats(color, fur = 1) { // fur: multiplicador do comprimento do pelo (lobo gigante do Caçador = pelagem bem mais longa)
   const KEY = color + '|' + fur; if (MATS[KEY]) return MATS[KEY];
   const base = new THREE.Color(color), C = { base, light: base.clone().lerp(new THREE.Color('#efe6d4'), 0.72), dark: base.clone().multiplyScalar(0.22), tan: base.clone().lerp(new THREE.Color('#b8925e'), 0.55) };
-  const K = `float wK(vec3 p){ return mix(${fur.toFixed(3)}, ${Math.min(fur, 1.15).toFixed(3)}, wLegs(p)); }\n`; // pelo longo no corpo; pernas e rosto continuam de lobo
+  const K = `float wK(vec3 p){ return mix(${fur.toFixed(3)}, ${Math.min(fur, 1.1).toFixed(3)}, max(wLegs(p), wHead(p) * 0.3)); }\n`; // S-396: cabeça com pelo de LOBO (o pelo longo do gigante deixava a cara redonda de foca); a juba do pescoço continua longa
+ // pelo longo no corpo; pernas e rosto continuam de lobo
   /* S-381: pelagem SÓLIDA. Antes: 8–10 camadas finas e semitransparentes com fios em pontinhos — de lado e na cauda viravam
      fatias e "pedacinhos soltos" com vão entre eles, com cara de holograma. Agora: (1) a malha da pele é INFLADA por metade do
      comprimento do pelo (o volume — juba, bochechas, cauda, calças — é corpo opaco de verdade) e tem mechas em relevo (normal
@@ -380,8 +385,8 @@ export function realWolf(color = '#8a8f99', opts = {}) {
   const lids = [], eg0 = wolfEyeGeo();
   for (const s of [-1, 1]) {
     const eg = new THREE.Group(); eg.rotation.set(-0.08, s * 0.62, s * -0.18); at('head', eg, s * EYE[0], EYE[1], EYE[2] - 0.006);
-    const ir = new THREE.Mesh(eg0, IRIS); ir.scale.set(1.32, 0.78, 0.42); eg.add(ir);
-    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.0165, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), LID); lid.scale.set(1.25, 0.05, 0.6); lid.position.y = 0.001; eg.add(lid); lids.push(lid);
+    const ir = new THREE.Mesh(eg0, IRIS); ir.scale.set(1.55, 0.92, 0.48); eg.add(ir); // S-396: olhos maiores e intensos (antes sumiam no pelo)
+    const lid = new THREE.Mesh(new THREE.SphereGeometry(0.0192, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), LID); lid.scale.set(1.25, 0.05, 0.6); lid.position.y = 0.001; eg.add(lid); lids.push(lid);
   }
   // S-370: nariz de lobo — couro escuro e úmido, mais largo em cima, narinas em vírgula abertas para os lados e o sulco do meio
   { const nm = new THREE.MeshPhysicalMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.55, clearcoat: 0.7, clearcoatRoughness: 0.28 });

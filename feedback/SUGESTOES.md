@@ -2,93 +2,11 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (14)
+## Pendentes (0)
 
-### S-392 · Área do mapa: Área da tela (1028×275 px) (sobre: Painel de status)
-- **Status:** pendente · **Quando:** 2026-11-12T23:44:12 · **Mapa:** Grande Areal (tile [-51, 458])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Essa água está claramente bem bugada
-- ![print](img/S-392.png)
+_Nenhuma._
 
-### S-393 · Área do mapa: Área da tela (589×139 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:46:28 · **Mapa:** Pedrafunda (tile [-288, -272])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Todos esses fogos de fogueira ficaram bastante esquisitos
-- ![print](img/S-393.png)
-
-### S-394 · Área do mapa: Área da tela (108×133 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:50:34 · **Mapa:** Pedrafunda (tile [-272, -299])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Aqui tá dando vários bugs esquisitos nessas luzes
-- ![print](img/S-394.png)
-
-### S-395 · Área do mapa: Área da tela (423×371 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:50:59 · **Mapa:** Pedrafunda (tile [-288, -288])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu gosto do fato de ter dia e noite nesse jogo porém eu senti que a noite ficou excessivamente escura eu gostaria que ela fosse um pouco mais clara talvez iluminada pela lua de alguma forma com que ficasse mais visível durante a noite
-- ![print](img/S-395.png)
-
-### S-396 · Área do mapa: Área da tela (153×109 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:53:13 · **Mapa:** Vila de Alvorada (tile [785, -11])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Eu sinto que o pelo do Lobo melhorou como consideravelmente Mas além dos dedos serem bolotas muito esquisitas e não realistas você pode perceber como que esse lobo tá com uma puta de uma cara de bunda e eu preciso que você se inspire em um lobo de verdade de uma vez por todas eu preciso que você olhe no rosto de um dire wolf la do GoT de uma vez e resolva esse meu problema
-- ![print](img/S-396.png)
-
-### S-397 · Área do mapa: Área da tela (100×227 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:54:12 · **Mapa:** Vila de Alvorada (tile [786, 0])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Repare como a questão do arco ainda está bem bugado aqui no ministério eu vou conferir ainda nas outras classes mais aqui a gente já percebe que está bugado E eu chamei de Menestrel mas na verdade é bardo
-- ![print](img/S-397.png)
-
-### S-398 · Área do mapa: Área da tela (208×125 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:54:58 · **Mapa:** Vila de Alvorada (tile [816, 2])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Que barbinha esquisita da porra hein toda bugada
-- ![print](img/S-398.png)
-
-### S-399 · Área do mapa: Área da tela (91×45 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:56:44 · **Mapa:** Vila de Alvorada (tile [790, 10])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Essa parte do ombro melhorou em relação ao que era e principalmente a roupa como um todo está infinitamente melhor porém algumas coisas ainda me incomodam uma delas é o fato desta cinta Ou melhor essa fivela do cinto ela não está centralizada e isso já me incomoda e principalmente em relação ao encaixe deste treco no ombro pois eu não gostaria que houvesse espaço entre as duas partes que aparentam ser de Armadura e eu gostaria de deixar claro para torná-las mais imponentes e menos com a aparência de pedaços aleatórios de alumínio pois eu sei que é totalmente possível trabalhar algo no ombro mais interessante e que chame muito mais a atenção do que esse pedaço de latão fodido
-- ![print](img/S-399.png)
-
-### S-400 · Área do mapa: Área da tela (164×153 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:57:10 · **Mapa:** Vila de Alvorada (tile [785, 4])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Mais um exemplo de como a posição do arqueiro ainda está bem deficiente em relação à realidade
-- ![print](img/S-400.png)
-
-### S-401 · Área do mapa: Área da tela (410×186 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:58:34 · **Mapa:** Vila de Alvorada (tile [807, -9])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Em relação às vestes das evoluções do Mago eu achei interessantes porém esta roupa azul do Mago não me caiu nem um pouco bem Eu gostaria assim que fosse vestes mas simples do que das evoluções Porém esse azul não pegou nada bem então gostaria que mudasse não apenas o azul mas também desse uma melhorada nessas vestes e aproveitando eu percebi que o cajado do Mago não chega ao chão e eu acho importante que os cajados de todas as classes de mago chegassem até o chão
-- ![print](img/S-401.png)
-
-### S-402 · Área do mapa: Área da tela (173×24 px)
-- **Status:** pendente · **Quando:** 2026-11-12T23:59:25 · **Mapa:** Vila de Alvorada (tile [-70, 28])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Já melhoramos infinitamente a roupa do Paladino frente ao que era porém agora talvez esse seja o único ponto que me incomoda que é a parte de cima desta capa que se conecta à armadura eu gostaria basicamente que ela se conectasse de um modo que não fosse tão parecido com uma cortina
-- ![print](img/S-402.png)
-
-### S-403 · Área do mapa: Área da tela (371×477 px)
-- **Status:** pendente · **Quando:** 2026-11-13T00:02:24 · **Mapa:** Vila de Alvorada (tile [-69, 31])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Duas coisas me incomodaram nos ataques do Paladino e eu gostaria que você conferisse as outras classes para que esse problemas também não ocorram o primeiro dos problemas é o fato de que este meu Paladino está dando socos no inimigo sendo que ele tem uma espada na mão Então nesse caso eu gostaria de colocar uma regra para que quando tivesse uma espada equipada apenas fossem desferidos golpes que usam essa espada e não a mão vazia Esta é a primeira indagação e outra coisa que me incomodou muito foi o fato de a classe paladino ter chegado tão extremamente próxima ao alvo mesmo que a classe pudesse atacar o inimigo a um Range razoável já que a espada tem uma certa dimensão e contribui para que os ataques fossem feitos de um Range um pouco maior Ou seja eu não quero que classes que tenham uma espada com tamanho parecido fica então absolutamente grudados aos alvos quando eu apertar o botão esquerdo e mirar em um inimigo
-- ![print](img/S-403.png)
-
-### S-404 · Área do mapa: Área da tela (413×322 px)
-- **Status:** pendente · **Quando:** 2026-11-13T00:06:06 · **Mapa:** Costa Brumosa (tile [-4, -560])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
-- **Sugestão:** Nadar na água poderia fazer um barulho de água enquanto nada e você Pode respirar o barulho dessa nadada no GTA ou no próprio Skyrim
-- ![print](img/S-404.png)
-
-### S-405 · Área do mapa: Área da tela (595×410 px) (sobre: Barra de atalhos, Ícones de buff)
-- **Status:** pendente · **Quando:** 2026-11-13T00:06:51 · **Mapa:** Costa Brumosa (tile [-108, -514])
-- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
-- **Sugestão:** Jamais insiram uma árvore dessa tão próximo ao mar pois não faz sentido ter vegetação assim tão próxima ao mar Ainda mais se for uma vegetação como essa que está nevando
-- ![print](img/S-405.png)
-
-## Feitas (391)
+## Feitas (405)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2867,3 +2785,101 @@ Também ficou mais leve: com 6 lobos perto, o quadro passou de 25 ms para ~19 ms
 - **Sugestão:** A forma como esse Astro está se movendo está muito truncada e não gradativa e está muito feio esteticamente
 - ![print](img/S-391.png)
 - **Resposta do Claude:** Sol e lua agora andam a cada quadro, de forma contínua (antes davam um pulinho a cada minuto do jogo), e a luz passa do sol para a lua aos poucos no crepúsculo. Também acabou o salto da lua de um lado do céu para o outro às 18h54.
+
+### S-392 · Área do mapa: Área da tela (1028×275 px) (sobre: Painel de status)
+- **Status:** feito · **Quando:** 2026-11-12T23:44:12 · **Mapa:** Grande Areal (tile [-51, 458])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Essa água está claramente bem bugada
+- ![print](img/S-392.png)
+- **Resposta do Claude:** A água do oásis (e a do lago e dos mares) tinha listras porque as ondas eram três ondas quase paralelas — agora são seis em direções diferentes. E o reflexo do céu na água era um azul-claro fixo, por isso brilhava à noite; agora acompanha a hora e escurece com o céu.
+
+### S-393 · Área do mapa: Área da tela (589×139 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:46:28 · **Mapa:** Pedrafunda (tile [-288, -272])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Todos esses fogos de fogueira ficaram bastante esquisitos
+- ![print](img/S-393.png)
+- **Resposta do Claude:** Fogo novo no jogo inteiro: uma chama de verdade feita por shader (turbulência subindo, línguas que se soltam, núcleo claro e bordas laranja), no lugar das camadas em forma de gota que viravam um 'adesivo' à noite. A forja da praça virou um leito de brasas com carvão em cima (antes um disco laranja chapado).
+
+### S-394 · Área do mapa: Área da tela (108×133 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:50:34 · **Mapa:** Pedrafunda (tile [-272, -299])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Aqui tá dando vários bugs esquisitos nessas luzes
+- ![print](img/S-394.png)
+- **Resposta do Claude:** As 'luzes bugadas' eram as runas dos anões: cada uma era um traço com uma barra, brilhando como lâmpada, e pareciam cruzes soltas. Agora são runas de verdade (haste com ramos inclinados), gravadas na pedra e com brilho discreto de brasa. A porta do templo do Irmão Hulda mostra o salão aceso lá dentro, no lugar do retângulo amarelo liso.
+
+### S-395 · Área do mapa: Área da tela (423×371 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:50:59 · **Mapa:** Pedrafunda (tile [-288, -288])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gosto do fato de ter dia e noite nesse jogo porém eu senti que a noite ficou excessivamente escura eu gostaria que ela fosse um pouco mais clara talvez iluminada pela lua de alguma forma com que ficasse mais visível durante a noite
+- ![print](img/S-395.png)
+- **Resposta do Claude:** A noite ficou mais clara, como noite de lua cheia: o luar azulado ilumina mais e o céu e o chão não ficam mais pretos — continua com clima de noite, mas dá para ver o caminho.
+
+### S-396 · Área do mapa: Área da tela (153×109 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:53:13 · **Mapa:** Vila de Alvorada (tile [785, -11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu sinto que o pelo do Lobo melhorou como consideravelmente Mas além dos dedos serem bolotas muito esquisitas e não realistas você pode perceber como que esse lobo tá com uma puta de uma cara de bunda e eu preciso que você se inspire em um lobo de verdade de uma vez por todas eu preciso que você olhe no rosto de um dire wolf la do GoT de uma vez e resolva esse meu problema
+- ![print](img/S-396.png)
+- **Resposta do Claude:** Lobo gigante: o pelo longo agora fica no corpo e na juba do pescoço, e a cabeça tem pelo de lobo (antes o pelo longo inchava as bochechas e a cara ficava redonda). Focinho mais longo e forte, crânio em cunha, orelhas mais altas, olhos maiores com arco de sobrancelha, testa mais escura e dedos juntos cobertos de pelo (sem as 'bolotas'). Vale também para os Lobos Cinzentos.
+
+### S-397 · Área do mapa: Área da tela (100×227 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:54:12 · **Mapa:** Vila de Alvorada (tile [786, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Repare como a questão do arco ainda está bem bugado aqui no ministério eu vou conferir ainda nas outras classes mais aqui a gente já percebe que está bugado E eu chamei de Menestrel mas na verdade é bardo
+- ![print](img/S-397.png)
+- **Resposta do Claude:** Arco consertado de raiz: a 'mola' que suaviza a mão da corda explodia quando o jogo rodava abaixo de ~50 quadros por segundo (comum no PvP) e jogava a mão 80 cm para trás ou para cima da cabeça. Agora é estável em qualquer velocidade — testado a 15, 30 e 60 quadros, nas 3 raças, Arqueiro, Caçador e Bardo: a mão fica sempre no rosto.
+
+### S-398 · Área do mapa: Área da tela (208×125 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:54:58 · **Mapa:** Vila de Alvorada (tile [816, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Que barbinha esquisita da porra hein toda bugada
+- ![print](img/S-398.png)
+- **Resposta do Claude:** A barba do anão com armadura ficava picotada: cada pedacinho era empurrado para fora da armadura por uma distância diferente, e as placas presas às clavículas nem eram consideradas. Agora a barba sai inteira, como uma peça só, por cima de todas as placas da gola.
+
+### S-399 · Área do mapa: Área da tela (91×45 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:56:44 · **Mapa:** Vila de Alvorada (tile [790, 10])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Essa parte do ombro melhorou em relação ao que era e principalmente a roupa como um todo está infinitamente melhor porém algumas coisas ainda me incomodam uma delas é o fato desta cinta Ou melhor essa fivela do cinto ela não está centralizada e isso já me incomoda e principalmente em relação ao encaixe deste treco no ombro pois eu não gostaria que houvesse espaço entre as duas partes que aparentam ser de Armadura e eu gostaria de deixar claro para torná-las mais imponentes e menos com a aparência de pedaços aleatórios de alumínio pois eu sei que é totalmente possível trabalhar algo no ombro mais interessante e que chame muito mais a atenção do que esse pedaço de latão fodido
+- ![print](img/S-399.png)
+- **Resposta do Claude:** Ombreira do Executor refeita: a placa de cima agora cobre a borda da cúpula (sem vão entre as duas), aço enegrecido com bordas de latão no lugar do 'alumínio' e um brasão carmim esmaltado (lua crescente com adaga) no meio. A fivela do cinto fica no centro do corpo — corrigido para os cintos de todas as classes.
+
+### S-400 · Área do mapa: Área da tela (164×153 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:57:10 · **Mapa:** Vila de Alvorada (tile [785, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Mais um exemplo de como a posição do arqueiro ainda está bem deficiente em relação à realidade
+- ![print](img/S-400.png)
+- **Resposta do Claude:** Pose do arqueiro como no Skyrim: puxada completa com a mão da corda no queixo, braço do arco esticado, flecha na horizontal e cotovelo alto atrás. Andando e atirando, só o tronco fica de lado (as pernas seguem o passo), a câmera aproxima um pouco segurando a corda e os outros jogadores (Arena e mundo) agora mostram essa mesma pose, em vez de 'atirar com pistola' com o arco nas costas.
+
+### S-401 · Área do mapa: Área da tela (410×186 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:58:34 · **Mapa:** Vila de Alvorada (tile [807, -9])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação às vestes das evoluções do Mago eu achei interessantes porém esta roupa azul do Mago não me caiu nem um pouco bem Eu gostaria assim que fosse vestes mas simples do que das evoluções Porém esse azul não pegou nada bem então gostaria que mudasse não apenas o azul mas também desse uma melhorada nessas vestes e aproveitando eu percebi que o cajado do Mago não chega ao chão e eu acho importante que os cajados de todas as classes de mago chegassem até o chão
+- ![print](img/S-401.png)
+- **Resposta do Claude:** Mago: a veste azul saiu; agora é lã castanha com debruns crus e uma estola verde-oliva bordada descendo pela frente até a barra (simples, de aprendiz). E os cajados agora deslizam pela mão até o pé encostar no chão — Mago, Arquimago e qualquer personagem com cajado.
+
+### S-402 · Área do mapa: Área da tela (173×24 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:59:25 · **Mapa:** Vila de Alvorada (tile [-70, 28])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Já melhoramos infinitamente a roupa do Paladino frente ao que era porém agora talvez esse seja o único ponto que me incomoda que é a parte de cima desta capa que se conecta à armadura eu gostaria basicamente que ela se conectasse de um modo que não fosse tão parecido com uma cortina
+- ![print](img/S-402.png)
+- **Resposta do Claude:** A capa do Paladino não sai mais de um 'varão de cortina': a borda de cima acompanha os ombros, a capa passa por cima das ombreiras e é presa por dois broches na frente do peito, ligados por uma corrente; também ficou mais larga e abre em 'A' até a barra (vale para as capas de pano de todas as classes).
+
+### S-403 · Área do mapa: Área da tela (371×477 px)
+- **Status:** feito · **Quando:** 2026-11-13T00:02:24 · **Mapa:** Vila de Alvorada (tile [-69, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Duas coisas me incomodaram nos ataques do Paladino e eu gostaria que você conferisse as outras classes para que esse problemas também não ocorram o primeiro dos problemas é o fato de que este meu Paladino está dando socos no inimigo sendo que ele tem uma espada na mão Então nesse caso eu gostaria de colocar uma regra para que quando tivesse uma espada equipada apenas fossem desferidos golpes que usam essa espada e não a mão vazia Esta é a primeira indagação e outra coisa que me incomodou muito foi o fato de a classe paladino ter chegado tão extremamente próxima ao alvo mesmo que a classe pudesse atacar o inimigo a um Range razoável já que a espada tem uma certa dimensão e contribui para que os ataques fossem feitos de um Range um pouco maior Ou seja eu não quero que classes que tenham uma espada com tamanho parecido fica então absolutamente grudados aos alvos quando eu apertar o botão esquerdo e mirar em um inimigo
+- ![print](img/S-403.png)
+- **Resposta do Claude:** Paladino sem escudo agora só dá golpes de espada (o 3º golpe era um empurrão de escudo e virava soco de mão vazia). E o avanço de cada golpe não passa mais da distância de alcance da arma — antes, golpe a golpe, o personagem ia grudando no alvo; vale para todas as classes corpo a corpo.
+
+### S-404 · Área do mapa: Área da tela (413×322 px)
+- **Status:** feito · **Quando:** 2026-11-13T00:06:06 · **Mapa:** Costa Brumosa (tile [-4, -560])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Nadar na água poderia fazer um barulho de água enquanto nada e você Pode respirar o barulho dessa nadada no GTA ou no próprio Skyrim
+- ![print](img/S-404.png)
+- **Resposta do Claude:** Nadar agora tem som: a cada braçada, a água sendo puxada, o respingo da mão saindo e as gotas caindo; parado na água, um marulho baixo de vez em quando.
+
+### S-405 · Área do mapa: Área da tela (595×410 px) (sobre: Barra de atalhos, Ícones de buff)
+- **Status:** feito · **Quando:** 2026-11-13T00:06:51 · **Mapa:** Costa Brumosa (tile [-108, -514])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Jamais insiram uma árvore dessa tão próximo ao mar pois não faz sentido ter vegetação assim tão próxima ao mar Ainda mais se for uma vegetação como essa que está nevando
+- ![print](img/S-405.png)
+- **Resposta do Claude:** Nenhuma árvore nasce mais a menos de 32 m de qualquer mar — vale para a Costa Brumosa, o Pinhal, os Ermos, a Costa Turquesa e o porto (conferido: zero árvores de folha ou pinheiros nessa faixa). Perto do mar só coqueiro, e longe da beira.

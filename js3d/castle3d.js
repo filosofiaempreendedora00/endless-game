@@ -53,38 +53,10 @@ function stainedGlass() {
 }
 
 
-/* ---------------- chama realista (S-182/S-190): sprites aditivos em camadas + brasas subindo ---------------- */
-let _flameTex = null, _emberTex = null;
-function flameTex() {
-  if (_flameTex) return _flameTex;
-  const mk = (stops, shape) => { const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d');
-    // gota de fogo: base larga e arredondada, ponta fina e ondulada
-    g.beginPath(); g.moveTo(32, 4); g.bezierCurveTo(44 + shape, 40, 58, 78, 52, 100); g.bezierCurveTo(46, 122, 18, 122, 12, 100); g.bezierCurveTo(6, 78, 20 - shape, 40, 32, 4); g.closePath();
-    const gr = g.createRadialGradient(32, 96, 2, 32, 80, 70); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.filter = 'blur(3px)'; g.fill();
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
-  _flameTex = [mk([[0, 'rgba(255,255,235,1)'], [0.25, 'rgba(255,230,140,0.95)'], [0.6, 'rgba(255,170,60,0.5)'], [1, 'rgba(255,120,20,0)']], 4),
-    mk([[0, 'rgba(255,200,90,0.95)'], [0.4, 'rgba(255,120,30,0.75)'], [0.8, 'rgba(200,50,10,0.3)'], [1, 'rgba(120,20,0,0)']], -6),
-    mk([[0, 'rgba(255,140,40,0.7)'], [0.5, 'rgba(210,60,15,0.45)'], [1, 'rgba(90,15,0,0)']], 8)];
-  return _flameTex;
-}
-function emberTex() { if (_emberTex) return _emberTex; const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,240,180,1)'); gr.addColorStop(0.3, 'rgba(255,150,40,0.8)'); gr.addColorStop(1, 'rgba(255,80,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 32, 32); _emberTex = new THREE.CanvasTexture(c); return _emberTex; }
-const flameMats = {};
-function fMat(i) { return flameMats[i] || (flameMats[i] = new THREE.SpriteMaterial({ map: flameTex()[i], transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); }
-let _emberM = null;
-// chama viva: 'size' = altura em metros; brasas opcionais. Devolve um Group com userData.update(t)
-export function realFlame(size = 0.5, seed = 0, embers = true) {
-  const g = new THREE.Group(), tongues = [];
-  const layers = [[2, 1.0, 0.95, 0], [1, 0.82, 0.8, 0.02], [1, 0.62, 0.62, -0.03], [0, 0.48, 0.42, 0.01], [0, 0.32, 0.3, 0]];
-  layers.forEach(([m, h, w, ox], i) => { const sp = new THREE.Sprite(fMat(m)); sp.center.set(0.5, 0.08); sp.position.set(ox * size, 0, (i % 2 ? 0.02 : -0.02) * size); sp.scale.set(w * size * 0.55, h * size, 1); sp.renderOrder = 20 + i; g.add(sp); tongues.push({ sp, h, w, ph: seed * 1.7 + i * 2.3 }); });
-  const emb = [];
-  if (embers) { _emberM = _emberM || new THREE.SpriteMaterial({ map: emberTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-    for (let k = 0; k < 6; k++) { const e = new THREE.Sprite(_emberM); e.scale.setScalar(0.035 * Math.max(0.6, size)); g.add(e); emb.push({ e, off: k / 6 + seed * 0.13, dx: Math.sin(k * 2.4 + seed) * 0.12, dz: Math.cos(k * 1.9 + seed) * 0.12 }); } }
-  g.userData.update = t => {
-    for (const q of tongues) { const f = 1 + Math.sin(t * 13 + q.ph) * 0.09 + Math.sin(t * 23.7 + q.ph * 2) * 0.06 + Math.sin(t * 5.3 + q.ph) * 0.05; q.sp.scale.set(q.w * size * 0.55 * (1.06 - (f - 1) * 0.6), q.h * size * f, 1); q.sp.material.rotation = Math.sin(t * 3.1 + q.ph) * 0.08; q.sp.position.x = Math.sin(t * 7 + q.ph) * 0.03 * size; }
-    for (const b of emb) { const k = (t * 0.55 + b.off) % 1; b.e.position.set(b.dx * size * (1 + k) + Math.sin(t * 4 + b.off * 9) * 0.05 * size, k * size * 2.2, b.dz * size * (1 + k)); b.e.material.opacity = 1; b.e.scale.setScalar(0.04 * Math.max(0.6, size) * (1 - k)); }
-  };
-  return g;
-}
+/* chama: agora em js3d/flame3d.js (S-393: shader de fogo de verdade) — reexportada daqui para quem já importava do castelo */
+import { realFlame } from './flame3d.js';
+export { realFlame };
+
 // lenha em brasa (toras cruzadas com ponta incandescente) para lareiras e braseiros
 function logsGlow(K, x, y, z, s = 1, ry = 0) {
   const wd = M.darkWood(), coal = P('coal', '#2a120a', { emissive: '#ff5a10', ei: 0.9, rough: 0.9 });

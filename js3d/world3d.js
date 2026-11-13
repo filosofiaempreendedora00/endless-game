@@ -501,7 +501,8 @@ export function buildWater(L = LAKE, distFn = lakeDist, seg = 110) { // expansã
     sh.vertexShader = 'attribute float aDepth;\nattribute float aMask;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
       vDepth = aDepth; vMask = aMask;
       vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
+    sh.uniforms.uWSky = waterSky;
+    sh.fragmentShader = 'uniform float uTime;\nuniform vec3 uWSky;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vDepth < -0.05 || vMask < 0.02) discard;
         float dk = smoothstep(0.0, 1.8, vDepth);
@@ -511,15 +512,12 @@ export function buildWater(L = LAKE, distFn = lakeDist, seg = 110) { // expansã
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85, 0.92, 0.9), fo * 0.55);
         diffuseColor.a = max(diffuseColor.a, fo * 0.8);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        { float t = uTime; vec2 q = vWPos.xz;
-          float a1 = q.x * 1.3 + t * 1.6, a2 = q.x * 2.9 + q.y * 1.7 + t * 2.3, a3 = q.x * 5.3 - q.y * 4.1 - t * 3.1, a4 = q.y * 1.1 - t * 1.3;
-          float dx = 0.13 * cos(a1) + 0.17 * cos(a2) + 0.18 * cos(a3);
-          float dz = 0.09 * cos(a4) + 0.10 * cos(a2) - 0.14 * cos(a3);
-          vec3 wn = normalize(vec3(-dx * 0.35, 1.0, -dz * 0.35));
-          normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz); }`)
+        { float t = uTime; vec2 q = vWPos.xz; float dx = 0.0, dz = 0.0; // S-392: ondas em 6 direções e frequências diferentes (as 3 ondas quase paralelas de antes formavam listras)
+          for (int i = 0; i < 6; i++) { float fi = float(i), an = fi * 1.07 + 0.3; vec2 d = vec2(cos(an), sin(an)); float ph = dot(q, d) * (0.9 + fi * 0.83) + t * (1.1 + fi * 0.37); float am = 0.075 / (1.0 + fi * 0.35); dx += am * cos(ph) * d.x; dz += am * cos(ph) * d.y; }
+          vec3 wn = normalize(vec3(-dx * 0.6, 1.0, -dz * 0.6)); normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz); }`)
       .replace('#include <opaque_fragment>', `#include <opaque_fragment>
         { float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 4.0);
-          gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.52, 0.70, 0.86), fr * 0.4);
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, uWSky, fr * 0.4); // S-392: o reflexo do céu acompanha a hora (antes ficava azul-claro de dia a noite inteira)
           gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5) * smoothstep(0.02, 0.6, vMask); }`);
   };
   const m = new THREE.Mesh(geo, mat);
@@ -559,7 +557,8 @@ function seaPlane(x0, x1, z0, z1) {
       vec3 wp0 = (modelMatrix * vec4(transformed, 1.0)).xyz;
       transformed.y += (sin(wp0.x * 0.11 + uTime * 1.1) * 0.12 + sin(wp0.z * 0.07 - uTime * 0.8) * 0.1) * smoothstep(0.5, 4.0, aDepth); // marulho em mar aberto
       vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
-    sh.fragmentShader = 'uniform float uTime;\nvarying vec3 vShal;\nvarying vec3 vDeep;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
+    sh.uniforms.uWSky = waterSky;
+    sh.fragmentShader = 'uniform float uTime;\nuniform vec3 uWSky;\nvarying vec3 vShal;\nvarying vec3 vDeep;\nvarying float vDepth;\nvarying float vMask;\nvarying vec3 vWPos;\n' + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vDepth < -0.1 || vMask < 0.02) discard;
         float dk = smoothstep(0.0, 5.0, vDepth);
@@ -569,13 +568,12 @@ function seaPlane(x0, x1, z0, z1) {
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.96, 0.95), fo * 0.75);
         diffuseColor.a = max(diffuseColor.a, fo * 0.9);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        { float t = uTime; vec2 q = vWPos.xz * 0.5;
-          float a1 = q.x * 1.3 + t * 1.2, a2 = q.x * 2.9 + q.y * 1.7 + t * 1.9, a3 = q.x * 5.3 - q.y * 4.1 - t * 2.6, a4 = q.y * 1.1 - t * 1.0;
-          float dx = 0.13 * cos(a1) + 0.17 * cos(a2) + 0.15 * cos(a3), dz = 0.09 * cos(a4) + 0.10 * cos(a2) - 0.12 * cos(a3);
-          normal = normalize((viewMatrix * vec4(normalize(vec3(-dx * 0.35, 1.0, -dz * 0.35)), 0.0)).xyz); }`)
+        { float t = uTime; vec2 q = vWPos.xz * 0.5; float dx = 0.0, dz = 0.0; // S-392: ondas em 6 direções e frequências diferentes (as 3 ondas quase paralelas de antes formavam listras)
+          for (int i = 0; i < 6; i++) { float fi = float(i), an = fi * 1.07 + 0.3; vec2 d = vec2(cos(an), sin(an)); float ph = dot(q, d) * (0.9 + fi * 0.83) + t * (1.1 + fi * 0.37); float am = 0.075 / (1.0 + fi * 0.35); dx += am * cos(ph) * d.x; dz += am * cos(ph) * d.y; }
+          normal = normalize((viewMatrix * vec4(normalize(vec3(-dx * 0.6, 1.0, -dz * 0.6)), 0.0)).xyz); }`)
       .replace('#include <opaque_fragment>', `#include <opaque_fragment>
         { float fr = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 4.0);
-          gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.55, 0.74, 0.90), fr * 0.45);
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, uWSky, fr * 0.45); // S-392: o reflexo do céu acompanha a hora (antes ficava azul-claro de dia a noite inteira)
           gl_FragColor.a = mix(gl_FragColor.a, 1.0, fr * 0.5) * smoothstep(0.02, 0.5, vMask); }`);
   };
   mat.onBeforeCompile.__sea = true;
@@ -734,6 +732,7 @@ export function buildSky(top = '#4f9be8', horizon = '#cfe7ff') {
 
 // grama de verdade: tufos de lâminas curvas que balançam com o vento + flores + pedregulhos
 const windUniform = { value: 0 };
+export const waterSky = { value: new THREE.Color(0.53, 0.72, 0.88) }; // S-392: cor do céu refletida na água (main3d acompanha a hora)
 export function updateNature(time) { windUniform.value = time; }
 // tufos baixos e finos (3 formatos diferentes para não parecerem carimbos iguais)
 function tuftGeometry(rng, variant = 0) {

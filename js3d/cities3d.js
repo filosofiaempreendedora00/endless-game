@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
+import { realFlame } from './flame3d.js';
 import { heightAt, PORT, DWARF, ELF, SEA, seaDist, FROZEN, HALF } from './world3d.js';
 
 export const rngOf = seed => () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
@@ -126,7 +127,7 @@ export const M = {
   gold: () => plain('gold', '#c9a24a', { metal: 0.9, rough: 0.3 }),
   silver: () => plain('silver', '#dfe4ea', { metal: 0.85, rough: 0.25 }),
   ember: () => plain('ember', '#ff8a2a', { emissive: '#ff6a10', ei: 2.2 }),
-  rune: () => plain('rune', '#ffcf7a', { emissive: '#ff9a2a', ei: 1.6 }),
+  rune: () => plain('rune', '#a8865a', { emissive: '#ff8a2a', ei: 0.6 }), // S-394: runas gravadas com brilho de brasa, discreto (antes brilhavam como lâmpadas e pareciam cruzes soltas)
   moonGlow: () => plain('moonGlow', '#dff4ff', { emissive: '#9fd8ff', ei: 1.8 }),
   glass: () => plain('glass', '#ffe8b8', { emissive: '#ffc878', ei: 0.9, rough: 0.2 }),
   leaf: () => MATS.leaf || (MATS.leaf = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })),
@@ -165,6 +166,13 @@ export class Kit {
     }
     return g;
   }
+}
+// S-394: runa anã de verdade (haste com ramos inclinados, como as runas antigas) gravada numa parede voltada para +z — nada de "+" ou "†"
+const RUNES = [[[0, 0, 0, 1], [0, 1, 0.5, 0.75], [0, 0.7, 0.5, 0.45]], [[0, 0, 0, 1], [0, 0.55, -0.4, 0.95], [0, 0.55, 0.4, 0.95]], [[0, 0, 0, 1], [0, 1, -0.35, 0.7], [0, 1, 0.35, 0.7]],
+  [[0.3, 1, -0.1, 0.5], [-0.1, 0.5, 0.3, 0]], [[0, 0, 0, 1], [0, 1, 0.4, 0.78], [0.4, 0.78, 0, 0.55], [0, 0.55, 0.4, 0]], [[0, 0, 0, 1], [0, 0.75, 0.35, 0.5], [0.35, 0.5, 0, 0.25]], [[0, 0, 0, 1], [-0.3, 0.68, 0.3, 0.38]]];
+function runeGlyph(K, x, y, z, s, kind) {
+  for (const [ax, ay, bx, by] of RUNES[((kind % RUNES.length) + RUNES.length) % RUNES.length]) { const dx = (bx - ax) * s, dy = (by - ay) * s, L = Math.hypot(dx, dy);
+    K.box(Math.max(0.035, s * 0.09), L + s * 0.05, 0.05, M.rune(), x + (ax + bx) / 2 * s - s * 0.1, y + (ay + by) / 2 * s - s * 0.5, z, 0, 0, Math.atan2(-dx, dy)); }
 }
 // telhado de duas águas (prisma), centrado na base
 function gable(K, w, d, h, mat, x, y, z, ry = 0, over = 0.4) {
@@ -225,14 +233,8 @@ function makeBanner(kind, w = 1.1, h = 2.4) {
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, w + 0.25, 10), M.iron()); rod.rotation.z = Math.PI / 2; g.add(rod);
   return g;
 }
-// chama animada (camadas aditivas) — o update fica no roomAnims
-function flame(scale = 1, seed = 0) {
-  const g = new THREE.Group();
-  const layer = (r, h, c, o, y) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false })); m.scale.set(1, h, 1); m.position.y = y; g.add(m); return m; };
-  layer(0.2, 2.2, '#ff4a12', 0.45, 0.2); layer(0.14, 2.1, '#ff9a30', 0.7, 0.17); layer(0.07, 1.9, '#fff0b0', 0.95, 0.1);
-  g.scale.setScalar(scale); g.userData.update = t => { g.scale.set(scale * (1 + Math.sin(t * 17 + seed) * 0.08), scale * (0.88 + Math.sin(t * 11 + seed) * 0.12 + Math.sin(t * 23 + seed * 2) * 0.06), scale); g.rotation.z = Math.sin(t * 7 + seed) * 0.06; };
-  return g;
-}
+// chama animada — S-393: a mesma chama de shader do resto do jogo (flame3d); scale 1 ≈ 0,9 m de altura. O update fica no roomAnims
+function flame(scale = 1, seed = 0) { return realFlame(0.9 * scale, seed, scale > 0.6); }
 function brazier(ctx, x, y, z, light = false, seed = 0) {
   const K = new Kit(); K.add(new THREE.LatheGeometry([[0.02, 0], [0.18, 0], [0.12, 0.1], [0.08, 0.95], [0.25, 1.0], [0.48, 1.25], [0.5, 1.35], [0.44, 1.32], [0.02, 1.1]].map(([a, b]) => new THREE.Vector2(a, b)), 20), M.iron());
   for (let k = 0; k < 6; k++) K.add(new THREE.DodecahedronGeometry(0.1, 0), M.ember(), Math.cos(k) * 0.22, 1.32, Math.sin(k) * 0.22);
@@ -287,7 +289,7 @@ function dwarfStatue(seed = 1) {
   // machado enorme apoiado à frente, com as mãos no cabo
   for (const g of axeGeo(7.5, 1.9)) K.add(g, st, 0, 1.9, 2.3, 0, 0, 0, 1, 1, 6);
   for (const sx of [-1, 1]) K.add(new THREE.SphereGeometry(0.5, 16, 12), st, sx * 0.55, 8.2, 2.2);
-  for (let k = 0; k < 7; k++) K.box(0.08, 0.5, 0.06, M.rune(), -1.2 + k * 0.4, 0.95, 2.32, 0, 0, (k % 3 - 1) * 0.45); // runas gravadas na base
+  for (let k = 0; k < 7; k++) runeGlyph(K, -1.2 + k * 0.4, 0.95, 2.32, 0.42, k); // runas gravadas na base
   return K;
 }
 // a ferraria do Mestre Brakar: galpão aberto com forja acesa, bigornas, barril de têmpera, fole e armas
@@ -299,7 +301,7 @@ function smithy(ctx, x, z, ry) {
   K.box(14.6, 0.5, 0.6, wd, 0, 5.2, 4.4);
   { const sh = new THREE.Shape(); sh.moveTo(-0.2, 0); sh.lineTo(10.8, 0); sh.lineTo(10.8, 0.3); sh.lineTo(0, 2.6); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 15, bevelEnabled: false }); g.rotateY(-Math.PI / 2); g.translate(7.5, 5.4, -5.4); K.add(g, M.slate()); } // telhado de uma água
   // forja: lareira de pedra com boca em arco, carvão em brasa e coifa
-  K.box(4.2, 1.3, 2.6, M.dwarfCarve(), -3.6, 0.65, -2.9); K.box(3.2, 0.25, 1.8, M.ember(), -3.6, 1.32, -2.7);
+  K.box(4.2, 1.3, 2.6, M.dwarfCarve(), -3.6, 0.65, -2.9); K.box(3.2, 0.25, 1.8, coalBed(), -3.6, 1.32, -2.7);
   K.box(4.6, 0.5, 3.0, st, -3.6, 3.4, -3.0); K.add(new THREE.CylinderGeometry(0.9, 2.1, 1.6, 4, 1), st, -3.6, 4.4, -3.1, Math.PI / 4); K.box(1.4, 3.0, 1.4, st, -3.6, 6.3, -3.4);
   // bigornas
   const anvil = (ax, az, rot) => { K.box(0.6, 0.6, 0.6, wd, ax, 0.55, az, rot); K.box(0.42, 0.25, 0.32, M.iron(), ax, 0.95, az, rot); K.box(0.95, 0.24, 0.36, M.iron(), ax, 1.18, az, rot); K.add(new THREE.ConeGeometry(0.17, 0.5, 16), M.iron(), ax + Math.cos(rot) * 0.68, 1.18, az - Math.sin(rot) * 0.68, rot, 0, -Math.PI / 2); };
@@ -324,6 +326,29 @@ function smithy(ctx, x, z, ry) {
    (praça com a forja de lava, pórtico de colunas e a ferraria do Brakar), cidade baixa em anéis de casas e, ao norte,
    a acrópole em dois terraços: templo da Forja, santuário dos Ancestrais e o Salão do Rei-Sob-a-Pedra no alto.
    Terraços e escadarias são "pisos" (DECKS): dá para subir andando. */
+// S-394: vão de porta que mostra o interior aceso: escuro em cima e nos cantos, luz quente da forja vindo de dentro, chão e colunas em silhueta
+let _doorGlow = null;
+// S-393: leito de brasas — placas escuras de carvão e o brilho correndo pelas rachaduras entre elas (antes: disco laranja chapado)
+let _coal = null;
+function coalBed() {
+  if (_coal) return _coal;
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), r = rngOf(911);
+  const gr = g.createRadialGradient(N / 2, N / 2, 10, N / 2, N / 2, N * 0.7); gr.addColorStop(0, '#ffcf6a'); gr.addColorStop(0.5, '#ff7a1a'); gr.addColorStop(1, '#b8360a'); g.fillStyle = gr; g.fillRect(0, 0, N, N);
+  for (let k = 0; k < 150; k++) { const x = r() * N, y = r() * N, rr = 6 + r() * 16, n = 5 + Math.floor(r() * 3); g.fillStyle = `rgb(${18 + r() * 22 | 0},${10 + r() * 10 | 0},${6 + r() * 6 | 0})`; g.beginPath();
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + r() * 0.5, q = rr * (0.7 + r() * 0.35); i ? g.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q) : g.moveTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } g.closePath(); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_coal = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: '#ffffff', emissiveIntensity: 0.9, roughness: 0.9 }));
+}
+function doorGlow() {
+  if (_doorGlow) return _doorGlow;
+  const c = document.createElement('canvas'); c.width = 64; c.height = 128; const g = c.getContext('2d');
+  g.fillStyle = '#0c0705'; g.fillRect(0, 0, 64, 128);
+  const gr = g.createRadialGradient(32, 112, 4, 32, 96, 70); gr.addColorStop(0, 'rgba(255,170,80,0.95)'); gr.addColorStop(0.35, 'rgba(220,110,40,0.55)'); gr.addColorStop(1, 'rgba(40,16,6,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 128);
+  g.fillStyle = 'rgba(10,6,4,0.85)'; for (const x of [6, 52]) g.fillRect(x, 20, 6, 108); // colunas lá dentro
+  g.fillStyle = 'rgba(30,14,6,0.7)'; g.fillRect(0, 114, 64, 14); // chão
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_doorGlow = new THREE.MeshBasicMaterial({ map: t }));
+}
 function dwarfTemple() { // templo da Forja: estilóbata em degraus, colunata, frontões e telhado de bronze; porta acesa
   const K = new Kit(), cv = M.dwarfCarve(), st = M.dwarfStone(), W = 14, D = 14;
   for (let k = 0; k < 3; k++) K.box(W + 3 - k * 1.0, 0.45, D + 3 - k * 1.0, cv, 0, 0.22 + k * 0.45, 0);
@@ -332,9 +357,9 @@ function dwarfTemple() { // templo da Forja: estilóbata em degraus, colunata, f
   for (let i = 1; i < 5; i++) for (const x of [-W / 2 + 0.6, W / 2 - 0.6]) { const z = -D / 2 + 0.6 + i * (D - 1.2) / 5; K.box(1.3, 0.4, 1.3, cv, x, y0 + 0.2, z); K.cyl(0.5, 0.58, H, cv, x, y0 + 0.4 + H / 2, z, 16); K.box(1.4, 0.45, 1.4, cv, x, y0 + 0.62 + H, z); }
   K.box(W - 4, H, D - 5, st, 0, y0 + H / 2, -1); // cela
   K.box(W + 0.6, 1.4, D + 0.6, cv, 0, y0 + H + 1.5, 0); // entablamento
-  for (let k = 0; k < 18; k++) K.box(0.5, 0.5, 0.12, M.rune(), -W / 2 + 0.8 + k * 0.75, y0 + H + 1.5, D / 2 + 0.32); // friso de runas
+  for (let k = 0; k < 18; k++) runeGlyph(K, -W / 2 + 0.8 + k * 0.75, y0 + H + 1.5, D / 2 + 0.32, 0.55, k * 3 + 1); // friso de runas
   gable(K, W + 0.6, D + 0.6, 3.2, M.copper(), 0, y0 + H + 2.2, 0, Math.PI / 2, 0.4);
-  K.box(3.0, 4.6, 0.3, M.darkWood(), 0, y0 + 2.3, D / 2 - 3.4); K.box(2.2, 3.6, 0.1, M.ember(), 0, y0 + 1.9, D / 2 - 3.3);
+  K.box(3.0, 4.6, 0.3, M.darkWood(), 0, y0 + 2.3, D / 2 - 3.4); K.add(new THREE.PlaneGeometry(2.2, 3.6), doorGlow(), 0, y0 + 1.9, D / 2 - 3.24); // S-394: porta aberta para o salão aceso (antes: retângulo laranja liso)
   return K;
 }
 function dwarfTholos() { // santuário dos Ancestrais: círculo de colunas com cúpula de bronze e uma estátua de antepassado
@@ -348,7 +373,7 @@ function dwarfTholos() { // santuário dos Ancestrais: círculo de colunas com c
 }
 function terrace(K, w, d, h, mat, cap) { // plataforma de pedra com talude, cornija e friso
   K.box(w + 0.8, h - 0.4, d + 0.8, mat, 0, (h - 0.4) / 2, 0); K.box(w + 1.4, 0.5, d + 1.4, mat, 0, 0.25, 0); K.box(w + 1.2, 0.4, d + 1.2, cap, 0, h - 0.2, 0); // o topo fica exatamente na altura do piso (h)
-  for (let k = 0; k < Math.floor(w / 3); k++) { const xx = -w / 2 + 1.5 + k * 3; K.box(0.07, 0.55, 0.06, M.rune(), xx, h - 0.75, d / 2 + 0.43, 0, 0, (k % 3 - 1) * 0.35); K.box(0.32, 0.06, 0.06, M.rune(), xx + 0.05, h - 0.62 - (k % 2) * 0.18, d / 2 + 0.43); } // runas gravadas (traços finos), não janelas
+  for (let k = 0; k < Math.floor(w / 3); k++) { const xx = -w / 2 + 1.5 + k * 3; runeGlyph(K, xx, h - 0.7, d / 2 + 0.43, 0.55, k * 2 + 1); } // runas gravadas (traços finos), não janelas
 }
 function stairs(K, w, run, rise, mat, steps) { // escadaria (anda em +z para baixo): degraus de pedra com corrimões
   for (let k = 0; k < steps; k++) { const y = rise * (1 - (k + 1) / steps), z = run * (k + 0.5) / steps; K.box(w, rise / steps + y, run / steps + 0.02, mat, 0, (rise / steps + y) / 2, z); }
@@ -381,7 +406,7 @@ function buildDwarfCity(ctx) {
   // ---------- portão monumental (torres quadradas, arco de aduelas, portas de bronze abertas) ----------
   { const K = new Kit();
     for (const sx of [-1, 1]) { K.box(9, 22, 13, st, sx * 9.5, 11, 0); K.box(10, 1.2, 14, cv, sx * 9.5, 22.4, 0); for (let k = -1; k <= 1; k++) K.box(1.8, 1.6, 1.6, cv, sx * 9.5 + k * 3, 23.8, 6.2); K.box(9.6, 4, 13.6, st, sx * 9.5 + sx * 0.3, 2, 0);
-      for (let k = 0; k < 6; k++) { const yy = 10 + k * 0.8; K.box(0.8 - (k % 2) * 0.35, 0.1, 0.08, M.rune(), sx * 9.5, yy, 6.55); K.box(0.1, 0.5, 0.08, M.rune(), sx * 9.5 + (k % 2 ? 0.25 : -0.3), yy + 0.3, 6.55, 0, 0, (k % 3 - 1) * 0.5); }
+      for (let k = 0; k < 6; k++) { const yy = 10 + k * 0.8; runeGlyph(K, sx * 9.5, yy + 0.2, 6.55, 0.6, k + (sx > 0 ? 3 : 0)); }
       // portas de bronze escancaradas, encostadas na passagem
       K.box(0.4, 9.4, 4.6, M.copper(), sx * 4.3, 4.7, -3.6); for (let k = 0; k < 4; k++) K.box(0.5, 0.3, 4.7, M.iron(), sx * 4.25, 1.4 + k * 2.4, -3.6);
     }
@@ -399,7 +424,7 @@ function buildDwarfCity(ctx) {
   for (const z of [34, 50]) for (const sx of [-1, 1]) { const [x, zz] = at(sx * 5.2, z); brazier(ctx, x, base, zz, z === 50, sx * z); }
   // ---------- ágora: forja de lava no meio, pórtico (estoa) a oeste, ferraria do Brakar a leste ----------
   const AG = { x: 0, z: 16 };
-  { const K = new Kit(); K.cyl(4.4, 4.8, 0.9, cv, 0, 0.3, 0, 32); K.cyl(3.6, 3.6, 0.1, M.ember(), 0, 0.72, 0, 32); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.8, 2.2, 0.8, cv, Math.cos(a) * 4.6, 1.1, Math.sin(a) * 4.6, -a); }
+  { const K = new Kit(); K.cyl(4.4, 4.8, 0.9, cv, 0, 0.3, 0, 32); K.cyl(3.6, 3.6, 0.1, coalBed(), 0, 0.72, 0, 32); for (let k = 0; k < 40; k++) { const a = k * 2.399, rr = Math.sqrt((k + 0.5) / 40) * 3.2; K.add(new THREE.DodecahedronGeometry(0.16 + (k % 5) * 0.04, 1), k % 3 ? M.dwarfStone() : M.ember(), Math.cos(a) * rr, 0.8, Math.sin(a) * rr, k); } // S-393: brasas e carvão por cima do leito for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; K.box(0.8, 2.2, 0.8, cv, Math.cos(a) * 4.6, 1.1, Math.sin(a) * 4.6, -a); }
     const [x, z] = at(AG.x, AG.z); const g = put(ctx, K, 'forja_da_praca', x, z, 0, { y: base, box: [[0, 0, 4.8, 4.8]] }); const L = vlight('#ff7a2a', 6, 18, 1.5); L.position.set(0, 2, 0); g.add(L); const f = flame(3.2, 9); f.position.y = 0.7; g.add(f); ctx.roomAnims.push(f); }
   { const K = new Kit(), L = 26, D = 7; // estoa: muro do fundo, colunata e telhado de bronze, com bancos de pedra
     K.box(0.9, 6, L, st, -D / 2, 3, 0); K.box(D + 0.4, 0.4, L + 0.4, cv, 0, 0.2, 0);
@@ -440,8 +465,8 @@ function buildDwarfCity(ctx) {
     for (let k = 0; k < 6; k++) { const x = -11 + k * 4.4; K.box(2.2, 1.0, 2.2, cv, x, 3.5, 2); K.cyl(0.85, 0.95, 12, cv, x, 10, 2, 16); K.box(2.4, 1.1, 2.4, cv, x, 16.6, 2); }
     K.box(28, 2.2, 4, cv, 0, 18.3, 2); { const sh = new THREE.Shape(); sh.moveTo(-14, 0); sh.lineTo(14, 0); sh.lineTo(0, 6); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false }); g.translate(0, 19.4, 0.5); K.add(g, st); }
     K.box(26, 20, 10, st, 0, 10, -5); K.box(7, 9, 0.6, M.darkWood(), 0, 7.5, -0.1); archBlocks(K, 7, 1.0, 1.2, cv, 0, 12, 0, 0, 11);
-    for (let k = 0; k < 7; k++) K.box(0.35, 0.35, 0.1, M.rune(), -3 + k, 10.2, 0.25);
-    for (let k = 0; k < 11; k++) K.box(0.12, 0.8, 0.1, M.rune(), -3 + k * 0.6, 21.8, 3.55, 0, 0, (k % 3 - 1) * 0.4);
+    for (let k = 0; k < 7; k++) runeGlyph(K, -3 + k, 10.2, 0.25, 0.5, k + 2);
+    for (let k = 0; k < 11; k++) runeGlyph(K, -3 + k * 0.6, 21.8, 3.55, 0.7, k * 5);
     gable(K, 26, 10, 4, M.copper(), 0, 20, -5, 0, 0.4);
     const [x, z] = at(0, -38.5); put(ctx, K, 'salao_anao', x, z, 0, { y: base + T2.h - 0.2, box: [[0, -4, 13.5, 5.5]] });
     for (const sx of [-1, 1]) { const b = makeBanner('anao', 2.4, 8); b.position.set(x + sx * 6.6, base + T2.h + 15.5, z + 3.6); ctx.scene.add(b); }
@@ -857,7 +882,7 @@ function buildFrostHold(ctx) {
     put(ctx, K, 'corvaria', C.x - 20, C.z - 2, 0, { box: [[0, 0, 3, 3]] }); }
   // ---------- arsenal com forja, estábulo, pátio de treino ----------
   { const K = new Kit(); K.box(10, 0.4, 7, st, 0, 0, 0); K.box(10, 4, 0.6, st, 0, 2, -3.2); for (const px of [-4.7, 0, 4.7]) K.box(0.4, 4, 0.4, dk, px, 2, 3.2); snowRoof(K, 10.4, 7.4, 1.8, M.slate(), 0, 4, 0, 0);
-    K.box(2.4, 1.1, 1.6, st, -3, 0.55, -2.2); K.box(1.8, 0.1, 1.1, M.ember(), -3, 1.12, -2.1); K.box(0.8, 0.6, 0.5, M.iron(), 1, 0.9, -0.8); K.box(0.5, 0.6, 0.5, dk, 1, 0.3, -0.8);
+    K.box(2.4, 1.1, 1.6, st, -3, 0.55, -2.2); K.box(1.8, 0.1, 1.1, coalBed(), -3, 1.12, -2.1); K.box(0.8, 0.6, 0.5, M.iron(), 1, 0.9, -0.8); K.box(0.5, 0.6, 0.5, dk, 1, 0.3, -0.8);
     for (let k = 0; k < 5; k++) for (const gg of axeGeo(1.6, 0.3)) K.add(gg, M.steel(), 2.6 + k * 0.45, 0.6, -2.85, 0, 0, 0.05);
     const g = put(ctx, K, 'arsenal', C.x + 24, C.z - 18, -Math.PI / 2, { box: [[0, -3.2, 5, 0.5], [-3, -2.2, 1.2, 0.8]] }); const f = flame(1.6, 4); f.position.set(-3, 1.15, -2.1); g.add(f); ctx.roomAnims.push(f); }
   { // S-260: Estábulo da Vigília de verdade — fundo e laterais de tábuas, três baias com divisórias, portinhas, manjedouras e argolas (os cavalos e o feno entram no main3d: FROST.stable)
