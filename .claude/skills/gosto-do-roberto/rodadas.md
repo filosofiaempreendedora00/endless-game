@@ -360,3 +360,15 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - **Testado andando**:
   - da ágora ao terraço de cima (6,7 m), à plataforma e ao portão;
   - pelos dois lados até as muretas, pelas bordas da frente (não cai) e sobre a grelha das canaletas de lava.
+
+### Pedrafunda, etapa 2 (2026-11-13): o Grande Salão
+- **Sala grande e escura precisa de clima próprio.** As salas usavam a luz de "dia" fixa. `I.mood` dá luz quente baixa e névoa marrom. Na 1ª versão ficou escuro demais: o ponto certo foi hemi 0,8 e exposição 1,18, com as runas e a lava brilhando por cima.
+- **Abismo dentro de sala**: o chão das salas é sempre y = 0, então o vão é só visual. A beirada tem uma barreira invisível (a ponte "sem corrimão" continua segura).
+  - As paredes do salão precisam descer até a lava. Senão sobram frestas para o vazio.
+- **Vãos de porta**:
+  - De fora, o portão aberto precisa de profundidade: um degradê escuro → quente com silhuetas de pilares, nunca uma placa laranja chapada.
+  - De dentro, o vão da saída mostra uma claridade de dia em degradê, não o céu chapado.
+- **Testado andando**:
+  - plataforma → portão → salão → ponte, com tentativa de pular no abismo pelos lados (bloqueado);
+  - rampa até o trono, conversa com o Rei sentado e saída de volta para a plataforma a 6,7 m;
+  - câmera em 6 pontos × 8 direções sem sair da sala.

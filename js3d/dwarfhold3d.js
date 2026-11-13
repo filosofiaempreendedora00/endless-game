@@ -14,6 +14,7 @@
 import * as THREE from 'three';
 import { vlight } from './lights3d.js';
 import { heightAt } from './world3d.js';
+import { addLevel } from './levels3d.js';
 
 const TAU = Math.PI * 2;
 export const LAVA_T = { value: 0 };
@@ -76,12 +77,11 @@ export function buildKingsGate(ctx, H, { FZ = -64, PY = 6.6, PD = 15, PW = 60 } 
     for (let k = 0; k < 3; k++) K.add(trapFrame(14 + k * 0.9, 11 + k * 0.9, 34 + k * 0.6, 0.45, 0.5 + k * 0.25), cv, nx, 0, 0.15); }
   // o portão: três molduras em degraus, as folhas de bronze, o selo de runas e o emblema da bigorna em cima
   for (let k = 0; k < 4; k++) K.add(trapFrame(GW + k * 1.3, GT + k * 1.3, GH + k * 0.9, 0.65, 1.0 + k * 0.45), cv, 0, 0, 0); // molduras em degraus (as de fora avançam mais)
-  for (const s of [-1, 1]) { const g = trapSolid(GW, GT, GH, 0.5, s < 0 ? -GW / 2 : 0.04, s < 0 ? -0.04 : GW / 2); K.add(g, bronze(), 0, 0, 0.15); // folhas de bronze, um palmo para dentro da 1ª moldura
-    for (let k = 0; k < 6; k++) { const y = 1.5 + k * 2.8, w = (GW / 2) * (1 - (y / GH) * (1 - GT / GW)); K.box(w - 0.6, 0.35, 0.2, M.iron(), s * (w / 2), y, 0.72); }
-    for (let k = 0; k < 5; k++) for (let j = 0; j < 3; j++) { const y = 2.2 + k * 3.1, w = (GW / 2) * (1 - (y / GH) * (1 - GT / GW)); K.add(new THREE.SphereGeometry(0.16, 10, 8), M.iron(), s * (0.8 + j * (w - 1.6) / 2), y, 0.72); } }
-  { const sealY = 8.5; K.add(new THREE.TorusGeometry(3.4, 0.16, 8, 56), M.rune(), 0, sealY, 0.78); K.add(new THREE.TorusGeometry(2.5, 0.1, 8, 48), M.rune(), 0, sealY, 0.78);
-    for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; runeGlyph(K, Math.cos(a) * 2.95, sealY + Math.sin(a) * 2.95 + 0.25, 0.82, 0.45, k * 7 + 2); }
-    for (let k = 0; k < 4; k++) K.box(0.12, 4.6, 0.1, M.rune(), 0, sealY, 0.8, 0, 0, k * Math.PI / 4); }
+  // etapa 2: o portão ABERTO — as folhas de bronze escancaradas para fora e, no vão, a luz quente do Grande Salão
+  { const gg = trapSolid(GW, GT, GH, 0.1), uv = gg.attributes.uv, P = gg.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (P.getX(i) + GW / 2) / GW, P.getY(i) / GH); K.add(gg, hallGlow(), 0, 0, 0.12); }
+  for (const s of [-1, 1]) { const g = trapSolid(GW, GT, GH, 0.5, s < 0 ? -GW / 2 : 0.04, s < 0 ? -0.04 : GW / 2); g.translate(-s * GW / 2, 0, 0); // dobradiça na origem
+    const KD = new Kit(); KD.add(g, bronze()); for (let k = 0; k < 6; k++) KD.box(GW / 2 - 0.8, 0.35, 0.2, M.iron(), -s * (GW / 4), 1.5 + k * 2.8, 0.55);
+    const d = KD.build(); d.position.set(C.x + s * GW / 2, Y, C.z + FZ + 0.4); d.rotation.y = s < 0 ? -1.95 : 1.95; ctx.scene.add(d); d.userData.asset = 'portao_dos_reis'; }
   { const ey = GH + 6.5; K.add(new THREE.CylinderGeometry(5.2, 5.2, 1.2, 6), cv, 0, ey, 0.6, 0, Math.PI / 2, Math.PI / 6); K.add(new THREE.TorusGeometry(4.4, 0.16, 6, 6), M.rune(), 0, ey, 1.25, 0, 0, Math.PI / 6);
     // bigorna (perfil de verdade) e dois martelos cruzados, em relevo
     const an = new THREE.Shape(); an.moveTo(-2.4, 0.9); an.lineTo(1.6, 0.9); an.quadraticCurveTo(2.9, 0.9, 3.1, 0.3); an.lineTo(1.2, 0.0); an.lineTo(0.8, -0.6); an.lineTo(1.4, -1.6); an.lineTo(-1.6, -1.6); an.lineTo(-1.0, -0.6); an.lineTo(-1.6, 0.0); an.lineTo(-2.4, 0.2); an.closePath();
@@ -124,6 +124,12 @@ export function buildKingsGate(ctx, H, { FZ = -64, PY = 6.6, PD = 15, PW = 60 } 
   for (const [x, y, c, i] of [[0, 8.5, '#ff8a3a', 5], [-32, 4, '#ff5a10', 6], [24, 10, '#ffb070', 3]]) { const L = vlight(c, i, 26, 1.4); L.position.set(C.x + x, Y + y, C.z + FZ + 4); ctx.scene.add(L); }
   return { gate: { x: C.x, z: C.z + FZ + 4.5, y: Y } };
 }
+let _glowH = null; function hallGlow() { // o vão do portão aberto: escuro em cima, luz quente subindo do chão (profundidade, não parede laranja)
+  if (_glowH) return _glowH; const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, '#000000'); gr.addColorStop(0.45, '#120804'); gr.addColorStop(0.8, '#5a2a0c'); gr.addColorStop(1, '#c8641e'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256);
+  for (let k = 0; k < 5; k++) { g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(6 + k * 12, 60, 4, 196); } // silhuetas dos pilares lá dentro
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_glowH = new THREE.MeshBasicMaterial({ map: t })); }
 let _bronze = null; function bronze() { return _bronze || (_bronze = new THREE.MeshStandardMaterial({ color: '#7a5a32', metalness: 0.7, roughness: 0.42 })); }
 let _warm = null; function warmDoor() { return _warm || (_warm = new THREE.MeshStandardMaterial({ color: '#ffcf8a', emissive: '#ff9a40', emissiveIntensity: 1.1, roughness: 0.8 })); }
 let _dark = null; function plainDark(M) { return _dark || (_dark = new THREE.MeshStandardMaterial({ color: '#1a1512', roughness: 1 })); }
@@ -175,3 +181,115 @@ export function buildLavaChannels(ctx, H, { x = 4.6, z0 = 30, z1 = 54 } = {}) {
   put(ctx, K, 'canaletas_de_lava', C.x, C.z, 0, { y: base, occ: false });
   for (const z of [z0 + 6, z1 - 6]) { const L2 = vlight('#ff5a10', 2.2, 9, 1.6); L2.position.set(C.x, base + 0.6, C.z + z); ctx.scene.add(L2); }
 }
+
+/* =========================================================================
+   ETAPA 2 — O GRANDE SALÃO SOB A MONTANHA (por trás do portão dos Reis)
+   Sala de 56 × 96 m e 30 m de pé-direito, em penumbra quente (I.mood):
+   • fileiras de pilares colossais chanfrados com runas acesas e capitéis em degraus que se abrem no teto;
+   • o ABISMO atravessando o salão de lado a lado, com lava lá no fundo e cascatas nas paredes — e uma ponte estreita
+     sem corrimão (a beirada tem uma barreira invisível: ninguém cai, mas a vertigem é de verdade);
+   • a Grande Forja: fornalha acesa, bigorna gigante e o martelo-pilão movido por uma roda dentada (bate de verdade);
+   • trilhos de minério com a vagoneta indo e voltando; o salão de festa com mesas compridas, bancos e barris;
+   • o trono do Rei-Sob-a-Pedra no alto de uma escadaria, entre dois ancestrais de pedra.
+   ========================================================================= */
+export function buildGreatHall(ctx, H, { id = 'grande_salao', x: IX = 2700, z: IZ = 0 } = {}) {
+  const { Kit, M, runeGlyph, makeBanner } = H, cv = M.dwarfCarve(), st = M.dwarfStone(), iron = M.iron(), wd = M.darkWood();
+  const W = 56, D = 96, HT = 30, hw = W / 2, hd = D / 2, CH = { z0: 6, z1: 22 }; // abismo de z = 6 a 22 (local)
+  const I = { name: 'Grande Salão de Pedrafunda', x: IX, z: IZ, w: W, d: D, h: HT, region: 'Pedrafunda',
+    mood: { hemi: 0.8, sky: '#ffd9a8', ground: '#4a3020', sun: 0.55, exp: 1.18, fog: '#24180f', near: 40, far: 170 } };
+  ctx.INTERIORS[id] = I;
+  const K = new Kit(), WK = new Kit(), LK = new Kit(), add = (kit, asset, occ) => { const g = kit.build(); g.position.set(IX, 0, IZ); ctx.scene.add(g); g.userData.asset = asset; if (occ) ctx.occluders.push(g); return g; };
+  const col = (lx, lz, hx, hz, name = id) => ctx.colliders.push({ x: IX + lx, z: IZ + lz, r: Math.max(hx, hz), box: true, hx, hz, rot: 0, name });
+  // ---------- chão (com o vão do abismo), paredes, teto ----------
+  for (const [z0, z1] of [[-hd, CH.z0], [CH.z1, hd]]) { K.box(W, 0.6, z1 - z0, cv, 0, -0.3, (z0 + z1) / 2); for (let z = z0 + 3; z < z1; z += 6) K.box(W, 0.02, 0.12, st, 0, 0.01, z); } // lajes grandes
+  K.box(3.2, 1.2, CH.z1 - CH.z0, cv, 0, -0.6, (CH.z0 + CH.z1) / 2); // a ponte: uma lâmina de pedra só
+  for (let k = 0; k < 4; k++) K.box(3.4, 0.25, 0.4, cv, 0, -0.1, CH.z0 + 2 + k * 4); // juntas da ponte
+  for (const z of [CH.z0, CH.z1]) { const s = z === CH.z0 ? -1 : 1; for (const [x0, x1] of [[-hw, -1.6], [1.6, hw]]) K.box(x1 - x0, 44, 1.0, st, (x0 + x1) / 2, -22.3, z + s * 0.5); } // paredes do abismo
+  K.box(3.2, 44, 1.0, st, 0, -23, CH.z0 - 0.5); K.box(3.2, 44, 1.0, st, 0, -23, CH.z1 + 0.5);
+  for (const sx of [-1, 1]) K.box(1.5, 46, CH.z1 - CH.z0 + 2, st, sx * (hw + 0.75), -23, (CH.z0 + CH.z1) / 2); // as paredes do salão descem até a lava (antes sobravam frestas para o vazio)
+  LK.box(W, 0.5, CH.z1 - CH.z0, lavaMat(), 0, -40, (CH.z0 + CH.z1) / 2); // o rio de lava lá no fundo
+  for (const sx of [-1, 1]) for (const zz of [9, 15, 19]) LK.add(lavaRibbon(36), lavaMat(), sx * (hw - 0.9), -21, zz, -sx * Math.PI / 2); // cascatas de lava nas paredes do abismo
+  const HW2 = HT + 2, T = 1.5, wb = [];
+  const WALL = (w, d, x, z) => { WK.box(w, HW2, d, cv, x, HW2 / 2, z); wb.push([x, z, w / 2, d / 2]); };
+  WALL(W + T * 2, T, 0, -hd - T / 2); WALL(T, D, -hw - T / 2, 0); WALL(T, D, hw + T / 2, 0);
+  WALL(hw - 4, T, -hw / 2 - 2, hd + T / 2); WALL(hw - 4, T, hw / 2 + 2, hd + T / 2); WK.box(8, HW2 - 12, T, cv, 0, 12 + (HW2 - 12) / 2, hd + T / 2);
+  WK.box(W + 2, 1.5, D + 2, st, 0, HT + 0.75, 0); // teto
+  for (let z = -hd + 6; z < hd; z += 12) WK.box(W, 2.2, 1.6, cv, 0, HT - 1.1, z); // vigas de pedra do teto
+  // relevo das paredes: faixas, pilastras e portais escuros (galerias mais fundas) — o salão continua montanha adentro
+  for (const sx of [-1, 1]) { const x = sx * (hw - 0.4);
+    for (const y of [6, 18]) { K.box(0.8, 1.2, D, cv, x, y, 0); for (let z = -hd + 1; z < hd; z += 2.4) runeGlyph(K, x - sx * 0.42, y + 0.5, z, 0.7, Math.floor(z * 3 + y)); }
+    for (let z = -hd + 10; z < hd - 6; z += 16) { if (z > CH.z0 - 4 && z < CH.z1 + 4) continue; K.add(trapSolid(6, 4.4, 9, 0.3), plainDark(M), x - sx * 0.05, 0, z, sx * -Math.PI / 2); K.add(trapFrame(6, 4.4, 9, 0.6, 0.8), cv, x - sx * 0.2, 0, z, sx * -Math.PI / 2); } }
+  // ---------- pilares colossais ----------
+  const pillar = (x, z) => { K.add(chamferPillar(3.4, 3.4, HT, 0.6), cv, x, 0, z); for (let k = 0; k < 3; k++) { K.box(5 - k * 0.6, 0.7, 5 - k * 0.6, cv, x, 0.35 + k * 0.7, z); K.box(4.2 + k * 1.4, 0.9, 4.2 + k * 1.4, cv, x, HT - 3.6 + k * 0.9, z); }
+    for (const [fx, fz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) for (let k = 0; k < 3; k++) runeGlyph(K, x + fx * 1.72, 6.5 + k * 1.1, z + fz * 1.72, 0.8, k + Math.floor(x + z)); // runas acesas nas quatro faces
+    col(x, z, 2.5, 2.5, 'pilar'); };
+  for (const z of [38, 28, -4, -16, -28]) for (const sx of [-1, 1]) pillar(sx * 13, z);
+  // ---------- lustres de ferro pendurados (aros com velas e uma brasa no meio) ----------
+  const lights = [];
+  for (const [lx, lz] of [[0, 34], [0, -10], [0, -30]]) { K.add(new THREE.TorusGeometry(2.6, 0.12, 8, 40), iron, lx, 14, lz, 0, Math.PI / 2); K.add(new THREE.TorusGeometry(1.6, 0.1, 8, 32), iron, lx, 14.6, lz, 0, Math.PI / 2);
+    for (let k = 0; k < 4; k++) { const a = k / 4 * TAU + 0.4; K.cyl(0.03, 0.03, HT - 14, iron, lx + Math.cos(a) * 1.2, 14 + (HT - 14) / 2, lz + Math.sin(a) * 1.2, 4, 0, Math.cos(a) * 0.08, -Math.sin(a) * 0.08); }
+    for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; K.cyl(0.07, 0.07, 0.4, M.glass(), lx + Math.cos(a) * 2.6, 14.3, lz + Math.sin(a) * 2.6, 8); }
+    K.add(new THREE.DodecahedronGeometry(0.5, 1), M.ember(), lx, 13.6, lz); lights.push([lx, 12.5, lz, '#ffb060', 5, 34]); }
+  // ---------- salão de festa (perto da entrada): mesas compridas, bancos, barris e canecas ----------
+  for (const sx of [-1, 1]) { const tx = sx * 6.5; K.box(2.0, 0.14, 14, wd, tx, 0.9, 36); for (const zz of [30, 36, 42]) for (const ox of [-0.8, 0.8]) K.box(0.16, 0.9, 0.16, wd, tx + ox, 0.45, zz);
+    for (const ox of [-1.6, 1.6]) K.box(0.5, 0.1, 14, wd, tx + ox, 0.5, 36); for (const ox of [-1.6, 1.6]) for (const zz of [30.5, 36, 41.5]) K.box(0.4, 0.5, 0.12, wd, tx + ox, 0.25, zz);
+    for (let k = 0; k < 9; k++) { const zz = 29.8 + k * 1.55, ox = (k % 2 ? 0.55 : -0.55); K.add(new THREE.CylinderGeometry(0.11, 0.1, 0.24, 14), wd, tx + ox, 1.1, zz); K.add(new THREE.TorusGeometry(0.07, 0.02, 6, 12, Math.PI), iron, tx + ox + 0.12, 1.1, zz, 0, 0, -Math.PI / 2); }
+    for (let k = 0; k < 3; k++) K.add(new THREE.SphereGeometry(0.22, 12, 8), P2('roast', '#7a3a1a'), tx, 1.1, 32 + k * 4, 0, 0, 0, 1.4, 0.7, 1); // assados na mesa
+    col(tx, 36, 1.0, 7.0, 'mesa'); col(tx - 1.6, 36, 0.3, 7, 'banco'); col(tx + 1.6, 36, 0.3, 7, 'banco'); }
+  for (const [bx, bz] of [[-hw + 2, 30], [-hw + 2, 32.2], [-hw + 2, 34.4], [hw - 2, 30], [hw - 2, 32.2]]) { K.add(new THREE.CylinderGeometry(0.9, 0.9, 1.9, 20), wd, bx, 0.95, bz, 0, 0, Math.PI / 2); for (const o of [-0.6, 0.6]) K.add(new THREE.TorusGeometry(0.92, 0.05, 6, 24), iron, bx + o, 0.95, bz, Math.PI / 2); col(bx, bz, 1.0, 1.0, 'barril'); }
+  // ---------- a Grande Forja (leste) ----------
+  const FX = hw - 6, FZ = -14;
+  K.box(9, 7, 6, cv, hw - 3.5, 3.5, FZ); K.box(0.3, 2.6, 5, plainDark(M), hw - 8.05, 2.0, FZ); LK.box(0.2, 2.0, 4.4, lavaMat(), hw - 8.15, 1.6, FZ); // fornalha com a boca acesa
+  K.box(4, HT - 7, 4, st, hw - 3, 7 + (HT - 7) / 2, FZ); col(hw - 3.5, FZ, 4.5, 3.0, 'fornalha');
+  { const an = new THREE.Shape(); an.moveTo(-2.4, 0.9); an.lineTo(1.6, 0.9); an.quadraticCurveTo(2.9, 0.9, 3.1, 0.3); an.lineTo(1.2, 0.0); an.lineTo(0.8, -0.6); an.lineTo(1.4, -1.6); an.lineTo(-1.6, -1.6); an.lineTo(-1.0, -0.6); an.lineTo(-1.6, 0.0); an.lineTo(-2.4, 0.2); an.closePath();
+    const g = new THREE.ExtrudeGeometry(an, { depth: 1.4, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.08 }); g.translate(0, 1.6, -0.7); K.add(g, iron, FX - 8, 0, FZ + 6, Math.PI / 2); K.box(2.4, 0.2, 2.4, cv, FX - 8, 0.1, FZ + 6); col(FX - 8, FZ + 6, 1.6, 1.4, 'bigorna'); } // a bigorna gigante (perfil de verdade)
+  K.box(3.0, 1.0, 1.4, cv, FX - 4, 0.5, FZ + 10); LK.box(2.6, 0.1, 1.0, P2('water', '#3a6a7a'), FX - 4, 0.98, FZ + 10); col(FX - 4, FZ + 10, 1.5, 0.7, 'tina'); // tina de têmpera
+  // martelo-pilão: armação de madeira, roda dentada girando na parede e o braço que sobe devagar e cai de uma vez sobre a bigorna
+  const AX = FX - 8, AZ = FZ + 6, PX = AX + 5.8; for (const sz of [-1.6, 1.6]) { K.box(0.6, 7, 0.6, wd, PX, 3.5, AZ + sz); } K.box(0.7, 0.7, 4.2, wd, PX, 6.6, AZ); col(PX, AZ, 0.5, 2.0, 'pilão');
+  const arm = new THREE.Group(); arm.position.set(IX + PX, 6.6, IZ + AZ); ctx.scene.add(arm); // o eixo fica de modo que a cabeça do martelo caia bem na bigorna
+  { const KA = new Kit(); KA.box(6.2, 0.6, 0.6, wd, -3.1, 0, 0); KA.box(1.6, 1.6, 1.4, iron, -5.8, -0.8, 0); KA.box(0.9, 0.3, 0.9, iron, -5.8, -1.7, 0); arm.add(KA.build()); }
+  const gear = new THREE.Group(); gear.position.set(IX + hw - 0.9, 8, IZ + AZ); ctx.scene.add(gear);
+  { const KG = new Kit(); KG.add(new THREE.CylinderGeometry(3, 3, 0.6, 40), wd, 0, 0, 0, 0, 0, Math.PI / 2); for (let k = 0; k < 20; k++) { const a = k / 20 * TAU; KG.box(0.7, 0.7, 0.5, iron, 0, Math.sin(a) * 3.2, Math.cos(a) * 3.2, 0, a); } for (let k = 0; k < 4; k++) KG.box(0.62, 5.6, 0.4, iron, 0, 0, 0, 0, k * Math.PI / 4); KG.add(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 16), iron, 0, 0, 0, 0, 0, Math.PI / 2); gear.add(KG.build()); }
+  let lastHit = 0; const anvilTop = 1.6 + 0.9 + 0.08;
+  arm.userData.update = t => { const cyc = (t % 2.6) / 2.6, lift = cyc < 0.82 ? cyc / 0.82 : Math.max(0, 1 - (cyc - 0.82) / 0.05); arm.rotation.z = 0.38 - lift * 0.6; // 0,38 = cabeça na bigorna; levanta devagar e cai de uma vez gear.rotation.x = t * 0.6;
+    if (cyc > 0.86 && cyc < 0.9 && t - lastHit > 1.5) { lastHit = t; const c = ctx.camera && ctx.camera.position; if (c && Math.abs(c.x - (IX + AX)) < 30 && Math.abs(c.z - (IZ + AZ)) < 30 && typeof Sound !== 'undefined') Sound.play('impact'); } };
+  ctx.roomAnims.push(arm); void anvilTop;
+  lights.push([FX - 6, 3, FZ, '#ff6a20', 7, 22]);
+  // ---------- trilhos de minério (oeste) e a vagoneta que vai e volta ----------
+  const RX = -hw + 5;
+  for (const [z0, z1] of [[CH.z1 + 1, hd - 4], [-hd + 6, CH.z0 - 1]]) { for (const o of [-0.6, 0.6]) K.box(0.12, 0.12, z1 - z0, iron, RX + o, 0.12, (z0 + z1) / 2); for (let z = z0; z < z1; z += 0.9) K.box(1.8, 0.1, 0.3, wd, RX, 0.05, z); }
+  const cart = new THREE.Group(); ctx.scene.add(cart);
+  { const KC = new Kit(); KC.box(1.6, 0.9, 2.2, iron, 0, 0.75, 0); KC.box(1.4, 0.1, 2.0, wd, 0, 0.35, 0); for (const sx of [-0.6, 0.6]) for (const sz of [-0.7, 0.7]) KC.add(new THREE.CylinderGeometry(0.3, 0.3, 0.12, 16), iron, sx, 0.3, sz, 0, 0, Math.PI / 2); for (let k = 0; k < 9; k++) KC.add(new THREE.DodecahedronGeometry(0.22, 0), k % 3 ? st : M.ember(), (k % 3 - 1) * 0.45, 1.3, (Math.floor(k / 3) - 1) * 0.6, k); cart.add(KC.build()); }
+  cart.userData.update = t => { const u = 0.5 - 0.5 * Math.cos(t * 0.22); cart.position.set(IX + RX, 0, IZ - hd + 9 + u * (CH.z0 - 1 - (-hd + 9) - 3)); }; ctx.roomAnims.push(cart);
+  col(RX, (-hd + 6 + CH.z0 - 1) / 2, 1.1, (CH.z0 - 1 + hd - 6) / 2, 'trilhos'); // não dá para ficar na frente da vagoneta
+  // ---------- o trono: escadaria larga, estrado, o trono de pedra e bronze e dois ancestrais ----------
+  const TZ0 = -34, TZ1 = -38, TY = 1.6;
+  for (let k = 0; k < 4; k++) K.box(20 - k * 0.6, TY * (k + 1) / 4, 1.0, cv, 0, TY * (k + 1) / 8, TZ0 - 0.5 - k);
+  K.box(20, TY, hd + TZ1, cv, 0, TY / 2, (TZ1 - hd) / 2); // estrado
+  { const tx = 0, tz = -44; K.box(3.0, 1.0, 2.4, cv, tx, TY + 0.5, tz); K.box(3.4, 4.6, 0.8, cv, tx, TY + 2.3, tz - 1.4); for (const sx of [-1, 1]) K.box(0.5, 1.6, 2.4, cv, tx + sx * 1.5, TY + 1.3, tz);
+    K.add(new THREE.CylinderGeometry(1.5, 1.5, 0.3, 6), bronze(), tx, TY + 4.9, tz - 1.3, 0, Math.PI / 2, Math.PI / 6); for (let k = 0; k < 5; k++) runeGlyph(K, tx - 1.2 + k * 0.6, TY + 3.4, tz - 0.98, 0.5, k * 3 + 1); col(tx, tz - 0.4, 1.8, 1.6, 'trono'); }
+  addLevel({ x: IX, z: IZ + TZ0, yaw: Math.PI, w: 20, len: TZ0 - TZ1, y0: 0, y1: TY }); addLevel({ x: IX, z: IZ + TZ1, yaw: Math.PI, w: 20, len: TZ1 + hd, y0: TY });
+  for (const sx of [-1, 1]) col(sx * 10.3, (TZ0 - hd) / 2, 0.3, (hd + TZ0) / 2, 'estrado'); // laterais do estrado (degrau alto)
+  for (const sx of [-1, 1]) { const KP = new Kit(); KP.box(3.4, 1.4, 3.4, cv, 0, 0.7, 0); for (let k = 0; k < 3; k++) runeGlyph(KP, -0.8 + k * 0.8, 1.0, 1.72, 0.5, k + sx); const g = KP.build(); g.position.set(IX + sx * 7, TY, IZ - 42); ctx.scene.add(g); col(sx * 7, -42, 1.7, 1.7, 'ancestral');
+    if (ctx.stoneHero) { const s = ctx.stoneHero({ id: 'ancestral_' + sx, model: sx < 0 ? 'Barbarian' : 'Knight', show: [sx < 0 ? '2H_Axe' : '2H_Sword'], look: { race: 'anao', face: sx < 0 ? 'valente' : 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true } }, { scale: 5.2, anim: 'Idle', t: 0.7 + sx * 0.2 }); s.position.set(IX + sx * 7, TY + 1.4, IZ - 42); s.rotation.y = -sx * 0.25; ctx.scene.add(s); } }
+  for (const sx of [-1, 1]) { lights.push([sx * 4, TY + 2.5, -40, '#ff9a48', 4, 16]); const b = makeBanner('anao', 3.0, 14); b.position.set(IX + sx * 9.5, HT - 9, IZ - hd + 1.2); ctx.scene.add(b); }
+  // braseiros do trono e da ponte (taça de ferro com brasa e chama de verdade)
+  const fire = (x, y, z, s) => { const KB = new Kit(); KB.add(new THREE.LatheGeometry([[0.02, 0], [0.4, 0], [0.25, 0.2], [0.18, 1.0], [0.6, 1.2], [0.9, 1.5], [0.82, 1.55], [0.02, 1.3]].map(([a, b]) => new THREE.Vector2(a, b)), 20), iron); for (let k = 0; k < 7; k++) KB.add(new THREE.DodecahedronGeometry(0.16, 0), M.ember(), Math.cos(k) * 0.4, 1.5, Math.sin(k) * 0.4); const g = KB.build(); g.position.set(IX + x, y, IZ + z); ctx.scene.add(g); const f = H.flame(s, x + z); f.position.set(IX + x, y + 1.55, IZ + z); ctx.scene.add(f); ctx.roomAnims.push(f); col(x, z, 0.9, 0.9, 'braseiro'); };
+  for (const sx of [-1, 1]) { fire(sx * 3.5, TY, -38.6, 1.1); fire(sx * 3.2, 0, CH.z1 + 2.5, 0.9); fire(sx * 3.2, 0, CH.z0 - 2.5, 0.9); }
+  // ---------- o abismo: barreira invisível na beirada (fora da ponte) e a luz da lava vindo de baixo ----------
+  for (const sx of [-1, 1]) col(sx * (hw + 1.7) / 2, (CH.z0 + CH.z1) / 2, (hw - 1.7) / 2, (CH.z1 - CH.z0) / 2, 'abismo');
+  lights.push([0, -10, 14, '#ff4a10', 8, 50], [-hw + 4, 6, 14, '#ff5a20', 4, 24], [hw - 4, 6, 14, '#ff5a20', 4, 24]);
+  // ---------- porta de saída: as folhas de bronze abertas para dentro e o portal ----------
+  for (const s of [-1, 1]) { const g = trapSolid(12, 8.6, 17, 0.5, 0, 6); g.translate(-6, 0, 0); const KD = new Kit(); KD.add(g, bronze(), 0, 0, 0); const d = KD.build(); d.position.set(IX + s * 6, 0, IZ + hd - 0.6); d.rotation.y = s > 0 ? Math.PI * 0.6 : -Math.PI * 0.6 + Math.PI; ctx.scene.add(d); }
+  { // pelo vão da saída entra a claridade de fora (degradê de dia, não o céu chapado)
+    const c = document.createElement('canvas'); c.width = 32; c.height = 128; const g2 = c.getContext('2d'), gr = g2.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#dfe9f0'); gr.addColorStop(0.6, '#c8c0ae'); gr.addColorStop(1, '#7a7264'); g2.fillStyle = gr; g2.fillRect(0, 0, 32, 128);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const day = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 12.4), new THREE.MeshBasicMaterial({ map: t, fog: false })); day.position.set(IX, 6.2, IZ + hd + 1.6); day.rotation.y = Math.PI; ctx.scene.add(day); }
+  const ex = ctx.makePortal('#ffb070'); ex.position.set(IX, 0, IZ + hd - 1.4); ctx.scene.add(ex); ctx.portals.push({ kind: 'exit', from: id, x: IX, z: IZ + hd - 1.4, mesh: ex });
+  // ---------- monta tudo ----------
+  add(K, 'grande_salao', false); const wg = add(WK, 'grande_salao_paredes', true); void wg; add(LK, 'grande_salao_lava', false);
+  for (const [lx, lz, hx, hz] of wb) col(lx, lz, hx, hz, id);
+  for (const [lx, ly, lz, c, it, dist] of lights) { const L = vlight(c, it, dist, 1.3); L.position.set(IX + lx, ly, IZ + lz); ctx.scene.add(L); }
+  const N = (n, x, z, yaw, anim, y = 0) => { const npc = ctx.roomNpc(n, IX + x, IZ + z, yaw, anim); if (y) { npc.obj.position.y = y; npc.deckY = y; } return npc; };
+  return { I, N, TY, hd, CH };
+}
+let _p2 = {}; function P2(k, c) { return _p2[k] || (_p2[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 })); }

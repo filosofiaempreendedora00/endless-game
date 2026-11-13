@@ -3713,14 +3713,16 @@ function draw(dt) {
       // o sol "vazava" pelo teto em faixas diagonais — no fundo do salão do trono, no Salão das Lâminas, na cozinha do castelo)
       const I = S.interior, roofed = !!(I && !I.round && I.w && I.d), wide = roofed ? Math.min(90, Math.max(20, Math.hypot(I.w, I.d) / 2 + 6)) : 38, sc = sun.shadow.camera;
       if (sc.right !== wide) { Object.assign(sc, { left: -wide, right: wide, top: wide, bottom: -wide }); sc.updateProjectionMatrix(); }
-      updateDayNight(dt, roofed ? { x: I.x, y: 0, z: I.z } : P, !!S.interior || P.x > HALF + 100); } // P-020
+      updateDayNight(dt, roofed ? { x: I.x, y: 0, z: I.z } : P, !!S.interior || P.x > HALF + 100);
+      if (I && I.mood) { const m = I.mood; hemi.intensity = m.hemi; hemi.color.set(m.sky); hemi.groundColor.set(m.ground); sun.intensity = m.sun; renderer.toneMappingExposure = m.exp; } } // P-020 · salas com clima próprio (o Grande Salão dos anões é penumbra quente, não luz de dia)
     { const nk = dayNightState().night; waterSky.value.setRGB(0.53 - 0.42 * nk, 0.72 - 0.56 * nk, 0.88 - 0.6 * nk); } // S-392: o reflexo do céu na água escurece à noite (fica um azul de luar): sol/lua, céu, luzes da noite (a luz direcional segue o sol de dia e a lua à noite)
     if ((S._dnMus = (S._dnMus || 0) + dt) > 1) { S._dnMus = 0; // P-020: trilha calma de noite ao ar livre (uma música por vez; salas e masmorras têm a delas)
       const outside = !S.interior && P.x <= HALF + 100, zm = S.zone && S.zone.music, want = outside && zm ? (isNight() && NIGHT_MUSIC.has(zm) ? 'noite' : zm) : null;
       if (want && Sound.ctx && Sound.songId !== want && !bossActive()) Sound.playSong(want); } // P-022: durante a luta de chefe a música de luta manda
     sky.position.copy(camera.position);
     // névoa por região
-    if (S.interior && S.interior.dungeon) { scene.fog.color.set('#0d0b0c'); scene.fog.near = 6; scene.fog.far = 46; }
+    if (S.interior && S.interior.mood) { const m = S.interior.mood; scene.fog.color.set(m.fog); scene.fog.near = m.near; scene.fog.far = m.far; }
+    else if (S.interior && S.interior.dungeon) { scene.fog.color.set('#0d0b0c'); scene.fog.near = 6; scene.fog.far = 46; }
     else {
       const wr = zoneWeight('ruinas', P.x, P.z), wf = zoneWeight('floresta', P.x, P.z), wg = zoneWeight('geada', P.x, P.z), wd = zoneWeight('dunas', P.x, P.z), wc = zoneWeight('colossos', P.x, P.z);
       scene.fog.color.copy(FOG_DAY).lerp(FOG_FOREST, wf * 0.6).lerp(FOG_RUINS, wr * 0.85).lerp(FOG_SNOW, wg * 0.85).lerp(FOG_SAND, wd * 0.7).lerp(FOG_PLAIN, wc * 0.6);

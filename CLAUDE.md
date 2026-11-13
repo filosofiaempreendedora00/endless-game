@@ -84,7 +84,11 @@ Quando ele pedir para aplicar as sugestões:
   - **Reis de pedra**: anões de verdade do jogo, posados e virados pedra com `ctx.stoneHero` (main3d).
   - **Terraços dos clãs** talhados no paredão (`buildCliffDwellings`) e canaletas de lava com grelha na rua (`buildLavaChannels`).
   - **Saiu o grego**: pilares chanfrados (`chamferPillar`), telhado em degraus no templo e Círculo dos Ancestrais no lugar do tholos. A muralha se abre ao norte e encosta na fachada.
-  - **Próximas etapas**: 2 = Grande Salão por trás do portão; 3 = gente, lojas e a missão "O Eco no Fundo".
+  - **Etapa 2: o Grande Salão** (`buildGreatHall`, sala `grande_salao` em x = 2700, 56 × 96 × 30 m). O portão dos Reis agora abre (`addDoorPortal` com `y`).
+    - Pilares colossais, abismo com lava e ponte sem corrimão (barreira invisível na beirada), Grande Forja com martelo-pilão e roda dentada animados, trilhos com a vagoneta, mesas de festa e o trono com dois ancestrais de pedra.
+    - O Rei Dúrgan está no trono.
+    - **Clima de sala**: `I.mood` (luz e névoa próprias, aplicadas no main3d).
+  - **Próxima etapa**: 3 = gente, lojas e a missão "O Eco no Fundo".
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar

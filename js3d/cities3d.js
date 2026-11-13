@@ -7,7 +7,7 @@
    Tudo é juntado por material (poucas chamadas de desenho) e some de longe.
    ========================================================================= */
 import * as THREE from 'three';
-import { buildKingsGate, buildCliffDwellings, buildLavaChannels, chamferPillar } from './dwarfhold3d.js';
+import { buildKingsGate, buildCliffDwellings, buildLavaChannels, chamferPillar, buildGreatHall } from './dwarfhold3d.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
 import { realFlame } from './flame3d.js';
@@ -470,8 +470,11 @@ function buildDwarfCity(ctx) {
   { const [x, z] = at(-15.5, -19); put(ctx, dwarfTholos(), 'santuario_ancestrais', x, z, 0, { y: base + T1.h }); { const f = flame(1.5, 31); f.position.set(x, base + T1.h + 2.55, z); ctx.scene.add(f); ctx.roomAnims.push(f); const L = vlight('#ff8a3a', 4, 14, 1.5); L.position.set(x, base + T1.h + 4, z); ctx.scene.add(L); } for (let i = 0; i < 12; i++) { if (i === 3) continue; const a = i / 12 * Math.PI * 2; ctx.colliders.push({ x: x + Math.cos(a) * 5.6, z: z + Math.sin(a) * 5.6, r: 0.6 }); } ctx.colliders.push({ x, z, r: 1.6 }); }
   // 2026-11-13 (etapa 1 da fortaleza): no lugar do Salão de colunas e frontão (grego demais), a FACHADA DOS REIS esculpida no paredão do norte,
   // com dois Reis de pedra de 24 m, o portão de bronze com o selo de runas, cascata de lava e o elevador de corrente (dwarfhold3d)
-  const HOLD = { C, base, Kit, M, runeGlyph, addDeck: d => DECKS.unshift(d), put, brazier, makeBanner };
+  const HOLD = { C, base, Kit, M, runeGlyph, addDeck: d => DECKS.unshift(d), put, brazier, makeBanner, flame };
   const KG = buildKingsGate(ctx, HOLD, { FZ: -64, PY: T2.h });
+  // etapa 2: o portão abre para o GRANDE SALÃO (sala em x = 2700): abismo com ponte, a Grande Forja, trilhos, salão de festa e o trono
+  const GH = ctx.INTERIORS && ctx.addDoorPortal ? buildGreatHall(ctx, HOLD) : null;
+  if (GH) ctx.addDoorPortal('grande_salao', C.x, C.z - 64 + 0.9, 0, KG.gate.y);
   buildCliffDwellings(ctx, HOLD); // terraços dos clãs talhados no paredão, em volta da cidade (menos na estrada do sul e na fachada)
   buildLavaChannels(ctx, HOLD, { x: 4.6, z0: 30, z1: 55 });
   // ---------- cidade baixa: casas de pedra em anéis, de frente para a ágora; a taverna "Bigorna Bêbada" a leste ----------
@@ -514,10 +517,20 @@ function buildDwarfCity(ctx) {
     lines: 'Cerveja de cogumelo das cavernas, a melhor do mundo! Quem diz o contrário nunca provou.\nO Brakar? Já quebrou mais espada do que consertou — mas as que aguentam ficam lendárias.' }, x, z, tav.ry); } // na porta da taverna
   { W({ id: 'oldra', name: 'Oldra', title: 'Mineira', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'astuto', hair: { style: 'curto', color: 'castanho' } },
     lines: 'O minério que o Brakar usa sai das galerias lá do fundo. Brilha no escuro, sabia? A gente chama de "pedra-fagulha".' }, MINE[0] + 1.2, MINE[1] + 2.4, face(MINE[0] + 1.2, MINE[1] + 2.4, MINE[0] + 1.2, MINE[1])); } // ao lado da carroça
-  { const x = KG.gate.x, z = KG.gate.z; W({ id: 'durgan', name: 'Rei Dúrgan', title: 'Senhor de Pedrafunda', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
-    lines: 'Os dois Reis de pedra são Hroggar e Bardun, os primeiros a abrir a montanha. Foram talhados por mil cinzéis durante três gerações, e cada um segura a arma com que morreu.\nAtrás deste portão fica o Grande Salão. O selo de runas só se abre para quem a montanha aceita... e ela anda inquieta.\nNos Campos de Valcinza, os humanos ergueram um castelo enorme. Pedra mole, pedra de planície.' }, x, z, 0, KG.gate.y); } // diante do portão dos Reis // diante da escadaria do Salão, de costas para ele
-  for (const sx of [-1, 1]) { const x = KG.gate.x + sx * 4.4, z = KG.gate.z - 0.8; W({ id: 'guarda_rei_' + (sx > 0 ? 'l' : 'o'), name: 'Guarda Real', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Axe', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: sx > 0 ? 'preto' : 'ruivo' }, beard: true },
-    lines: 'Nenhum passo além sem a palavra do Rei.' }, x, z, 0, KG.gate.y); }
+  // etapa 2: o Rei está no trono, lá dentro do Grande Salão; no portão ficam os guardas reais, um de cada lado
+  for (const sx of [-1, 1]) { const x = KG.gate.x + sx * 6.6, z = KG.gate.z - 2.2; W({ id: 'guarda_rei_' + (sx > 0 ? 'l' : 'o'), name: 'Guarda Real', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Sword', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'curto', color: sx > 0 ? 'preto' : 'ruivo' }, beard: true },
+    lines: sx > 0 ? 'O portão está aberto, viajante. O Rei recebe quem sobe até aqui, mas olhe onde pisa na ponte: lá embaixo é só fogo.' : 'Hroggar e Bardun guardam este portão há mil anos. Nós só ajudamos.' }, x, z, 0, KG.gate.y); }
+  if (GH) { const { N, TY } = GH;
+    N({ id: 'durgan', name: 'Rei Dúrgan', title: 'Rei-Sob-a-Pedra', model: 'Knight', show: ['2H_Sword', 'Knight_Cape'], look: { race: 'anao', face: 'sereno', hair: { style: 'longo', color: 'grisalho' }, beard: true },
+      lines: 'Bem-vindo ao Grande Salão, o coração de Pedrafunda. Mil invernos de cinzel, e ainda cavamos.\nOs dois Reis lá fora são Hroggar e Bardun, os primeiros a abrir a montanha. Estes aqui atrás de mim são seus filhos.\nUltimamente os mineiros ouvem batidas que não são nossas, lá no fundo das galerias. Quando eu souber o que é, mando te chamar.' }, 0, -44.1, 0, 'Sit_Chair_Idle', TY + 0.55);
+    for (const sx of [-1, 1]) N({ id: 'guarda_trono_' + sx, name: 'Guarda do Trono', title: 'Escudo do Rei', model: 'Knight', show: ['2H_Sword', 'Knight_Helmet'], hat: true, look: { race: 'anao', face: 'valente', hair: { style: 'longo', color: sx > 0 ? 'castanho' : 'grisalho' }, beard: true },
+      lines: 'Fale com o Rei de pé e de cabeça erguida. Anão não gosta de quem fala olhando o chão.' }, sx * 5.2, -39.4, 0, 'Idle', TY);
+    N({ id: 'brom', name: 'Mestre Brom', title: 'Senhor da Grande Forja', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', face: 'valente', hair: { style: 'careca', color: 'ruivo' }, beard: true },
+      lines: 'Este martelo-pilão bate desde antes do seu bisavô nascer. A roda é movida pelo vapor da lava lá do abismo.\nNa bigorna grande só se forjam as coisas que têm nome: portões, coroas, a lâmina de um rei.' }, 14, -11.5, 0);
+    N({ id: 'thyra', name: 'Thyra', title: 'Capataz das Galerias', model: 'Barbarian', show: ['1H_Axe'], look: { race: 'anao', sex: 'f', face: 'astuto', hair: { style: 'coque', color: 'preto' } },
+      lines: 'A vagoneta não para nem de noite. O minério sobe das galerias fundas, passa por aqui e vai direto para a forja do Brom.\nSe ouvir batidas vindas do chão quando a vagoneta está parada... não são nossas.' }, -19.5, -30, -1.2);
+    N({ id: 'arauto', name: 'Arauto do Salão', title: 'Guardião das Mesas', model: 'Knight', look: { race: 'anao', face: 'alegre', hair: { style: 'curto', color: 'castanho' }, beard: true },
+      lines: 'Mesas compridas, cerveja de cogumelo e canções de mil versos: aqui os clãs festejam cada veio novo que encontram.\nO trono fica do outro lado do abismo. A ponte não tem corrimão porque anão nenhum precisa de um.' }, 3.0, 43.5, Math.PI); }
   { const [x, z] = at(-15.5, -16); W({ id: 'gudrun', name: 'Gudrun', title: 'Anciã do Clã', model: 'Mage', look: { race: 'anao', sex: 'f', face: 'sabio', hair: { style: 'longo', color: 'branco' } },
     lines: 'Nossos avós ergueram estes muros quando o mundo ainda era jovem. Cada runa no santuário conta uma história.' }, x, z, 0, base + T1.h + 1.35); } // diante da estátua do ancestral
   { const [x, z] = at(15.5, -11.4); W({ id: 'sacerdote_forja', name: 'Irmão Hulda', title: 'Sacerdote da Forja', model: 'Mage', look: { race: 'anao', face: 'sereno', hair: { style: 'careca', color: 'grisalho' }, beard: true },
