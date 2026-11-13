@@ -428,7 +428,7 @@ function goFloor(pt) {
     S.interior = { id: pt.to, ...I, back };
     Object.assign(S.pos, { x: pt.arrive.x, z: pt.arrive.z, y: 0, vy: 0, ground: true, yaw: pt.arrive.yaw }); S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = pt.arrive.yaw;
     setTarget(null); S.casting = null; S.fallTop = null;
-    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.vx = S.pet.vz = 0; }
+    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.y = S.pos.y; S.pet.vx = S.pet.vz = 0; }
     $('mapname').innerHTML = `${I.name} <small>Masmorra</small>`; banner(I.name, I.region || '');
     S.portalCd = S.time + 2; Sound.play('portal');
   });
@@ -452,7 +452,7 @@ function enterInterior(id, from) {
     Object.assign(S.pos, { x: I.x, z: I.z + I.d / 2 - 2.8, y: 0, vy: 0, ground: true, yaw: Math.PI });
     S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = Math.PI; S.cam.distT = Math.min(S.cam.distT, 6);
     setTarget(null); S.casting = null;
-    if (S.pet) { S.pet.x = S.pos.x + 1.2; S.pet.z = S.pos.z + 0.8; S.pet.vx = S.pet.vz = 0; }
+    if (S.pet) { S.pet.x = S.pos.x + 1.2; S.pet.z = S.pos.z + 0.8; S.pet.y = 0; S.pet.vx = S.pet.vz = 0; }
     if (S.riding) dismount(true);
     $('mapname').innerHTML = `${I.name} <small>${I.dungeon ? 'Masmorra' : 'Interior'}</small>`; banner(I.name, I.region || 'Vila de Alvorada');
     if (I.music) Sound.playSong(I.music);
@@ -467,7 +467,7 @@ function leaveInterior(instant) {
     if (!isFinite(back.yaw)) back.yaw = isFinite(S.pos.yaw) ? S.pos.yaw : 0; // trava: sem direção na porta de volta, NaN contaminava o herói (e, pela separação de corpos, os monstros em volta)
     Object.assign(S.pos, { x: back.x, z: back.z, y: back.y ?? heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw }); // porta no alto: volta para a plataforma, não para o chão lá embaixo
     S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = back.yaw;
-    if (S.pet) { S.pet.x = back.x - Math.sin(back.yaw) * 1.5; S.pet.z = back.z - Math.cos(back.yaw) * 1.5; S.pet.vx = S.pet.vz = 0; }
+    if (S.pet) { S.pet.x = back.x - Math.sin(back.yaw) * 1.5; S.pet.z = back.z - Math.cos(back.yaw) * 1.5; S.pet.y = S.pos.y; S.pet.vx = S.pet.vz = 0; }
     S.portalCd = S.time + 1.2;
   };
   if (instant) go(); else { fadeTo(go); Sound.play('portal'); }
@@ -884,7 +884,7 @@ function enterArena() {
     const a = Math.random() * 6.28, r = 6 + Math.random() * 8;
     Object.assign(S.pos, { x: ARENA_I.x + Math.cos(a) * r, z: ARENA_I.z + Math.sin(a) * r, y: 0, vy: 0, ground: true });
     S.vel = { x: 0, z: 0 }; setTarget(null); S.casting = null;
-    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.vx = S.pet.vz = 0; }
+    if (S.pet) { S.pet.x = S.pos.x + 1; S.pet.z = S.pos.z + 1; S.pet.y = S.pos.y; S.pet.vx = S.pet.vz = 0; }
     S.arena = { id: (S.p.charId || 'x') + '-' + Math.random().toString(36).slice(2, 7), since: 0, rivals: new Map(), savedHp: S.p.hp, kills: 0, deaths: 0, dead: false, busy: false, last: 0 };
     S.p.hp = S.p.d.maxHp;
     $('mapname').innerHTML = 'Arena de Aethra <small>PvP</small>'; banner('⚔️ Arena de Aethra', 'Tab escolhe adversário • R ataca • portal dourado para sair');
@@ -2707,8 +2707,10 @@ function updateCompanion(dt) {
 function petWarp(pe) { // traz o mascote para o seu lado — nunca para dentro da água funda (ex.: ao lado do convés ou da beira do cais)
   const P = S.pos; let x = P.x - 1.5, z = P.z - 1.5; const wl = !S.interior && x <= HALF + 100 ? waterLevelAt(x, z) : null;
   if (wl !== null && groundAt(x, z, P.y) < wl - 0.5) { x = P.x; z = P.z; }
-  pe.x = x; pe.z = z;
+  pe.x = x; pe.z = z; pe.y = P.y; pe.offT = 0;
 }
+// chão do mascote no andar em que ELE está (rampa, terraço, plataforma das copas) — sem altura, groundAt devolvia o terreno lá embaixo
+function petGround(pe, x = pe.x, z = pe.z) { return groundAt(x, z, pe.y ?? S.pos.y); }
 function updatePet(dt) {
   const pe = S.pet, data = S.p && S.p.pet; if (!pe || !data || S.p.dead) return;
   const P = S.pos, t = S.time, role = PETS[data.species].role, pw = petPower(data);
@@ -2723,7 +2725,7 @@ function updatePet(dt) {
     data.hp = Math.min(pw.maxHp, data.hp + pw.maxHp * 0.02 * dt);
     if (t >= pe.down) { pe.down = 0; log(`🐾 ${petInfo(data).name} se levantou!`); }
     if (Math.hypot(P.x - pe.x, P.z - pe.z) > 30 && !S.swim) petWarp(pe); // nadando, o mascote espera na margem (não aparece dentro da água)
-    pe.obj.position.set(pe.x, groundAt(pe.x, pe.z), pe.z); pe.obj.rotation.set(0, pe.yaw, Math.PI / 2 * 0.85, 'YXZ');
+    pe.y = petGround(pe); pe.obj.position.set(pe.x, pe.y, pe.z); pe.obj.rotation.set(0, pe.yaw, Math.PI / 2 * 0.85, 'YXZ');
     pe.animate(t, { speed: 0, turn: 0 }, dt); return;
   }
   const tired = data.sta < 15, useSta = c => { if (data.sta < c) return false; data.sta -= c; return true; };
@@ -2771,6 +2773,17 @@ function updatePet(dt) {
   const dToPlayer = Math.hypot(P.x - pe.x, P.z - pe.z);
   const maxSp = S.p.d.speed / 32 * TM * 1.25 * pw.speedMult * (tired ? 0.6 : 1); // cansado (pouca stamina), anda mais devagar
   let wantX = 0, wantZ = 0;
+  { // andares (rampa da Árvore-Mãe, terraços, pontes, plataformas das copas): o mascote segue o RASTRO dos seus passos, com ~1,5 m de folga,
+    // em vez de cortar caminho em linha reta (cortando, ele caía da rampa e ficava no chão lá embaixo)
+    const tr = S.petTrail || (S.petTrail = []), lt = tr[tr.length - 1];
+    if (lt && Math.hypot(P.x - lt.x, P.z - lt.z) > 5) tr.length = 0; // teleporte, porta, voo: começa outro rastro
+    if (!lt || !tr.length || Math.hypot(P.x - lt.x, P.z - lt.z) > 0.4 || Math.abs(P.y - lt.y) > 0.3) { tr.push({ x: P.x, y: P.y, z: P.z }); if (tr.length > 120) tr.shift(); }
+    const py = pe.y ?? P.y;
+    if (!face && !S.interior && tr.length > 3 && (Math.abs(py - P.y) > 0.6 || P.y - heightAt(P.x, P.z) > 1.2 || py - heightAt(pe.x, pe.z) > 1.2)) {
+      let bi = -1, bd = 1e9; for (let i = 0; i < tr.length; i++) { const t = tr[i], d = Math.hypot(t.x - pe.x, t.z - pe.z) + Math.abs(t.y - py) * 2; if (d < bd) { bd = d; bi = i; } }
+      if (bi >= 0 && bd < 4) { const ti = Math.min(bi + 3, tr.length - 4); if (ti > bi) { goal = { x: tr[ti].x, z: tr[ti].z }; stopAt = 0.15; } else goal = null; }
+    }
+  }
   if (dToPlayer > 30 && !S.swim) { petWarp(pe); pe.vx = pe.vz = 0; } // ficou longe demais: aparece ao seu lado (nadando, espera na margem)
   else if (goal) {
     const dx = goal.x - pe.x, dz = goal.z - pe.z, d = Math.hypot(dx, dz);
@@ -2793,9 +2806,12 @@ function updatePet(dt) {
   const r = resolve(pe.x, pe.z, 0.3); pe.x = r.x; pe.z = r.z;
   // acompanha a inclinação do terreno
   const fx = Math.sin(pe.yaw) * 0.3, fz = Math.cos(pe.yaw) * 0.3;
-  const slope = Math.atan2(groundAt(pe.x + fx, pe.z + fz) - groundAt(pe.x - fx, pe.z - fz), 0.6);
+  pe.y = petGround(pe);
+  // caiu de um andar ou ficou num andar diferente do seu, bem perto (ex.: embaixo da plataforma): depois de 3 s aparece ao seu lado
+  if (Math.abs(pe.y - P.y) > 3 && Math.hypot(P.x - pe.x, P.z - pe.z) < 10 && !S.swim) { pe.offT = (pe.offT || 0) + dt; if (pe.offT > 3) { petWarp(pe); pe.vx = pe.vz = 0; pe.y = petGround(pe); } } else pe.offT = 0;
+  const slope = Math.atan2(petGround(pe, pe.x + fx, pe.z + fz) - petGround(pe, pe.x - fx, pe.z - fz), 0.6);
   pe.pitch = (pe.pitch || 0) + (-slope - (pe.pitch || 0)) * (1 - Math.exp(-dt * 8));
-  pe.obj.position.set(pe.x, !S.interior && lakeDist(pe.x, pe.z) < LAKE.r - 0.5 ? Math.max(heightAt(pe.x, pe.z), LAKE.level - 0.3) : groundAt(pe.x, pe.z), pe.z); // na água o mascote nada na superfície
+  pe.obj.position.set(pe.x, !S.interior && lakeDist(pe.x, pe.z) < LAKE.r - 0.5 ? Math.max(heightAt(pe.x, pe.z), LAKE.level - 0.3) : pe.y, pe.z); // na água o mascote nada na superfície
   pe.obj.rotation.set(pe.pitch, pe.yaw, 0, 'YXZ');
   pe.animate(t, { speed: spd / Math.max(1, maxSp), turn: Math.max(-4, Math.min(4, pe.turn)) }, dt);
 }

@@ -335,4 +335,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - terraço da Mãe entre os três bairros;
   - câmera em 5 pontos × 8 direções em cada sala, sem nenhuma saída;
   - missão ec1 entregue e ec2 liberada.
-- **Ficou de fora**: o mascote ainda anda no chão embaixo das plataformas (`groundAt` sem altura em `updatePet`). Isso já acontecia na rampa; é um candidato a correção.
+- **Mascote nos andares (corrigido no mesmo dia, com o sim dele)**:
+  - Ele andava no chão embaixo das plataformas.
+  - Agora guarda a própria altura (`pe.y` + `petGround`) e, quando você ou ele está num andar, segue o **rastro dos seus passos** (`S.petTrail`) em vez de cortar caminho. Cortando, ele caía da rampa.
+  - Se ficar num andar diferente, bem perto, por 3 s, aparece ao seu lado.
+  - Portas e saídas levam o mascote na altura certa.
+  - Testado: rampa inteira descendo e subindo (0 quadros fora da rampa), ponte e plataforma (a 1,6 m de você) e entrada e saída de sala.
