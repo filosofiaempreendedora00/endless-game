@@ -87,6 +87,19 @@ const QUESTS = {
     text: 'No fim da calçada antiga, encravado na montanha, fica o <b>Santuário Silente</b>. Dizem que lá dentro nem os passos fazem barulho. Entre e desça ao <b>1º andar das Catacumbas</b>: é de lá que os colossos tentam nos proteger. Depois volte ao Ancião Teodoro e conte o que viu.',
     done: 'Você desceu às Catacumbas e voltou para contar... Então a canção estava certa: os Que Dormem de Pé não dormem. Eles VIGIAM. E alguém lá embaixo quer que eles caiam. Guarde estas coisas: você vai precisar.',
     obj: [{ goto: 'santuario', x: 0, z: -392, r: 16, label: 'o Santuário Silente' }, { goto: 'catacumbas', x: 1500, z: 0, r: 40, mapX: 0, mapZ: -392, label: 'o 1º andar das Catacumbas' }], reward: { expPct: 0.16, zeny: 4000, items: [['pocao_azul', 5], ['ferrolume', 1], ['pedra_egide', 1]] } },
+  // ---------- Aelindra: "O sono de Sylvaren" (2026-11-13, Cidade das Copas) ----------
+  ec1: { name: 'Um convite do Conselho', giver: 'thalion', turnIn: 'aranel', lv: 18, chain: 'O sono de Sylvaren',
+    text: 'Você subiu até o Mirante sem tropeçar, então talvez sirva. Sylvaren anda sonhando mal, e quem lê os sonhos dela é a <b>Arquivista Aranel</b>. Atravesse a ponte para o <b>Bairro do Saber</b> (a árvore-irmã do sudeste) e procure a <b>Biblioteca das Copas</b>.',
+    done: 'O Ancião Thalion mandou um humano? Os tempos mudaram mesmo... Sente-se. Os sonhos de Sylvaren andam cheios de raízes partidas.',
+    obj: [{ talk: 'aranel' }], reward: { expPct: 0.1, zeny: 300 } },
+  ec2: { name: 'Orvalho da Fonte', giver: 'aranel', turnIn: 'naerith', lv: 18, requires: 'ec1', chain: 'O sono de Sylvaren',
+    text: 'Para entender um sonho, a gente pergunta à água que a árvore bebe. Desça até a <b>Fonte da Lua</b> e olhe o reflexo do cristal. Depois leve o que viu à <b>druida Naerith</b>, na porta das raízes, ao norte do tronco.',
+    done: 'Você viu raízes rasgadas no reflexo? Então não é só um sonho. Alguma coisa está arrancando as raízes mais longas de Sylvaren, lá para o leste.',
+    obj: [{ goto: 'fonte_da_lua', x: 286, z: -266, r: 7, label: 'a Fonte da Lua' }, { talk: 'naerith' }], reward: { expPct: 0.12, zeny: 600, items: [['frutinha_azul', 4]] } },
+  ec3: { name: 'Raízes arrancadas', giver: 'naerith', turnIn: 'aranel', lv: 26, requires: 'ec2', chain: 'O sono de Sylvaren',
+    text: 'As raízes de Sylvaren vão até a <b>Mata das Araras</b>, a leste. O capitão Sylvar diz que os <b>Golens de Musgo</b> as estão arrancando para comer a seiva. Derrote <b>3 Golens de Musgo</b> e traga <b>4 Pedras de Musgo</b> para a Arquivista ver de onde eles vieram.',
+    done: 'Pedra de musgo com veios de seiva viva... Os golens não acordaram sozinhos: alguém os mandou. Vou registrar isto nas Crônicas das Folhas. Sylvaren já sonha mais tranquila, graças a você. Leve este manto: as penas são da copa, e o vento delas ainda vai te reconhecer.',
+    obj: [{ kill: 'golem_musgo', n: 3 }, { collect: 'pedra_musgo', n: 4 }], reward: { expPct: 0.16, zeny: 2500, items: [['manto_penas', 1], ['pocao_azul', 4]] } },
 };
 const QUEST_GIVERS_NPC = { // NPC novo da história principal (S-126) — colocado na praça da vila pelo main3d
   teodoro: { id: 'teodoro', name: 'Ancião Teodoro', title: 'Guardião de Alvorada', model: 'Mage', show: ['Mage_Cape'], look: { race: 'humano', face: 'sabio', hair: { style: 'curto', color: 'grisalho' }, beard: true } },
@@ -107,7 +120,7 @@ function questMarker(p, npcId) {
   return '';
 }
 function objText(o) { if (o.goto) return `Ir até ${o.label || o.goto}`; if (o.kill) return `Derrotar ${MONSTERS[o.kill] ? MONSTERS[o.kill].name : o.kill}`; if (o.collect) return `Coletar ${ITEMS[o.collect] ? ITEMS[o.collect].name : o.collect}`; return `Falar com ${QUEST_NPC_NAMES[o.talk] || o.talk}`; }
-const QUEST_NPC_NAMES = { isis: 'Ísis', teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
+const QUEST_NPC_NAMES = { thalion: 'Ancião Thalion', aranel: 'Arquivista Aranel', naerith: 'Naerith', isis: 'Ísis', teodoro: 'Ancião Teodoro', bento: 'Bento', rosa: 'Dona Rosa', ivra: 'Mestra Ivra', bastiao: 'Bastião', flora: 'Dona Flora', tobias: 'Guarda Tobias', clara: 'Irmã Clara', tome: 'Tomé', gui: 'Velho Gui' };
 function questRewardText(p, q) {
   const r = q.reward || {}, parts = [];
   const exp = questExp(q); if (exp) parts.push(`<b class="gold">${exp.toLocaleString('pt-BR')} EXP</b>`);

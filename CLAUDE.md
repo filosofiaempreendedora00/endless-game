@@ -71,6 +71,11 @@ Quando ele pedir para aplicar as sugestões:
 - **Aelindra** (2026-11-12): `js3d/elfcity3d.js` (`buildAelindra`, chamada no main3d logo depois de `buildCities`).
   - Árvore-Mãe Sylvaren em (ELF.x, ELF.z−6), com rampa em espiral (36 trechos `addLevel`), Terraço das Folhas (12 m) e Mirante do Conselho (24 m).
   - Três árvores-irmãs com plataforma, casa na copa e ponte (`BRIDGES`).
+  - Cidade das Copas (2026-11-13): cada irmã é um bairro (`DISTRICTS`).
+    - Plataforma de 13 m, casas-oca `canopyPod` com placa do ofício (`signMat`) e praça (mercado, treino, jardim).
+    - Cinco salas `elfRoom` em x = 2400…2530: Empório, Casa da Seda, Arsenal, Estalagem e Biblioteca (`buildCanopyRooms`).
+    - Porta no alto: `addDoorPortal(id, x, z, yaw, y)`. Com `y`, só entra quem está na altura da porta, e a saída volta para a plataforma (`back.y`).
+    - Missões ec1–ec3 ("O sono de Sylvaren", em js/quests.js).
   - No chão: casas-folha (`leafHouse`/`leafRoof`), Mercado das Folhas, Fonte da Lua, pedras-lua, Portal das Raízes, bosque de árvores gigantes prateadas (`giantTree`/`canopyGeo` com as folhas de trees3d), cogumelos que brilham e vaga-lumes.
   - Há NPCs em cima dos andares (`Wn(..., y)`), e o `interact` exige |Δy| < 3,5 m.
   - **Colisão com `y0/y1` fora das salas é relativa ao terreno** (`RES_Y`).

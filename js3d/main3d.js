@@ -356,9 +356,9 @@ function roomAt(x, z) { for (const I of Object.values(INTERIORS)) if (Math.abs(x
 
 /* ---------- portais nas portas e salas internas ---------- */
 const portals = [];
-function addDoorPortal(id, x, z, faceYaw) {
-  const mesh = makePortal('#8fdcff'); mesh.position.set(x, heightAt(x, z), z); scene.add(mesh);
-  portals.push({ kind: 'door', to: id, x, z, mesh, out: { x: x + Math.sin(faceYaw) * 2.2, z: z + Math.cos(faceYaw) * 2.2, yaw: faceYaw } });
+function addDoorPortal(id, x, z, faceYaw, y) { // y: porta num andar (ex.: casas nas copas de Aelindra) — sem y, a porta fica no chão
+  const mesh = makePortal('#8fdcff'); mesh.position.set(x, y ?? heightAt(x, z), z); scene.add(mesh);
+  portals.push({ kind: 'door', to: id, x, z, y, mesh, out: { x: x + Math.sin(faceYaw) * 2.2, z: z + Math.cos(faceYaw) * 2.2, yaw: faceYaw, y } });
   INTERIORS[id].door = { x, z };
 }
 function buildInteriors() {
@@ -465,7 +465,7 @@ function leaveInterior(instant) {
   const go = () => {
     S.interior = null; S.zone = null;
     if (!isFinite(back.yaw)) back.yaw = isFinite(S.pos.yaw) ? S.pos.yaw : 0; // trava: sem direção na porta de volta, NaN contaminava o herói (e, pela separação de corpos, os monstros em volta)
-    Object.assign(S.pos, { x: back.x, z: back.z, y: heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw });
+    Object.assign(S.pos, { x: back.x, z: back.z, y: back.y ?? heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw }); // porta no alto: volta para a plataforma, não para o chão lá embaixo
     S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = back.yaw;
     if (S.pet) { S.pet.x = back.x - Math.sin(back.yaw) * 1.5; S.pet.z = back.z - Math.cos(back.yaw) * 1.5; S.pet.vx = S.pet.vz = 0; }
     S.portalCd = S.time + 1.2;
@@ -480,6 +480,7 @@ function updatePortals(dt) {
     if (Math.abs(pt.x - P.x) > 60 || Math.abs(pt.z - P.z) > 60) continue;
     pt.mesh.userData.update(S.time);
     if (S.p.dead || S.time < (S.portalCd || 0) || Math.hypot(pt.x - P.x, pt.z - P.z) > 1.0) continue;
+    if (pt.y !== undefined && !S.interior && Math.abs(P.y - pt.y) > 2) continue; // porta no alto: quem passa embaixo dela (no chão) não entra
     if (pt.kind === 'door' && !S.interior) enterInterior(pt.to, pt);
     else if (pt.kind === 'exit' && S.interior && S.interior.id === pt.from) leaveInterior(false);
     else if (pt.kind === 'floor' && S.interior && S.interior.id === pt.from) goFloor(pt);

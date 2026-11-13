@@ -313,3 +313,26 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - Com o painel oculto, `__api.qa()` completo trava em música e câmera das salas (timers parados). Rode com `{music:false, rooms:false}`.
 - **Custo**: a malha foi de 18 mil para 34 mil vértices (cabeça 0,53 cm, patas 0,56 cm).
 
+
+## Pedido direto (2026-11-13): Aelindra, "lá em cima ser de fato uma cidade"
+- **Pedido**: em vez de "pequenas casinhas aleatórias após as pontes", ele quer ambientes maiores, casas de verdade onde se entra, NPCs da história e mercadores, ou seja, "uma estrutura mais robusta nas copas".
+- **Aprendizado**:
+  - Cenário bonito e vazio não basta para ele. **Cidade = lugares com função** (loja, pousada, biblioteca, arsenal), gente fazendo coisa e uma história que passa por ali.
+  - Casa que não abre parece cenário de papelão.
+- **Como fizemos**:
+  - Plataformas de 8 → 13 m.
+  - Casas-oca de dois andares com placa do ofício.
+  - Uma praça por bairro.
+  - Cinco salas mobiliadas com moradores.
+  - Uma cadeia de missões que obriga a visitar o Mirante, a Biblioteca, a Fonte e a druida.
+- **Pegadinhas técnicas**:
+  - **Porta no alto precisa de `y`**: o portal disparava pela posição x/z (quem passasse embaixo entraria) e a saída jogava o herói no terreno, 12 m abaixo.
+  - **Abóbada mais alta que as paredes deixa o céu à vista** dentro da sala.
+  - **O vão da porta por dentro precisa de uma porta fechada**, senão mostra o vazio de fora.
+- **Testado andando** (tecla W real, com a câmera virada para o rumo):
+  - ponte → plataforma → porta → sala → loja → saída, de volta na plataforma a 12,2 m;
+  - corredor atrás das casas até as praças;
+  - terraço da Mãe entre os três bairros;
+  - câmera em 5 pontos × 8 direções em cada sala, sem nenhuma saída;
+  - missão ec1 entregue e ec2 liberada.
+- **Ficou de fora**: o mascote ainda anda no chão embaixo das plataformas (`groundAt` sem altura em `updatePet`). Isso já acontecia na rampa; é um candidato a correção.
