@@ -97,7 +97,7 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
     - os 3 salões tinham o telhado girado 90° (o `snowRoof` girado sem trocar largura × fundo).
 - **Checagens novas no `__api.qa()`**: `checkTerrain` (frestas), `checkWater` (mar sem água e nado em água invisível), `checkOverlaps` (prédios encavalados) e `checkRoomLeak` (sala ou Arena à vista do mundo). Testadas: a Arena forçada a aparecer é acusada.
 - **Ficou para decidir (propostas)**:
-  - P-029: as cristas serrilhadas, com ~600 "agulhas" de 3–5 m no alto das serras;
+  - P-029: as cristas serrilhadas, com ~600 "agulhas" de 3–5 m no alto das serras. **Feito no mesmo dia, com o sim dele.** Arredondar TUDO deixou a serra com cara de morro mole. O certo foi só o fino arredondado e as cristas de 20 m ainda 70% em V: -79% de bicos (sonda em Node com `heightAt`, contando curvatura > 0,9 m em 1,5 m);
   - P-030: casas geminadas que se cruzam de 1–3 m (porto, Pedrafunda, vila).
 - **Pequenos, não corrigidos**:
   - trancos de 0,6–0,7 m num quadro ao contornar quinas, em Pedraclara (310, 5) e no Santuário (16, -402);

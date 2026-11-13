@@ -403,7 +403,8 @@
     "evidencias": [
       "caça-bugs 2026-11-13: 'o topo das montanhas é muito estranho'"
     ],
-    "status": "proposta"
+    "status": "feita",
+    "resposta": "Feito: o ruído fino das cristas agora é arredondado e mais fraco, e as cristas médias mantêm 70% do recorte em V. São 79% menos bicos no alto das serras; os picos grandes e os paredões continuam."
   },
   {
     "id": "P-030",

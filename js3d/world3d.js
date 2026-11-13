@@ -144,6 +144,7 @@ export function roadDist(x, z) {
 /* ---------- montanhas na borda do mundo (fazem parte do terreno) ---------- */
 const edgeDist = (x, z) => Math.pow(Math.pow(Math.abs(x), 6) + Math.pow(Math.abs(z), 6), 1 / 6); // quadrado de cantos arredondados
 const ridged = (x, z) => 1 - Math.abs(vnoise(x, z) * 2 - 1);
+const roundRidge = (x, z) => { const u = vnoise(x, z) * 2 - 1; return 1 - u * u; }; // crista arredondada (sem o bico do ridged)
 // S-103: o Santuário fica num nicho escavado na montanha — paredões dos lados e atrás, abertura para a planície.
 // templeNiche = 1 no chão do pátio, 0 na rocha; templeCliff = paredão em volta do nicho.
 export function templeNiche(x, z) {
@@ -184,7 +185,9 @@ export function dwarfCliff(x, z) {
 }
 export function mountainH(x, z) {
   const m = mountainMask(x, z), dcl = dwarfCliff(x, z); if (m <= 0 && dcl <= 0) return 0;
-  const r = ridged(x * 0.022, z * 0.022) * 0.5 + ridged(x * 0.05 + 7, z * 0.05) * 0.28 + ridged(x * 0.13, z * 0.13 + 4) * 0.14 + vnoise(x * 0.3, z * 0.3) * 0.08; // cristas, picos e rochas
+  // P-029 (2026-11-13): o ruído fino (7 m e 3 m) era de cristas em "V", e o alto das serras virava um paliteiro de ~600 agulhas de 3–5 m.
+  // Agora o fino tem crista arredondada e pesa menos, e as cristas médias (20 m) ficam 70% em "V" (o recorte de rocha continua). -79% de bicos.
+  const r = ridged(x * 0.022, z * 0.022) * 0.5 + (ridged(x * 0.05 + 7, z * 0.05) * 0.7 + roundRidge(x * 0.05 + 7, z * 0.05) * 0.3) * 0.33 + roundRidge(x * 0.13, z * 0.13 + 4) * 0.08 + vnoise(x * 0.3, z * 0.3) * 0.03; // cristas, picos e rochas
   const big = 0.45 + vnoise(x * 0.011 + 3, z * 0.011) * 0.9; // picos altos e vales mais baixos ao longo da cordilheira
   let h = Math.pow(m, 1.7) * (12 + r * 58) * big;
   const tc = templeCliff(x, z); if (tc > 0) h = Math.max(h, Math.pow(tc, 0.8) * (30 + r * 22)); // paredões altos em volta do Santuário
