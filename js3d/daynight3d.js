@@ -145,15 +145,11 @@ export function updateDayNight(dt, focus, inside) {
   st.stars.material.uniforms.uT.value = st.t; st.stars.material.uniforms.uPx.value = Math.min(2, C.renderer.getPixelRatio()) * 1.2;
   st.inside = !!inside;
   if (st.scanT > (st.t < 90 ? 4 : 15) || st.lastInside !== st.inside) { st.scanT = 0; scanLights(); } // o mundo é montado aos poucos (P-010): procura luzes novas com frequência no começo, depois de vez em quando
+  if (!st.inside) skyBodies(); // S-391: sol, lua e direção da luz andam a CADA QUADRO, com a hora fracionada (antes: pulinhos a cada minuto do jogo e a lua trocando de lado de uma vez às 18h54)
   if (st.acc < 0.2 && st.lastInside === st.inside) { placeSun(focus); return; }
   st.acc = 0; st.lastInside = st.inside;
   const h = dayNightHours(), s = sample(h);
   st.nightK = s.night;
-  // direção do sol: nasce às 6h no leste, a pino ao meio-dia, se põe às 18h; à noite a luz vem da lua (do lado oposto)
-  const day = h >= 5.3 && h <= 18.9, ang = day ? ((h - 6) / 12) * Math.PI : ((((h - 18) + 24) % 24) / 12) * Math.PI;
-  const el = Math.max(0.16, Math.sin(Math.min(Math.PI, Math.max(0, ang)))) * (day ? 1 : 0.85);
-  st.sunDir.set(Math.cos(ang) * 0.95, el, 0.32).normalize();
-  st.celest = new THREE.Vector3(Math.cos(ang) * 0.95, Math.sin(ang), 0.32).normalize(); // posição real no céu (pode ficar abaixo do horizonte)
   if (inside) { // salas, arena e masmorras: luz própria, sem céu de noite
     C.hemi.color.set('#d8ecff'); C.hemi.groundColor.set('#5a6b3a'); C.hemi.intensity = 1.1; C.sun.color.set('#fff1d0'); C.sun.intensity = 2.4; C.renderer.toneMappingExposure = 1.05;
     st.lightK = 1; applyLights(0, true); st.stars.material.uniforms.uA.value = 0; if (C.setWeatherLight) C.setWeatherLight(new THREE.Color(1, 1, 1));
@@ -175,11 +171,24 @@ export function updateDayNight(dt, focus, inside) {
   st.lightK = 1 - s.night * 0.62;
   if (C.setWeatherLight) C.setWeatherLight(new THREE.Color(st.lightK, st.lightK, Math.min(1, st.lightK + s.night * 0.12)));
   applyLights(s.night, false);
-  // sol e lua no céu
-  st.sunS.position.copy(st.celest).multiplyScalar(800); st.sunS.visible = st.celest.y > -0.05; st.sunS.material.opacity = Math.min(1, (st.celest.y + 0.05) * 6) * (1 - s.night * 0.9);
-  const mDir = st.celest.clone().multiplyScalar(-1); mDir.y = Math.abs(mDir.y) * (day ? -1 : 1); st.moon.position.copy(mDir).multiplyScalar(790); st.moon.visible = mDir.y > -0.05; st.moon.material.opacity = Math.max(0.12, s.night);
+  skyBodies();
   const today = Math.floor(Date.now() / 1000 / 1440); if (today !== st.day) { st.day = today; st.moon.material.map.dispose(); st.moon.material.map = moonTex(((today % 8) + 0.5) / 8); st.moon.material.needsUpdate = true; }
   placeSun(focus);
+}
+// hora com fração (o relógio do jogo anda 1 minuto por segundo real; a posição dos astros precisa ser contínua)
+function hoursF() { const o = globalThis.__aethraClock, D = 1440, m = o != null ? ((o % D) + D) % D : (Date.now() / 1000) % D; return m / 60; }
+const _sl = new THREE.Vector3(), _ml = new THREE.Vector3();
+function skyBodies() {
+  const h = hoursF(), sa = (h - 6) / 12 * Math.PI, ma = sa + Math.PI; // o sol nasce às 6h no leste; a lua fica do lado oposto (nasce às 18h)
+  st.celest = st.celest || new THREE.Vector3(); st.celest.set(Math.cos(sa) * 0.95, Math.sin(sa), 0.32).normalize();
+  const mDir = _ml.set(Math.cos(ma) * 0.95, Math.sin(ma), 0.32).normalize();
+  // luz: do sol de dia, da lua de noite, passando de um para o outro devagar no crepúsculo (sem pulo de sombra)
+  const dayK = Math.min(1, Math.max(0, (Math.sin(sa) + 0.1) / 0.18)), dk = dayK * dayK * (3 - 2 * dayK);
+  _sl.set(Math.cos(sa) * 0.95, Math.max(0.16, Math.sin(sa)), 0.32).normalize();
+  st.sunDir.set(Math.cos(ma) * 0.95, Math.max(0.16, Math.sin(ma)) * 0.85, 0.32).normalize().lerp(_sl, dk).normalize();
+  const n = st.nightK || 0;
+  st.sunS.position.copy(st.celest).multiplyScalar(800); st.sunS.visible = st.celest.y > -0.05; st.sunS.material.opacity = Math.min(1, (st.celest.y + 0.05) * 6) * (1 - n * 0.9);
+  st.moon.position.copy(mDir).multiplyScalar(790); st.moon.visible = mDir.y > -0.05; st.moon.material.opacity = Math.max(0.12, n) * Math.min(1, (mDir.y + 0.05) * 6);
 }
 function placeSun(focus) { if (!focus) return; C.sun.position.set(focus.x + st.sunDir.x * 80, focus.y + st.sunDir.y * 80, focus.z + st.sunDir.z * 80); C.sun.target.position.set(focus.x, focus.y, focus.z); }
 // névoa: a cor da região multiplicada pela tinta da hora (névoa azul-escura à noite, dourada no amanhecer)

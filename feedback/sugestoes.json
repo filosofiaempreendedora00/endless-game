@@ -18807,5 +18807,1095 @@
     "criadoEm": "2026-11-11T23:22:54",
     "imagem": "img/S-382.png",
     "resposta": "Vestes novas de mago, todas com robe longo até perto do chão que acompanha as pernas, mangas em sino e costas trabalhadas:\n- Mago: lã azul-ardósia com barra crua, estrela do aprendiz nas costas, capuz caído, cinto com bolsa e porta-pergaminhos.\n- Arquimago: túnica de veludo violeta com sobretúnica azul-meia-noite debruada de ouro, runas, sigilo arcano nas costas, gola alta, ombreiras finas de prata com gema e faixa com medalhão.\n- Sábio Elemental: lã terrosa com escapulário cor de areia, os 4 elementos bordados no peito, a rosa dos elementos nas costas e um cordão dourado com borlas."
+  },
+  {
+    "texto": "Eu reparei que em alguns Monstros Principalmente nos Boss quando eles são atacados o tamanho deles começa a crescer e crescer e crescer isso é muito estranho e eu não quero que aconteça",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (300×352 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 5,
+          "Cavaleiro Caído": 6,
+          "Espectro Pálido": 2,
+          "Selvara, a Rainha Sem Túmulo": 1,
+          "Morcego de Cripta": 5,
+          "Orvalhinho Sombrio": 5,
+          "Maldoran, o Chifre Negro": 1
+        },
+        "npcs": [
+          "Oto"
+        ],
+        "cenario": {
+          "Rocha": 3,
+          "Tronco caído": 1,
+          "Toco": 1,
+          "Prédio em ruínas": 2,
+          "Torre": 1
+        },
+        "centro": "Selvara, a Rainha Sem Túmulo",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:ruinas",
+      "nome": "Ruínas de Kael",
+      "tile": [
+        -5,
+        -71
+      ],
+      "pos": [
+        -5,
+        -71
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 39,
+      "nivelClasse": 11,
+      "hp": "1138/1138",
+      "sp": "172/172"
+    },
+    "id": "S-383",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:31:00",
+    "imagem": "img/S-383.png",
+    "resposta": "Corrigido: ao apanhar, o monstro dá um 'pulinho' de 15% e volta ao tamanho ORIGINAL. Antes, dois golpes em menos de 0,08 s (você + mascote, golpe duplo, habilidade) faziam ele voltar ao tamanho já aumentado, e os chefes cresciam sem parar. Vale para todos os monstros."
+  },
+  {
+    "texto": "Essa parede Aparentemente está oca porque o meu personagem está conseguindo entrar nela e na outra parede que também está oca do lado preciso que você corrija isso bem como verifica se dentro dessa Dungeon também existe bugs parecidos e também gostaria de que essa chama ou seja este fogo tivéssemos resolução melhor",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (220×333 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colossos",
+      "nome": "Ruínas dos Colossos",
+      "tile": [
+        1506,
+        28
+      ],
+      "pos": [
+        1506,
+        28
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 15,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-384",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:33:29",
+    "imagem": "img/S-384.png",
+    "resposta": "As paredes ocas eram os pilares dos cruzamentos: mais largos que a parede e sem colisão. Agora todos os pilares dos 4 andares bloqueiam, e sarcófagos e colunas quebradas têm colisão no lugar e no tamanho certos (antes ficavam deslocados). As tochas da masmorra ganharam chama de verdade, com línguas de fogo que tremulam e brasas subindo."
+  },
+  {
+    "texto": "Esse print não reflete a minha sugestão então foque na minha sugestão eu quero que o curso não apenas mexe levemente na câmera e sim a posição dele indique de fato Onde eu estou querendo enxergar Então eu preciso que a câmera acompanhe absolutamente o cursor e não de uma forma Sutil eu não sei se você compreendeu o que eu quero dizer mas eu preciso garantir que onde o meu mouse for a câmera mude por completo como se fosse um jogo de FPS mesmo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (277×122 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Encosta / montanha — Ruínas dos Colossos",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colossos",
+      "nome": "Ruínas dos Colossos",
+      "tile": [
+        -149,
+        -257
+      ],
+      "pos": [
+        -149,
+        -257
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 15,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-385",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:35:11",
+    "imagem": "img/S-385.png",
+    "resposta": "Novo modo de câmera 'Total (como FPS)', agora o padrão: o mouse gira a câmera por completo (100 px ≈ 14°), o cursor encostado na borda da tela continua girando e, andando, o personagem vai para onde a câmera olha (A/D andam de lado). Dá para voltar aos modos antigos em Esc → Configurações → Câmera no cursor."
+  },
+  {
+    "texto": "Não pode e não deve ter essa árvore de Natal aqui",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (198×239 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 3,
+          "Lobo Cinzento": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Pinheiro com neve": 1,
+          "Santuário Silente": 1
+        },
+        "centro": "Pinheiro com neve",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:colossos",
+      "nome": "Ruínas dos Colossos",
+      "tile": [
+        1,
+        -382
+      ],
+      "pos": [
+        1,
+        -382
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 15,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-386",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:35:54",
+    "imagem": "img/S-386.png",
+    "resposta": "O pinheiro saiu da frente do Santuário Silente e nenhuma árvore nasce mais a menos de 44 m dele, em nenhuma região."
+  },
+  {
+    "texto": "Esse tipo de árvore tão perto da areia da praia não tem muita lógica os coqueiros tem mais lógica mas mesmo assim percebi que eles estão excessivamente perto da água e isso também é totalmente esquisito é claro que pode haver vegetações por aqui mas não dessa natureza",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (240×268 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Coelho-Chifre": 2
+        },
+        "npcs": [],
+        "cenario": {
+          "Carvalho": 4,
+          "Pedra": 1,
+          "Coqueiro": 3
+        },
+        "centro": "Carvalho",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:savana",
+      "nome": "Savana Dourada",
+      "tile": [
+        478,
+        143
+      ],
+      "pos": [
+        478,
+        143
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 15,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-387",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:36:58",
+    "imagem": "img/S-387.png",
+    "resposta": "Árvores de folha não nascem mais na faixa de areia (no mínimo 32 m da água, em todas as praias), e os coqueiros ficam a pelo menos 12 m da beira, na Costa Turquesa e no porto."
+  },
+  {
+    "texto": "Esses objetos Seria interessante se eu não conseguisse atravessá-los ou seja existe uma física ali",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (78×154 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Aerin",
+          "Calen",
+          "Eldin"
+        ],
+        "cenario": {},
+        "centro": "Pedras-lua com runas",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:aelindra",
+      "nome": "Aelindra",
+      "tile": [
+        286,
+        -251
+      ],
+      "pos": [
+        286,
+        -251
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-388",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:38:12",
+    "imagem": "img/S-388.png",
+    "resposta": "As pedras-lua estavam desenhadas ~30 m fora do lugar da colisão (por isso dava para atravessar). Agora estão no caminho, dentro do portal, e bloqueiam."
+  },
+  {
+    "texto": "Este piso está flutuando aqui e obviamente isso é um bug",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (418×313 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Thandril",
+          "Lyssandra",
+          "Ithiel",
+          "Faëlar",
+          "Myrael",
+          "Vaelis",
+          "Naerith",
+          "Nimriel",
+          "Faewyn",
+          "Ilyria",
+          "Elwyn"
+        ],
+        "cenario": {
+          "Sylvaren, a Árvore-Mãe": 2,
+          "Rampa e terraços da Árvore-Mãe": 1,
+          "Ponte suspensa": 1,
+          "Fonte da Lua": 1,
+          "Caminho de pedra clara": 1,
+          "Portal das Raízes": 1,
+          "Pedras-lua com runas": 1,
+          "Casa-folha élfica": 1,
+          "Mercado das Folhas": 1,
+          "Lanternas élficas": 1,
+          "Árvore gigante do bosque": 4,
+          "Carvalho": 1,
+          "Arbustos e cogumelos luminosos": 1
+        },
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:aelindra",
+      "nome": "Aelindra",
+      "tile": [
+        286,
+        -213
+      ],
+      "pos": [
+        286,
+        -213
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-389",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:39:19",
+    "imagem": "img/S-389.png",
+    "resposta": "Era o caminho de pedra clara, desenhado fora do lugar e boiando fora do portal. Agora fica no chão, ligando o portal à Fonte da Lua e ao pé da rampa."
+  },
+  {
+    "texto": "Dá para melhorar bastante o gráfico dessa árvore pois quero que ela tem uma pegada de árvore da vida inspirada no filme Avatar e não essa árvore totalmente riscada e esquisita",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (769×323 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Pinheiro escuro": 3,
+          "Carvalho do bosque": 1
+        },
+        "centro": "Sylvaren, a Árvore-Mãe",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:aelindra",
+      "nome": "Aelindra",
+      "tile": [
+        286,
+        -290
+      ],
+      "pos": [
+        286,
+        -290
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-390",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:41:18",
+    "imagem": "img/S-390.png",
+    "resposta": "Sylvaren virou uma 'árvore da vida': casca lisa com relevo (sem os riscos), pontinhos de luz bioluminescentes que pulsam devagar e cortinas de filamentos luminosos, do verde-água ao violeta, com contas de luz, pendendo da copa e balançando ao vento (lindos à noite). As árvores-irmãs e o bosque ganharam a casca nova também."
+  },
+  {
+    "texto": "A forma como esse Astro está se movendo está muito truncada e não gradativa e está muito feio esteticamente",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (166×104 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Céu",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:alem",
+      "nome": "Ermos Além da Muralha",
+      "tile": [
+        -472,
+        -536
+      ],
+      "pos": [
+        -472,
+        -536
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-391",
+    "status": "feito",
+    "criadoEm": "2026-11-12T23:43:28",
+    "imagem": "img/S-391.png",
+    "resposta": "Sol e lua agora andam a cada quadro, de forma contínua (antes davam um pulinho a cada minuto do jogo), e a luz passa do sol para a lua aos poucos no crepúsculo. Também acabou o salto da lua de um lado do céu para o outro às 18h54."
+  },
+  {
+    "texto": "Essa água está claramente bem bugada",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (1028×275 px) (sobre: Painel de status)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {
+          "Escorpião-Rubro": 3,
+          "Formiga Ceifadora": 2,
+          "Brasinha": 2,
+          "Mandacaru Andarilho": 1,
+          "Lagarto-de-Sal": 2,
+          "Esqueleto Vigia": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Cacto": 7,
+          "Toco": 2,
+          "Rocha": 5,
+          "Muro em ruínas": 1,
+          "Coqueiro": 4
+        },
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D",
+        "interface": [
+          "Painel de status"
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:areal",
+      "nome": "Grande Areal",
+      "tile": [
+        -51,
+        458
+      ],
+      "pos": [
+        -51,
+        458
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-392",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:44:12",
+    "imagem": "img/S-392.png"
+  },
+  {
+    "texto": "Todos esses fogos de fogueira ficaram bastante esquisitos",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (589×139 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {
+          "Muralha de Pedrafunda": 1,
+          "Rua principal de Pedrafunda": 1,
+          "Forja da praça": 1,
+          "Acrópole de Pedrafunda": 1
+        },
+        "centro": "Forja da praça",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:pedrafunda",
+      "nome": "Pedrafunda",
+      "tile": [
+        -288,
+        -272
+      ],
+      "pos": [
+        -288,
+        -272
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-393",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:46:28",
+    "imagem": "img/S-393.png"
+  },
+  {
+    "texto": "Aqui tá dando vários bugs esquisitos nessas luzes",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (108×133 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Irmão Hulda"
+        ],
+        "cenario": {},
+        "centro": "Irmão Hulda",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:pedrafunda",
+      "nome": "Pedrafunda",
+      "tile": [
+        -272,
+        -299
+      ],
+      "pos": [
+        -272,
+        -299
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-394",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:50:34",
+    "imagem": "img/S-394.png"
+  },
+  {
+    "texto": "Eu gosto do fato de ter dia e noite nesse jogo porém eu senti que a noite ficou excessivamente escura eu gostaria que ela fosse um pouco mais clara talvez iluminada pela lua de alguma forma com que ficasse mais visível durante a noite",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (423×371 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 4,
+          "Orvalhinho Sombrio": 3,
+          "Lobo Cinzento": 2
+        },
+        "npcs": [
+          "Hakon"
+        ],
+        "cenario": {
+          "Casa de anão": 2,
+          "Barril": 1
+        },
+        "centro": "Muralha de Pedrafunda",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:pedrafunda",
+      "nome": "Pedrafunda",
+      "tile": [
+        -288,
+        -288
+      ],
+      "pos": [
+        -288,
+        -288
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-395",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:50:59",
+    "imagem": "img/S-395.png"
+  },
+  {
+    "texto": "Eu sinto que o pelo do Lobo melhorou como consideravelmente Mas além dos dedos serem bolotas muito esquisitas e não realistas você pode perceber como que esse lobo tá com uma puta de uma cara de bunda e eu preciso que você se inspire em um lobo de verdade de uma vez por todas eu preciso que você olhe no rosto de um dire wolf la do GoT de uma vez e resolva esse meu problema",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (153×109 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 2,
+          "Orvalhinho Sombrio": 1,
+          "Musguinho": 2,
+          "Lobo Cinzento": 2,
+          "Golem de Musgo": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        785,
+        -11
+      ],
+      "pos": [
+        785,
+        -11
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-396",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:53:13",
+    "imagem": "img/S-396.png"
+  },
+  {
+    "texto": "Repare como a questão do arco ainda está bem bugado aqui no ministério eu vou conferir ainda nas outras classes mais aqui a gente já percebe que está bugado E eu chamei de Menestrel mas na verdade é bardo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (100×227 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Abelha Rubra": 1,
+          "Golem de Musgo": 1
+        },
+        "npcs": [
+          "Bardo · Humano"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        786,
+        0
+      ],
+      "pos": [
+        786,
+        0
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-397",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:54:12",
+    "imagem": "img/S-397.png"
+  },
+  {
+    "texto": "Que barbinha esquisita da porra hein toda bugada",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (208×125 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [
+          "Cavaleiro · Anão"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        816,
+        2
+      ],
+      "pos": [
+        816,
+        2
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-398",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:54:58",
+    "imagem": "img/S-398.png"
+  },
+  {
+    "texto": "Essa parte do ombro melhorou em relação ao que era e principalmente a roupa como um todo está infinitamente melhor porém algumas coisas ainda me incomodam uma delas é o fato desta cinta Ou melhor essa fivela do cinto ela não está centralizada e isso já me incomoda e principalmente em relação ao encaixe deste treco no ombro pois eu não gostaria que houvesse espaço entre as duas partes que aparentam ser de Armadura e eu gostaria de deixar claro para torná-las mais imponentes e menos com a aparência de pedaços aleatórios de alumínio pois eu sei que é totalmente possível trabalhar algo no ombro mais interessante e que chame muito mais a atenção do que esse pedaço de latão fodido",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (91×45 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        790,
+        10
+      ],
+      "pos": [
+        790,
+        10
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-399",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:56:44",
+    "imagem": "img/S-399.png"
+  },
+  {
+    "texto": "Mais um exemplo de como a posição do arqueiro ainda está bem deficiente em relação à realidade",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (164×153 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Abelha Rubra": 1,
+          "Golem de Musgo": 1
+        },
+        "npcs": [
+          "Bardo · Anão"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        785,
+        4
+      ],
+      "pos": [
+        785,
+        4
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-400",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:57:10",
+    "imagem": "img/S-400.png"
+  },
+  {
+    "texto": "Em relação às vestes das evoluções do Mago eu achei interessantes porém esta roupa azul do Mago não me caiu nem um pouco bem Eu gostaria assim que fosse vestes mas simples do que das evoluções Porém esse azul não pegou nada bem então gostaria que mudasse não apenas o azul mas também desse uma melhorada nessas vestes e aproveitando eu percebi que o cajado do Mago não chega ao chão e eu acho importante que os cajados de todas as classes de mago chegassem até o chão",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (410×186 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Esqueleto Vigia": 5,
+          "Orvalhinho Sombrio": 3,
+          "Morcego de Cripta": 5
+        },
+        "npcs": [
+          "Tomé",
+          "Dona Rosa",
+          "Velho Gui",
+          "Irmão Dunstan",
+          "Ulf",
+          "Sera",
+          "Tam",
+          "Odete",
+          "Bóris",
+          "Ilka",
+          "Rei Aldemar",
+          "Rainha Isolda",
+          "Dama Clarisse",
+          "Dama Brienna",
+          "Sir Bertran",
+          "Sir Ulric",
+          "Elwen",
+          "Frei Lauro",
+          "Berta",
+          "Edmundo",
+          "Mestre Anselmo",
+          "Irmão Caio",
+          "Mago · Elfo",
+          "Mago · Anão"
+        ],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        807,
+        -9
+      ],
+      "pos": [
+        807,
+        -9
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-401",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:58:34",
+    "imagem": "img/S-401.png"
+  },
+  {
+    "texto": "Já melhoramos infinitamente a roupa do Paladino frente ao que era porém agora talvez esse seja o único ponto que me incomoda que é a parte de cima desta capa que se conecta à armadura eu gostaria basicamente que ela se conectasse de um modo que não fosse tão parecido com uma cortina",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (173×24 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1
+        },
+        "npcs": [],
+        "cenario": {},
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -70,
+        28
+      ],
+      "pos": [
+        -70,
+        28
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1711/1711",
+      "sp": "194/194"
+    },
+    "id": "S-402",
+    "status": "pendente",
+    "criadoEm": "2026-11-12T23:59:25",
+    "imagem": "img/S-402.png"
+  },
+  {
+    "texto": "Duas coisas me incomodaram nos ataques do Paladino e eu gostaria que você conferisse as outras classes para que esse problemas também não ocorram o primeiro dos problemas é o fato de que este meu Paladino está dando socos no inimigo sendo que ele tem uma espada na mão Então nesse caso eu gostaria de colocar uma regra para que quando tivesse uma espada equipada apenas fossem desferidos golpes que usam essa espada e não a mão vazia Esta é a primeira indagação e outra coisa que me incomodou muito foi o fato de a classe paladino ter chegado tão extremamente próxima ao alvo mesmo que a classe pudesse atacar o inimigo a um Range razoável já que a espada tem uma certa dimensão e contribui para que os ataques fossem feitos de um Range um pouco maior Ou seja eu não quero que classes que tenham uma espada com tamanho parecido fica então absolutamente grudados aos alvos quando eu apertar o botão esquerdo e mirar em um inimigo",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (371×477 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {
+          "Boneco de Treino": 1,
+          "Brasinha": 16,
+          "Esqueleto Vigia": 3,
+          "Kharzûl, Soberano das Areias Rubras": 1,
+          "Mandacaru Andarilho": 5,
+          "Escorpião-Rubro": 7,
+          "Formiga Ceifadora": 9,
+          "Lagarto-de-Sal": 8,
+          "Trotavento Selvagem": 3
+        },
+        "npcs": [
+          "Samira"
+        ],
+        "cenario": {
+          "Estábulo do Tomé": 1,
+          "Cerca": 4
+        },
+        "centro": "Gertrudes (Paladino)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -69,
+        31
+      ],
+      "pos": [
+        -69,
+        31
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1711/1711",
+      "sp": "194/194"
+    },
+    "id": "S-403",
+    "status": "pendente",
+    "criadoEm": "2026-11-13T00:02:24",
+    "imagem": "img/S-403.png"
   }
 ]

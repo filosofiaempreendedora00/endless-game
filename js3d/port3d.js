@@ -465,7 +465,7 @@ export function buildPortCity(ctx) {
   // 11) coqueiros: nas praias das pontas, atrás do passeio e em volta da praça (sem cair em cima de casa)
   { const spots = [], tries = rngOf(777); const blocked = (s, t) => houses.some(h => Math.abs(s - h.s) < h.d / 2 + 2.2 && Math.abs(t - h.t) < h.w / 2 + 2.2) || (Math.abs(t - 60) < 4 && s > q - 2) || (s > q - 12 && s < q + 1 && Math.abs(t) < 66);
     for (let k = 0; k < 400 && spots.length < 36; k++) { const zone = k % 3, s = zone === 0 ? q - 4 - tries() * 22 : zone === 1 ? -4 + tries() * 22 : q - 24 + tries() * 10, t = zone === 0 ? (tries() < 0.5 ? -1 : 1) * (74 + tries() * 40) : zone === 1 ? (tries() < 0.5 ? -1 : 1) * (14 + tries() * 50) : (tries() - 0.5) * 30;
-      if (blocked(s, t) || spots.some(([a, b]) => Math.hypot(a - s, b - t) < 5)) continue; const p = at(s, t); if (seaDist(p.x, p.z) < 2) continue; spots.push([s, t]); }
+      if (blocked(s, t) || spots.some(([a, b]) => Math.hypot(a - s, b - t) < 5)) continue; const p = at(s, t); if (seaDist(p.x, p.z) < 12) continue; spots.push([s, t]); } // S-387 (generalizado): coqueiro também não fica colado na água no porto
     spots.forEach(([s, t], i) => { const p = H(s, t); put(ctx, palmTree(300 + i), 'palmeira', p.x, p.z, 0, { box: [[0, 0, 0.3, 0.3]], occ: false }); }); }
   // 12) NPCs do porto, cada um no seu lugar (S-217)
   const W = (n, s, t, yaw, y) => { const p = H(s, t), npc = ctx.worldNpc(n, p.x, p.z, yaw); if (y !== undefined) npc.obj.position.y = y; return npc; };

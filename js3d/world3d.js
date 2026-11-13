@@ -198,7 +198,8 @@ export function treeAllowed(x, z, opts = {}) {
   const { rock, slope, h } = rockiness(x, z);
   if (rock > (opts.maxRock ?? 0.3) || slope > (opts.maxSlope ?? 0.5) || h > 20) return false;
   if (Math.hypot(x - DWARF.x, z - DWARF.z) < 146) return false; // cascalho de Pedrafunda
-  if (seaDist(x, z) < 14) return false; // praia
+  if (seaDist(x, z) < 32) return false; // S-387: árvore de folha não nasce na faixa de areia (perto do mar só coqueiro, e longe da beira)
+  if (Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 44) return false; // S-386: nada de pinheiro ("árvore de Natal") na frente do Santuário Silente
   if (x < -470 && ICE_LAKES.some(L => Math.hypot(x - L.x, z - L.z) < L.r * 1.3)) return false; // lagos congelados dos Ermos
   if (z > 400 && oasisDist(x, z) < OASIS.r + 2) return false; // lagoa do oásis
   return true;

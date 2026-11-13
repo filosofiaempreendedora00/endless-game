@@ -272,3 +272,14 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - **Aprendizados**:
   - Cidade "da raça" = um marco gigante que se vê de longe e se USA (subir, atravessar), não um conjunto de casinhas numa clareira.
   - "Não pode ter bugs" virou roteiro de teste andando (ver caca-bugs.md).
+
+## Rodada S-383 a S-391 (2026-11-12/13)
+- **Bugs da rodada**:
+  - chefe crescendo a cada golpe (escala de "pulinho" acumulando);
+  - pilares ocos na masmorra (geometria maior que a colisão);
+  - pedras e caminho de Aelindra desenhados fora do lugar (eu errei o centro do grupo);
+  - lua aos saltos.
+- **Reincidência**: S-385, a câmera no cursor. Ele já tinha pedido e eu fiz "sutil" (peso). Ele quer TOTAL, "como FPS". Quando ele pedir câmera/controle, a primeira entrega deve ser a forte, com a sutil como opção.
+- **Aprendizado (S-390)**: textura com linhas finas parece "riscado". Árvore mágica = superfície lisa com relevo + luz em pontos/manchas + elementos pendentes que balançam (referência que ele deu: a árvore da vida do Avatar).
+- **Aprendizado (S-386/S-387)**: o lugar certo de cada vegetação importa (nada de pinheiro na porta do templo, nada de carvalho na areia, coqueiro longe da beira).
+- **Antipadrão meu**: montar um grupo em (x0, z0) com peças já em coordenadas da cidade. Antes de entregar, confira sempre se o visual bate com a colisão (caixa do objeto × colisores).

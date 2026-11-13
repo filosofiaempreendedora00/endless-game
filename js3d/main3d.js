@@ -1116,7 +1116,7 @@ async function buildExpansion() {
     for (let k = 0; k < n * 25 && done < n; k++) {
       const x = zn.x + (rng() * 2 - 1) * zn.r * 1.25, z = zn.z + (rng() * 2 - 1) * zn.r * 1.25;
       if (Math.abs(x) > PLAY_LIMIT - 4 || Math.abs(z) > PLAY_LIMIT - 4 || zoneWeight(zoneId, x, z) < minW) continue;
-      if (roadDist(x, z) < 5 || mountainMask(x, z) > 0.3 || ambSeaDist(x, z) < (extra.sea ?? 3) || (x < -398 && x > -500 && Math.abs(z) < 310)) continue;
+      if (roadDist(x, z) < 5 || mountainMask(x, z) > 0.3 || ambSeaDist(x, z) < (extra.sea ?? 3) || (x < -398 && x > -500 && Math.abs(z) < 310) || Math.hypot(x - TEMPLE.x, z - TEMPLE.z) < 44) continue; // S-386: nada em volta do Santuário
       if (extra.tree && !treeAllowed(x, z)) continue;
       if (!freeAt(x, z, gap)) continue;
       place(list[Math.floor(rng() * list.length)], x, z, { scale: (extra.s0 || 0.9) + rng() * (extra.s1 || 0.4), rf: extra.rf || 0.35, sink: extra.sink || 0 }); done++;
@@ -1157,7 +1157,7 @@ async function buildExpansion() {
   for (let k = 0; k < 4; k++) MODELS['palm_' + k] = { scene: palmModel(700 + k * 13), radius: 0.35, native: true };
   const palm = (x, z) => { if (!freeAt(x, z, 3)) return false; place('palm_' + Math.floor(rng() * 4), x, z, { scale: 0.85 + rng() * 0.35, r: 0.35, rot: rng() * 6.28 }); return true; };
   for (let k = 0, n = 0; k < 2500 && n < 34; k++) { // coqueiros na faixa de areia da Costa Turquesa (e um pouco na savana perto do mar)
-    const x = 430 + rng() * 175, z = -300 + rng() * 420, sd = ambSeaDist(x, z); if (sd < 5 || sd > 46 || roadDist(x, z) < 3 || mountainMask(x, z) > 0.2 || Math.abs(z) > PLAY_LIMIT - 6 || x > PLAY_LIMIT - 4) continue;
+    const x = 430 + rng() * 175, z = -300 + rng() * 420, sd = ambSeaDist(x, z); if (sd < 12 || sd > 46 || roadDist(x, z) < 3 || mountainMask(x, z) > 0.2 || Math.abs(z) > PLAY_LIMIT - 6 || x > PLAY_LIMIT - 4) continue;
     if (seaAt(x, z) !== SEA_TROPIC || mesaHere(x, z)) continue; if (palm(x, z)) n++;
   }
   for (let k = 0, n = 0; k < 200 && n < 9; k++) { const a = rng() * 6.28, rr = OASIS.r + 3 + rng() * 9, x = OASIS.x + Math.cos(a) * rr, z = OASIS.z + Math.sin(a) * rr; if (oasisDist(x, z) < OASIS.r + 2 || roadDist(x, z) < 3) continue; if (palm(x, z)) n++; } // coqueiros do oásis
@@ -1480,8 +1480,10 @@ function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]
 const aimRay = new THREE.Raycaster();
 // S-141: no modo clássico a mira é o CURSOR do mouse (estilo Skyrim, sem alvo travado); nos modos de ação, o centro da tela
 const mouseNdc = new THREE.Vector2(0, 0), NDC0 = new THREE.Vector2(0, 0);
-const AIM_WEIGHT = { leve: 0.0035, medio: 0.0022, pesado: 0.0012, travado: 0 }; // S-234: quanto a câmera gira ao mexer o mouse segurando o ataque
-try { S.aimWeight = localStorage.getItem('aethra_aimw') || 'pesado'; } catch (e) { }
+const AIM_WEIGHT = { total: 0.0042, leve: 0.0035, medio: 0.0022, pesado: 0.0012, travado: 0 }; // S-234: quanto a câmera gira ao mexer o mouse · S-385: 'total' = como FPS (padrão)
+try { S.aimWeight = localStorage.getItem('aethra_aimw') || 'total'; if (!localStorage.getItem('aethra_aimw_v2')) { localStorage.setItem('aethra_aimw_v2', '1'); if (S.aimWeight === 'pesado') { S.aimWeight = 'total'; localStorage.setItem('aethra_aimw', 'total'); } } } catch (e) { S.aimWeight = 'total'; }
+// S-385: no modo Total a câmera segue o cursor por completo (como FPS): o mouse gira a câmera, a borda da tela continua girando e, andando, o corpo vai para onde a câmera olha
+const lookTotal = () => S.aimWeight === 'total' && !isAction() && !S.flight;
 const aimNdc = () => isAction() ? NDC0 : mouseNdc;
 function aimTarget(maxRange) {
   aimRay.setFromCamera(aimNdc(), camera);
@@ -1947,7 +1949,7 @@ function hurtMonster(m, res, elem) {
   Sound.play(S.hitSfx ? (res.crit ? S.hitSfx + 'Crit' : S.hitSfx) : res.crit ? 'crit' : 'hit');
   { const sx = MON_SFX[m.def.shape]; if (sx && sx.hurt && Math.random() < (sx.hurtP ?? 0.6)) Sound.play(sx.hurt); }
   impact(m, { x: m.x - S.pos.x, z: m.z - S.pos.z }, { crit: res.crit, heavy: S.heavyHit }); // P-011: pausa curta, recuo, piscada e partículas pelo material do alvo
-  if (m.vis.critter) { const r = m.vis.critter.root, s0 = r.scale.x; r.scale.setScalar(s0 * 1.15); later(0.08, () => r.scale.setScalar(s0)); }
+  if (m.vis.critter) { const r = m.vis.critter.root, s0 = r.userData.baseScale ?? (r.userData.baseScale = r.scale.x); r.scale.setScalar(s0 * 1.15); later(0.08, () => r.scale.setScalar(s0)); } // S-383: o tamanho de volta é SEMPRE o original (antes, golpes seguidos dentro de 0,08 s faziam o chefe crescer sem parar)
   else if (S.time >= m.lockAnim) { monAnim(m, 'Hit_A', { once: true, restart: true, fade: 0.05 }); m.lockAnim = S.time + 0.3; }
   if (p.d.lifesteal) p.hp = Math.min(p.d.maxHp, p.hp + Math.floor(res.dmg * p.d.lifesteal / 100));
   if (m.hp <= 0) killMonster(m);
@@ -2238,13 +2240,19 @@ function bardPose(me, p, t, dt) {
   const W = sm('_instW', fight ? 1 : 0, fight ? 6 : 3), P = sm('_instP', playing ? 1 : atk ? 0.85 : 0.12, 8);
   instrumentPose(me, { w: W, play: P, t });
 }
+// S-385: cursor encostado na borda esquerda/direita da tela continua girando a câmera (como empurrar o mouse num FPS)
+function edgeLook(dt) {
+  if (!S.cursorOnWorld || mouse.left || mouse.right || mouse.mid || S.menuOpen || (typeof FB !== 'undefined' && (FB.picking || FB.box))) return;
+  const ex = mouseNdc.x, band = 0.86; if (Math.abs(ex) <= band) return;
+  S.cam.yaw -= Math.sign(ex) * Math.min(1, (Math.abs(ex) - band) / (1 - band)) * 1.2 * dt;
+}
 function moveInput() {
   const k = keys;
   let fwd = 0, strafe = 0, turn = 0;
   if (k.w || k.arrowup || (mouse.left && mouse.right)) fwd += 1;
   if (k.s || k.arrowdown) fwd -= 1;
   const L = k.a || k.arrowleft, R = k.d || k.arrowright;
-  if (mouse.right || isAction() || S.fire) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; } // modo ação ou mirando (botão esquerdo): A/D andam de lado
+  if (mouse.right || isAction() || S.fire || lookTotal()) { if (L) strafe -= 1; if (R) strafe += 1; } else { if (L) turn += 1; if (R) turn -= 1; } // modo ação ou mirando (botão esquerdo): A/D andam de lado
   if (k.q_strafe) strafe -= 1;
   return { fwd, strafe, turn, any: !!(fwd || strafe) };
 }
@@ -2412,6 +2420,9 @@ function updatePlayer(dt) {
   if (!isAction()) updateAimCursor();
   if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
   else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, lk ? (Math.hypot(lk.x - P.x, lk.z - P.z) < 0.25 ? P.yaw : Math.atan2(lk.x - P.x, lk.z - P.z)) : aimYaw(q, P.yaw), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
+  else if (lookTotal()) { // S-385: a câmera manda; andando, o corpo vira para onde ela olha (nada de a câmera voltar sozinha para trás do herói)
+    edgeLook(dt); if (mi.any) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 12));
+  }
   else {
     P.yaw += mi.turn * 2.6 * dt;
     if (mi.turn && !mouse.left) S.cam.yaw = angLerp(S.cam.yaw, P.yaw, Math.min(1, dt * 20));
@@ -3423,8 +3434,9 @@ addEventListener('mousemove', e => {
   if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
   // S-234 + pedido de 2026-11-11: o CURSOR é o foco da câmera — mexer o mouse gira a câmera devagar ("peso" das Configurações), segurando o ataque
   // ou não, andando ou parado. Só sobre o mundo (não sobre janelas, barra ou menus) e sem botão de arrastar apertado (esses já giram a câmera).
+  S.cursorOnWorld = e.target === canvas;
   const freeLook = !S.fire && e.target === canvas && !mouse.left && !mouse.right && !mouse.mid && !S.menuOpen && !S.flight && !(typeof FB !== 'undefined' && (FB.picking || FB.box)); // marcando ou escrevendo uma sugestão (Q): a câmera fica parada
-  if ((S.fire || freeLook) && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'pesado'], mx = clamp(e.movementX, -60, 60), my = clamp(e.movementY, -60, 60); S.cam.yaw -= mx * w; S.cam.pitch = clamp(S.cam.pitch + my * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
+  if ((S.fire || freeLook) && !isAction() && S.started) { const w = AIM_WEIGHT[S.aimWeight || 'total'], mx = clamp(e.movementX, -60, 60), my = clamp(e.movementY, -60, 60); S.cam.yaw -= mx * w; S.cam.pitch = clamp(S.cam.pitch + my * w * 0.6, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; } // S-234: segurando o ataque, mexer o mouse também gira a câmera (devagar, "pesado")
   if (mouse.mid) { S.lookYaw -= e.movementX * 0.006; S.cam.pitch = clamp(S.cam.pitch + e.movementY * 0.004, -0.12, 1.52); S.cam.pitchT = S.cam.pitch; return; }
   if (!mouse.left && !mouse.right) return;
   const dx = e.movementX, dy = e.movementY;
@@ -3473,7 +3485,7 @@ function showSettings() {
     <div class="opt-sec">🌿 Mundo</div>
     <label class="opt-sw"><input type="checkbox" id="o-fauna" ${faunaEnabled() ? 'checked' : ''}><span>🦋 Vida ambiente <small class="muted">(pássaros, borboletas, vaga-lumes, peixes — desligue se o computador for fraco)</small></span></label>
     <div class="opt-sec">🎯 Combate</div>
-    <div class="opt-sw"><span>Peso da câmera no cursor <small class="muted">(quanto a câmera gira ao mexer o mouse sobre o mundo — atacando ou não; "Câmera parada" desliga)</small></span><select id="o-aimw">${[['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'pesado') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="opt-sw"><span>Câmera no cursor <small class="muted">("Total" = como FPS: o mouse gira a câmera por completo e a borda da tela continua girando; "Câmera parada" desliga)</small></span><select id="o-aimw">${[['total', 'Total (como FPS)'], ['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'total') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     <div class="opt-sec">📘 Tutorial</div>
     <div class="opt-sw"><span>Primeiros passos <small class="muted">(as dicas de boas-vindas da vila)</small></span><button class="btn" id="o-tut">Refazer os primeiros passos</button></div>
     <div class="menu-btns" style="margin-top:14px"><button class="btn" id="o-test">▶ Testar efeito</button><button class="btn gold" id="o-back">← Voltar</button></div></div>`;
@@ -4124,7 +4136,7 @@ function admPois() {
   for (const m of S.monsters) if (!m.dead && (m.def.mini || m.def.boss)) out.push({ label: `💀 Perto do ${m.def.name}`, x: m.x + 4, z: m.z });
   return out;
 }
-const qaCtx = () => ({ renderer, scene, camera, galleryAnim, ensureGallery, S, placed, colliders, groundAt, resolve, trulyStuck, portals, waterLevelAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
+const qaCtx = () => ({ renderer, scene, camera, galleryAnim, ensureGallery, S, placed, colliders, groundAt, resolve, trulyStuck, portals, waterLevelAt, heightAt, HALF, INTERIORS, Sound, CLASSES, teleport3d, sim: sec => window.__sim(sec), enterInterior, leaveInterior, makeHero, hurtMonster, zones: ZONES.filter(z => z.id !== 'vila').slice(0, 4).concat(ZONES.filter(z => z.id === 'vila')) }); // P-003/P-004
 function adminRender() {
   const p = S.p; if (!p) return;
   const body = UI.body('admin'), pois = admPois();

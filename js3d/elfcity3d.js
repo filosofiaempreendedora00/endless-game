@@ -1,8 +1,8 @@
 /* =========================================================================
    AELINDRA, A CIDADE NA ÁRVORE-MÃE (2026-11-12: "muito mais élfica")
    Uma cidade que mora DENTRO da floresta, não numa clareira:
-   • Sylvaren, a Árvore-Mãe: tronco prateado de 12 m de diâmetro com veias de
-     luz; uma rampa em espiral sobe em volta dele até o Terraço das Folhas (12 m)
+   • Sylvaren, a Árvore-Mãe (S-390: "árvore da vida"): tronco de 12 m de diâmetro com luz viva na casca e filamentos que brilham;
+     uma rampa em espiral sobe em volta dele até o Terraço das Folhas (12 m)
      e o Mirante do Conselho (24 m). Tudo isso é chão de verdade (levels3d).
    • Três árvores-irmãs com plataformas e casas na copa, ligadas ao terraço
      por pontes suspensas.
@@ -25,28 +25,77 @@ const mats = {};
 const P = (k, color, o = {}) => mats[k] || (mats[k] = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? 0.7, metalness: o.metal ?? 0, emissive: o.emissive || '#000000', emissiveIntensity: o.ei ?? 1, side: o.side || THREE.FrontSide, transparent: !!o.transparent, opacity: o.opacity ?? 1 }));
 
 /* ---------------- materiais ---------------- */
-let _bark = null;
-function silverBark() { // casca prateada com fissuras longas e lenticelas (nada de marrom de carvalho)
-  if (_bark) return _bark;
-  const c = document.createElement('canvas'); c.width = 256; c.height = 512; const g = c.getContext('2d'), r = rngOf(4441);
-  g.fillStyle = '#bcb5a7'; g.fillRect(0, 0, 256, 512);
-  for (let k = 0; k < 900; k++) { const l = r() < 0.5; g.fillStyle = l ? `rgba(240,236,226,${0.05 + r() * 0.07})` : `rgba(70,66,58,${0.04 + r() * 0.06})`; g.fillRect(r() * 256, r() * 512, 2 + r() * 12, 6 + r() * 36); }
-  g.lineCap = 'round';
-  for (let k = 0; k < 44; k++) { const x0 = r() * 256, A = 3 + r() * 6, n = 1 + Math.floor(r() * 3), ph = r() * TAU; g.strokeStyle = `rgba(72,66,58,${0.3 + r() * 0.4})`; g.lineWidth = 1 + r() * 2.6;
-    const B = 2 + r() * 4, m = n + 1 + Math.floor(r() * 2), ph2 = r() * TAU, cuts = []; for (let q = 0; q < 3; q++) cuts.push([r() * 512, 20 + r() * 70]); // fissuras interrompidas
-    const X = y => x0 + A * Math.sin(y / 512 * TAU * n + ph) + B * Math.sin(y / 512 * TAU * m + ph2);
-    for (const off of [-256, 0, 256]) for (let y = 0; y < 512; y += 8) { if (cuts.some(([c, l]) => ((y - c + 512) % 512) < l)) continue; g.beginPath(); g.moveTo(X(y) + off, y); g.lineTo(X(y + 8) + off, y + 8); g.stroke(); } } // fissuras que emendam em cima/embaixo (textura sem costura)
-  for (let k = 0; k < 160; k++) { g.fillStyle = `rgba(64,58,52,${0.4 + r() * 0.3})`; g.fillRect(r() * 256, r() * 512, 5 + r() * 12, 1.6); }
-  for (let k = 0; k < 40; k++) { g.fillStyle = `rgba(110,140,90,${0.12 + r() * 0.12})`; g.beginPath(); g.ellipse(r() * 256, 380 + r() * 132, 8 + r() * 20, 4 + r() * 10, 0, 0, TAU); g.fill(); } // musgo perto do pé
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
-  t.repeat.set(7, 9); // UV do próprio torno: em volta (9×) e na altura (11×) — sem as emendas da projeção por faces
-  _bark = new THREE.MeshStandardMaterial({ map: t, roughness: 0.84 }); return _bark;
+// S-390: casca lisa e viva (nada de riscos): manchas suaves, sulcos largos em relevo (bump) e musgo — a mesma para as irmãs e o bosque
+let _barkTex = null;
+function barkTextures() {
+  if (_barkTex) return _barkTex;
+  const N = 512, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), r = rngOf(4441);
+  const wrap = (fn) => { for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) fn(ox, oy); };
+  g.fillStyle = '#b7b0a1'; g.fillRect(0, 0, N, N);
+  g.filter = 'blur(10px)';
+  for (let k = 0; k < 160; k++) { const x = r() * N, y = r() * N, rr = 30 + r() * 90, l = r() < 0.5; wrap((ox, oy) => { const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, rr); gr.addColorStop(0, l ? 'rgba(232,228,214,0.35)' : 'rgba(120,112,98,0.3)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x + ox - rr, y + oy - rr, rr * 2, rr * 2); }); }
+  g.filter = 'blur(4px)';
+  for (let k = 0; k < 26; k++) { const x0 = r() * N, w = 6 + r() * 14, A = 6 + r() * 10, ph = r() * TAU; g.fillStyle = `rgba(96,88,76,${0.18 + r() * 0.12})`; // sulcos largos e macios, que emendam
+    wrap((ox, oy) => { g.beginPath(); for (let y = 0; y <= N; y += 16) { const x = x0 + ox + A * Math.sin(y / N * TAU + ph); y ? g.lineTo(x - w / 2, y + oy) : g.moveTo(x - w / 2, y + oy); } for (let y = N; y >= 0; y -= 16) g.lineTo(x0 + ox + A * Math.sin(y / N * TAU + ph) + w / 2, y + oy); g.closePath(); g.fill(); }); }
+  g.filter = 'blur(6px)';
+  for (let k = 0; k < 30; k++) { const x = r() * N, y = r() * N; wrap((ox, oy) => { g.fillStyle = `rgba(104,138,84,${0.16 + r() * 0.12})`; g.beginPath(); g.ellipse(x + ox, y + oy, 14 + r() * 30, 8 + r() * 18, 0, 0, TAU); g.fill(); }); } // musgo
+  g.filter = 'none';
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = 4; map.repeat.set(5, 6);
+  return (_barkTex = { map });
 }
-let _barkTube = null;
-function barkTube() { // raízes e galhos: o tubo tem U ao longo do comprimento, então a textura gira 90° (fissuras correm ao longo da raiz)
-  if (_barkTube) return _barkTube; const b = silverBark(), t = b.map.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(3, 6);
-  return (_barkTube = new THREE.MeshStandardMaterial({ map: t, roughness: 0.84 }));
+let _bark = null, _barkTube = null;
+function silverBark() { if (_bark) return _bark; const { map } = barkTextures(); return (_bark = new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 4, roughness: 0.82 })); }
+function barkTube() { // raízes e galhos: U corre ao longo do tubo, então a textura gira 90°
+  if (_barkTube) return _barkTube; const t = barkTextures().map.clone(); t.needsUpdate = true; t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; t.repeat.set(2, 4);
+  return (_barkTube = new THREE.MeshStandardMaterial({ map: t, bumpMap: t, bumpScale: 4, roughness: 0.82 }));
 }
+// S-390: a Árvore-Mãe é uma "árvore da vida": trilhas de pontinhos de luz (bioluminescência) que correm pela casca e pulsam devagar,
+// calculadas no shader pela posição no mundo (sem riscos desenhados e sem repetição de textura)
+const GLOW_T = { value: 0 };
+function glowBark(base) {
+  const m = base.clone();
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uT = GLOW_T;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvGW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vGW; uniform float uT;
+float gh(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float gn(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(gh(i), gh(i + vec3(1,0,0)), f.x), mix(gh(i + vec3(0,1,0)), gh(i + vec3(1,1,0)), f.x), f.y), mix(mix(gh(i + vec3(0,0,1)), gh(i + vec3(1,0,1)), f.x), mix(gh(i + vec3(0,1,1)), gh(i + vec3(1,1,1)), f.x), f.y), f.z); }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+{ vec3 p = vGW; // nada de linhas: manchas de "sardas" de luz (pontinhos redondos agrupados), como um bicho bioluminescente
+  float cluster = smoothstep(0.42, 0.66, gn(p * vec3(0.32, 0.11, 0.32) + vec3(3.1, 0.0, 7.7)));
+  vec3 q = p * 2.2, ci = floor(q), cp = ci + 0.25 + 0.5 * vec3(gh(ci), gh(ci + 7.3), gh(ci + 3.1)); float rad = 0.1 + 0.16 * gh(ci + 1.7); // um ponto redondo por célula (nunca cortado pela borda)
+  float spot = step(0.3, gh(ci + 5.5)) * smoothstep(rad, rad * 0.35, length(q - cp));
+  float pulse = 0.7 + 0.3 * sin(uT * 1.1 + gn(p * 0.5) * 6.28);
+  vec3 col = mix(vec3(0.16, 0.85, 0.78), vec3(0.62, 0.42, 0.95), gn(p * 0.09));
+  totalEmissiveRadiance += col * cluster * spot * pulse * 1.4; }`);
+  };
+  m.customProgramCacheKey = () => 'aethraGlowBark' + (base === _barkTube ? 't' : 'l');
+  return m;
+}
+let _glowL = null, _glowR = null;
+const motherBark = () => _glowL || (_glowL = glowBark(silverBark()));
+const motherRoot = () => _glowR || (_glowR = glowBark(barkTube()));
+// filamentos de luz pendurados (como um salgueiro que brilha): fitas finas cruzadas, do verde-água (em cima) ao violeta (na ponta), balançando com o vento
+function glowStrands(list, seed) { // list = [[x, yTop, z, len]]
+  const rng = rngOf(seed), pos = [], col = [], hang = [], ph = [], idx = [], top = new THREE.Color('#3aa890'), tip = new THREE.Color('#b47ae0'), c = new THREE.Color();
+  for (const [x, y, z, len] of list) { const w = 0.07 + rng() * 0.05, seg = 24, p0 = rng() * TAU, ca = rng() * TAU, cr = 0.5 + rng() * 1.0, beads = 4 + Math.floor(rng() * 4);
+    for (const rot of [0, Math.PI / 2]) { const dx = Math.cos(rot), dz = Math.sin(rot), base = pos.length / 3;
+      for (let i = 0; i <= seg; i++) { const t = i / seg, yy = y - t * len, bend = Math.sin(t * Math.PI * 0.5) * cr; // cai em curva, não reta
+        const bead = Math.pow(Math.abs(Math.sin(t * Math.PI * beads)), 6), ww = w * (0.45 + 1.6 * bead) * (1 - t * 0.35); // contas de luz ao longo do filamento
+        c.copy(top).lerp(tip, Math.pow(t, 1.2)).multiplyScalar(0.45 + bead * 0.9 + t * 0.35);
+        for (const s of [-1, 1]) { pos.push(x + Math.cos(ca) * bend + s * dx * ww, yy, z + Math.sin(ca) * bend + s * dz * ww); col.push(c.r, c.g, c.b); hang.push(t); ph.push(p0); } }
+      for (let i = 0; i < seg; i++) { const a = base + i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute('aH', new THREE.Float32BufferAttribute(hang, 1)); g.setAttribute('aP', new THREE.Float32BufferAttribute(ph, 1)); g.setIndex(idx); g.computeBoundingSphere();
+  const m = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  m.onBeforeCompile = sh => { sh.uniforms.uT = GLOW_T; sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aH; attribute float aP; uniform float uT;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat k = aH * aH; transformed.x += (sin(uT * 0.8 + aP) * 0.45 + sin(uT * 1.9 + aP * 2.0) * 0.08) * k; transformed.z += cos(uT * 0.6 + aP * 1.3) * 0.38 * k;'); };
+  m.customProgramCacheKey = () => 'aethraStrands';
+  const mesh = new THREE.Mesh(g, m); mesh.frustumCulled = false; return mesh;
+}
+
 let _leaf = null;
 function leafMat() { // as folhas desenhadas dos carvalhos, aqui em verde-prata com pontas douradas (cor por vértice)
   if (_leaf) return _leaf;
@@ -107,7 +156,7 @@ function taperTube(curve, segs, r0, r1, radial = 12) {
 // galho: afina de "from" até "to", subindo em curva
 function branch(K, from, to, r0, r1, mat) {
   const mid = from.clone().lerp(to, 0.5); mid.y += from.distanceTo(to) * 0.12;
-  K.add(taperTube(new THREE.CatmullRomCurve3([from, mid, to]), 20, r0, r1, 12), mat === silverBark() ? barkTube() : mat);
+  K.add(taperTube(new THREE.CatmullRomCurve3([from, mid, to]), 20, r0, r1, 12), mat === silverBark() ? barkTube() : mat === motherBark() ? motherRoot() : mat);
 }
 // árvore gigante de casca prateada (as irmãs e as do bosque): tronco liso com sulcos, galhos e copa de folhas
 function giantTree(seed, H, R0, crownR) {
@@ -141,8 +190,8 @@ const BRIDGES = [ // árvores-irmãs (local), raio do tronco e raio da plataform
   { id: 'sudeste', x: 25, z: 18, tr: 3.1, R: 7.6, house: 'Casa do Bardo' },
 ];
 
-function motherTree(K, leafParts, r) {
-  const bark = silverBark(), H = 60;
+function motherTree(K, leafParts, r, strands) {
+  const bark = motherBark(), H = 60;
   const Rt = y => y < 27 ? 5.75 - y * 0.004 : Math.max(0.5, 5.65 - (y - 27) * 0.165);
   const prof = []; for (let k = 0; k <= 60; k++) { const y = k / 60 * H - 1; prof.push(new THREE.Vector2(Rt(Math.max(0, y)), y)); }
   const tr = new THREE.LatheGeometry(prof, 72), Pp = tr.attributes.position;
@@ -158,11 +207,8 @@ function motherTree(K, leafParts, r) {
   const roots = [];
   for (const deg of ROOT_DEG) { const a = deg * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
     const pts = [[5.4, 2.4], [8.5, 1.8], [11.5, 0.7], [14.5, -0.4], [16, -1.0]].map(([d, y]) => new THREE.Vector3(ca * d, y, sa * d));
-    K.add(taperTube(new THREE.CatmullRomCurve3(pts), 30, 1.35, 0.25, 14), barkTube()); roots.push(a);
-    for (const s of [-0.18, 0.18]) { const a2 = a + s, p2 = [[5.6, 1.2], [8, 0.5], [10.5, -0.5]].map(([d, y]) => new THREE.Vector3(Math.cos(a2) * d, y, Math.sin(a2) * d)); K.add(taperTube(new THREE.CatmullRomCurve3(p2), 16, 0.7, 0.15, 10), barkTube()); } }
-  // veias de luz subindo pelo tronco (as runas vivas de Sylvaren)
-  for (let v = 0; v < 6; v++) { const pts = []; for (let k = 0; k <= 40; k++) { const t = k / 40, y = 0.3 + t * 25, a = v / 6 * TAU + t * 1.6 + Math.sin(t * 9 + v) * 0.08; pts.push(new THREE.Vector3(Math.cos(a) * 6.28, y, Math.sin(a) * 6.28)); }
-    K.add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 80, 0.06, 5), P('vein', '#8affd8', { emissive: '#2affb8', ei: 0.9 })); }
+    K.add(taperTube(new THREE.CatmullRomCurve3(pts), 30, 1.35, 0.25, 14), motherRoot()); roots.push(a);
+    for (const s of [-0.18, 0.18]) { const a2 = a + s, p2 = [[5.6, 1.2], [8, 0.5], [10.5, -0.5]].map(([d, y]) => new THREE.Vector3(Math.cos(a2) * d, y, Math.sin(a2) * d)); K.add(taperTube(new THREE.CatmullRomCurve3(p2), 16, 0.7, 0.15, 10), motherRoot()); } }
   // porta da Árvore-Mãe (ao norte, entre as raízes): arco de luz e folhas de madeira entalhada
   { const a = DOOR_DEG * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), ry = Math.atan2(ca, sa);
     const sh = new THREE.Shape(); sh.moveTo(-1.2, 0); sh.lineTo(1.2, 0); sh.lineTo(1.2, 2.4); sh.quadraticCurveTo(1.2, 3.6, 0, 4.2); sh.quadraticCurveTo(-1.2, 3.6, -1.2, 2.4); sh.closePath();
@@ -175,6 +221,9 @@ function motherTree(K, leafParts, r) {
     branch(K, new THREE.Vector3(Math.cos(a) * 3.5, y0, Math.sin(a) * 3.5), new THREE.Vector3(Math.cos(a) * d, ty, Math.sin(a) * d), 1.5, 0.45, bark);
     clusters.push([Math.cos(a) * d, ty + 1.5, Math.sin(a) * d, 8 + r() * 2], [Math.cos(a) * d * 0.55, ty + 4, Math.sin(a) * d * 0.55, 7]); }
   leafParts.push(canopyGeo(777, clusters, 3.6, new THREE.Vector3(0, 46, 0)));
+  // S-390: cortinas de filamentos de luz pendendo da copa (nunca descem sobre os terraços nem sobre as pontes)
+  for (const [x, y, z, rr] of clusters) for (let k = 0; k < 16; k++) { const a = r() * TAU, d = Math.sqrt(r()) * rr * 0.9, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, top = y - rr * 0.3 - r() * 1.5, rad = Math.hypot(px, pz);
+    const minB = rad < 15 ? 27.5 : 15.5, len = Math.min(3 + r() * 7, top - minB); if (len > 1.5) strands.push([px, top, pz, len]); }
   // flores-lua penduradas sob a copa
   for (let k = 0; k < 28; k++) { const a = r() * TAU, d = 10 + r() * 14, y = 31 + r() * 6, len = 1.5 + r() * 3;
     K.cyl(0.015, 0.015, len, M.rope(), Math.cos(a) * d, y + len / 2, Math.sin(a) * d, 4); K.add(new THREE.SphereGeometry(0.22, 12, 8), M.moonGlow(), Math.cos(a) * d, y, Math.sin(a) * d, 0, 0, 0, 1, 1.4, 1); }
@@ -298,9 +347,11 @@ export function buildAelindra(ctx) {
   /* ===== Árvore-Mãe, rampa e terraços ===== */
   const [mx, mz] = W(MT.x, MT.z), Y0 = gY(MT.x, MT.z), ys = rampProfile();
   { const K = new Kit(), leaf = [];
-    const roots = motherTree(K, leaf, r);
+    const strands = [], roots = motherTree(K, leaf, r, strands);
     add(K.build(), 'arvore_mae', mx, mz, Y0, { far: 900 });
     const lg = new THREE.Group(); for (const L of leaf) lg.add(leafMesh(L)); add(lg, 'arvore_mae', mx, mz, Y0, { occ: false, far: 900 }); // a copa não bloqueia a câmera
+    add(glowStrands(strands, 99), 'arvore_mae', mx, mz, Y0, { occ: false, far: 900 });
+    const clock = new THREE.Object3D(); clock.userData.update = t => { GLOW_T.value = t; }; ctx.roomAnims.push(clock); // pulso da luz e balanço dos filamentos
     col(MT.x, MT.z, TR, { name: 'arvore_mae' });
     for (const a of roots) for (const d of [9, 11.5, 14]) col(MT.x + Math.cos(a) * d, MT.z + Math.sin(a) * d, 1.1, { name: 'raiz', y0: -50, y1: Y0 + 3.0 }); // só no chão: no terraço lá em cima não bloqueia
     for (let deg = 252; deg <= 375; deg += 12) { if (Math.abs(deg - DOOR_DEG) < 22) continue; const a = deg * Math.PI / 180; col(MT.x + Math.cos(a) * 7.4, MT.z + Math.sin(a) * 7.4, 1.25, { name: 'arvore_mae', y0: -50, y1: Y0 + 3.0 }); } } // contrafortes da base (só no chão: quem está na rampa passa por cima)
@@ -381,10 +432,10 @@ export function buildAelindra(ctx) {
     col(FW.x, FW.z, 4.9, { name: 'fonte_da_lua' }); }
   // caminho de pedra clara: portal → fonte → pé da rampa (contorna a fonte pelo leste)
   { const K = new Kit(), mb = M.marble(), path = [[0, 46], [0, 36], [0, 28], [5.5, 12], [6.5, 6], [3.5, 2.6]];
-    const curve = new THREE.CatmullRomCurve3(path.map(([x, z]) => new THREE.Vector3(x, 0, z))), by = gY(0, 28);
+    const curve = new THREE.CatmullRomCurve3(path.map(([x, z]) => new THREE.Vector3(x, 0, z))), by = gY(0, 0); // S-389: o grupo fica no centro da cidade (as pedras estão em coordenadas da cidade)
     for (let k = 0; k <= 70; k++) { const p = curve.getPoint(k / 70); if (Math.hypot(p.x - FW.x, p.z - FW.z) < 8.6) continue; const s = 0.7 + r() * 0.5;
       K.add(new THREE.CylinderGeometry(s, s * 1.05, 0.12, 9), mb, p.x + (r() - 0.5) * 1.6, gY(p.x, p.z) - by + 0.02, p.z + (r() - 0.5) * 0.6, r() * 3); }
-    const [px, pz] = W(0, 28); add(K.build(), 'calcada_elfica', px, pz, by, { occ: false }); }
+    const [px, pz] = W(0, 0); add(K.build(), 'calcada_elfica', px, pz, by, { occ: false }); }
   // Portal das Raízes: dois troncos prateados que nascem das raízes e se entrelaçam numa ogiva, com folhas e lanternas
   { const K = new Kit(), bark = silverBark(), gz = 44, by = gY(0, gz);
     for (const sx of [-1, 1]) { branch(K, new THREE.Vector3(sx * 4.6, -0.6, 0), new THREE.Vector3(sx * 4.2, 7.5, 0), 0.75, 0.5, bark);
@@ -399,11 +450,11 @@ export function buildAelindra(ctx) {
     for (const sx of [-1, 1]) col(sx * 4.6, gz, 0.9, { name: 'portal_elfico' });
     for (const sx of [-1, 1]) { const b = makeBanner('elfo', 1.1, 3.0); b.position.set(gx + sx * 4.2, by + 7.2, gz2 + 0.75); ctx.scene.add(b); } }
   // pedras-lua com runas ao longo do caminho
-  { const K = new Kit(), by = gY(0, 33);
+  { const K = new Kit(), by = gY(0, 0); // S-388: antes o grupo ia para z+33 e as pedras apareciam longe da colisão
     for (const [x, z, h] of [[-3.6, 40, 2.6], [3.6, 40, 2.4], [-3.4, 33, 2.2], [3.4, 33, 2.5], [-3.2, 27, 2.0], [3.2, 27, 2.1]]) {
       const g = new THREE.CylinderGeometry(0.32, 0.45, h, 12, 4); const Pp = g.attributes.position; for (let i = 0; i < Pp.count; i++) { const y = Pp.getY(i); if (y > h / 2 - 0.01) Pp.setY(i, y + 0.25 * (1 - Math.abs(Pp.getX(i)) / 0.32)); } g.computeVertexNormals();
       K.add(g, runeMat(), x, gY(x, z) - by + h / 2 - 0.1, z, x > 0 ? -Math.PI / 2 : Math.PI / 2); col(x, z, 0.5, { name: 'pedra_lua' }); }
-    const [px, pz] = W(0, 33); add(K.build(), 'pedra_lua', px, pz, by, { occ: false }); }
+    const [px, pz] = W(0, 0); add(K.build(), 'pedra_lua', px, pz, by, { occ: false }); }
   // casas-folha no chão
   for (const [i, [dx, dz]] of HOUSES.entries()) {
     const { K, box } = leafHouse(70 + i), ry = Math.atan2(-dx, -dz) - Math.PI / 2; // a porta (no +x da casa) olha para a Árvore-Mãe

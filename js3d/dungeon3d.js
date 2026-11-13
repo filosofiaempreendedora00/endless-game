@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 import { vlight } from './lights3d.js';
+import { realFlame } from './castle3d.js'; // S-384: chama de verdade nas tochas (camadas que tremulam + brasas)
 
 export const CELL = 8, GRID = 8, WALL_T = 1.3, WALL_H = 6;
 export const FLOOR_IDS = ['catacumbas', 'catacumbas2', 'catacumbas3', 'catacumbas4'];
@@ -169,8 +170,6 @@ export function buildCatacombs(ctx) {
   const ceilM = new THREE.MeshStandardMaterial({ map: T.wall, bumpMap: T.wallB, bumpScale: 2, roughness: 1, color: '#6a6258' });
   const boneM = new THREE.MeshStandardMaterial({ color: '#d8ccae', roughness: 0.85 }), ironM = new THREE.MeshStandardMaterial({ color: '#2a2622', metalness: 0.7, roughness: 0.55 }), woodM = new THREE.MeshStandardMaterial({ color: '#4a3120', roughness: 0.9 });
   const webM = new THREE.MeshBasicMaterial({ map: T.web, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: true });
-  const flameMats = [['#ff4a10', 0.42], ['#ff9a30', 0.7], ['#fff2b0', 0.95]].map(([c, o]) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false }));
-  const flameGeo = [new THREE.SphereGeometry(0.17, 10, 8), new THREE.SphereGeometry(0.12, 10, 8), new THREE.SphereGeometry(0.065, 8, 6)];
   const parent = new THREE.Group(); parent.name = 'catacumbas'; scene.add(parent);
 
   FLOOR_IDS.forEach((id, i) => {
@@ -187,7 +186,7 @@ export function buildCatacombs(ctx) {
       if (r < GRID - 1 && maze.s[r][c]) addWall(cx(c), Z - half + (r + 1) * CELL, CELL + WALL_T, WALL_T);
     }
     // pilares nos cruzamentos (escondem as emendas e dão ritmo de cripta)
-    for (let r = 1; r < GRID; r++) for (let c = 1; c < GRID; c++) { if (r <= maze.bossRows) continue; if (!(maze.e[r - 1][c - 1] || maze.e[r][c - 1] || maze.s[r - 1][c - 1] || maze.s[r - 1][c])) continue; const x = X - half + c * CELL, z = Z - half + r * CELL; wallGeo[quad(x, z)].push(strip(boxM(WALL_T + 0.5, H, WALL_T + 0.5, x, H / 2, z))); wallGeo[quad(x, z)].push(strip(boxM(WALL_T + 0.8, 0.5, WALL_T + 0.8, x, 0.25, z))); }
+    for (let r = 1; r < GRID; r++) for (let c = 1; c < GRID; c++) { if (r <= maze.bossRows) continue; if (!(maze.e[r - 1][c - 1] || maze.e[r][c - 1] || maze.s[r - 1][c - 1] || maze.s[r - 1][c])) continue; const x = X - half + c * CELL, z = Z - half + r * CELL; wallGeo[quad(x, z)].push(strip(boxM(WALL_T + 0.5, H, WALL_T + 0.5, x, H / 2, z))); colliders.push({ x, z, r: (WALL_T + 0.5) / 2, box: true, hx: (WALL_T + 0.5) / 2 + 0.03, hz: (WALL_T + 0.5) / 2 + 0.03, rot: 0, name: 'catacumba' }); /* S-384: o pilar é mais largo que a parede e não tinha colisão (dava para entrar nele) */ wallGeo[quad(x, z)].push(strip(boxM(WALL_T + 0.8, 0.5, WALL_T + 0.8, x, 0.25, z))); }
     // salão do chefe (4º andar): colunas grossas e o altar com runas
     if (maze.bossRows) {
       for (const c of [1, 3, 4, 6]) for (const r of [0.6, 2.2]) { const x = X - half + (c + 0.5) * CELL, z = Z - half + r * CELL; const col = new THREE.CylinderGeometry(0.9, 1.05, H, 20, 1); col.translate(x, H / 2, z); wallGeo[quad(x, z)].push(strip(col)); colliders.push({ x, z, r: 1.05 }); }
@@ -228,12 +227,12 @@ export function buildCatacombs(ctx) {
       const walls = [c === GRID - 1 || maze.e[r][c], c === 0 || maze.e[r][c - 1], r === GRID - 1 || maze.s[r][c], r === 0 || maze.s[r - 1][c]].filter(Boolean).length;
       const x = cx(c), z = cz(r), isEntry = r === GRID - 1 && (c === 3 || c === 4), isDown = r === best[0] && c === best[1];
       if (isEntry || isDown) continue;
-      if (walls >= 3 && rng() < 0.7) { sarcophagus(x + (rng() - 0.5) * 1.5, z + (rng() - 0.5) * 1.5, rng() < 0.5 ? 0 : Math.PI / 2, geoStone); colliders.push({ x, z, r: 1.4 }); }
+      if (walls >= 3 && rng() < 0.7) { const sx2 = x + (rng() - 0.5) * 1.5, sz2 = z + (rng() - 0.5) * 1.5, sr = rng() < 0.5 ? 0 : Math.PI / 2; sarcophagus(sx2, sz2, sr, geoStone); colliders.push({ x: sx2, z: sz2, r: 1.4, box: true, hx: 0.75, hz: 1.37, rot: sr, name: 'sarcofago' }); } // S-384: colisão no lugar e no tamanho do sarcófago
       else if (rng() < 0.35) { const g = []; bonePile(rng, g); const m = new THREE.Matrix4().setPosition(x + (rng() - 0.5) * 4, 0, z + (rng() - 0.5) * 4); for (const q of g) { q.applyMatrix4(m); geoBone.push(q); } }
-      else if (rng() < 0.12) { brokenPillar(rng, x + (rng() - 0.5) * 2, z + (rng() - 0.5) * 2, geoStone); colliders.push({ x, z, r: 0.8 }); }
+      else if (rng() < 0.12) { const bx2 = x + (rng() - 0.5) * 2, bz2 = z + (rng() - 0.5) * 2; brokenPillar(rng, bx2, bz2, geoStone); colliders.push({ x: bx2, z: bz2, r: 0.8, name: 'pilar_quebrado' }); }
       if (rng() < 0.3) { const web = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), webM); const sx = rng() < 0.5 ? -1 : 1, sz = rng() < 0.5 ? -1 : 1; web.position.set(x + sx * (CELL / 2 - WALL_T / 2 - 0.05), H - 1.1, z + sz * (CELL / 2 - WALL_T / 2 - 0.6)); web.rotation.set(0, sx > 0 ? -Math.PI / 2 : Math.PI / 2, sx * sz > 0 ? Math.PI : -Math.PI / 2); group.add(web); }
     }
-    for (const [r, c] of maze.rooms) { const x = X - half + (c + 1) * CELL, z = Z - half + (r + 1) * CELL; sarcophagus(x - 2, z - 2, 0, geoStone); sarcophagus(x + 2, z + 2, 0, geoStone); colliders.push({ x: x - 2, z: z - 2, r: 1.4 }, { x: x + 2, z: z + 2, r: 1.4 }); }
+    for (const [r, c] of maze.rooms) { const x = X - half + (c + 1) * CELL, z = Z - half + (r + 1) * CELL; sarcophagus(x - 2, z - 2, 0, geoStone); sarcophagus(x + 2, z + 2, 0, geoStone); colliders.push({ x: x - 2, z: z - 2, r: 1.4, box: true, hx: 0.75, hz: 1.37, rot: 0, name: 'sarcofago' }, { x: x + 2, z: z + 2, r: 1.4, box: true, hx: 0.75, hz: 1.37, rot: 0, name: 'sarcofago' }); }
     // entrada (sul): 1º andar = portão imponente para fora; outros = escada que sobe
     const ex = X, ez = Z + half;
     if (n === 1) {
@@ -257,16 +256,9 @@ export function buildCatacombs(ctx) {
       for (let k = 0; k < 5; k++) { const st = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.12), new THREE.MeshBasicMaterial({ color: new THREE.Color('#8a7c66').multiplyScalar(1 - k * 0.19) })); st.rotation.x = -Math.PI / 2; st.position.set(dx, 0.04, dz + 1.5 - k * 0.62); group.add(st); } // bordas dos degraus sumindo no escuro
     }
     // chamas: 3 camadas em InstancedMesh (uma chamada por camada), tremulam sozinhas
-    const inst = flameGeo.map((g, k) => { const im = new THREE.InstancedMesh(g, flameMats[k], flames.length); im.frustumCulled = false; group.add(im); return im; });
-    const dummy = new THREE.Object3D();
-    group.userData.update = t => {
-      if (!group.visible) return;
-      flames.forEach((f, j) => {
-        const fl1 = Math.sin(t * 13 + f.seed) * 0.12 + Math.sin(t * 23 + f.seed * 2) * 0.07;
-        for (let k = 0; k < 3; k++) { dummy.position.set(f.p.x + Math.sin(t * 7 + f.seed + k) * 0.012, f.p.y + (0.11 + k * -0.02 + fl1 * 0.05) * (f.big ? 3.2 : 1), f.p.z); const bs = f.big ? 3.2 : 1; dummy.scale.set((1 + fl1 * 0.3) * bs, (2.4 - k * 0.2) * (1 + fl1) * bs, (1 + fl1 * 0.3) * bs); dummy.rotation.set(0, 0, Math.sin(t * 5 + f.seed) * 0.1); dummy.updateMatrix(); inst[k].setMatrixAt(j, dummy.matrix); }
-      });
-      for (const im of inst) im.instanceMatrix.needsUpdate = true;
-    };
+    // S-384: chamas de verdade (as mesmas do castelo: línguas de fogo em camadas que tremulam e brasas subindo) no lugar das bolinhas
+    const live = flames.map(f => { const fl = realFlame(f.big ? 1.3 : 0.42, f.seed, true); fl.position.set(f.p.x, f.p.y + (f.big ? 0.05 : 0.02), f.p.z); group.add(fl); return fl; });
+    group.userData.update = t => { if (!group.visible) return; for (const fl of live) fl.userData.update(t); };
     roomAnims.push(group);
     // malhas mescladas
     const add = (list, m, occ, cast = true) => { if (!list.length) return null; const mesh = new THREE.Mesh(mergeGeometries(list), m); mesh.castShadow = cast; mesh.receiveShadow = true; group.add(mesh); if (occ) occluders.push(mesh); return mesh; };

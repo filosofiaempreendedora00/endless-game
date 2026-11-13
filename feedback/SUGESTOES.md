@@ -2,11 +2,81 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (0)
+## Pendentes (12)
 
-_Nenhuma._
+### S-392 · Área do mapa: Área da tela (1028×275 px) (sobre: Painel de status)
+- **Status:** pendente · **Quando:** 2026-11-12T23:44:12 · **Mapa:** Grande Areal (tile [-51, 458])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Essa água está claramente bem bugada
+- ![print](img/S-392.png)
 
-## Feitas (382)
+### S-393 · Área do mapa: Área da tela (589×139 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:46:28 · **Mapa:** Pedrafunda (tile [-288, -272])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Todos esses fogos de fogueira ficaram bastante esquisitos
+- ![print](img/S-393.png)
+
+### S-394 · Área do mapa: Área da tela (108×133 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:50:34 · **Mapa:** Pedrafunda (tile [-272, -299])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Aqui tá dando vários bugs esquisitos nessas luzes
+- ![print](img/S-394.png)
+
+### S-395 · Área do mapa: Área da tela (423×371 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:50:59 · **Mapa:** Pedrafunda (tile [-288, -288])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu gosto do fato de ter dia e noite nesse jogo porém eu senti que a noite ficou excessivamente escura eu gostaria que ela fosse um pouco mais clara talvez iluminada pela lua de alguma forma com que ficasse mais visível durante a noite
+- ![print](img/S-395.png)
+
+### S-396 · Área do mapa: Área da tela (153×109 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:53:13 · **Mapa:** Vila de Alvorada (tile [785, -11])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu sinto que o pelo do Lobo melhorou como consideravelmente Mas além dos dedos serem bolotas muito esquisitas e não realistas você pode perceber como que esse lobo tá com uma puta de uma cara de bunda e eu preciso que você se inspire em um lobo de verdade de uma vez por todas eu preciso que você olhe no rosto de um dire wolf la do GoT de uma vez e resolva esse meu problema
+- ![print](img/S-396.png)
+
+### S-397 · Área do mapa: Área da tela (100×227 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:54:12 · **Mapa:** Vila de Alvorada (tile [786, 0])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Repare como a questão do arco ainda está bem bugado aqui no ministério eu vou conferir ainda nas outras classes mais aqui a gente já percebe que está bugado E eu chamei de Menestrel mas na verdade é bardo
+- ![print](img/S-397.png)
+
+### S-398 · Área do mapa: Área da tela (208×125 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:54:58 · **Mapa:** Vila de Alvorada (tile [816, 2])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Que barbinha esquisita da porra hein toda bugada
+- ![print](img/S-398.png)
+
+### S-399 · Área do mapa: Área da tela (91×45 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:56:44 · **Mapa:** Vila de Alvorada (tile [790, 10])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Essa parte do ombro melhorou em relação ao que era e principalmente a roupa como um todo está infinitamente melhor porém algumas coisas ainda me incomodam uma delas é o fato desta cinta Ou melhor essa fivela do cinto ela não está centralizada e isso já me incomoda e principalmente em relação ao encaixe deste treco no ombro pois eu não gostaria que houvesse espaço entre as duas partes que aparentam ser de Armadura e eu gostaria de deixar claro para torná-las mais imponentes e menos com a aparência de pedaços aleatórios de alumínio pois eu sei que é totalmente possível trabalhar algo no ombro mais interessante e que chame muito mais a atenção do que esse pedaço de latão fodido
+- ![print](img/S-399.png)
+
+### S-400 · Área do mapa: Área da tela (164×153 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:57:10 · **Mapa:** Vila de Alvorada (tile [785, 4])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Mais um exemplo de como a posição do arqueiro ainda está bem deficiente em relação à realidade
+- ![print](img/S-400.png)
+
+### S-401 · Área do mapa: Área da tela (410×186 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:58:34 · **Mapa:** Vila de Alvorada (tile [807, -9])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Em relação às vestes das evoluções do Mago eu achei interessantes porém esta roupa azul do Mago não me caiu nem um pouco bem Eu gostaria assim que fosse vestes mas simples do que das evoluções Porém esse azul não pegou nada bem então gostaria que mudasse não apenas o azul mas também desse uma melhorada nessas vestes e aproveitando eu percebi que o cajado do Mago não chega ao chão e eu acho importante que os cajados de todas as classes de mago chegassem até o chão
+- ![print](img/S-401.png)
+
+### S-402 · Área do mapa: Área da tela (173×24 px)
+- **Status:** pendente · **Quando:** 2026-11-12T23:59:25 · **Mapa:** Vila de Alvorada (tile [-70, 28])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Já melhoramos infinitamente a roupa do Paladino frente ao que era porém agora talvez esse seja o único ponto que me incomoda que é a parte de cima desta capa que se conecta à armadura eu gostaria basicamente que ela se conectasse de um modo que não fosse tão parecido com uma cortina
+- ![print](img/S-402.png)
+
+### S-403 · Área do mapa: Área da tela (371×477 px)
+- **Status:** pendente · **Quando:** 2026-11-13T00:02:24 · **Mapa:** Vila de Alvorada (tile [-69, 31])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Duas coisas me incomodaram nos ataques do Paladino e eu gostaria que você conferisse as outras classes para que esse problemas também não ocorram o primeiro dos problemas é o fato de que este meu Paladino está dando socos no inimigo sendo que ele tem uma espada na mão Então nesse caso eu gostaria de colocar uma regra para que quando tivesse uma espada equipada apenas fossem desferidos golpes que usam essa espada e não a mão vazia Esta é a primeira indagação e outra coisa que me incomodou muito foi o fato de a classe paladino ter chegado tão extremamente próxima ao alvo mesmo que a classe pudesse atacar o inimigo a um Range razoável já que a espada tem uma certa dimensão e contribui para que os ataques fossem feitos de um Range um pouco maior Ou seja eu não quero que classes que tenham uma espada com tamanho parecido fica então absolutamente grudados aos alvos quando eu apertar o botão esquerdo e mirar em um inimigo
+- ![print](img/S-403.png)
+
+## Feitas (391)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2722,3 +2792,66 @@ Também ficou mais leve: com 6 lobos perto, o quadro passou de 25 ms para ~19 ms
 - Mago: lã azul-ardósia com barra crua, estrela do aprendiz nas costas, capuz caído, cinto com bolsa e porta-pergaminhos.
 - Arquimago: túnica de veludo violeta com sobretúnica azul-meia-noite debruada de ouro, runas, sigilo arcano nas costas, gola alta, ombreiras finas de prata com gema e faixa com medalhão.
 - Sábio Elemental: lã terrosa com escapulário cor de areia, os 4 elementos bordados no peito, a rosa dos elementos nas costas e um cordão dourado com borlas.
+
+### S-383 · Área do mapa: Área da tela (300×352 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:31:00 · **Mapa:** Ruínas de Kael (tile [-5, -71])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Eu reparei que em alguns Monstros Principalmente nos Boss quando eles são atacados o tamanho deles começa a crescer e crescer e crescer isso é muito estranho e eu não quero que aconteça
+- ![print](img/S-383.png)
+- **Resposta do Claude:** Corrigido: ao apanhar, o monstro dá um 'pulinho' de 15% e volta ao tamanho ORIGINAL. Antes, dois golpes em menos de 0,08 s (você + mascote, golpe duplo, habilidade) faziam ele voltar ao tamanho já aumentado, e os chefes cresciam sem parar. Vale para todos os monstros.
+
+### S-384 · Área do mapa: Área da tela (220×333 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:33:29 · **Mapa:** Ruínas dos Colossos (tile [1506, 28])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Essa parede Aparentemente está oca porque o meu personagem está conseguindo entrar nela e na outra parede que também está oca do lado preciso que você corrija isso bem como verifica se dentro dessa Dungeon também existe bugs parecidos e também gostaria de que essa chama ou seja este fogo tivéssemos resolução melhor
+- ![print](img/S-384.png)
+- **Resposta do Claude:** As paredes ocas eram os pilares dos cruzamentos: mais largos que a parede e sem colisão. Agora todos os pilares dos 4 andares bloqueiam, e sarcófagos e colunas quebradas têm colisão no lugar e no tamanho certos (antes ficavam deslocados). As tochas da masmorra ganharam chama de verdade, com línguas de fogo que tremulam e brasas subindo.
+
+### S-385 · Área do mapa: Área da tela (277×122 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:35:11 · **Mapa:** Ruínas dos Colossos (tile [-149, -257])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse print não reflete a minha sugestão então foque na minha sugestão eu quero que o curso não apenas mexe levemente na câmera e sim a posição dele indique de fato Onde eu estou querendo enxergar Então eu preciso que a câmera acompanhe absolutamente o cursor e não de uma forma Sutil eu não sei se você compreendeu o que eu quero dizer mas eu preciso garantir que onde o meu mouse for a câmera mude por completo como se fosse um jogo de FPS mesmo
+- ![print](img/S-385.png)
+- **Resposta do Claude:** Novo modo de câmera 'Total (como FPS)', agora o padrão: o mouse gira a câmera por completo (100 px ≈ 14°), o cursor encostado na borda da tela continua girando e, andando, o personagem vai para onde a câmera olha (A/D andam de lado). Dá para voltar aos modos antigos em Esc → Configurações → Câmera no cursor.
+
+### S-386 · Área do mapa: Área da tela (198×239 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:35:54 · **Mapa:** Ruínas dos Colossos (tile [1, -382])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Não pode e não deve ter essa árvore de Natal aqui
+- ![print](img/S-386.png)
+- **Resposta do Claude:** O pinheiro saiu da frente do Santuário Silente e nenhuma árvore nasce mais a menos de 44 m dele, em nenhuma região.
+
+### S-387 · Área do mapa: Área da tela (240×268 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:36:58 · **Mapa:** Savana Dourada (tile [478, 143])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esse tipo de árvore tão perto da areia da praia não tem muita lógica os coqueiros tem mais lógica mas mesmo assim percebi que eles estão excessivamente perto da água e isso também é totalmente esquisito é claro que pode haver vegetações por aqui mas não dessa natureza
+- ![print](img/S-387.png)
+- **Resposta do Claude:** Árvores de folha não nascem mais na faixa de areia (no mínimo 32 m da água, em todas as praias), e os coqueiros ficam a pelo menos 12 m da beira, na Costa Turquesa e no porto.
+
+### S-388 · Área do mapa: Área da tela (78×154 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:38:12 · **Mapa:** Aelindra (tile [286, -251])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Esses objetos Seria interessante se eu não conseguisse atravessá-los ou seja existe uma física ali
+- ![print](img/S-388.png)
+- **Resposta do Claude:** As pedras-lua estavam desenhadas ~30 m fora do lugar da colisão (por isso dava para atravessar). Agora estão no caminho, dentro do portal, e bloqueiam.
+
+### S-389 · Área do mapa: Área da tela (418×313 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:39:19 · **Mapa:** Aelindra (tile [286, -213])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Este piso está flutuando aqui e obviamente isso é um bug
+- ![print](img/S-389.png)
+- **Resposta do Claude:** Era o caminho de pedra clara, desenhado fora do lugar e boiando fora do portal. Agora fica no chão, ligando o portal à Fonte da Lua e ao pé da rampa.
+
+### S-390 · Área do mapa: Área da tela (769×323 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:41:18 · **Mapa:** Aelindra (tile [286, -290])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Dá para melhorar bastante o gráfico dessa árvore pois quero que ela tem uma pegada de árvore da vida inspirada no filme Avatar e não essa árvore totalmente riscada e esquisita
+- ![print](img/S-390.png)
+- **Resposta do Claude:** Sylvaren virou uma 'árvore da vida': casca lisa com relevo (sem os riscos), pontinhos de luz bioluminescentes que pulsam devagar e cortinas de filamentos luminosos, do verde-água ao violeta, com contas de luz, pendendo da copa e balançando ao vento (lindos à noite). As árvores-irmãs e o bosque ganharam a casca nova também.
+
+### S-391 · Área do mapa: Área da tela (166×104 px)
+- **Status:** feito · **Quando:** 2026-11-12T23:43:28 · **Mapa:** Ermos Além da Muralha (tile [-472, -536])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** A forma como esse Astro está se movendo está muito truncada e não gradativa e está muito feio esteticamente
+- ![print](img/S-391.png)
+- **Resposta do Claude:** Sol e lua agora andam a cada quadro, de forma contínua (antes davam um pulinho a cada minuto do jogo), e a luz passa do sol para a lua aos poucos no crepúsculo. Também acabou o salto da lua de um lado do céu para o outro às 18h54.
