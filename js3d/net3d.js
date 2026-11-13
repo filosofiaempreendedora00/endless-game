@@ -72,11 +72,12 @@ function myState() {
     id: myId(), since: Math.max(0, N.since), name: p.name, cls: p.cls, look: p.look, baseLv: p.baseLv,
     hat: C.hatOf(p), wpn: C.wpnOf(p), off: C.offOf(p), skin: p.cosmetics && p.cosmetics.skin || null,
     riding: S.riding && p.mount ? p.mount.kind : null,
-    x: +S.pos.x.toFixed(2), y: +((S.pos.y || 0) + (S.swimOff || 0)).toFixed(2), z: +S.pos.z.toFixed(2), yaw: +(me ? me.obj.rotation.y : S.pos.yaw).toFixed(3),
+    x: +S.pos.x.toFixed(2), y: +((S.pos.y || 0) + (S.swimOff || 0)).toFixed(2), z: +S.pos.z.toFixed(2), yaw: +(me ? me.obj.rotation.y - (me.root && me.root.userData.bowState ? (me._bowTwist || 0) : 0) : S.pos.yaw).toFixed(3), // arqueiro: manda a direção da MIRA (o giro de lado quem vê refaz)
     anim: me && me.anim ? me.anim.name : 'Idle', moving: sp > 0.3, speed: +sp.toFixed(2), sit: !!S.sitting, dead: !!p.dead,
     room: S.arena ? 'arena' : S.interior ? S.interior.id : null, hp: p.hp, maxHp: p.d ? p.d.maxHp : p.hp, sp: p.sp, maxSp: p.d ? p.d.maxSp : p.sp, jobLv: p.jobLv, // sp/jobLv: quadro do grupo (P-026)
     atk: (S.atkN || 0) + (S.katN || 0), clip: me && me.anim ? me.anim.name : null,
     sfx: S.skillFx || null, // P-016: última habilidade lançada (os outros jogadores mostram o mesmo efeito)
+    bow: C.bowNetState ? C.bowNetState(me) : null, // S-397/S-400: pose do arco (os outros montam a mesma puxada)
     comp: S.comp ? S.comp.state() : null, // S-325: lobo gigante do Caçador (os outros jogadores desenham pelo que chega aqui)
   };
 }
@@ -176,12 +177,14 @@ export function updateNet(dt) {
     } else { R.ch.obj.position.set(q.x, q.y, q.z); R.ch.obj.rotation.y = q.yaw; }
     // animação: golpe novo toca uma vez; o resto segue o estado mandado
     const a = R.ch.anim;
+    const archer = !!(R.ch.root.userData.bowState && o.bow); if (archer && R.pendingAtk && /Shoot/.test(R.pendingAtk)) R.pendingAtk = null; // arqueiro: o tiro é a pose do arco (nada de clipe de pistola)
     if (R.pendingAtk) { a.play(R.pendingAtk, { once: true, restart: true, fade: 0.06, speed: 1.4 }); R.anim = R.pendingAtk; R.atkUntil = now + 0.45; R.pendingAtk = null; }
     else if (!(R.atkUntil > now)) {
       const want = R.mt ? 'Sit_Chair_Idle' : o.dead ? 'Death_A' : o.anim && !ATTACK_RE.test(o.anim) ? o.anim : o.moving ? 'Running_A' : 'Idle';
       if (R.anim !== want) { a.play(want, want === 'Death_A' ? { once: true, fade: 0.15 } : want === 'Walking_Backwards' ? { speed: -1.05, fade: 0.2 } : { fade: 0.2 }); R.anim = want; }
     }
     a.update(dt); if (R.fx) R.fx(S.time);
+    if (archer && !R.mt && C.remoteBow) C.remoteBow(R.ch, o.bow, !!o.moving, q.yaw, dt);
     // S-325: o lobo gigante de outro Caçador (só desenha; quem decide onde ele está é o dono)
     if (o.comp && o.comp.kind === 'direwolf' && C.remoteCompanion) { if (!R.comp) R.comp = C.remoteCompanion(C.scene); R.comp.set(o.comp, C.groundAt); R.comp.obj.visible = true; R.comp.update(dt, S.time); }
     else if (R.comp) { R.comp.dispose(); R.comp = null; }

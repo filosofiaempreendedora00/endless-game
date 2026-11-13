@@ -9,6 +9,10 @@ import * as THREE from 'three';
 import { gripHand } from './looks3d.js';
 
 const UP = new THREE.Vector3(0, 1, 0), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
+/* S-397/S-400: passo EXATO de mola criticamente amortecida (forma fechada). A integração de Euler usada antes só é estável se
+   dt·2√k < 1: com k = 420–700 isso exige mais de ~50 FPS — a 30 FPS (ou num engasgo no PvP) a mola explodia e jogava a mão da
+   corda para trás da cabeça. Esta forma é estável para QUALQUER dt e chega no alvo sem passar do ponto. */
+function cdStep(x, v, target, k, dt) { const w = Math.sqrt(k), y = x - target, e = Math.exp(-w * dt), t = (v + w * y) * dt; return [target + (y + t) * e, (v - w * t) * e]; }
 function setWorldQuat(b, wq) { b.parent.updateWorldMatrix(true, false); b.quaternion.copy(b.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(wq)); b.updateWorldMatrix(false, true); }
 function rotBoneTo(b, from, to) { _q.setFromUnitVectors(from.clone().normalize(), to.clone().normalize()); b.getWorldQuaternion(_q2); _q2.premultiply(_q); setWorldQuat(b, _q2.clone()); }
 function yawBone(b, ang) { if (!b || Math.abs(ang) < 1e-3) return; b.getWorldQuaternion(_q2); _q.setFromAxisAngle(UP, ang); _q2.premultiply(_q); setWorldQuat(b, _q2.clone()); }
@@ -144,7 +148,7 @@ export function bowPose(me, o, ctx) {
   // começam devagar, aceleram e chegam sem tranco (a suavização exponencial antiga dava o "estalo" ao sair da mira)
   const bdt = o.dt != null ? Math.min(0.1, o.dt) : Math.min(0.1, Math.max(0, performance.now() / 1000 - (me._bt ?? performance.now() / 1000))); me._bt = performance.now() / 1000;
   const now = (me._clk = (me._clk ?? 0) + bdt);
-  const spring = (key, target, k) => { if (me[key] === undefined) { me[key] = target; me[key + 'V'] = 0; } const v = me[key + 'V'] + ((target - me[key]) * k - 2 * Math.sqrt(k) * me[key + 'V']) * bdt; me[key + 'V'] = v; me[key] += v * bdt; return me[key]; };
+  const spring = (key, target, k) => { if (me[key] === undefined) { me[key] = target; me[key + 'V'] = 0; } const [x, v] = cdStep(me[key], me[key + 'V'], target, k, bdt); me[key] = x; me[key + 'V'] = v; return x; }; // S-397/S-400: mola exata (estável em qualquer FPS)
   const Aeff = Math.max(0, Math.min(1, spring('_bpA', o.aim, o.aim > (me._bpA ?? 0) ? 220 : 26))); // S-354: ergue o arco bem rápido (antes, a puxada acontecia com o arco ainda subindo e a mão ficava no peito) // entra na mira rápido, sai macio
   const Weff = Math.max(0, Math.min(1, spring('_bpW', o.w < (me._bpW ?? 0) && Aeff > 0.18 ? (me._bpW ?? 1) : o.w, o.w > (me._bpW ?? 0) ? 70 : 18))); // só solta o braço depois de baixar a mira
   r.userData.bowState(Weff > 0.02 ? 'hand' : 'back');
@@ -154,8 +158,11 @@ export function bowPose(me, o, ctx) {
   if (!sl || !el || !hl || !sr || !er || !hr || !hd) return;
   gripHand(r, 'l', 'punho'); // P-013: mão do arco fechada em volta da empunhadura (encosta no cabo registrado)
   gripHand(r, 'r', 'corda'); // P-013: dedos da corda em gancho
-  const W = Weff, A = Aeff, tw = o.twist || 0, fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
+  const W = Weff, A = Aeff, spin = o.spine || 0, tw = (o.twist || 0) + spin, fwd = new THREE.Vector3(Math.sin(o.yaw), 0, Math.cos(o.yaw)), right = new THREE.Vector3(-Math.cos(o.yaw), 0, Math.sin(o.yaw));
   r.updateWorldMatrix(true, true);
+  // S-397/S-400 (como no Skyrim): andando e mirando, as pernas seguem o passo e só o TRONCO fica de lado para o alvo (giro dividido
+  // na coluna) — antes, andando, o arqueiro puxava a corda de frente e o braço cruzava a cara
+  if (Math.abs(spin) > 1e-3) { for (const nm of ['spine_01', 'spine_02', 'spine_03']) yawBone(r.getObjectByName(nm), spin * W / 3); r.updateWorldMatrix(true, true); }
   // corpo de lado (twist no obj): o peito volta um pouco e a cabeça olha para o alvo
   yawBone(s3, -tw * 0.3 * W); yawBone(nk, -tw * 0.3 * W); yawBone(hd, -tw * 0.4 * W);
   const shL = sl.getWorldPosition(new THREE.Vector3()), shR = sr.getWorldPosition(new THREE.Vector3()), head = hd.getWorldPosition(new THREE.Vector3());
@@ -220,7 +227,7 @@ export function bowPose(me, o, ctx) {
   if (sinceRel < 0.16) { const back = anchor.clone().sub(restPt).normalize(); want = SP.worldToLocal(anchor.clone().add(back.multiplyScalar(0.07)).add(rightA.clone().multiplyScalar(0.035)).add(UP.clone().multiplyScalar(0.01))); k = 700; }
   else k = !reNock && o.draw > (me._drawSm ?? 0) + 0.02 ? 420 : 55; // puxando: acompanha a corda; voltando para encaixar outra flecha: macio
   me._drawSm = o.draw;
-  { const acc = want.clone().sub(me._hpL).multiplyScalar(k).sub(me._hpV.clone().multiplyScalar(2 * Math.sqrt(k))); me._hpV.add(acc.multiplyScalar(bdt)); me._hpL.add(me._hpV.clone().multiplyScalar(bdt)); }
+  for (const c of ['x', 'y', 'z']) { const [x, v] = cdStep(me._hpL[c], me._hpV[c], want[c], k, bdt); me._hpL[c] = x; me._hpV[c] = v; } // S-397/S-400: mola exata — a de Euler explodia com o jogo abaixo de ~50 FPS (a mão voava 80 cm para trás/para cima da cabeça depois de cada tiro)
   const pull = SP.localToWorld(me._hpL.clone());
   const holding = o.draw > 0.04 && sinceRel > 0.14; // dedos na corda (fora da janela da soltura)
   let adir = restPt.clone().sub(holding ? pull : strRest).normalize();
@@ -243,7 +250,8 @@ export function bowPose(me, o, ctx) {
       if (!best || c > best.c + 1e-4) { best = { sv, te, c }; worse = 0; } else if (++worse >= 6) break;
       if (c >= CLEAR_MIN) break;
       if (k === 0) { const dS = wt.distanceTo(Sp); if (dS > sv.reach * 0.98) { wt.sub(Sp).multiplyScalar(sv.reach * 0.98 / dS).add(Sp); continue; } } // alvo além do alcance: primeiro traz para onde o braço chega
-      wt.addScaledVector(n, Math.min(0.04, CLEAR_MIN + 0.004 - c));
+      n.y = Math.min(n.y, 0.1); if (n.lengthSq() < 1e-6) n.copy(rightA); n.normalize(); // S-397/S-400: sair da cabeça para o LADO/trás, nunca para cima (a mão subia por cima da cabeça)
+      wt.addScaledVector(n, Math.min(0.04, CLEAR_MIN + 0.004 - c)); if (wt.y > anchor.y + 0.07) wt.y = anchor.y + 0.07;
       const dS = wt.distanceTo(Sp); if (dS > sv.reach * 0.98) wt.sub(Sp).multiplyScalar(sv.reach * 0.98 / dS).add(Sp); // além do alcance não adianta
     }
     reset(); ik2(sr, er, hr, best.te, best.sv.pole, 1); clear = best.c; me._elbTh = best.sv.th;
@@ -263,7 +271,7 @@ export function bowPose(me, o, ctx) {
   me._bowGap = o.draw > 0.75 ? fingers.distanceTo(anchor) : null; // testes: dedos × âncora no rosto
   const nockPt = holding ? fingers : strRest; adir = restPt.clone().sub(nockPt); const alen = adir.length(); adir.normalize();
   stringFx(bow, holding ? fingers : null, W > 0.3 && holding);
-  nock.visible = !!o.nock && W > 0.55 && alen > 0.05;
+  me._nockOn = !!o.nock; nock.visible = !!o.nock && W > 0.55 && alen > 0.05;
   if (nock.visible) { nock.position.copy(nockPt).add(adir.clone().multiplyScalar(0.37)); nock.lookAt(nock.position.clone().add(adir)); }
 }
 /* S-379: PERNAS DE ARQUEIRO — mirando parado, os pés ficam plantados de lado para o alvo: o esquerdo à frente, na linha da flecha
@@ -308,6 +316,23 @@ export function archerLegs(me, o) {
     _lq.setFromAxisAngle(UP, angD(toe, bodyYaw)); setWorldQuat(ft, cq.premultiply(_lq)); // o pé gira em volta da vertical (a sola continua no chão)
   }
 }
+/* S-397/S-400: ARCO DOS OUTROS JOGADORES (Arena e mundo aberto). Antes eles tocavam o clipe de "atirar com pistola" com o arco nas
+   costas. Agora cada jogador manda o estado do arco (b = [guarda, mira, puxada, flecha encaixada]) e quem vê monta a MESMA pose do
+   arqueiro local: de lado parado, só o tronco de lado andando, mão da corda no rosto. Chame DEPOIS de atualizar a animação.
+   Devolve true se o personagem é arqueiro (quem chama não deve tocar o clipe de tiro). */
+export function remoteBow(ch, b, moving, yaw, dt, ctx) {
+  if (!ch || !ch.root || !ch.root.userData.bowState || !(ch.root.userData.items && ch.root.userData.items.bow)) return false;
+  const [w = 0, a = 0, d = 0.1, nk = 1] = Array.isArray(b) ? b : [];
+  const sm = (k, v, rate) => (ch[k] = (ch[k] ?? v) + (v - (ch[k] ?? v)) * Math.min(1, dt * rate));
+  const W = sm('_rW', +w || 0, 10), A = sm('_rA', +a || 0, 14), D = (+d || 0) < (ch._rD ?? 0) - 0.3 ? (ch._rD = +d || 0) : sm('_rD', +d || 0, 18); // a soltura é instantânea
+  const tw = sm('_rTw', -1.1 * A * W * (moving ? 0 : 1), 7), sp = sm('_rSp', -1.1 * A * W * (moving ? 1 : 0), 7);
+  ch.obj.rotation.y += tw;
+  bowPose(ch, { w: W, aim: A, draw: D, yaw, twist: tw, spine: sp, nock: !!nk, dt }, ctx);
+  archerLegs(ch, { k: A * W * (moving ? 0 : 1), yaw, dt });
+  return true;
+}
+// estado do arco do jogador local para mandar aos outros
+export const bowNetState = me => me && me.root && me.root.userData.bowState ? [+(me._aimW || 0).toFixed(2), +(me._aimA || 0).toFixed(2), +(me._draw ?? 0.1).toFixed(2), me._nockOn === false ? 0 : 1] : null;
 // atraso entre a puxada e a soltura, seguindo a velocidade de ataque (ASPD alto = puxa e solta rápido)
 export const bowRelease = aspdMs => Math.max(0.09, Math.min(0.25, aspdMs / 1000 * 0.55));
 // curva da corda ao longo de um tiro: puxa até a âncora, solta de uma vez, re-encaixa a próxima flecha

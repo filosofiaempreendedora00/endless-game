@@ -40,7 +40,20 @@ import random
 import time
 ARENA_LOCK = threading.Lock()
 ARENA = {'players': {}, 'events': [], 'seq': 0}
-ARENA_FIELDS = ('name', 'cls', 'look', 'hat', 'skin', 'x', 'z', 'yaw', 'moving', 'anim', 'maxHp', 'def', 'mdef', 'flee', 'baseLv')
+ARENA_FIELDS = ('name', 'cls', 'look', 'hat', 'skin', 'x', 'z', 'yaw', 'moving', 'anim', 'maxHp', 'def', 'mdef', 'flee', 'baseLv', 'bow')  # bow: [guarda, mira, puxada, flecha] (S-397/S-400: a pose do arco dos outros jogadores)
+
+
+def clean_bow(v):
+    """estado do arco vindo do cliente: no máximo 4 números entre 0 e 1 (qualquer outra coisa vira None)"""
+    if not isinstance(v, list):
+        return None
+    out = []
+    for x in v[:4]:
+        try:
+            out.append(max(0.0, min(1.0, round(float(x), 2))))
+        except (TypeError, ValueError):
+            return None
+    return out
 
 
 def arena_event(kind, **kw):
@@ -131,7 +144,7 @@ WORLD_LOCK = threading.Lock()
 WORLD = {'players': {}, 'chat': [], 'seq': 0,
          # P-026 (grupo): grupos em memória — parties[id] = {id, leader, members[pid], mode}; pmeta[pid] = {own, name, party, gone}
          'parties': {}, 'pmeta': {}, 'invites': {}, 'credits': {}, 'kills': {}, 'pseq': 0}
-WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'sp', 'maxSp', 'jobLv', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed', 'comp', 'sfx')  # comp: companheiro (S-325, lobo gigante do Caçador)
+WORLD_FIELDS = ('name', 'cls', 'look', 'hat', 'wpn', 'off', 'skin', 'mount', 'x', 'y', 'z', 'yaw', 'anim', 'moving', 'room', 'hp', 'maxHp', 'sp', 'maxSp', 'jobLv', 'baseLv', 'sit', 'dead', 'riding', 'atk', 'clip', 'speed', 'comp', 'sfx', 'bow')  # comp: companheiro (S-325, lobo gigante do Caçador)
 WORLD_NEAR = 150.0   # vê quem está a até 150 m (ou na mesma sala)
 WORLD_TTL = 8.0      # sem notícia há 8 s = saiu
 
@@ -873,7 +886,7 @@ class Handler(SimpleHTTPRequestHandler):
                     arena_event('entrou', who=str(data.get('name'))[:24])
                 for f in ARENA_FIELDS:
                     if f in data:
-                        p[f] = data[f]
+                        p[f] = clean_bow(data[f]) if f == 'bow' else data[f]
                 p['seen'] = time.time()
                 p['hp'] = min(p['hp'], int(p.get('maxHp') or 100))
                 if data.get('heal'):  # cura feita no cliente desde o último sync (poção, habilidade, regeneração)
@@ -999,6 +1012,8 @@ class Handler(SimpleHTTPRequestHandler):
                             v = data[f]
                             if isinstance(v, str):
                                 v = v[:64]
+                            if f == 'bow':
+                                v = clean_bow(v)
                             p[f] = v
                     p['name'] = str(p.get('name') or 'Aventureiro')[:24]
                     p['last'] = now

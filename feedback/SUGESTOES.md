@@ -2,7 +2,7 @@
 
 Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas sugestões pendentes"*.
 
-## Pendentes (12)
+## Pendentes (14)
 
 ### S-392 · Área do mapa: Área da tela (1028×275 px) (sobre: Painel de status)
 - **Status:** pendente · **Quando:** 2026-11-12T23:44:12 · **Mapa:** Grande Areal (tile [-51, 458])
@@ -75,6 +75,18 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 - **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
 - **Sugestão:** Duas coisas me incomodaram nos ataques do Paladino e eu gostaria que você conferisse as outras classes para que esse problemas também não ocorram o primeiro dos problemas é o fato de que este meu Paladino está dando socos no inimigo sendo que ele tem uma espada na mão Então nesse caso eu gostaria de colocar uma regra para que quando tivesse uma espada equipada apenas fossem desferidos golpes que usam essa espada e não a mão vazia Esta é a primeira indagação e outra coisa que me incomodou muito foi o fato de a classe paladino ter chegado tão extremamente próxima ao alvo mesmo que a classe pudesse atacar o inimigo a um Range razoável já que a espada tem uma certa dimensão e contribui para que os ataques fossem feitos de um Range um pouco maior Ou seja eu não quero que classes que tenham uma espada com tamanho parecido fica então absolutamente grudados aos alvos quando eu apertar o botão esquerdo e mirar em um inimigo
 - ![print](img/S-403.png)
+
+### S-404 · Área do mapa: Área da tela (413×322 px)
+- **Status:** pendente · **Quando:** 2026-11-13T00:06:06 · **Mapa:** Costa Brumosa (tile [-4, -560])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Nadar na água poderia fazer um barulho de água enquanto nada e você Pode respirar o barulho dessa nadada no GTA ou no próprio Skyrim
+- ![print](img/S-404.png)
+
+### S-405 · Área do mapa: Área da tela (595×410 px) (sobre: Barra de atalhos, Ícones de buff)
+- **Status:** pendente · **Quando:** 2026-11-13T00:06:51 · **Mapa:** Costa Brumosa (tile [-108, -514])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html
+- **Sugestão:** Jamais insiram uma árvore dessa tão próximo ao mar pois não faz sentido ter vegetação assim tão próxima ao mar Ainda mais se for uma vegetação como essa que está nevando
+- ![print](img/S-405.png)
 
 ## Feitas (391)
 

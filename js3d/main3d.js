@@ -15,7 +15,7 @@ import { makeGiantHead, makeMonolith, makeArch, makeTemple, cactusGeometry, make
 import { makeCritter } from './critters.js';
 import { makePet } from './pets3d.js';
 import { instrumentPose } from './instrument3d.js'; // S-324: tocar alaúde/bandolim/flauta (Bardo)
-import { bowPose, archerLegs, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
+import { bowPose, archerLegs, bowRelease as bowReleaseMs, bowDraw, crossbowPose, crossbowTimes, crossbowCycle, remoteBow, bowNetState } from './bow3d.js'; // S-312: pose do arco (costas / guarda / de lado puxando até a boca); S-325: besta
 import { createCompanion, makeDirewolf, remoteCompanion } from './companion3d.js'; // S-325: lobo gigante do Caçador
 import { startStrike, updateStrike, strikeKind, guardPose, initImpact, impact, hitStopDt, updateImpact, shakeCamera } from './strikes3d.js';
 import { initSkillFx, playSkillFx, playSkillFxRemote, skillProjectile, skillHitDelay, skillGesture, skillGemElement, updateSkillFx } from './skillfx3d.js'; // P-016: visual, gesto e som próprios por habilidade // P-014/P-011: golpes sob medida por arma e impacto no acerto
@@ -431,6 +431,7 @@ function leaveInterior(instant) {
   if (S.arena) arenaLeave();
   const go = () => {
     S.interior = null; S.zone = null;
+    if (!isFinite(back.yaw)) back.yaw = isFinite(S.pos.yaw) ? S.pos.yaw : 0; // trava: sem direção na porta de volta, NaN contaminava o herói (e, pela separação de corpos, os monstros em volta)
     Object.assign(S.pos, { x: back.x, z: back.z, y: heightAt(back.x, back.z), vy: 0, ground: true, yaw: back.yaw });
     S.vel = { x: 0, z: 0 }; S.cam.yaw = S.cam.viewYaw = back.yaw;
     if (S.pet) { S.pet.x = back.x - Math.sin(back.yaw) * 1.5; S.pet.z = back.z - Math.cos(back.yaw) * 1.5; S.pet.vx = S.pet.vz = 0; }
@@ -872,7 +873,7 @@ addEventListener('beforeunload', () => { if (S.arena) navigator.sendBeacon && na
 async function arenaSync() {
   const A = S.arena; if (!A || A.busy) return; A.busy = true; A.last = S.time;
   const p = S.p, d = p.d;
-  const body = { id: A.id, name: p.name, cls: p.cls, look: p.look, hat: hatOf(p), skin: (p.cosmetics || {}).skin || null, x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw, moving: Math.hypot(S.vel.x, S.vel.z) > 0.5, anim: S.me.anim.name, maxHp: d.maxHp, def: d.def, mdef: d.mdef, flee: d.flee, baseLv: p.baseLv, since: A.since };
+  const body = { id: A.id, name: p.name, cls: p.cls, look: p.look, hat: hatOf(p), skin: (p.cosmetics || {}).skin || null, x: S.pos.x, z: S.pos.z, yaw: S.pos.yaw, moving: Math.hypot(S.vel.x, S.vel.z) > 0.5, anim: S.me.anim.name, bow: bowNetState(S.me), maxHp: d.maxHp, def: d.def, mdef: d.mdef, flee: d.flee, baseLv: p.baseLv, since: A.since };
   // P-002: toda cura feita aqui (poção, habilidade, regeneração) vira um pedido de cura ao servidor, que é quem decide o HP — antes o sync desfazia a cura
   if (A.hpServer !== undefined && !A.dead && p.hp > A.hpServer) { body.heal = Math.round(p.hp - A.hpServer); body.healSrc = A.healSrc || 'cura'; A.healSrc = null; }
   const hpSent = p.hp;
@@ -903,7 +904,7 @@ function makeRival(o) {
   return rv;
 }
 function updateRival(rv, o) {
-  rv.tx = o.x; rv.tz = o.z; rv.tyaw = o.yaw; rv.moving = o.moving; rv.hp = o.hp; rv.maxHp = o.maxHp || rv.maxHp; rv.anim = o.anim;
+  rv.tx = o.x; rv.tz = o.z; rv.tyaw = o.yaw; rv.moving = o.moving; rv.hp = o.hp; rv.maxHp = o.maxHp || rv.maxHp; rv.anim = o.anim; rv.bow = o.bow;
   Object.assign(rv.def, { name: o.name, lv: o.baseLv, def: o.def || 0, mdef: o.mdef || 0, flee: o.flee || 0 });
   if (o.dead && !rv.dead) { rv.ch.anim.play('Death_A', { once: true, fade: 0.1 }); if (S.target === rv) S.autoAttack = false; }
   if (!o.dead && rv.dead) rv.ch.anim.play('Idle', { restart: true });
@@ -918,8 +919,10 @@ function updateArena(dt) {
     const k = 1 - Math.exp(-dt * 12);
     rv.x += (rv.tx - rv.x) * k; rv.z += (rv.tz - rv.z) * k; rv.yaw = angLerp(rv.yaw, rv.tyaw ?? rv.yaw, k);
     rv.obj.position.set(rv.x, 0, rv.z); rv.obj.rotation.y = rv.yaw;
-    if (!rv.dead) { const want = rv.anim && /Attack|Shoot|Spell|Chop|Slice|Stab/.test(rv.anim) ? rv.anim : rv.moving ? 'Running_A' : 'Idle'; if (rv.ch.anim.name !== want) rv.ch.anim.play(want, /Attack|Shoot|Spell|Chop|Slice|Stab/.test(want) ? { once: true } : {}); }
+    const archer = !!(rv.bow && rv.ch.root.userData.bowState); // S-397/S-400: arqueiro rival = pose do arco, nunca o clipe de pistola
+    if (!rv.dead) { const want = rv.anim && /Attack|Shoot|Spell|Chop|Slice|Stab/.test(rv.anim) && !(archer && /Shoot/.test(rv.anim)) ? rv.anim : rv.moving ? 'Running_A' : 'Idle'; if (rv.ch.anim.name !== want) rv.ch.anim.play(want, /Attack|Shoot|Spell|Chop|Slice|Stab/.test(want) ? { once: true } : {}); }
     rv.ch.anim.update(dt); rv.fx(S.time);
+    if (archer && !rv.dead) remoteBow(rv.ch, rv.bow, !!rv.moving, rv.yaw, dt, BOW_CTX);
   }
   const hud = $('arena-hud'), dead = hud.dataset.dead;
   hud.innerHTML = `⚔️ <b>Arena</b> · Abates <b>${A.kills}</b> · Derrotas <b>${A.deaths}</b> · Adversários <b>${A.rivals.size}</b>${dead ? `<div class="ar-dead">Você foi derrotado — voltando em ${dead}s</div>` : A.rivals.size ? '' : '<div class="ar-wait">Esperando adversários… (abra o jogo em outra janela com outro personagem para testar)</div>'}`;
@@ -1918,6 +1921,7 @@ function fallDamage(drop, water) {
 // Cada um tem um "peso" (chefe e boneco de treino quase não saem do lugar; o jogador cede pouco).
 function separateBodies() {
   const P = S.pos, list = [];
+  if (!isFinite(P.x) || !isFinite(P.z)) return; // trava: posição inválida não se espalha para os monstros
   for (const m of S.monsters) if (!m.dead && m.obj.visible && Math.abs(m.x - P.x) < 45 && Math.abs(m.z - P.z) < 45) list.push({ o: m, r: Math.max(0.35, m.radius * 0.85), w: m.def.dummy ? 0 : m.def.boss ? 0.15 : m.def.mini ? 0.4 : 1, mon: true });
   if (!list.length) return;
   if (S.p && !S.p.dead) list.push({ o: P, r: 0.4, w: 0.25, me: true });
@@ -2218,8 +2222,15 @@ function archerPose(me, p, t, dt) {
   me._draw = since >= rel && since < rel + 0.1 ? draw : (me._draw ?? 0.1) + (draw - (me._draw ?? 0.1)) * Math.min(1, dt * 25); // a soltura é instantânea, a puxada é suave
   const spd = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, still = Math.max(0, 1 - spd / 1.2);
   sm('_bowTwist', -1.1 * A * still * W, 7); // de lado para o alvo (o ombro esquerdo aponta para ele); aplicado no obj em updatePlayer
+  sm('_bowSpine', -1.1 * A * (1 - still) * W, 7); // S-397/S-400: andando, quem fica de lado é só o tronco (as pernas seguem o passo)
   me._bowLegK = A * W * Math.max(0, 1 - spd / 0.5) * (S.riding || S.swim || !S.pos.ground ? 0 : 1); // S-379: pés de arqueiro só parado no chão (andando, as pernas são da animação)
-  bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, nock: !(since >= rel && since < rel + 0.12), dt }, BOW_CTX);
+  bowPose(me, { w: W, aim: A, draw: me._draw, yaw: S.pos.yaw, twist: me._bowTwist, spine: me._bowSpine, nock: !(since >= rel && since < rel + 0.12), dt }, BOW_CTX);
+}
+// S-397/S-400 (Skyrim): segurando a corda puxada, a câmera aproxima um pouco (campo de visão 60° → 54°) e volta macia ao soltar
+function bowZoom(me, dt) {
+  const want = me.root.userData.bowState && me.root.userData.bowAt === 'hand' && (me._aimA || 0) > 0.6 && (me._draw || 0) > 0.7 ? 54 : 60;
+  if (Math.abs(camera.fov - want) < 0.02) { if (camera.fov !== want) { camera.fov = want; camera.updateProjectionMatrix(); } return; }
+  camera.fov += (want - camera.fov) * Math.min(1, dt * (want < camera.fov ? 5 : 8)); camera.updateProjectionMatrix();
 }
 /* S-324: Bardo com instrumento — fora de combate nas costas; em guarda nas mãos, pronto; tocando (ataque ou canção) dedilha
    no ritmo, com o corpo e a cabeça balançando. A pose dos braços fica em js3d/instrument3d.js (instrumentPose). */
@@ -2244,7 +2255,7 @@ function bardPose(me, p, t, dt) {
 function edgeLook(dt) {
   if (!S.cursorOnWorld || mouse.left || mouse.right || mouse.mid || S.menuOpen || (typeof FB !== 'undefined' && (FB.picking || FB.box))) return;
   const ex = mouseNdc.x, band = 0.86; if (Math.abs(ex) <= band) return;
-  S.cam.yaw -= Math.sign(ex) * Math.min(1, (Math.abs(ex) - band) / (1 - band)) * 1.2 * dt;
+  S.cam.yaw -= Math.sign(ex) * Math.min(1, (Math.abs(ex) - band) / (1 - band)) * 2.0 * dt;
 }
 function moveInput() {
   const k = keys;
@@ -2395,7 +2406,7 @@ function updatePlayer(dt) {
       const armK = g('_poseArm', on && !atk && !ARMLESS_POSE.test(p.cls) ? 1 : 0, atk ? 18 : 5), atkK = g('_poseAtk', on && atk ? 1 : 0, atk ? 14 : 5);
       applyClassPose(me, p.cls, legK, bodyK, armK, atkK);
     }
-    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bardPose(me, p, t, dt); /* S-324: instrumento */
+    levelHead(me,S._fighting || t < S.lockAnim ? 0.75 : 0, dt); archerPose(me, p, t, dt); bowZoom(me, dt); bardPose(me, p, t, dt); /* S-324: instrumento */
     { // S-346/S-352: guarda de lâmina (mão à frente, ponta para cima; Cavaleiro com as duas mãos) e lâmina pendendo rente à perna fora de combate
       const it = weaponInfo(p), gk = !p.d.ranged && !p.d.magicAuto && !p.d.sonic ? strikeKind(p.cls, it ? it.wtype : null, !!(p.equip && p.equip.arma)) : null;
       const free = !S.riding && !S.sitting && !S.swim && !p.dead, on = free && S._fighting && !S.casting && P.ground;
@@ -3983,7 +3994,7 @@ function startWith(s) {
     grantZeny: (p, z) => { p.zeny += z; }, touch: () => { hudDirty = true; },
     restoreMusic: () => { const I = S.interior, id = I && I.music ? I.music : (S.zone && S.zone.music); if (id && Sound.ctx) Sound.playSong(id); } }); } // P-022
   initTutorial({ S, UI, isAdmin, log, Sound, save3d, questState, countItem, addItem, banner, markDirty: () => { hudDirty = true; UI.markDirty(); }, toScreen, groundAt: (x, z) => groundAt(x, z), VILLAGE }); startTutorial(); // P-018
-  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx: playSkillFxRemote, groundAt: (x, z) => groundAt(x, z) }); // online: outros jogadores por perto
+  initNet({ S, scene, THREE, buildPreviewChar, makeMount, riderPose, toScreen, log, H3, hatOf, wpnOf, offOf, CLASSES, remoteCompanion, playSkillFx: playSkillFxRemote, groundAt: (x, z) => groundAt(x, z), remoteBow: (ch, b, mv, yaw, dt) => remoteBow(ch, b, mv, yaw, dt, BOW_CTX), bowNetState }); // online: outros jogadores por perto
   if (PARTY_ENABLED) initParty({ S, H3, log, gainExp, camera, renderer, THREE, CLASSES, net: { onNetView, netId, netOthers } }); // P-026
   log(`Bem-vindo(a) ao mundo aberto de Aethra, ${p.name}!`, 'card');
   log('W/S andam • A/D viram • botão direito segurado gira a câmera junto • Espaço pula • Tab escolhe alvo • R ataca • H ajuda', 'sys');

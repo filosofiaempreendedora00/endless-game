@@ -19897,5 +19897,103 @@
     "status": "pendente",
     "criadoEm": "2026-11-13T00:02:24",
     "imagem": "img/S-403.png"
+  },
+  {
+    "texto": "Nadar na água poderia fazer um barulho de água enquanto nada e você Pode respirar o barulho dessa nadada no GTA ou no próprio Skyrim",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (413×322 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Chão — Costa Brumosa",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:brumosa",
+      "nome": "Costa Brumosa",
+      "tile": [
+        -4,
+        -560
+      ],
+      "pos": [
+        -4,
+        -560
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1711/1711",
+      "sp": "194/194"
+    },
+    "id": "S-404",
+    "status": "pendente",
+    "criadoEm": "2026-11-13T00:06:06",
+    "imagem": "img/S-404.png"
+  },
+  {
+    "texto": "Jamais insiram uma árvore dessa tão próximo ao mar pois não faz sentido ter vegetação assim tão próxima ao mar Ainda mais se for uma vegetação como essa que está nevando",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (595×410 px) (sobre: Barra de atalhos, Ícones de buff)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno) · interface: js/ui.js, style.css, index.html",
+      "detalhes": {
+        "monstros": {
+          "Geadinha": 4,
+          "Lobo Alfa": 1,
+          "Espectro Pálido": 1
+        },
+        "npcs": [],
+        "cenario": {
+          "Pinheiro com neve": 1
+        },
+        "centro": "Solaris (Nv. 26)",
+        "versao": "3D",
+        "interface": [
+          "Barra de atalhos",
+          "Ícones de buff"
+        ]
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:brumosa",
+      "nome": "Costa Brumosa",
+      "tile": [
+        -108,
+        -514
+      ],
+      "pos": [
+        -108,
+        -514
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Paladino",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1711/1711",
+      "sp": "194/194"
+    },
+    "id": "S-405",
+    "status": "pendente",
+    "criadoEm": "2026-11-13T00:06:51",
+    "imagem": "img/S-405.png"
   }
 ]
