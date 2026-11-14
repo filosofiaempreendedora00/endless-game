@@ -20009,5 +20009,50 @@
     "criadoEm": "2026-11-13T00:06:51",
     "imagem": "img/S-405.png",
     "resposta": "Nenhuma árvore nasce mais a menos de 32 m de qualquer mar — vale para a Costa Brumosa, o Pinhal, os Ermos, a Costa Turquesa e o porto (conferido: zero árvores de folha ou pinheiros nessa faixa). Perto do mar só coqueiro, e longe da beira."
+  },
+  {
+    "texto": "Percebi que quando está na posição de ataque e eu ando para o lado o modelo é arrastado para o lado sem que ele Ande e isso é extremamente esquisito e anti natural",
+    "categoria": null,
+    "versao": "0.2.0 (mundo 3D)",
+    "tela": "Mundo",
+    "alvo": {
+      "tipo": "area",
+      "rotulo": "Área do mapa",
+      "id": "area3d",
+      "nome": "Área da tela (391×277 px)",
+      "codigo": "js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)",
+      "detalhes": {
+        "monstros": {},
+        "npcs": [],
+        "cenario": {},
+        "centro": "Gertrudes (Executor)",
+        "versao": "3D"
+      }
+    },
+    "mapa": {
+      "id": "mundo3d:vila",
+      "nome": "Vila de Alvorada",
+      "tile": [
+        -61,
+        24
+      ],
+      "pos": [
+        -61,
+        24
+      ]
+    },
+    "jogador": {
+      "nome": "Gertrudes",
+      "classe": "Executor",
+      "nivelBase": 40,
+      "nivelClasse": 17,
+      "hp": "1179/1179",
+      "sp": "177/177"
+    },
+    "id": "S-406",
+    "status": "feito",
+    "criadoEm": "2026-11-14T11:22:51",
+    "imagem": "img/S-406.png",
+    "resposta": "Corrigido: na câmera estilo Skyrim, em combate o tronco continua de frente para a mira e agora as pernas correm para o lado em que você anda (A/D = corrida de lado, S = passos para trás), como já acontecia com o alvo travado. Nada de deslizar parado."
   }
 ]

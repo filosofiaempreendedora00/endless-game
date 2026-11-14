@@ -2547,9 +2547,11 @@ function updatePlayer(dt) {
   // movimento
   const mi = moveInput();
   if (!isAction()) updateAimCursor();
+  S._actFace = false;
   if (isAction()) { // estilo Skyrim: parado, a câmera orbita livre em volta do herói; andando, ele corre para onde o WASD aponta (relativo à câmera);
     // em combate (atacando, apanhando ou com inimigo perto) e na 1ª pessoa, o corpo fica de frente para a mira e anda de lado
     const fight = S.view === 'fps' || S.fire || inCombat(S.time) || S.riding;
+    S._actFace = fight && !S.riding; // S-406: corpo de frente para a mira → as pernas andam para onde você vai (igual ao alvo travado)
     const lkA = fireLock(); // travado: o corpo se volta para o monstro (a câmera continua livre, estilo Skyrim)
     if (lkA) { if (Math.hypot(lkA.x - P.x, lkA.z - P.z) > 0.25) P.yaw = angLerp(P.yaw, Math.atan2(lkA.x - P.x, lkA.z - P.z), Math.min(1, dt * 12)); }
     else if (fight) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 14));
@@ -2573,7 +2575,7 @@ function updatePlayer(dt) {
     const lk = fireLock(), ry = lk || isAction() ? S.cam.yaw : P.yaw; // estilo Skyrim: WASD sempre relativo à câmera · S-265: travado no alvo, WASD anda pela câmera (W = para longe da câmera) e o corpo continua de frente para o alvo
     const fx = Math.sin(ry), fz = Math.cos(ry), rx = -Math.cos(ry), rz = Math.sin(ry);
     let dx = fx * mi.fwd + rx * mi.strafe, dz = fz * mi.fwd + rz * mi.strafe; const l = Math.hypot(dx, dz) || 1;
-    let rel = null; if (lk) { rel = Math.atan2(dx, dz) - P.yaw; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2; }
+    let rel = null; if (lk || S._actFace) { rel = Math.atan2(dx, dz) - P.yaw; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2; }
     S.moveRel = rel;
     const sp = base * (rel != null ? (Math.abs(rel) < 0.8 ? 1 : Math.abs(rel) < 2.0 ? 0.85 : 0.6) : (mi.fwd < 0 ? 0.55 : mi.fwd === 0 ? 0.85 : 1)) * (inLake || S.swim ? 0.6 : 1);
     vx = dx / l * sp; vz = dz / l * sp;

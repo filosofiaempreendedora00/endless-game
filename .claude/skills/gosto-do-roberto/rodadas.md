@@ -425,3 +425,8 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Resultado: o cabo fica a 0,1–2,6 cm do centro do punho em todas as armas (antes 4 cm), e nenhum dedo atravessa (antes 13,6 mm).
 - Lição: com o Roberto, "melhorou" não basta — ele compara com o Skyrim em close. Sempre conferir de perto e medir antes de entregar.
 
+
+## 2026-11-14 — S-406 ("arrastado para o lado sem andar")
+- Causa: na câmera estilo Skyrim, em combate o corpo fica de frente para a mira e as pernas tocavam a corrida para a frente. Andar de lado (A/D) virava deslizar.
+- Feito: nesse caso o movimento passa pelo mesmo caminho do alvo travado (`S._actFace` → `S.moveRel`). As pernas giram para onde você anda (`legTwist`), o tronco fica na mira e S faz passos para trás.
+- Lição: ele repara em qualquer "patinação" (pé que não acompanha o movimento). Toda mudança de câmera/orientação do corpo tem de conferir a animação das pernas em A/D/S.

@@ -6,7 +6,7 @@ Feitas dentro do jogo com a tecla **Q**. Peça ao Claude: *"aplique minhas suges
 
 _Nenhuma._
 
-## Feitas (405)
+## Feitas (406)
 
 ### S-001 · Área do mapa: Área de 6×4 tiles
 - **Status:** feito · **Quando:** 2026-11-07T15:20:32 · **Mapa:** Vila de Alvorada (tile [29, 11])
@@ -2883,3 +2883,10 @@ Também ficou mais leve: com 6 lobos perto, o quadro passou de 25 ms para ~19 ms
 - **Sugestão:** Jamais insiram uma árvore dessa tão próximo ao mar pois não faz sentido ter vegetação assim tão próxima ao mar Ainda mais se for uma vegetação como essa que está nevando
 - ![print](img/S-405.png)
 - **Resposta do Claude:** Nenhuma árvore nasce mais a menos de 32 m de qualquer mar — vale para a Costa Brumosa, o Pinhal, os Ermos, a Costa Turquesa e o porto (conferido: zero árvores de folha ou pinheiros nessa faixa). Perto do mar só coqueiro, e longe da beira.
+
+### S-406 · Área do mapa: Área da tela (391×277 px)
+- **Status:** feito · **Quando:** 2026-11-14T11:22:51 · **Mapa:** Vila de Alvorada (tile [-61, 24])
+- **Onde no código:** js3d/main3d.js → buildWorld (cenário) · js3d/world3d.js (terreno)
+- **Sugestão:** Percebi que quando está na posição de ataque e eu ando para o lado o modelo é arrastado para o lado sem que ele Ande e isso é extremamente esquisito e anti natural
+- ![print](img/S-406.png)
+- **Resposta do Claude:** Corrigido: na câmera estilo Skyrim, em combate o tronco continua de frente para a mira e agora as pernas correm para o lado em que você anda (A/D = corrida de lado, S = passos para trás), como já acontecia com o alvo travado. Nada de deslizar parado.
