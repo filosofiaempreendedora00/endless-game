@@ -1473,7 +1473,7 @@ function inCombat(t) {
   return !!S._cbNear;
 }
 // S-265: segurando o esquerdo em cima de um inimigo, ele fica travado: o corpo gira de frente para ele e WASD anda em volta (relativo à câmera)
-function fireLock() { const m = S.fireLock; if (!m || m.dead || !S.fire || isAction() || S.riding && !S.riding.war) return null; if (Math.hypot(m.x - S.pos.x, m.z - S.pos.z) > 40) { S.fireLock = null; return null; } return m; }
+function fireLock() { const m = S.fireLock; if (!m || m.dead || !S.fire || S.riding && !S.riding.war) return null; /* vale também na câmera estilo Skyrim (o Roberto quis manter a trava) */ if (Math.hypot(m.x - S.pos.x, m.z - S.pos.z) > 40) { S.fireLock = null; return null; } return m; }
 const ATTACK_ANIM = { '1h': ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'], '2h': ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Chop'], dual: ['Dualwield_Melee_Attack_Slice', 'Dualwield_Melee_Attack_Stab'], ranged: ['2H_Ranged_Shoot'], cast: ['2H_Melee_Attack_Chop'] };
 
 /* =========================== Estado =========================== */
@@ -1563,6 +1563,16 @@ function aimTarget(maxRange) {
     const a = Math.abs(((Math.atan2(m.x - S.pos.x, m.z - S.pos.z) - S.cam.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
     if (a < 0.6 && d < bd) { bd = d; best = m; }
   }
+  return best;
+}
+// trava da câmera estilo Skyrim: quem a mira acerta; se errar por pouco (bicho pequeno ou longe), o inimigo mais perto do centro da mira num cone estreito
+function lockTarget() {
+  const hit = aimTarget(40); if (hit) return hit;
+  const cp = camera.position, f = new THREE.Vector3(); camera.getWorldDirection(f); let best = null, ba = 1e9;
+  for (const m of [...S.monsters, ...(S.arena ? S.arena.rivals.values() : [])]) {
+    if (m.dead || !m.obj || !m.obj.visible) continue; const dP = Math.hypot(m.x - S.pos.x, m.z - S.pos.z); if (dP > 40) continue;
+    const v = new THREE.Vector3(m.x - cp.x, (m.obj.position.y + (m.height || 1) * 0.5) - cp.y, m.z - cp.z), d = v.length(), a = f.angleTo(v);
+    if (a < Math.max(0.09, Math.atan2(1.3, d)) && a < ba) { ba = a; best = m; } }
   return best;
 }
 function aimPoint(dist = 30) {
@@ -2517,7 +2527,9 @@ function updatePlayer(dt) {
   if (isAction()) { // estilo Skyrim: parado, a câmera orbita livre em volta do herói; andando, ele corre para onde o WASD aponta (relativo à câmera);
     // em combate (atacando, apanhando ou com inimigo perto) e na 1ª pessoa, o corpo fica de frente para a mira e anda de lado
     const fight = S.view === 'fps' || S.fire || inCombat(S.time) || S.riding;
-    if (fight) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 14));
+    const lkA = fireLock(); // travado: o corpo se volta para o monstro (a câmera continua livre, estilo Skyrim)
+    if (lkA) { if (Math.hypot(lkA.x - P.x, lkA.z - P.z) > 0.25) P.yaw = angLerp(P.yaw, Math.atan2(lkA.x - P.x, lkA.z - P.z), Math.min(1, dt * 12)); }
+    else if (fight) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 14));
     else if (mi.any) { const cy = S.cam.yaw, dx = Math.sin(cy) * mi.fwd - Math.cos(cy) * mi.strafe, dz = Math.cos(cy) * mi.fwd + Math.sin(cy) * mi.strafe; P.yaw = angLerp(P.yaw, Math.atan2(dx, dz), Math.min(1, dt * 10)); }
     actionFire(); updateViewModel(dt); }
   else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, lk ? (Math.hypot(lk.x - P.x, lk.z - P.z) < 0.25 ? P.yaw : Math.atan2(lk.x - P.x, lk.z - P.z)) : aimYaw(q, P.yaw), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
@@ -3537,7 +3549,7 @@ canvas.addEventListener('mousedown', e => {
   if (!S.started || S.menuOpen || FB.picking || FB.box) return;
   if (isAction()) { // modo ação: o 1º clique prende o mouse; depois, segurar o esquerdo ataca
     if (document.pointerLockElement !== canvas) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; }
-    if (e.button === 0) { if (S.crossNpc) { const n = S.crossNpc; document.exitPointerLock(); interact(n, false); return; } S.fire = true; } return; // mira num NPC perto: clicar conversa (não ataca)
+    if (e.button === 0) { if (S.crossNpc) { const n = S.crossNpc; document.exitPointerLock(); interact(n, false); return; } S.fire = true; S.autoAttack = false; const m = lockTarget(); S.fireLock = m && !m.dead && !m.isNpc ? m : null; if (S.fireLock) setTarget(S.fireLock); } return; // segurar o esquerdo com o inimigo na mira trava nele (como no modo clássico): o corpo se vira para ele e corre até o alcance; a câmera continua livre // mira num NPC perto: clicar conversa (não ataca)
   }
   if (e.button === 1) { e.preventDefault(); mouse.mid = true; S.lookYaw = S.lookYaw || 0; try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; } // S-115: segurar o botão do meio e arrastar = olhar o personagem por qualquer ângulo (360°)
   if (e.button === 0) { // S-141: botão esquerdo = atacar (segurar = continuar atacando); em NPC = conversar
