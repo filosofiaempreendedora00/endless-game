@@ -99,6 +99,13 @@ Quando ele pedir para aplicar as sugestões:
     - Festa com anões sentados, a skald Hrafna, a ferreira Dagny e mineiros nos trilhos.
     - Missões dw1–dw4 ("O Eco no Fundo", em js/quests.js): Rei → Thyra → galeria funda → Orvik → morcegos de cripta → Brom → Rei.
   - **Pose sentada (`Sit_Chair_Idle`) fica virada 180° do yaw pedido**: some π para o NPC olhar para a mesa.
+- **1ª pessoa de verdade (P-032, etapa 1 — 2026-11-13)**: `js3d/fpview3d.js` (`makeFirstPerson`, chamado em `buildViewModel` do main3d).
+  - Os braços são uma 2ª cópia do PRÓPRIO herói (`makeHero` com a mesma raça, pele, roupa e arma), presa à câmera. Da malha só ficam os triângulos que se movem com ombro→dedos; peças presas ao tronco ou à cabeça somem.
+  - Base = pose de ligação (`skeleton.pose()`): o makeHero já vem com o tronco torcido. Ombros a 21 cm abaixo e 6 cm atrás dos olhos.
+  - Mãos por IK de dois ossos até alvos em espaço de câmera (`POSES` por tipo: swing, heavy, dagger, shield, bow, magic, staff, fist; `fpKind` escolhe).
+  - O punho gira para o eixo da arma (eixo y da peça). O escudo vem pela torção do antebraço; o arco vai para a mão esquerda (`bowState('hand')`).
+  - Dedos fecham pela curvatura medida no repouso. Na mão esquerda a palma é invertida em relação à regra do polegar (conferido fechando o punho).
+  - Ainda faltam (etapas 2–3) golpes e gestos por arma, instrumento do Bardo, besta, rastro, braços que não entram na parede e montaria.
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar

@@ -406,3 +406,9 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Fim do pulo do destravador nas emendas de muralha.
 - Sombra das peças minúsculas dos monstros desligada (−23% de chamadas na vila). Juntar peças por modelo segue em aberto na P-031.
 
+## 2026-11-13 — câmera e 1ª pessoa
+- Ele **aprovou a câmera estilo Skyrim** ("ficou muito melhor"), mas quis de volta a trava no alvo: segurar o ataque num monstro e o corpo se voltar para ele (feito, câmera continua livre).
+- **1ª pessoa**: "uma das coisas mais ridículas... os dedos estão ridículos e está pior que minecraft". Quer o nível do Skyrim para todas as classes: espada, mãos de mago etc., "um universo pela frente".
+- Etapa 1 (P-032) feita: braços e mãos do próprio corpo realista, com a roupa da classe, a arma de verdade e dedos fechando no cabo.
+- Lição: peça feita de primitivas (cilindro + cápsulas) num lugar em close é o pior caso do princípio 1. Em close, use sempre o modelo realista.
+

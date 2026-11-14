@@ -434,7 +434,7 @@
   {
     "id": "P-032",
     "titulo": "Primeira pessoa de verdade (braços, mãos e armas no nível do Skyrim)",
-    "detalhe": "Trocar os braços de cilindro e os dedos de cápsula por braços e mãos do PRÓPRIO corpo realista do herói (o esqueleto já tem cinco dedos com três falanges cada, e as mangas e luvas da roupa da classe), presos à câmera, com poses e golpes feitos para a 1ª pessoa. Em 3 etapas: (1) mãos reais, a arma de verdade bem encaixada na palma, respiração e balanço ao andar e correr; (2) golpes e gestos por tipo de arma: espada/machado/maça em combo, montante de duas mãos, adaga/katar, escudo (bloquear), arco (puxar a corda com a flecha), cajado/varinha/livro com a magia acesa entre os dedos, instrumento do Bardo; (3) acabamento: rastro e peso do golpe, tranco ao acertar, campo de visão próprio dos braços (não entram na parede), sacar/guardar a arma e montaria.",
+    "detalhe": "Trocar os braços de cilindro e os dedos de cápsula por braços e mãos do PRÓPRIO corpo realista do herói (o esqueleto já tem cinco dedos com três falanges cada, e as mangas e luvas da roupa da classe), presos à câmera, com poses e golpes feitos para a 1ª pessoa. Em 3 etapas: (1) mãos reais, a arma de verdade bem encaixada na palma, respiração e balanço ao andar e correr; (2) golpes e gestos por tipo de arma: espada/machado/maça em combo, montante de duas mãos, adaga/katar, escudo (bloquear), arco (puxar a corda com a flecha), cajado/varinha/livro com a magia acesa entre os dedos, instrumento do Bardo; (3) acabamento: rastro e peso do golpe, tranco ao acertar, campo de visão próprio dos braços (não entram na parede), sacar/guardar a arma e montaria. (Etapa 1 feita em 2026-11-13: braços e mãos do próprio herói, arma bem encaixada, dedos fechando, balanço ao andar. Faltam as etapas 2 e 3.)",
     "principios": [
       "Nada de \"fake\", \"perfeitinho\" ou \"quadradão\"",
       "Vivo e animado",
@@ -443,6 +443,6 @@
     "evidencias": [
       "Conversa de 2026-11-13: \"as mãos... os dedos estão ridículos e está pior que minecraft\""
     ],
-    "status": "proposta"
+    "status": "aprovada"
   }
 ]

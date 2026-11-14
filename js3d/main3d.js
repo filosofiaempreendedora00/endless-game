@@ -45,6 +45,7 @@ import { setGrassRange } from './world3d.js';
 import { makeSmithy, makeWell, makeBucket, makeClothFlag, retextureKayKit, makeBarrel, makeLogPile, makeWeaponRack } from './village3d.js';
 import { makePalisade } from './palisade3d.js';
 import { loadHumans, makeHuman, shareSkeletons, unsquashDwarf } from './humans3d.js';
+import { makeFirstPerson } from './fpview3d.js'; // P-032: 1ª pessoa com os braços do próprio herói
 
 const TM = 1.6; // metros por "tile" do 2D (alcances e distâncias de regras)
 const $ = id => document.getElementById(id);
@@ -1598,9 +1599,25 @@ function actionFire() {
   else { Sound.play(ca.sound || 'swing'); later(0.25, () => { const q = aimPoint(3); floatAt(new THREE.Vector3(q.x, groundAt(q.x, q.z), q.z), 'Errou', '#cfd6e0', 1.2); Sound.play('miss'); }); } // S-233: golpe no vazio mostra "Errou" com som
 }
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
-let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing';
+let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing', fpv = null;
+// P-032: a 1ª pessoa usa os braços do PRÓPRIO herói (corpo realista, roupa da classe, arma de verdade, dedos de verdade) — fpview3d.js
+function fpKind(items, style) {
+  if (style === 'cast') return items['2H_Staff'] || Object.keys(items).some(k => /Staff|Cajado/i.test(k)) ? 'staff' : 'magic';
+  if (style === 'ranged') return items.bow ? 'bow' : 'fist';
+  if (style === 'dual') return 'dagger';
+  if (style === '2h') return 'heavy';
+  if (items.shield) return 'shield';
+  if (Object.keys(items).some(k => /Knife|Dagger/i.test(k))) return 'dagger';
+  return Object.keys(items).length ? 'swing' : 'fist';
+}
 function buildViewModel() {
-  if (viewModel) { camera.remove(viewModel); viewModel = null; }
+  if (viewModel) { camera.remove(viewModel); viewModel = null; } fpv = null;
+  try {
+    const { ch, d } = makeHero(S.p.cls, S.p.look, null, { offhand: offOf(S.p), weaponId: wpnOf(S.p) });
+    const items = ch.root.userData.items || {};
+    fpv = makeFirstPerson(ch, { kind: fpKind(items, d.style), items }); viewModel = fpv.root; camera.add(viewModel);
+    vmKind = S.p.d.magicAuto ? 'magic' : S.p.d.ranged ? 'bow' : 'swing'; viewModel.visible = S.view === 'fps'; return;
+  } catch (e) { console.warn('1ª pessoa nova falhou, voltando à antiga', e); fpv = null; }
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz, sleeve = new THREE.MeshStandardMaterial({ color: (L.tint && L.tint.body) || '#6a5a48', roughness: 0.8 });
   const skinCol = (() => { let c = null; S.me.root.traverse(o => { if (!c && o.userData.skin) c = o.userData.skin; }); return c || new THREE.Color().setRGB(0.871, 0.527, 0.352); })();
   const skin = new THREE.MeshStandardMaterial({ color: skinCol, roughness: 0.6 }), glove = new THREE.MeshStandardMaterial({ color: '#5a3a22', roughness: 0.75 });
@@ -1632,9 +1649,10 @@ function buildViewModel() {
   viewModel.visible = S.view === 'fps';
 }
 let vmAtk = -9;
-function vmAttack(kind) { vmAtk = S.time; vmKind = kind; }
+function vmAttack(kind) { vmAtk = S.time; vmKind = kind; if (fpv) fpv.attack(); }
 function updateViewModel(dt) {
   if (!viewModel || !viewModel.visible) return;
+  if (fpv) { const sp = Math.hypot(S.vel.x, S.vel.z); fpv.update(dt, { cam: camera, speed: sp, sprint: sp > 5.5 }); return; }
   vmT += dt; const sp = Math.hypot(S.vel.x, S.vel.z), bob = Math.sin(vmT * 9) * 0.012 * Math.min(1, sp / 3), k = Math.min(1, (S.time - vmAtk) / 0.35), sw = k < 1 ? Math.sin(k * Math.PI) : 0;
   viewModel.position.set(Math.cos(vmT * 4.5) * 0.006 * Math.min(1, sp / 3), bob + Math.sin(vmT * 1.6) * 0.004, 0);
   if (vmKind === 'swing') { vmArmR.rotation.set(0.25 - sw * 1.2, 0.12 + sw * 0.9, -sw * 0.6); vmArmR.position.x = 0.22 - sw * 0.12; }
