@@ -1501,20 +1501,25 @@ function hitbox(ref, r, h) {
    V alterna a câmera: 'classica' (estilo WoW, com alvo) → 'fps' (1ª pessoa, estilo Skyrim) → 'ombro' (3ª pessoa de ação).
    Nos modos de ação o mouse fica preso (clique na tela), a mira fica no centro e segurar o botão
    esquerdo ataca o que está na mira. Habilidades (1–9) também vão para quem está na mira. */
-const VIEWS = ['classica', 'fps', 'ombro'], VIEW_NAMES = { classica: '3ª pessoa clássica (alvo)', fps: '1ª pessoa (mira)', ombro: '3ª pessoa de ação (mira)' };
+const VIEWS = ['classica', 'fps', 'ombro'], VIEW_NAMES = { classica: 'Câmera clássica (estilo WoW)', fps: '1ª pessoa', ombro: '3ª pessoa (estilo Skyrim)' };
 try { S.view = localStorage.getItem('aethra_view') || 'classica'; } catch (e) { S.view = 'classica'; }
 if (!VIEWS.includes(S.view)) S.view = 'classica';
+// 2026-11-13 (pedido: "modele o próprio Skyrim"): a câmera estilo Skyrim vira o padrão — mouse sempre na câmera, mira no centro,
+// rodinha aproxima até a 1ª pessoa; a clássica (WoW) continua nas Configurações. Uma vez só, quem estava na clássica passa para a nova.
+try { if (!localStorage.getItem('aethra_view_v2')) { localStorage.setItem('aethra_view_v2', '1'); S.view = 'ombro'; localStorage.setItem('aethra_view', 'ombro'); } } catch (e) { }
+try { S.sens = +(localStorage.getItem('aethra_sens') || 1); S.invY = localStorage.getItem('aethra_invy') === '1'; } catch (e) { S.sens = 1; S.invY = false; }
+if (!(S.sens > 0.1 && S.sens < 4)) S.sens = 1;
 S.aim = 0.05; S.fire = false;
 const isAction = () => S.view !== 'classica';
-function setView(v) {
+function setView(v, silent) {
   S.view = v; try { localStorage.setItem('aethra_view', v); } catch (e) { }
   $('crosshair').classList.toggle('hidden', !isAction());
   if (!isAction() && document.pointerLockElement) document.exitPointerLock();
   if (S.me) S.me.obj.visible = S.view !== 'fps';
   if (viewModel) viewModel.visible = S.view === 'fps';
-  banner(VIEW_NAMES[v], isAction() ? 'Clique para mirar · segure o botão esquerdo para atacar · Esc solta o mouse' : 'Segure o botão esquerdo para atacar onde o cursor aponta · botão direito gira a câmera');
+  if (!silent) banner(VIEW_NAMES[v], isAction() ? 'O mouse gira a câmera · rodinha aproxima (até a 1ª pessoa) · F fala/usa · segure Alt para soltar o cursor' : 'Segure o botão esquerdo para atacar onde o cursor aponta · botão direito gira a câmera');
 }
-function cycleView() { setView(VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]); }
+function cycleView() { setView(S.view === 'ombro' ? 'fps' : 'ombro'); } // V = 1ª ↔ 3ª pessoa (como o F do Skyrim); a clássica fica nas Configurações
 // quem está na mira: raio do centro da tela; para corpo a corpo, um cone generoso à frente
 const aimRay = new THREE.Raycaster(); aimRay.camera = camera;
 // S-141: no modo clássico a mira é o CURSOR do mouse (estilo Skyrim, sem alvo travado); nos modos de ação, o centro da tela
@@ -1524,6 +1529,25 @@ try { S.aimWeight = localStorage.getItem('aethra_aimw') || 'total'; if (!localSt
 // S-385: no modo Total a câmera segue o cursor por completo (como FPS): o mouse gira a câmera, a borda da tela continua girando e, andando, o corpo vai para onde a câmera olha
 const lookTotal = () => S.aimWeight === 'total' && !isAction() && !S.flight;
 const aimNdc = () => isAction() ? NDC0 : mouseNdc;
+// estilo Skyrim: quem está debaixo da mira (no centro). NPC perto = "F — Falar com..."; um monstro na frente tapa o NPC atrás
+function crossNpc() {
+  aimRay.setFromCamera(NDC0, camera);
+  for (const h of aimRay.intersectObjects(hitboxes, false)) { const r = h.object.userData.ref; if (!r || r.dead) continue; if (!r.isNpc) return null;
+    if (Math.hypot(r.x - S.pos.x, r.z - S.pos.z) < 4.6 && Math.abs((r.obj ? r.obj.position.y : 0) - S.pos.y) < 3.5) return r; return null; }
+  return null;
+}
+const iaPrompt = (() => { const d = document.createElement('div'); d.id = 'ia-prompt'; d.style.cssText = 'position:fixed;left:50%;top:57%;transform:translateX(-50%);z-index:31;pointer-events:none;font:600 15px Nunito,system-ui,sans-serif;color:#f6ecd2;text-shadow:0 1px 3px #000,0 0 6px #000;display:none;white-space:nowrap'; document.body.appendChild(d); return d; })();
+function updateCrosshairPrompt() {
+  let txt = '';
+  if (S.started && isAction() && !S.menuOpen && !S.flight) {
+    const locked = document.pointerLockElement === canvas, uiOpen = $('overlay').classList.contains('show') || (UI.wins && Object.values(UI.wins).some(Boolean));
+    if (locked && uiOpen) document.exitPointerLock(); // janela, loja ou conversa aberta: o cursor volta para você clicar nela
+    S.crossNpc = locked ? crossNpc() : null;
+    if (S.crossNpc) txt = `<b style="display:inline-block;min-width:20px;padding:1px 6px;margin-right:6px;border:1px solid #f3d98a;border-radius:4px;color:#ffe9a8;background:rgba(20,14,6,0.6)">F</b>${S.crossNpc.shopList ? 'Comprar com' : S.crossNpc.heals ? 'Ser curado por' : 'Falar com'} <b style="color:#ffe9a8">${escH(S.crossNpc.name || '')}</b>`;
+    else if (!locked && !uiOpen) txt = '<span style="opacity:0.85">Clique na tela para controlar a câmera</span>';
+  } else S.crossNpc = null;
+  if (iaPrompt._t !== txt) { iaPrompt._t = txt; iaPrompt.innerHTML = txt; iaPrompt.style.display = txt ? 'block' : 'none'; }
+}
 function aimTarget(maxRange) {
   aimRay.setFromCamera(aimNdc(), camera);
   const hit = aimRay.intersectObjects(hitboxes, false).find(h => { const r = h.object.userData.ref; return r && !r.isNpc && !r.dead && Math.hypot(r.x - S.pos.x, r.z - S.pos.z) <= maxRange; });
@@ -2479,7 +2503,12 @@ function updatePlayer(dt) {
   // movimento
   const mi = moveInput();
   if (!isAction()) updateAimCursor();
-  if (isAction()) { P.yaw = S.cam.yaw; actionFire(); updateViewModel(dt); } // o corpo olha para onde a mira aponta
+  if (isAction()) { // estilo Skyrim: parado, a câmera orbita livre em volta do herói; andando, ele corre para onde o WASD aponta (relativo à câmera);
+    // em combate (atacando, apanhando ou com inimigo perto) e na 1ª pessoa, o corpo fica de frente para a mira e anda de lado
+    const fight = S.view === 'fps' || S.fire || inCombat(S.time) || S.riding;
+    if (fight) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 14));
+    else if (mi.any) { const cy = S.cam.yaw, dx = Math.sin(cy) * mi.fwd - Math.cos(cy) * mi.strafe, dz = Math.cos(cy) * mi.fwd + Math.sin(cy) * mi.strafe; P.yaw = angLerp(P.yaw, Math.atan2(dx, dz), Math.min(1, dt * 10)); }
+    actionFire(); updateViewModel(dt); }
   else if (S.fire) { const lk = fireLock(), q = lk || aimPoint(30); P.yaw = angLerp(P.yaw, lk ? (Math.hypot(lk.x - P.x, lk.z - P.z) < 0.25 ? P.yaw : Math.atan2(lk.x - P.x, lk.z - P.z)) : aimYaw(q, P.yaw), Math.min(1, dt * (lk ? 12 : 14))); actionFire(); } // S-141/S-196: segurando o esquerdo, o corpo mira no cursor e WASD anda (A/D de lado) enquanto ataca
   else if (lookTotal()) { // S-385: a câmera manda; andando, o corpo vira para onde ela olha (nada de a câmera voltar sozinha para trás do herói)
     edgeLook(dt); if (mi.any) P.yaw = angLerp(P.yaw, S.cam.yaw, Math.min(1, dt * 12));
@@ -2495,7 +2524,7 @@ function updatePlayer(dt) {
   const inLake = !S.interior && lakeDist(P.x, P.z) < LAKE.r + 1;
   let vx = 0, vz = 0; S.moveRel = null;
   if (mi.any && !S.casting) {
-    const lk = fireLock(), ry = lk ? S.cam.yaw : P.yaw; // S-265: travado no alvo, WASD anda pela câmera (W = para longe da câmera) e o corpo continua de frente para o alvo
+    const lk = fireLock(), ry = lk || isAction() ? S.cam.yaw : P.yaw; // estilo Skyrim: WASD sempre relativo à câmera · S-265: travado no alvo, WASD anda pela câmera (W = para longe da câmera) e o corpo continua de frente para o alvo
     const fx = Math.sin(ry), fz = Math.cos(ry), rx = -Math.cos(ry), rz = Math.sin(ry);
     let dx = fx * mi.fwd + rx * mi.strafe, dz = fz * mi.fwd + rz * mi.strafe; const l = Math.hypot(dx, dz) || 1;
     let rel = null; if (lk) { rel = Math.atan2(dx, dz) - P.yaw; while (rel > Math.PI) rel -= Math.PI * 2; while (rel < -Math.PI) rel += Math.PI * 2; }
@@ -3462,6 +3491,7 @@ addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if (S.flight) { if (k === 'escape') S.flight.skip(); return; } // P-006: voando não há controle; Esc chega logo
   if ((e.metaKey || e.ctrlKey) && k === 'z') { e.preventDefault(); if (isAdmin()) UI.toggle('admin'); return; }
+  if (k === 'alt' && isAction()) { e.preventDefault(); if (document.pointerLockElement) document.exitPointerLock(); return; } // estilo WoW/MMO de ação: Alt solta o cursor para clicar na interface
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (FB.picking || FB.box) { if (k === 'escape') FB.cancel(); return; }
   if (k === 'escape') { if (UI.closeAll()) return; if (S.target) setTarget(null); else toggleMenu(); return; }
@@ -3474,6 +3504,9 @@ addEventListener('keydown', e => {
   if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys[k] = true; e.preventDefault(); return; }
   const win = { c: 'char', i: 'inv', e: 'equip', k: 'skills', t: 'tree', h: 'help', l: 'sugestoes', b: 'bestiario', o: 'loja', g: 'mapa', j: 'quests' }[k];
   if (win) { if (document.pointerLockElement) document.exitPointerLock(); UI.toggle(win); return; }
+  if (k === 'f') { // estilo Skyrim: F = falar/usar com quem está na mira (ou o NPC mais perto à frente, até 3,5 m)
+    let n = S.crossNpc; if (!n) { let bd = 3.5; for (const c of S.npcs) { if (!c.obj || Math.abs(c.obj.position.y - S.pos.y) > 3.5) continue; const d = Math.hypot(c.x - S.pos.x, c.z - S.pos.z); const a = Math.abs(((Math.atan2(c.x - S.pos.x, c.z - S.pos.z) - S.pos.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < bd && a < 1.3) { bd = d; n = c; } } }
+    if (n) { if (document.pointerLockElement) document.exitPointerLock(); interact(n, false); } return; }
   if (k === 'n') { toggleSound(); return; }
   if (k === 'z') { if (isAdmin()) toggleGod(); return; }
   if (S.paused) return;
@@ -3493,7 +3526,7 @@ canvas.addEventListener('mousedown', e => {
   if (!S.started || S.menuOpen || FB.picking || FB.box) return;
   if (isAction()) { // modo ação: o 1º clique prende o mouse; depois, segurar o esquerdo ataca
     if (document.pointerLockElement !== canvas) { try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; }
-    if (e.button === 0) S.fire = true; return;
+    if (e.button === 0) { if (S.crossNpc) { const n = S.crossNpc; document.exitPointerLock(); interact(n, false); return; } S.fire = true; } return; // mira num NPC perto: clicar conversa (não ataca)
   }
   if (e.button === 1) { e.preventDefault(); mouse.mid = true; S.lookYaw = S.lookYaw || 0; try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { }); } catch (err) { } return; } // S-115: segurar o botão do meio e arrastar = olhar o personagem por qualquer ângulo (360°)
   if (e.button === 0) { // S-141: botão esquerdo = atacar (segurar = continuar atacando); em NPC = conversar
@@ -3510,7 +3543,7 @@ const AIM_W = AIM_CUR('#ffffff'), AIM_R = AIM_CUR('#ff4a3a');
 function updateAimCursor() { if (isAction()) return; const want = S.fire ? (fireLock() || aimTarget(S.p && (S.p.d.ranged || S.p.d.magicAuto) ? 32 : 3.5) ? AIM_R : AIM_W) : ''; if (canvas.style.cursor !== want) canvas.style.cursor = want; }
 addEventListener('mousemove', e => {
   mouseNdc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-  if (isAction() && S.started && document.pointerLockElement === canvas) { S.cam.yaw -= e.movementX * 0.0024; S.aim = clamp(S.aim - e.movementY * 0.0022, -1.25, 1.3); return; }
+  if (isAction() && S.started && document.pointerLockElement === canvas) { const mx = e.movementX, my = e.movementY; if (Math.abs(mx) > 400 || Math.abs(my) > 400) return; /* pulo falso do navegador ao prender o mouse */ const k = 0.0021 * (S.sens || 1); S.cam.yaw -= mx * k; S.aim = clamp(S.aim - my * k * (S.invY ? -1 : 1), -1.3, 1.35); return; }
   // S-234 + pedido de 2026-11-11: o CURSOR é o foco da câmera — mexer o mouse gira a câmera devagar ("peso" das Configurações), segurando o ataque
   // ou não, andando ou parado. Só sobre o mundo (não sobre janelas, barra ou menus) e sem botão de arrastar apertado (esses já giram a câmera).
   S.cursorOnWorld = e.target === canvas;
@@ -3543,6 +3576,9 @@ addEventListener('mouseup', e => {
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
   const d = e.deltaY || e.deltaX; // com Shift, alguns navegadores mandam a rolagem na horizontal
+  if (isAction()) { // estilo Skyrim: a rodinha aproxima/afasta a câmera do ombro e, no fim, entra na 1ª pessoa (e sai dela)
+    const c = S.cam; if (S.view === 'fps') { if (d > 0) { c.odistT = 1.6; c.ocur = 1.0; setView('ombro', true); } return; }
+    const was = c.odistT || 4.2; c.odistT = clamp(was * (d > 0 ? 1.15 : 0.87), 1.2, 8); if (d < 0 && was <= 1.2) setView('fps', true); return; } // já no mais perto: mais um giro entra na 1ª pessoa
   if (e.shiftKey) S.cam.pitchT = clamp((S.cam.pitchT ?? S.cam.pitch) + (d > 0 ? 0.07 : -0.07), -0.12, 1.52); // de rente ao chão até quase 90°
   else S.cam.distT = clamp(S.cam.distT * (d > 0 ? 1.12 : 0.89), 1.6, 26);
 }, { passive: false });
@@ -3563,6 +3599,10 @@ function showSettings() {
     <div class="opt-sw"><span>Qualidade gráfica <small class="muted" id="o-gfx-d">(${gfxLevel().desc})</small></span><select id="o-gfx">${GFX_LEVELS.map(l => `<option value="${l.id}" ${l.id === gfxId() ? 'selected' : ''}>${l.name}</option>`).join('')}</select></div>
     <div class="opt-sec">🌿 Mundo</div>
     <label class="opt-sw"><input type="checkbox" id="o-fauna" ${faunaEnabled() ? 'checked' : ''}><span>🦋 Vida ambiente <small class="muted">(pássaros, borboletas, vaga-lumes, peixes — desligue se o computador for fraco)</small></span></label>
+    <div class="opt-sec">🎥 Câmera</div>
+    <div class="opt-sw"><span>Tipo de câmera <small class="muted">(Skyrim: o mouse sempre gira a câmera, mira no centro, rodinha até a 1ª pessoa · Clássica: estilo WoW, com o cursor na tela)</small></span><select id="o-camt"><option value="skyrim" ${isAction() ? 'selected' : ''}>Skyrim (3ª/1ª pessoa)</option><option value="classica" ${!isAction() ? 'selected' : ''}>Clássica (WoW)</option></select></div>
+    <label class="opt-sw"><span>Sensibilidade do mouse</span><input type="range" id="o-sens" min="30" max="250" value="${Math.round((S.sens || 1) * 100)}"><b id="o-sens-t">${Math.round((S.sens || 1) * 100)}%</b></label>
+    <label class="opt-sw"><input type="checkbox" id="o-invy" ${S.invY ? 'checked' : ''}><span>Inverter o eixo vertical <small class="muted">(empurrar o mouse para a frente olha para baixo)</small></span></label>
     <div class="opt-sec">🎯 Combate</div>
     <div class="opt-sw"><span>Câmera no cursor <small class="muted">("Total" = como FPS: o mouse gira a câmera por completo e a borda da tela continua girando; "Câmera parada" desliga)</small></span><select id="o-aimw">${[['total', 'Total (como FPS)'], ['leve', 'Leve'], ['medio', 'Médio'], ['pesado', 'Pesado'], ['travado', 'Câmera parada']].map(([k, n]) => `<option value="${k}" ${(S.aimWeight || 'total') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     <div class="opt-sec">📘 Tutorial</div>
@@ -3578,6 +3618,9 @@ function showSettings() {
   $('o-test').onclick = () => Sound.play('levelup');
   if (typeof Ambience !== 'undefined') { $('o-aon').onchange = e => Ambience.setOn(e.target.checked); $('o-av').oninput = e => { Ambience.setVolume(e.target.value / 100); $('o-av-t').textContent = e.target.value + '%'; }; } // P-025
   $('o-gfx').onchange = e => { const L = applyGfx(gfxCtx, e.target.value); $('o-gfx-d').textContent = '(' + L.desc + ')'; sceneryT = -1e9; cullScenery(); if (L.grass > 0) cullGrass(camera.position.x, camera.position.z, true); };
+  $('o-camt').onchange = e => { setView(e.target.value === 'classica' ? 'classica' : 'ombro', true); };
+  $('o-sens').oninput = e => { S.sens = e.target.value / 100; $('o-sens-t').textContent = e.target.value + '%'; try { localStorage.setItem('aethra_sens', String(S.sens)); } catch (er) { } };
+  $('o-invy').onchange = e => { S.invY = e.target.checked; try { localStorage.setItem('aethra_invy', S.invY ? '1' : '0'); } catch (er) { } };
   $('o-aimw').onchange = e => { S.aimWeight = e.target.value; try { localStorage.setItem('aethra_aimw', S.aimWeight); } catch (er) { } };
   $('o-back').onclick = () => { S.menuOpen = false; toggleMenu(); };
 }
@@ -3699,13 +3742,20 @@ function draw(dt) {
     if (isAction()) { // 1ª pessoa / por cima do ombro: a câmera aponta para a mira (S-094)
       const fx = Math.sin(cam.yaw), fz = Math.cos(cam.yaw), ap = Math.cos(S.aim), as = Math.sin(S.aim), look = new THREE.Vector3(fx * ap, as, fz * ap);
       if (S.view === 'fps') { const eye = new THREE.Vector3(P.x + fx * 0.14, P.y + HERO_H * 0.92 + (S.riding ? 1 : 0) + (S.swimOff ? 0.4 : 0), P.z + fz * 0.14); camera.position.copy(eye); camera.lookAt(eye.clone().add(look)); }
-      else {
-        const pivot = new THREE.Vector3(P.x - fz * 0.55, P.y + 1.62 + (S.riding ? 1 : 0) + (S.swimOff || 0) * 0.75, P.z + fx * 0.55), back = look.clone().multiplyScalar(-2.7);
-        camRay.set(pivot, back.clone().normalize()); camRay.far = 2.7; const oh = camRay.intersectObjects(near, true)[0];
-        const cpos = pivot.clone().add(back.setLength(oh ? Math.max(0.5, oh.distance - 0.25) : 2.7)); cpos.y = Math.max(cpos.y, groundAt(cpos.x, cpos.z) + 0.3);
-        camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 12));
+      else { // 3ª pessoa estilo Skyrim: pivô no ombro (direito), distância na rodinha, colisão que encolhe rápido e volta devagar
+        const want = (cam.odistT || 4.2) * (1 - Math.max(0, S.aim) * 0.4), side = 0.48 * clamp(want / 3, 0.35, 1); // olhando para cima a câmera chega perto (como no Skyrim)
+        const tall = S.p && S.p.look && S.p.look.race === 'anao' ? 1.45 : 1.78; // um pouco acima da cabeça: dá para ver por cima do ombro
+        const pivot = new THREE.Vector3(P.x - fz * side, P.y + tall + (S.riding ? 1 : 0) + (S.swimOff || 0) * 0.75, P.z + fx * side), bdir = look.clone().negate();
+        camRay.set(pivot, bdir); camRay.far = want + 0.4; const oh = camRay.intersectObjects(near, true).find(h => !h.object.isSprite && !(h.object.material && h.object.material.blending === THREE.AdditiveBlending));
+        const allow = oh ? Math.max(0.35, oh.distance - 0.3) : want;
+        cam.ocur = cam.ocur === undefined ? allow : allow < cam.ocur ? allow : cam.ocur + (allow - cam.ocur) * Math.min(1, dt * 3.5);
+        const cpos = pivot.clone().addScaledVector(bdir, cam.ocur); cpos.y = Math.max(cpos.y, groundAt(cpos.x, cpos.z) + 0.3);
+        { const I = S.interior; if (I && !I.round && I.w && I.d) { cpos.x = clamp(cpos.x, I.x - I.w / 2 + 0.35, I.x + I.w / 2 - 0.35); cpos.z = clamp(cpos.z, I.z - I.d / 2 + 0.35, I.z + I.d / 2 - 0.35); } } // nas salas, nunca sai pela parede
+        camera.position.copy(cpos); camera.lookAt(pivot.clone().addScaledVector(look, 20));
+        if (S.me) S.me.obj.visible = cam.ocur > 0.55; // encostado na parede, a câmera não fica dentro da cabeça
       }
     }
+    updateCrosshairPrompt();
     if (!S.flight && tutorialCamera(camera, dt)) { /* P-018: câmera de apresentação da vila */ }
     else if (S.flight) S.flight.cam(camera, dt); // P-006: câmera atrás e acima do Pégaso
     else { updateImpact(dt); shakeCamera(camera, dt); } updateSkillFx(dt); // P-011: recuo/piscada do alvo, partículas e tremidinha só em críticos/pesados

@@ -382,3 +382,20 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - as cinco lojas abrem (8/6/6/4 itens) e a cura funciona;
   - chega-se a pé a todos os balcões.
 - **Pegadinha da ferramenta**: a pasta temporária de testes (scratchpad) foi limpa no meio da sessão. Recrie a cópia com rsync, refaça a rota de fotos do servidor de teste e crie um personagem novo (o banco de teste também some).
+
+## Pedido direto (2026-11-13): câmera "muito ruim, meio zoada" → modelar a do Skyrim
+- **Reincidência do tema câmera** (S-234, S-385, agora). A câmera "no cursor" sem prender o mouse (cursor solto que bate na borda da tela e precisa de giro de borda) nunca agradou.
+- **O que ele quer**: o padrão dos jogos de ação em 3ª pessoa no PC.
+  - Mouse sempre na câmera, mira no centro e rodinha até a 1ª pessoa.
+  - Parado, orbita livre; andando, corre para onde aponta; em combate, de frente para a mira.
+  - Colisão suave.
+  - Sensibilidade e inversão nas opções.
+- **Lição**: quando ele citar um jogo de referência para controle, copie o **comportamento** dele por inteiro e faça disso o padrão. A versão antiga fica só como opção.
+- **Testado por script**:
+  - orbitar parado não gira o corpo;
+  - W, S e A correm para os lados certos da câmera;
+  - em combate, S anda de costas;
+  - a rodinha entra e sai da 1ª pessoa;
+  - o F conversa;
+  - a câmera não sai da taverna em 36 ângulos.
+  - Falta ele sentir o mouse de verdade.

@@ -570,7 +570,8 @@ const UI = {
     this.body('help').innerHTML = `<div style="line-height:1.6">
       <b class="gold">Movimento e combate</b><br>
       • <b>W A S D</b> (ou as setas) para andar, ou <b>clique no chão</b> (segure para continuar andando).<br>
-      • <b>Segure o botão esquerdo</b> para atacar para onde o <b>cursor</b> aponta (estilo Skyrim, sem alvo travado): corpo a corpo só acerta quem está na mira e ao alcance; flechas e magias vão até o ponto do cursor. Botão direito gira a câmera; V troca para 1ª pessoa/ombro.<br>
+      • <b>Câmera estilo Skyrim</b> (padrão): o <b>mouse gira a câmera</b> o tempo todo e a mira fica no centro. <b>Clique e segure o botão esquerdo</b> para atacar o que está na mira. A <b>rodinha</b> aproxima até a 1ª pessoa, e <b>V</b> alterna 1ª/3ª pessoa. <b>F</b> fala com quem está na mira. <b>Alt</b> solta o cursor para clicar na interface; clicar na tela prende de novo. Parado, a câmera gira em volta do herói; andando, ele corre para onde você aponta; em combate, fica de frente para a mira.<br>
+      • Prefere a câmera clássica (estilo WoW, com o cursor na tela)? <b>Esc → Configurações → Câmera</b>. Lá também ficam a sensibilidade do mouse e a inversão do eixo vertical.<br>
       • <b>Clique em itens no chão</b> para pegar (ou aperte <b>F</b>).<br>
       • <b>1–9</b>: atalhos de habilidades/itens. Habilidades de alvo pedem um clique no monstro/área.<br>
       • <b>X</b>: sentar (regenera HP/SP 2× mais rápido). <b>Roda do mouse</b>: zoom.<br><br>
