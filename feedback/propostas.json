@@ -417,5 +417,17 @@
       "caça-bugs 2026-11-13 (prédios encavalados)"
     ],
     "status": "proposta"
+  },
+  {
+    "id": "P-031",
+    "titulo": "Monstros mais leves para a placa de vídeo",
+    "detalhe": "Cada monstro dos campos é montado com dezenas de peças animadas separadas. Perto da vila, eles e o Noctívago (279 peças) passam de 4 mil desenhos por quadro, o que pesa no FPS. A proposta é juntar as peças que se mexem juntas e desenhar os monstros iguais de uma vez só, sem mudar o visual.",
+    "principios": [
+      "16. Desempenho é parte do gosto"
+    ],
+    "evidencias": [
+      "medição de 2026-11-13: vila com 4.171 chamadas de desenho"
+    ],
+    "status": "proposta"
   }
 ]

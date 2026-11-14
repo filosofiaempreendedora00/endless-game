@@ -37,7 +37,7 @@ export const ROUTINES = {
   bravo: { region: 'vila', post: [13, -9], work: 'Idle', spots: [[10.4, -11], [14.6, -5.6]], night: 'vigilia', nightAt: [12, -8], lunch: 'taverna', service: true },
   flora: { region: 'vila', post: null, work: 'PickUp', workAlt: 'Idle', spots: [[1.6, -1.6], [3.4, -3]], night: 'casa', home: 2, lunch: 'poco', service: true },
   dario: { region: 'vila', post: [0, -18.4, Math.PI], work: 'Interact', spots: [[1.7, -1.4], [-2.8, -14.6]], night: 'casa', home: 0, lunch: 'taverna' },
-  marta: { region: 'vila', post: [4.2, 9.5], work: 'PickUp', workAlt: 'Idle', spots: [[1.7, 1.5], [-1.6, 1.8], [6.8, -3.8], [-5.4, 4.4]], night: 'casa', home: 1, lunch: 'poco' },
+  marta: { region: 'vila', post: [4.2, 9.5], work: 'PickUp', workAlt: 'Idle', spots: [[2.5, 2.1], /* caça-bugs: o ponto antigo (1,7; 1,5) era em cima do balde do poço */ [-1.6, 1.8], [6.8, -3.8], [-5.4, 4.4]], night: 'casa', home: 1, lunch: 'poco' },
   tobias: { region: 'vila', post: [15, 2], patrol: [[15, 2], [11.5, 11.5], [2, 15.5], [-9.6, 12.2], [-15.5, 1], [-13, -9.6], [-2.5, -15.5], [10.6, -13.4], [15.5, -5.5]], night: 'patrulha', rest: [2, 4], service: true },
   // ---------- Cidadela de Pedraclara (relativo a CITY2) ----------
   isis: { region: 'pedraclara', post: [5, -4], work: 'Idle', spots: [[2.5, -1.8], [8, -2.4], [6.2, -7]], night: 'vigilia', nightAt: [4, -3.2], service: true },

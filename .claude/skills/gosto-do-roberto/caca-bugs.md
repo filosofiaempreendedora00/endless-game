@@ -105,6 +105,22 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
   - um Esqueleto Vigia que às vezes nasce dentro de objeto na masmorra.
 - **Pegadinha da ferramenta**: com o painel do navegador oculto, `setTimeout` em cadeia é estrangulado (1 por minuto). Rode um lote por chamada, de ~20 s no máximo cada.
 
+### 2026-11-13 (noite): faxina depois das obras
+- **Corrigidos**:
+  - **Escombros das Ruínas** com colisão no miolo do monte (S-302); as pedrinhas da beira continuam pisáveis.
+  - **Marta** saiu do ponto de descanso que caía em cima do balde do poço (routines3d).
+  - **Monstro nunca nasce dentro de objeto**: o ponto de nascimento passa pelo `resolve`.
+  - **Trancos ao contornar quinas**: as caixas de colisão agora têm cantos arredondados. Antes o empurrão trocava de face de um quadro para o outro.
+  - **Regressão minha da manhã**: `cullInteriors` deixava de fora tudo o que tinha esqueleto, e os cavalos do estábulo (sala em x = 1300) eram desenhados do mundo inteiro. Agora só os rivais da Arena ficam de fora.
+  - **Cidades além do fim da névoa não são mais desenhadas** (da vila desenhavam-se Aelindra, a Vigília e Pedrafunda): Pedrafunda caiu de 2,7 para 1,9 M de triângulos, Aelindra de 3,9 para 3,3 M e a vila de 6,1 para 5,1 M.
+- **Medição**: `renderer.info` + `gl.finish()` por cena.
+  - Pegadinha: `S.time` pode estar parado logo depois de entrar no mundo (o 1º lote de `__sim` não avançou). Confira `S.time` antes de confiar nos números.
+  - O tempo de GPU com o painel oculto oscila muito; compare chamadas de desenho e triângulos.
+- **Fica para depois**:
+  - **Proposta P-031**: os monstros dos campos são montados com dezenas de peças animadas cada um, e a vila passa de 4 mil chamadas de desenho por causa deles e do Noctívago (279 peças).
+  - O destravador ainda pode dar um salto de ~0,9 m quando se empurra uma quina por 1 s (Pedraclara, casa em 314, -30).
+  - O verificador completo (música e câmera nas salas) precisa do painel visível.
+
 ### Falsos alarmes conhecidos
 - **Gudrun e Irmão Hulda** (Pedrafunda) ficam 1,35 m acima do chão de propósito, na base da estátua e no degrau do templo. Dá para conversar com eles de baixo.
 - "Prédios encavalados" baixos (até ~3 m) em casas em fileira do porto e de Pedrafunda podem ser geminadas de propósito (P-030).

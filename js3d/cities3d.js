@@ -977,7 +977,9 @@ function buildFrostHold(ctx) {
 // ctx: { scene, place, worldNpc, colliders, occluders, placed, roomAnims, camera }
 export function buildCities(ctx) {
   let cullT = -9;
-  const anim = { userData: { update: t => { clothT.value = t; if (t - cullT < 0.5) return; cullT = t; const c = ctx.camera.position; if (c.x > HALF + 100) return; /* nas salas (o mundo agora vai até 630) */ for (const g of CULL) { const d = Math.hypot(g.position.x - c.x, g.position.z - c.z); g.visible = d < (g.userData.far || 380); } } } };
+  const anim = { userData: { update: t => { clothT.value = t; if (t - cullT < 0.5) return; cullT = t; const c = ctx.camera.position; if (c.x > HALF + 100) return; /* nas salas (o mundo agora vai até 630) */ const fogFar = ctx.scene.fog ? ctx.scene.fog.far : 1e9; // desempenho (2026-11-13): o que está além do fim da névoa nem aparece — não precisa ser desenhado (da vila desenhava-se Aelindra, a Vigília e Pedrafunda inteiras)
+      for (const g of CULL) { const d = Math.hypot(g.position.x - c.x, g.position.z - c.z), far = g.userData.far || 380; let rad = g.userData._rad; if (rad === undefined) { const b = new THREE.Box3().setFromObject(g); rad = g.userData._rad = b.isEmpty() ? 0 : b.getSize(new THREE.Vector3()).length() / 2; }
+        g.visible = d < (far >= 800 ? far : Math.min(far, fogFar + rad)); } } } };
   ctx.roomAnims.push(anim); // vento nos estandartes e distância de desenho das cidades
   const dwarf = buildDwarfCity(ctx);
   // o Porto das Gaivotas é montado por buildPortCity/buildMerchants (js3d/port3d.js), chamados pelo main3d logo depois

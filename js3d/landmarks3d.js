@@ -1011,7 +1011,7 @@ export function buildRuins(ctx) {
       for (const sx of [-1, 1]) { const f = chunk(rng, 0.7, 1.2, 0.8); f.translate(sx * 0.8, 2.6, 0); parts.push(paint(f, RUIN_STONE, RUIN_MOSS, 0.3, 5)); } // só os pés da estátua
       debrisPile(rng, parts, x, y0, z, 5.5, 26, heightAt, x, z); cols.push([x, z, 2.4]); }, 'pedestal_vazio'); }
   for (let k = 0; k < 18; k++) { if (k % 2) { rng(); rng(); rng(); continue; } /* S-301: metade dos montes de escombros (ficou excessivo) */ const a = rng() * Math.PI * 2, d = 30 + rng() * 85, x = Math.cos(a) * d * 1.3, z = -300 + Math.sin(a) * d; if (!free(x, z, 5) || (roadDist && roadDist(x, z) < 4)) continue;
-    cluster(x, z, (parts, y0) => debrisPile(rng, parts, x, y0, z, 3.5 + rng() * 3.5, 22 + Math.floor(rng() * 18), heightAt, x, z), 'escombros'); }
+    cluster(x, z, (parts, y0, cols) => { const R = 3.5 + rng() * 3.5; debrisPile(rng, parts, x, y0, z, R, 22 + Math.floor(rng() * 18), heightAt, x, z); cols.push([x, z, R * 0.42]); }, 'escombros'); } // caça-bugs (S-302): o miolo do monte, onde as pedras são grandes, tem colisão; as pedrinhas da beira se pisam por cima
   return groups;
 }
 

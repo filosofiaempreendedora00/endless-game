@@ -248,8 +248,8 @@ function cullInteriors() {
       if (interiorSeen.has(o) || o.visible === false) continue; // escondido agora (ex.: durante a vitrine): olha de novo quando aparecer
       interiorSeen.add(o);
       if (skip.has(o) || o.isLight || o.isCamera || o.userData.noRender) continue; /* não liga de volta o que nasceu escondido (bloqueadores de câmera) */
-      let skinned = false; o.traverse(q => { if (q.isSkinnedMesh) skinned = true; }); if (skinned) continue; // gente e bichos (rivais da Arena, monstros) têm visibilidade própria
       b.setFromObject(o); if (b.isEmpty()) continue; b.getCenter(c);
+      let skinned = false; o.traverse(q => { if (q.isSkinnedMesh) skinned = true; }); if (skinned && Math.abs(c.x - ARENA_I.x) < 60) continue; // rivais da Arena têm visibilidade própria (os cavalos do estábulo, também com esqueleto, ficam na lista: antes eram desenhados do mundo inteiro)
       if (c.x > HALF + 100 && b.min.x > HALF + 50) { interiorObjs.push(o); if (interiorShown !== null) o.visible = interiorShown; }
     }
   }
@@ -1822,7 +1822,8 @@ function monsterLiveOld(type, cv) {
 function spawnMonster(zoneId, type, at) {
   const def = MONSTERS[type]; if (!def) return;
   if (def.boss && INTERIORS[zoneId]) SPAWN_BOSS_NEXT = true;
-  const pt = at || spawnPoint(zoneId);
+  let pt = at || spawnPoint(zoneId);
+  if (!at) { const sy = RES_Y; RES_Y = 0; for (let k = 0; k < 3; k++) pt = resolve(pt.x, pt.z, 0.9); RES_Y = sy; } // caça-bugs: nunca nasce dentro de sarcófago, coluna ou caixa (antes um Esqueleto Vigia às vezes nascia preso)
   const m = { uid: S.uid++, type, def, zoneId, hp: def.hp, maxHp: def.hp, x: pt.x, z: pt.z, yaw: rng() * 6.28, home: { ...pt }, aggro: false, returning: false, wander: null, nextThink: rng() * 3, nextAttack: 0, status: {}, dead: false, lockAnim: 0, moving: false, stolen: false };
   const v = monsterVisual(m);
   Object.assign(m, { vis: v, obj: v.obj, radius: v.radius, height: v.height });
@@ -2358,7 +2359,12 @@ function resolve(x, z, r) {
       if (Math.abs(dx) > c.r + r + 0.5 || Math.abs(dz) > c.r + r + 0.5) continue;
       const cs = Math.cos(c.rot), sn = Math.sin(c.rot);
       let lx = dx * cs - dz * sn, lz = dx * sn + dz * cs;
-      const px = c.hx + r - Math.abs(lx), pz = c.hz + r - Math.abs(lz);
+      const ax = Math.abs(lx), az = Math.abs(lz);
+      if (ax > c.hx && az > c.hz) { // caça-bugs: canto ARREDONDADO — antes o canto era quadrado e o empurrão trocava de face de um quadro para o outro (tranco de até 0,7 m ao contornar quinas)
+        const qx = ax - c.hx, qz = az - c.hz, d = Math.hypot(qx, qz);
+        if (d < r && d > 1e-6) { const k = r / d; lx = Math.sign(lx) * (c.hx + qx * k); lz = Math.sign(lz) * (c.hz + qz * k); x = c.x + lx * cs + lz * sn; z = c.z - lx * sn + lz * cs; }
+        continue; }
+      const px = c.hx + r - ax, pz = c.hz + r - az;
       if (px > 0 && pz > 0) { if (px < pz) lx = Math.sign(lx || 1) * (c.hx + r); else lz = Math.sign(lz || 1) * (c.hz + r); x = c.x + lx * cs + lz * sn; z = c.z - lx * sn + lz * cs; }
       continue;
     }
