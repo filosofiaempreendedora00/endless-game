@@ -3928,10 +3928,10 @@ function handChains(root, side) {
   for (const f of FINGER_NAMES) { const bs = ['01', '02', '03'].map(j => root.getObjectByName(`${f}_${j}_${side}`)); if (bs.every(Boolean)) out.push({ f, bs, q0: bs.map(() => new THREE.Quaternion()), s: 1, n: 0 }); }
   return (root.userData[k] = out);
 }
-const _fgR = new THREE.Quaternion(), _fgX = new THREE.Vector3(1, 0, 0), _fgP = new THREE.Vector3(), _fgA = new THREE.Vector3(), _fgD = new THREE.Vector3(), _fgT = new THREE.Vector3(), _fgU = new THREE.Vector3(), _fgV = new THREE.Vector3();
+const _fgSc = new THREE.Vector3(), _fgR = new THREE.Quaternion(), _fgX = new THREE.Vector3(1, 0, 0), _fgP = new THREE.Vector3(), _fgA = new THREE.Vector3(), _fgD = new THREE.Vector3(), _fgT = new THREE.Vector3(), _fgU = new THREE.Vector3(), _fgV = new THREE.Vector3();
 function curlChain(c, ang, s) { for (let i = 0; i < 3; i++) c.bs[i].quaternion.copy(c.q0[i]).multiply(_fgR.setFromAxisAngle(_fgX, ang[i] * s)); c.bs[0].updateWorldMatrix(false, true); }
-function chainPen(c, A0, d, r) { // quanto o dedo entra no cilindro do cabo (>0 = atravessa)
-  const p1 = _fgU.setFromMatrixPosition(c.bs[1].matrixWorld), p2 = _fgV.setFromMatrixPosition(c.bs[2].matrixWorld), seg = p2.distanceTo(p1), fr = Math.max(0.0055, seg * 0.26); // matrizes já atualizadas em curlChain (barato)
+function chainPen(c, A0, d, r, sc = 1) { // quanto o dedo entra no cilindro do cabo (>0 = atravessa); sc = escala do mundo da mão (1ª pessoa encolhida)
+  const p1 = _fgU.setFromMatrixPosition(c.bs[1].matrixWorld), p2 = _fgV.setFromMatrixPosition(c.bs[2].matrixWorld), seg = p2.distanceTo(p1), fr = Math.max(0.0055 * sc, seg * 0.26); // matrizes já atualizadas em curlChain (barato)
   _fgT.copy(p2).sub(p1).multiplyScalar(0.85).add(p2); // ponta do dedo
   let pen = -1;
   for (const P of [p1, p2, _fgT]) { _fgD.copy(P).sub(A0); _fgD.addScaledVector(d, -_fgD.dot(d)); pen = Math.max(pen, r + fr - _fgD.length()); }
@@ -3947,16 +3947,16 @@ export function fingerGrip(root, side, type) {
   const G = GRIPS[reg ? reg.type : type]; if (!G) return;
   const hand = b0.parent; if (hand) hand.updateWorldMatrix(true, false);
   let A0 = null, d = null, r = 0;
-  if (reg && reg.r) { reg.obj.updateWorldMatrix(true, false); A0 = _fgP.copy(reg.point).applyMatrix4(reg.obj.matrixWorld); d = _fgA.copy(reg.axis).transformDirection(reg.obj.matrixWorld); r = reg.r; }
+  let sc = 1; if (reg && reg.r) { reg.obj.updateWorldMatrix(true, false); A0 = _fgP.copy(reg.point).applyMatrix4(reg.obj.matrixWorld); d = _fgA.copy(reg.axis).transformDirection(reg.obj.matrixWorld); sc = _fgSc.setFromMatrixScale(reg.obj.matrixWorld).x; r = reg.r * sc; } // raio na escala real (a 1ª pessoa usa o corpo encolhido)
   for (const c of chains) {
     for (let i = 0; i < 3; i++) c.q0[i].copy(c.bs[i].quaternion);
     const ang = c.f === 'thumb' ? [0, G.thumb[0] * (G.over === false ? 0.6 : 1), G.thumb[1] * (G.over === false ? 0.6 : 1)] : G.curl;
     if (!A0) { c.s = 1; curlChain(c, ang, 1); continue; }
     curlChain(c, ang, c.s);
-    if (c.n++ % 3 === 0 || chainPen(c, A0, d, r) > 0.0005) { // busca a dobra que ENCOSTA no cabo: a cada 3 quadros, ou na hora se a pose nova fez o dedo entrar
+    if (c.n++ % 3 === 0 || chainPen(c, A0, d, r, sc) > 0.0005 * sc) { // busca a dobra que ENCOSTA no cabo: a cada 3 quadros, ou na hora se a pose nova fez o dedo entrar
       let lo = -0.75, hi = 1.3; // pode ABRIR o dedo (negativo) quando a própria animação já o fecha por dentro do cabo
-      curlChain(c, ang, hi); if (chainPen(c, A0, d, r) <= 0) lo = hi;
-      else for (let it = 0; it < 6; it++) { const m = (lo + hi) / 2; curlChain(c, ang, m); if (chainPen(c, A0, d, r) > 0) hi = m; else lo = m; }
+      curlChain(c, ang, hi); if (chainPen(c, A0, d, r, sc) <= 0) lo = hi;
+      else for (let it = 0; it < 6; it++) { const m = (lo + hi) / 2; curlChain(c, ang, m); if (chainPen(c, A0, d, r, sc) > 0) hi = m; else lo = m; }
       c.s = lo; curlChain(c, ang, c.s);
     }
   }
@@ -3973,8 +3973,8 @@ export function gripReport(root) {
     const chains = handChains(root, side), fb = ['index', 'middle', 'ring', 'pinky'].map(n => root.getObjectByName(`${n}_02_${side}`)).filter(Boolean), hb = root.getObjectByName('hand_' + side); if (fb.length < 4 || !hb) continue;
     const C = fb.reduce((a, b) => a.add(b.getWorldPosition(new THREE.Vector3())), new THREE.Vector3()).multiplyScalar(0.25).lerp(hb.getWorldPosition(new THREE.Vector3()), 0.22);
     const A0 = reg.point.clone().applyMatrix4(reg.obj.matrixWorld), d = reg.axis.clone().transformDirection(reg.obj.matrixWorld), v = C.clone().sub(A0); v.addScaledVector(d, -v.dot(d));
-    let pen = -1; for (const c of chains) if (c.f !== 'thumb') pen = Math.max(pen, chainPen(c, A0, d, reg.r));
-    out.push({ side, type: reg.type, eixo_cm: +(v.length() * 100).toFixed(1), penetra_mm: +(Math.max(0, pen) * 1000).toFixed(1) });
+    const sc = new THREE.Vector3().setFromMatrixScale(reg.obj.matrixWorld).x; let pen = -1; for (const c of chains) if (c.f !== 'thumb') pen = Math.max(pen, chainPen(c, A0, d, reg.r * sc, sc));
+    out.push({ side, type: reg.type, eixo_cm: +(v.length() * 100 / sc).toFixed(1), penetra_mm: +(Math.max(0, pen) * 1000 / sc).toFixed(1) }); // medidas na escala do corpo
   }
   return out;
 }

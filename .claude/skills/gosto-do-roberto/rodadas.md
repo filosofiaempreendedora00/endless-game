@@ -413,3 +413,15 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Lição: peça feita de primitivas (cilindro + cápsulas) num lugar em close é o pior caso do princípio 1. Em close, use sempre o modelo realista.
 - Etapa 2 (P-032) feita: golpes em combo por arma, arco puxando a corda com a flecha, besta com coice e recarga, magia acesa na palma, alaúde/flauta do Bardo e escudo que levanta ao apanhar.
 - Etapa 3 (P-032) feita: braços que não atravessam parede (escala de vista), rastro e tranco do golpe, guarda baixa fora de combate, sacar a arma e mãos nas rédeas montado. Bug achado de passagem: abrir o jogo já na 1ª pessoa quebrava o 1º quadro (S.vel).
+
+## 2026-11-14 — mãos da 1ª pessoa ("dedos estranhos, polegares longos, mal encaixados")
+- Diagnóstico com close-ups (câmera do próprio olho com lente fechada + órbita em volta da mão) e medida (`gripReport`).
+  - Os dedos partiam da pose de ligação (retos, em leque).
+  - O solver de pegada comparava o cabo na escala errada (a 1ª pessoa é encolhida): achava que tudo atravessava e ABRIA a mão.
+  - A arma ficava ~4 cm fora do punho.
+- Feito:
+  - Dedos a partir das poses das animações, pegada de verdade em todos os cabos e arma reencaixada no canal da mão.
+  - Duas mãos no montante (peito gira), apoio da besta, mão no braço do alaúde, corda em gancho e mangas de mago que não tapam a mão.
+- Resultado: o cabo fica a 0,1–2,6 cm do centro do punho em todas as armas (antes 4 cm), e nenhum dedo atravessa (antes 13,6 mm).
+- Lição: com o Roberto, "melhorou" não basta — ele compara com o Skyrim em close. Sempre conferir de perto e medir antes de entregar.
+

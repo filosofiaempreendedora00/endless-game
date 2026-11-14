@@ -114,6 +114,14 @@ Quando ele pedir para aplicar as sugestões:
     - Rastro do golpe: fita aditiva perto da ponta da lâmina, só durante o corte das armas de corpo a corpo.
     - Tranco: `fpv.impact()` no acerto corpo a corpo, mais um pequeno coice da câmera (`S.fpKick`).
     - Guarda baixa fora de combate (`combat`); braços sobem sacando a arma ao entrar na 1ª pessoa (`redraw`); montado = mãos nas rédeas (`riding`).
+  - **Mãos de verdade (2026-11-14)**:
+    - Os dedos partem das poses das ANIMAÇÕES: punho do "Idle" e mão solta do "Spell_Simple_Idle_Loop" (`CLOSED`/`OPEN`), nunca da pose de ligação.
+    - Quem segura algo passa pelo MESMO sistema de pegada da 3ª pessoa (`fingerGrip`/`gripOn` em looks3d, P-013). O `fingerGrip`/`chainPen` agora usa a escala real do objeto: sem isso, na 1ª pessoa encolhida (K) todo cabo "atravessava" e a mão abria.
+    - A arma é reencaixada no CANAL da mão fechada (`channel`: centro dos círculos das juntas de cada dedo; `seat`).
+    - Montante: a mão esquerda se registra no mesmo cabo, vai ao primeiro ponto alcançável e o peito gira (`spine_03`) para alcançar.
+    - Besta e alaúde: o apoio desliza pela peça até o braço alcançar (`reachAlong`). A corda do arco usa os dedos em gancho (`STRING_HOOK`).
+    - Mangas em sino dos magos são afuniladas perto do pulso só na cópia da 1ª pessoa.
+    - Para conferir use `gripReport` (eixo do cabo × centro do punho, quanto os dedos entram).
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar
