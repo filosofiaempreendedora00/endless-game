@@ -412,3 +412,4 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - Etapa 1 (P-032) feita: braços e mãos do próprio corpo realista, com a roupa da classe, a arma de verdade e dedos fechando no cabo.
 - Lição: peça feita de primitivas (cilindro + cápsulas) num lugar em close é o pior caso do princípio 1. Em close, use sempre o modelo realista.
 - Etapa 2 (P-032) feita: golpes em combo por arma, arco puxando a corda com a flecha, besta com coice e recarga, magia acesa na palma, alaúde/flauta do Bardo e escudo que levanta ao apanhar.
+- Etapa 3 (P-032) feita: braços que não atravessam parede (escala de vista), rastro e tranco do golpe, guarda baixa fora de combate, sacar a arma e mãos nas rédeas montado. Bug achado de passagem: abrir o jogo já na 1ª pessoa quebrava o 1º quadro (S.vel).

@@ -152,7 +152,10 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), loc = b => b.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
   // os OMBROS ficam onde estariam num corpo de verdade: 21 cm abaixo dos olhos e 6 cm atrás deles
   const sh = loc(B.upperarm_l).add(loc(B.upperarm_r)).multiplyScalar(0.5).applyAxisAngle(V(0, 1, 0), Math.PI);
-  const base = V(-sh.x, -0.21 - sh.y, 0.06 - sh.z); root.position.copy(base);
+  const base = V(-sh.x, -0.21 - sh.y, 0.06 - sh.z);
+  // ETAPA 3 — braços que não entram na parede: tudo encolhido a K e trazido para perto do olho na mesma proporção.
+  // Na tela fica idêntico, mas as mãos ficam a ~10 cm da câmera (a câmera já não chega tão perto de parede nenhuma)
+  const K = 0.22; root.scale.setScalar(K); root.position.copy(base).multiplyScalar(K);
 
   // eixos de cada mão no espaço do osso: "fwd" = punho → nós dos dedos, "palm" = normal da palma, "rad" = lado do polegar
   const handAxes = side => { const h = B['hand_' + side], m = B['middle_01_' + side], t = B['thumb_01_' + side], ix = B['index_01_' + side], pk = B['pinky_01_' + side];
@@ -223,9 +226,22 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
   const palmLocal = side => AX[side].fwd.clone().multiplyScalar(0.075).add(AX[side].palm.clone().multiplyScalar(0.045));
   const glows = {}; if (glow && (kind === 'magic' || kind === 'staff')) for (const sd of kind === 'magic' ? ['r', 'l'] : ['l']) { const g = makeGlow(glow, sd === 'r' ? 1.5 : 1.25); g.position.copy(palmLocal(sd)); B['hand_' + sd].add(g); glows[sd] = g; }
   const camToRoot = (P, Q) => { // ponto/rotação no espaço da câmera → espaço do suporte (root está girado 180° e deslocado)
-    const p = V(-(P.x - root.position.x), P.y - root.position.y, -(P.z - root.position.z)); const q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI).multiply(Q); return { p, q }; };
+    const rp = root.position, p = V(-(P.x * K - rp.x) / K, (P.y * K - rp.y) / K, -(P.z * K - rp.z) / K); const q = new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI).multiply(Q); return { p, q }; };
   const basisQ = (Y, Z) => { const y = Y.clone().normalize(), z = Z.clone().sub(y.clone().multiplyScalar(Z.dot(y))).normalize(), x = new THREE.Vector3().crossVectors(y, z); return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); };
 
+  // rastro do golpe: fita entre o meio da lâmina e a ponta, nos últimos quadros do corte (some em 0,14 s)
+  const MELEE = new Set(['swing', 'shield', 'heavy', 'dagger', 'katar', 'spear']), wItem = WAX.r ? weapons.r[0].it : null;
+  let trail = null, tipL = null, baseL = null; const trailPts = [];
+  if (MELEE.has(kind) && wItem) {
+    const bb = new THREE.Box3(); root.updateMatrixWorld(true); const wi = wItem.matrixWorld.clone().invert();
+    wItem.traverse(o => { if (o.isMesh) { o.geometry.computeBoundingBox(); bb.union(o.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(wi, o.matrixWorld))); } });
+    if (!bb.isEmpty()) { tipL = V(0, bb.max.y * 0.97, 0); baseL = V(0, bb.min.y + (bb.max.y - bb.min.y) * 0.72, 0); // fita fina, só perto da ponta
+      const N = 16, geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 6), 3)); geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(N * 6), 3));
+      const idx = []; for (let i = 0; i < N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } geo.setIndex(idx);
+      trail = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+      trail.frustumCulled = false; trail.renderOrder = 11; trail.visible = false; trail.userData = { N, col: new THREE.Color(kind === 'heavy' ? '#ffd9a0' : '#d8ecff') }; root.add(trail); }
+  }
+  const shake = V(); let jolt = 0, relax = 0, drawT = 0, rideK = 0;
   let T = 0, atk = -9, atkDur = 0.45, clip = null, combo = -1, lastEnd = -9, cast = -9, castCol = null, flare = 0, breathe = 0, blockT = 0;
   const api = {
     root, kind, B, SG, glows,
@@ -241,14 +257,17 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
       if (type === 'spell' && (kind === 'magic' || kind === 'staff' || kind === 'fist' || kind === 'lute' || kind === 'flute')) { cast = T; atk = T; atkDur = 0.6; clip = kind === 'staff' ? CLIPS.staff[0] : CLIPS.spell[0]; lastEnd = T + 0.6; }
       else api.attack(null, delay);
     },
-    update(dt, { cam, speed = 0, sprint = false, hurt = 9 }) {
+    impact(power = 1) { jolt = Math.min(1.5, Math.max(jolt, power)); }, // tranco ao acertar
+    redraw() { drawT = 0; }, // sacar de novo (os braços sobem de baixo)
+    update(dt, { cam, speed = 0, sprint = false, hurt = 9, combat = true, riding = false }) {
       T += dt; breathe += dt;
+      jolt = Math.max(0, jolt - dt * 7); shake.set((Math.random() - 0.5) * 0.008 * jolt, (Math.random() - 0.5) * 0.008 * jolt, 0); drawT = Math.min(1, drawT + dt / 0.45);
       resetPose();
       // balanço: respiração parada, passada ao andar, mais forte correndo
       const w = Math.min(1, speed / 3.2), bobX = Math.cos(T * 4.6) * 0.011 * w, bobY = -Math.abs(Math.sin(T * 4.6)) * 0.014 * w + Math.sin(breathe * 1.5) * 0.004;
-      root.position.set(base.x + bobX, base.y + bobY - (sprint ? 0.03 : 0), base.z + (sprint ? 0.02 : 0));
+      root.position.set(base.x + bobX + shake.x, base.y + bobY - (sprint ? 0.03 : 0) + shake.y, base.z + (sprint ? 0.02 : 0)).multiplyScalar(K);
       root.updateMatrixWorld(true);
-      const toW = v => v.clone().applyMatrix4(cam.matrixWorld), dirW = v => v.clone().normalize().transformDirection(cam.matrixWorld);
+      const camInv = cam.matrixWorld.clone().invert(), toW = v => v.clone().multiplyScalar(K).applyMatrix4(cam.matrixWorld), toC = w => w.clone().applyMatrix4(camInv).multiplyScalar(1 / K), dirW = v => v.clone().normalize().transformDirection(cam.matrixWorld);
       const P0 = POSES[kind] || POSES.swing, s = (T - atk) / atkDur, on = s >= 0 && s < 1;
       // pose deste quadro = parada (com um leve respirar das mãos) + golpe em andamento
       const idle = { ...P0 }; const sway = V(Math.sin(T * 1.3) * 0.004, Math.sin(T * 1.5 + 1) * 0.005, 0);
@@ -256,6 +275,16 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
       const S = on && clip ? sample(idle, clip, s) : sample(idle, [], 0);
       let rPos = S.r || V(0.16, -0.15, -0.44), lPos = S.l || V(-0.19, -0.17, -0.42);
       const hold = P0.hold;
+      // guarda baixa fora de combate (a arma desce, apontando para a frente e para baixo) e sobe ao lutar; sacar = braços subindo de baixo
+      relax += ((combat || on ? 0 : 1) - relax) * Math.min(1, dt * (combat || on ? 9 : 2.2)); rideK += ((riding && !on ? 1 : 0) - rideK) * Math.min(1, dt * 6);
+      if (hold !== 'inst') {
+        const rk = relax * (kind === 'bow' ? 0.6 : 1), drop = 1 - smooth(drawT);
+        rPos = rPos.clone().add(V(0.02, -0.11, 0.05).multiplyScalar(rk)).add(V(0, -0.32 * drop, 0.05 * drop));
+        lPos = lPos.clone().add(V(-0.01, -0.09, 0.05).multiplyScalar(rk)).add(V(0, -0.32 * drop, 0.05 * drop));
+        if (S.rd) S.rd = S.rd.clone().add(kind === 'xbow' ? V(0.1 * rk, -0.5 * rk, 0) : V(0, -0.85 * rk, -0.3 * rk)).normalize();
+        if (rideK > 0.01 && hold !== 'bow' && hold !== 'xbow') { rPos = rPos.clone().lerp(V(0.075, -0.26, -0.36), rideK); if (hold !== 'shield') lPos = lPos.clone().lerp(V(-0.075, -0.26, -0.36), rideK); } // montado: mãos nas rédeas (o escudo fica no braço, de lado)
+      }
+      rPos = rPos.clone().add(V(0.01, 0.02, 0.045).multiplyScalar(jolt)); // tranco do acerto
       // escudo: levanta para o centro quando apanha (0,6 s)
       if (hold === 'shield') { blockT = hurt < 0.15 ? 1 : Math.max(0, blockT - dt * 2.2); if (blockT > 0) lPos = lPos.clone().lerp(V(-0.07, -0.15, -0.36), smooth(Math.min(1, blockT * 1.4))); }
 
@@ -272,7 +301,7 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
         const L = kind === 'lute', at = L ? V(0.08, -0.21, -0.42) : V(0.0, -0.15, -0.30), Y = L ? V(-0.88, 0.32, -0.34) : V(1, 0.04, -0.4), Z = L ? V(-0.1, -0.8, -0.6) : V(0, 1, 0.35); // alaúde: o tampo (cordas e boca) virado para quem toca
         const strum = on ? Math.sin(s * Math.PI * 4) * (1 - s) : 0; const { p, q } = camToRoot(at.clone().add(V(0, 0.01 * strum, 0)), basisQ(Y, Z)); instHolder.position.copy(p); instHolder.quaternion.copy(q); instHolder.updateMatrixWorld(true);
         const hs = instI && instI.obj.userData.inst && instI.obj.userData.inst.hands;
-        const inv = cam.matrixWorld.clone().invert(), hr = hs ? instI.obj.localToWorld(hs.r.clone()).applyMatrix4(inv) : V(0.1, -0.25, -0.35), hl = hs ? instI.obj.localToWorld(hs.l.clone()).applyMatrix4(inv) : V(-0.15, -0.2, -0.4);
+        const hr = hs ? toC(instI.obj.localToWorld(hs.r.clone())) : V(0.1, -0.25, -0.35), hl = hs ? toC(instI.obj.localToWorld(hs.l.clone())) : V(-0.15, -0.2, -0.4);
         rPos = hr.add(L ? V(0.02, 0.03 + strum * 0.05, 0.02) : V(0.01, -0.02, 0.02)); lPos = hl.add(L ? V(0, -0.02, 0.02) : V(-0.01, -0.02, 0.02));
         S.rf = L ? V(-0.5, -0.7, -0.5) : V(-0.2, 0.2, -1); S.rp = L ? V(-0.2, 0.1, 1) : V(-0.3, 1, 0.2); S.lf = L ? V(0.2, 0.9, -0.3) : V(0.2, 0.2, -1); S.lp = L ? V(0.6, -0.3, 0.4) : V(0.3, 1, 0.2);
         ro = (L ? 0.35 : 0.5) + (on ? Math.sin(s * 30) * 0.15 : 0); lo = (L ? 0.65 : 0.5) + (on ? Math.sin(s * 23 + 1) * 0.2 : Math.sin(T * 2) * 0.04);
@@ -288,8 +317,8 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
       else orientHand('r', AX.r.fwd, dirW(S.rf || V(-0.2, 0.2, -1)), AX.r.palm, dirW(S.rp || V(-0.4, -1, 0)));
       root.updateMatrixWorld(true);
       // mão esquerda: no cabo (duas mãos), no escudo, no arco, na besta, livre…
-      if (hold === 'grip2' && WAX.r) { const wd = V(0, 1, 0).applyQuaternion(weapons.r[0].it.getWorldQuaternion(new THREE.Quaternion())).normalize(); const rW = wp(B.hand_r); lPos = rW.addScaledVector(wd, P0.grip2).applyMatrix4(cam.matrixWorld.clone().invert()); }
-      if (hold === 'xbow' && xbow) { const fz = xbow.userData.foreZ ?? 0.12; lPos = xbow.localToWorld(V(0, -0.035, fz)).applyMatrix4(cam.matrixWorld.clone().invert()).add(V(-0.015, -0.02, 0)); }
+      if (hold === 'grip2' && WAX.r) { const wd = V(0, 1, 0).applyQuaternion(weapons.r[0].it.getWorldQuaternion(new THREE.Quaternion())).normalize(); const rW = wp(B.hand_r); lPos = toC(rW.addScaledVector(wd, P0.grip2 * K)); }
+      if (hold === 'xbow' && xbow) { const fz = xbow.userData.foreZ ?? 0.12; lPos = toC(xbow.localToWorld(V(0, -0.035, fz))).add(V(-0.015, -0.02, 0)); }
       solveArm('l', toW(lPos), toW(lPos.clone().add(hold === 'shield' ? V(-0.6, -0.25, 0.1) : V(-0.35, -0.4, 0.15))));
       if (hold === 'shield' && shieldN) twistBone(B.lowerarm_l, shieldN, dirW(V(0.1 + blockT * 0.1, 0.05, -1))); // a face do escudo para a frente
       if (hold === 'grip2' && WAX.r) { const wd = V(0, 1, 0).applyQuaternion(weapons.r[0].it.getWorldQuaternion(new THREE.Quaternion())).normalize(), kn = AX.r.fwd.clone().applyQuaternion(B.hand_r.getWorldQuaternion(new THREE.Quaternion())); orientHand('l', AX.l.rad, wd, AX.l.fwd, kn); } // as duas mãos no mesmo cabo: polegares para a lâmina, nós dos dedos para o mesmo lado
@@ -298,11 +327,12 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
       else orientHand('l', AX.l.fwd, dirW(S.lf || V(0.2, 0.1, -1)), AX.l.palm, dirW(S.lp || V(0.5, -1, 0)));
       // arco: a mão direita vai à corda e puxa até o rosto; a corda segue os dedos e a flecha fica encaixada
       if (kind === 'bow' && bow) {
-        bow.updateWorldMatrix(true, true); const inv = cam.matrixWorld.clone().invert(), strC = bow.localToWorld(V(0, 0, strZ)).applyMatrix4(inv), anchor = V(0.035, -0.075, -0.17);
+        bow.updateWorldMatrix(true, true); const strC = toC(bow.localToWorld(V(0, 0, strZ))), anchor = V(0.035, -0.075, -0.17);
         const pullC = bowDraw > 0 ? strC.clone().lerp(anchor, Math.max(0, (bowDraw - 0.25) / 0.75)) : null;
         if (pullC) { const tgt = pullC.clone().add(V(0.025, -0.035, 0.07)); const r0 = rPos.clone(), k0 = Math.min(1, bowDraw / 0.25); solveArm('r', toW(r0.lerp(tgt, k0)), toW(tgt.clone().add(V(0.3, -0.15, 0.3)))); orientHand('r', AX.r.fwd, dirW(V(-0.55, 0.05, -1)), AX.r.palm, dirW(V(-0.9, -0.2, 0.3))); ro = 0.55; }
         else if (on && s >= 0.78) { const f = smooth(Math.min(1, (s - 0.78) / 0.07)) * (1 - smooth(Math.max(0, (s - 0.86) / 0.14))); const tgt = rPos.clone().lerp(V(0.08, -0.04, -0.07), f); solveArm('r', toW(tgt), toW(tgt.clone().add(V(0.35, -0.3, 0.15)))); orientHand('r', AX.r.fwd, dirW(V(-0.3, 0.3, -1)), AX.r.palm, dirW(V(-0.6, -0.6, 0.3))); ro = 0.15; }
       }
+      if (rideK > 0.5 && hold !== 'bow' && hold !== 'xbow' && hold !== 'inst') { if (ro !== undefined) ro += (1 - ro) * rideK; if (lo !== undefined) lo += (1 - lo) * rideK; } // rédeas na mão fechada
       // dedos: fechados no cabo / punho cerrado / abertos e vivos para a magia
       const live = Math.sin(T * 1.7) * 0.05;
       curl('r', ro !== undefined ? ro + live : 0.95, ro !== undefined ? Math.min(0.5, ro * 0.6) : 0.8);
@@ -312,8 +342,18 @@ export function makeFirstPerson(ch, { kind = 'swing', items = {}, glow = null, m
       if (kind === 'bow' && bow) {
         const pulling = bowDraw > 0.2, cp = pulling ? ['index_02_r', 'index_03_r', 'middle_02_r', 'middle_03_r'].reduce((a, n) => a.add(wp(B[n])), V(0, 0, 0)).multiplyScalar(0.25) : null;
         stringFx(bow, cp || V(), !!cp);
-        if (arrow) { arrow.visible = on && bowDraw > 0.3 && s < 0.78 && !!cp; if (arrow.visible) { const tail = cp, grip = bow.localToWorld(V(0, 0.03, (bow.userData.gripZ || -0.11) - 0.02)), dir = grip.clone().sub(tail).normalize(), mid = tail.clone().addScaledVector(dir, 0.37);
+        if (arrow) { arrow.visible = on && bowDraw > 0.3 && s < 0.78 && !!cp; if (arrow.visible) { const tail = cp, grip = bow.localToWorld(V(0, 0.03, (bow.userData.gripZ || -0.11) - 0.02)), dir = grip.clone().sub(tail).normalize(), mid = tail.clone().addScaledVector(dir, 0.37 * K);
           root.updateMatrixWorld(true); arrow.position.copy(root.worldToLocal(mid)); const qw = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), dir); arrow.quaternion.copy(root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(qw)); } }
+      }
+      // rastro do golpe
+      if (trail) {
+        const ck = clip || [], t0 = ck.length ? ck[0].t : 0.3, t1 = ck.length ? ck[ck.length - 1].t : 0.75, act = on && s > t0 - 0.04 && s < t1 + 0.02;
+        for (const q of trailPts) q.age += dt; while (trailPts.length && trailPts[0].age > 0.14) trailPts.shift();
+        if (act) { wItem.updateMatrixWorld(true); root.updateMatrixWorld(true); trailPts.push({ a: root.worldToLocal(wItem.localToWorld(baseL.clone())), b: root.worldToLocal(wItem.localToWorld(tipL.clone())), age: 0 }); if (trailPts.length > trail.userData.N) trailPts.shift(); }
+        const n = trailPts.length, N = trail.userData.N, pos = trail.geometry.attributes.position, colA = trail.geometry.attributes.color, c0 = trail.userData.col; trail.visible = n >= 2;
+        if (n >= 2) { for (let i = 0; i < N; i++) { const q = trailPts[Math.max(0, n - N + i)], al = Math.max(0, 1 - q.age / 0.14) * Math.pow((i + 1) / N, 2) * 0.32;
+          pos.setXYZ(i * 2, q.a.x, q.a.y, q.a.z); pos.setXYZ(i * 2 + 1, q.b.x, q.b.y, q.b.z); colA.setXYZ(i * 2, 0, 0, 0); colA.setXYZ(i * 2 + 1, c0.r * al, c0.g * al, c0.b * al); }
+          pos.needsUpdate = true; colA.needsUpdate = true; }
       }
       // brilho da magia: pulsa, explode no golpe/conjuração e volta à cor da classe
       flare = Math.max(0, flare - dt * 3); if (on && s > 0.45 && s < 0.6 && (kind === 'magic' || kind === 'staff')) flare = 1;

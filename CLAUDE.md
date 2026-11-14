@@ -109,7 +109,11 @@ Quando ele pedir para aplicar as sugestões:
     - Tipos novos: katar (estocadas alternadas), lança (`hold: 'grip2'`), besta (`xbow`: coice e recarga com `setCocked`), alaúde/flauta (`inst`: suporte próprio na frente da câmera, mãos nos pontos `userData.inst.hands`).
     - Arco: alcança a corda, puxa até o rosto com a flecha (`makeArrow` do main3d) e solta; a corda segue os dedos (`stringFx`, exportada de bow3d).
     - Magia acesa na palma (`makeGlow`, cor `FP_GLOW` por classe; na cor do elemento ao conjurar: `fpv.cast` no lançamento de habilidade). O escudo levanta ao apanhar (`hurt` = tempo desde `S.lastHurt`).
-  - Ainda falta (etapa 3): rastro e tranco do golpe, braços que não entram na parede, sacar/guardar a arma e montaria.
+  - Etapa 3 (feita, P-032 concluída):
+    - **Braços não entram na parede**: o suporte inteiro tem escala `K = 0,22` e fica perto do olho na mesma proporção (mesma imagem, mãos a ~10 cm). Use `toW`/`toC` (câmera ↔ mundo, já com K) para qualquer ponto novo.
+    - Rastro do golpe: fita aditiva perto da ponta da lâmina, só durante o corte das armas de corpo a corpo.
+    - Tranco: `fpv.impact()` no acerto corpo a corpo, mais um pequeno coice da câmera (`S.fpKick`).
+    - Guarda baixa fora de combate (`combat`); braços sobem sacando a arma ao entrar na 1ª pessoa (`redraw`); montado = mãos nas rédeas (`riding`).
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar

@@ -1517,7 +1517,7 @@ function setView(v, silent) {
   $('crosshair').classList.toggle('hidden', !isAction());
   if (!isAction() && document.pointerLockElement) document.exitPointerLock();
   if (S.me) S.me.obj.visible = S.view !== 'fps';
-  if (viewModel) viewModel.visible = S.view === 'fps';
+  if (viewModel) { if (S.view === 'fps' && !viewModel.visible && fpv) fpv.redraw(); viewModel.visible = S.view === 'fps'; } // P-032: entrando na 1ª pessoa, os braços sobem sacando a arma
   if (!silent) banner(VIEW_NAMES[v], isAction() ? 'O mouse gira a câmera · rodinha aproxima (até a 1ª pessoa) · F fala/usa · segure Alt para soltar o cursor' : 'Segure o botão esquerdo para atacar onde o cursor aponta · botão direito gira a câmera');
 }
 function cycleView() { setView(S.view === 'ombro' ? 'fps' : 'ombro'); } // V = 1ª ↔ 3ª pessoa (como o F do Skyrim); a clássica fica nas Configurações
@@ -1657,8 +1657,8 @@ let vmAtk = -9;
 function vmAttack(kind) { vmAtk = S.time; vmKind = kind; if (fpv) fpv.attack(kind, S.p.d.aspd / 1000); }
 function updateViewModel(dt) {
   if (!viewModel || !viewModel.visible) return;
-  if (fpv) { const sp = Math.hypot(S.vel.x, S.vel.z); fpv.update(dt, { cam: camera, speed: sp, sprint: sp > 5.5, hurt: S.time - (S.lastHurt ?? -9) }); return; }
-  vmT += dt; const sp = Math.hypot(S.vel.x, S.vel.z), bob = Math.sin(vmT * 9) * 0.012 * Math.min(1, sp / 3), k = Math.min(1, (S.time - vmAtk) / 0.35), sw = k < 1 ? Math.sin(k * Math.PI) : 0;
+  if (fpv) { const sp = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0; /* abrindo o jogo já na 1ª pessoa, S.vel ainda não existe no 1º quadro */ fpv.update(dt, { cam: camera, speed: sp, sprint: sp > 5.5, hurt: S.time - (S.lastHurt ?? -9), combat: !!S.fire || inCombat(S.time) || S.time - (S.lastAtk ?? -99) < 5, riding: !!S.riding }); return; }
+  vmT += dt; const sp = S.vel ? Math.hypot(S.vel.x, S.vel.z) : 0, bob = Math.sin(vmT * 9) * 0.012 * Math.min(1, sp / 3), k = Math.min(1, (S.time - vmAtk) / 0.35), sw = k < 1 ? Math.sin(k * Math.PI) : 0;
   viewModel.position.set(Math.cos(vmT * 4.5) * 0.006 * Math.min(1, sp / 3), bob + Math.sin(vmT * 1.6) * 0.004, 0);
   if (vmKind === 'swing') { vmArmR.rotation.set(0.25 - sw * 1.2, 0.12 + sw * 0.9, -sw * 0.6); vmArmR.position.x = 0.22 - sw * 0.12; }
   else if (vmKind === 'bow') { vmArmL.rotation.set(0.1, -0.05, 0); vmArmL.position.set(-0.1, -0.16, -0.5); vmArmR.position.set(0.1, -0.15, -0.36 + sw * 0.12); vmArmR.rotation.set(0.1, 0.1, 0); }
@@ -2715,6 +2715,7 @@ function playerAttack(m) {
     if (m.dead) return;
     if (ca && ca.katar) { S.hitSfx = 'katarRend'; hurtMonster(m, rollPhys(p, m, 1, 'neutro')); S.hitSfx = null; } // katar: rasgo + faíscas no lugar do baque/sino
     else { hurtMonster(m, rollPhys(p, m, 1, 'neutro')); if (!p.d.ranged) Sound.play('impact'); }
+    if (!p.d.ranged && fpv && viewModel && viewModel.visible) { fpv.impact(ca && ca.heavy ? 1.4 : 1); S.fpKick = S.time; } // P-032: tranco do acerto na 1ª pessoa
     if (p.d.doubleAttack && !p.d.ranged && Math.random() * 100 < p.d.doubleAttack) later(0.15, () => { if (!m.dead) hurtMonster(m, rollPhys(p, m, 1, 'neutro')); });
     if (ca && ca.katar) later(Math.min(0.08, p.d.aspd / 4000), () => { if (!m.dead) { S.hitSfx = 'katarSpark'; hurtMonster(m, rollPhys(p, m, 0.25, 'neutro')); S.hitSfx = null; } }); // katar: segundo número menor logo depois (como no RO)
   };
@@ -3788,7 +3789,7 @@ function draw(dt) {
     camera.position.copy(camPos); camera.lookAt(head);
     if (isAction()) { // 1ª pessoa / por cima do ombro: a câmera aponta para a mira (S-094)
       const fx = Math.sin(cam.yaw), fz = Math.cos(cam.yaw), ap = Math.cos(S.aim), as = Math.sin(S.aim), look = new THREE.Vector3(fx * ap, as, fz * ap);
-      if (S.view === 'fps') { const eye = new THREE.Vector3(P.x + fx * 0.14, P.y + HERO_H * 0.92 + (S.riding ? 1 : 0) + (S.swimOff ? 0.4 : 0), P.z + fz * 0.14); camera.position.copy(eye); camera.lookAt(eye.clone().add(look)); }
+      if (S.view === 'fps') { const eye = new THREE.Vector3(P.x + fx * 0.14, P.y + HERO_H * 0.92 + (S.riding ? 1 : 0) + (S.swimOff ? 0.4 : 0), P.z + fz * 0.14); camera.position.copy(eye); camera.lookAt(eye.clone().add(look)); { const k = (S.time - (S.fpKick ?? -9)) / 0.16; if (k >= 0 && k < 1) { const e = Math.sin(k * Math.PI) * (1 - k); camera.rotateX(e * 0.02); camera.rotateZ(e * 0.012); } } } // P-032: tranco do acerto também na câmera (pequeno)
       else { // 3ª pessoa estilo Skyrim: pivô no ombro (direito), distância na rodinha, colisão que encolhe rápido e volta devagar
         const want = (cam.odistT || 4.2) * (1 - Math.max(0, S.aim) * 0.4), side = 0.48 * clamp(want / 3, 0.35, 1); // olhando para cima a câmera chega perto (como no Skyrim)
         const tall = S.p && S.p.look && S.p.look.race === 'anao' ? 1.45 : 1.78; // um pouco acima da cabeça: dá para ver por cima do ombro
