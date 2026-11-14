@@ -105,7 +105,11 @@ Quando ele pedir para aplicar as sugestões:
   - Mãos por IK de dois ossos até alvos em espaço de câmera (`POSES` por tipo: swing, heavy, dagger, shield, bow, magic, staff, fist; `fpKind` escolhe).
   - O punho gira para o eixo da arma (eixo y da peça). O escudo vem pela torção do antebraço; o arco vai para a mão esquerda (`bowState('hand')`).
   - Dedos fecham pela curvatura medida no repouso. Na mão esquerda a palma é invertida em relação à regra do polegar (conferido fechando o punho).
-  - Ainda faltam (etapas 2–3) golpes e gestos por arma, instrumento do Bardo, besta, rastro, braços que não entram na parede e montaria.
+  - Etapa 2 (feita): golpes por quadros-chave (`CLIPS` + `sample`, campos que o quadro não diz vêm da pose parada) e em combo (emendou em < 0,9 s = próximo golpe; duração pela ASPD, `attack(kind, delay)`).
+    - Tipos novos: katar (estocadas alternadas), lança (`hold: 'grip2'`), besta (`xbow`: coice e recarga com `setCocked`), alaúde/flauta (`inst`: suporte próprio na frente da câmera, mãos nos pontos `userData.inst.hands`).
+    - Arco: alcança a corda, puxa até o rosto com a flecha (`makeArrow` do main3d) e solta; a corda segue os dedos (`stringFx`, exportada de bow3d).
+    - Magia acesa na palma (`makeGlow`, cor `FP_GLOW` por classe; na cor do elemento ao conjurar: `fpv.cast` no lançamento de habilidade). O escudo levanta ao apanhar (`hurt` = tempo desde `S.lastHurt`).
+  - Ainda falta (etapa 3): rastro e tranco do golpe, braços que não entram na parede, sacar/guardar a arma e montaria.
 - Fase 2 feita e o 3D virou o jogo principal (v0.2, 2026-11-07). Novidades de jogo entram primeiro no 3D; o 2D só recebe o que vier de graça pelos arquivos compartilhados.
 
 ## Testar

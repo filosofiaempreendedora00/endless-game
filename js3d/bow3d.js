@@ -132,7 +132,7 @@ function contactPt(r) { // onde a corda engancha: entre a 2ª e a 3ª falange do
   const p = b.map(x => x.getWorldPosition(new THREE.Vector3())); return p[0].add(p[1]).add(p[2]).add(p[3]).multiplyScalar(0.25);
 }
 // corda: some a corda reta e desenha as duas metades das pontas do arco até os dedos que puxam
-function stringFx(bow, pull, on) {
+export function stringFx(bow, pull, on) {
   const str = bow.userData.strMesh || (bow.userData.strMesh = (() => { let m = null; bow.traverse(o => { if (!m && o.isMesh && o.geometry && o.geometry.type === 'CylinderGeometry' && o.geometry.parameters.radiusTop < 0.003) m = o; }); return m; })());
   if (!str) return;
   let fx = bow.userData.strFx;

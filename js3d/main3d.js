@@ -1601,7 +1601,12 @@ function actionFire() {
 // mãos em 1ª pessoa: braços com manga da classe, mãos na cor da pele e a arma que o personagem carrega
 let viewModel = null, vmArmR = null, vmArmL = null, vmT = 0, vmKind = 'swing', fpv = null;
 // P-032: a 1ª pessoa usa os braços do PRÓPRIO herói (corpo realista, roupa da classe, arma de verdade, dedos de verdade) — fpview3d.js
-function fpKind(items, style) {
+const FP_GLOW = { mago: '#ff9a4a', arquimago: '#b07aff', sabio_elemental: '#62f0c0' }; // cor da magia entre os dedos, por classe
+function fpKind(items, style, root) {
+  if (items.instrument && root && root.userData.instrument) return root.userData.instrument.kind === 'flauta' ? 'flute' : 'lute';
+  if (items.xbow) return 'xbow';
+  if (items.Katar_R) return 'katar';
+  if (Object.keys(items).some(k => /Spear|Lanca|Halberd|Polearm/i.test(k))) return 'spear';
   if (style === 'cast') return items['2H_Staff'] || Object.keys(items).some(k => /Staff|Cajado/i.test(k)) ? 'staff' : 'magic';
   if (style === 'ranged') return items.bow ? 'bow' : 'fist';
   if (style === 'dual') return 'dagger';
@@ -1615,7 +1620,7 @@ function buildViewModel() {
   try {
     const { ch, d } = makeHero(S.p.cls, S.p.look, null, { offhand: offOf(S.p), weaponId: wpnOf(S.p) });
     const items = ch.root.userData.items || {};
-    fpv = makeFirstPerson(ch, { kind: fpKind(items, d.style), items }); viewModel = fpv.root; camera.add(viewModel);
+    fpv = makeFirstPerson(ch, { kind: fpKind(items, d.style, ch.root), items, glow: FP_GLOW[S.p.cls] || (d.style === 'cast' ? '#8fd0ff' : null), makeArrow }); viewModel = fpv.root; camera.add(viewModel);
     vmKind = S.p.d.magicAuto ? 'magic' : S.p.d.ranged ? 'bow' : 'swing'; viewModel.visible = S.view === 'fps'; return;
   } catch (e) { console.warn('1ª pessoa nova falhou, voltando à antiga', e); fpv = null; }
   const L = CLASS_LOOKS[S.p.cls] || CLASS_LOOKS.aprendiz, sleeve = new THREE.MeshStandardMaterial({ color: (L.tint && L.tint.body) || '#6a5a48', roughness: 0.8 });
@@ -1649,10 +1654,10 @@ function buildViewModel() {
   viewModel.visible = S.view === 'fps';
 }
 let vmAtk = -9;
-function vmAttack(kind) { vmAtk = S.time; vmKind = kind; if (fpv) fpv.attack(); }
+function vmAttack(kind) { vmAtk = S.time; vmKind = kind; if (fpv) fpv.attack(kind, S.p.d.aspd / 1000); }
 function updateViewModel(dt) {
   if (!viewModel || !viewModel.visible) return;
-  if (fpv) { const sp = Math.hypot(S.vel.x, S.vel.z); fpv.update(dt, { cam: camera, speed: sp, sprint: sp > 5.5 }); return; }
+  if (fpv) { const sp = Math.hypot(S.vel.x, S.vel.z); fpv.update(dt, { cam: camera, speed: sp, sprint: sp > 5.5, hurt: S.time - (S.lastHurt ?? -9) }); return; }
   vmT += dt; const sp = Math.hypot(S.vel.x, S.vel.z), bob = Math.sin(vmT * 9) * 0.012 * Math.min(1, sp / 3), k = Math.min(1, (S.time - vmAtk) / 0.35), sw = k < 1 ? Math.sin(k * Math.PI) : 0;
   viewModel.position.set(Math.cos(vmT * 4.5) * 0.006 * Math.min(1, sp / 3), bob + Math.sin(vmT * 1.6) * 0.004, 0);
   if (vmKind === 'swing') { vmArmR.rotation.set(0.25 - sw * 1.2, 0.12 + sw * 0.9, -sw * 0.6); vmArmR.position.x = 0.22 - sw * 0.12; }
@@ -3047,6 +3052,7 @@ function executeSkill(a) {
   { // P-016: efeito de lançamento (e o mesmo para os outros jogadores pelo online)
     const tgt = a.m ? { x: a.m.x, y: a.m.obj.position.y, z: a.m.z } : a.pt ? { x: a.pt.x, y: groundAt(a.pt.x, a.pt.z), z: a.pt.z } : { x: S.pos.x, y: S.pos.y, z: S.pos.z };
     playSkillFx(a.id, me.obj.position, tgt, { follow: () => me.obj.position });
+    if (fpv && viewModel && viewModel.visible) { const el = ELEMENTS[eff.element || 'neutro']; fpv.cast(eff.dmg === 'magic' || eff.kind === 'heal' || eff.kind === 'buff' ? 'spell' : 'skill', el && el.color, p.d.aspd / 1000); } // P-032: o gesto da habilidade na 1ª pessoa
     S.skillFx = { n: ((S.skillFx && S.skillFx.n) || 0) + 1, id: a.id, ox: +S.pos.x.toFixed(2), oy: +S.pos.y.toFixed(2), oz: +S.pos.z.toFixed(2), tx: +tgt.x.toFixed(2), ty: +tgt.y.toFixed(2), tz: +tgt.z.toFixed(2) };
     const ge = skillGemElement(a.id); if (ge) me.root.userData.gemTint = { el: ge, until: performance.now() + 1600 }; // Sábio: as gemas acendem na cor do elemento
     if (p.cls === 'cacador') S.lastAtk = S.time; // o lobo gigante entra junto quando o Caçador usa habilidade

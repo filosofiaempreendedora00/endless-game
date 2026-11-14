@@ -411,4 +411,4 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
 - **1ª pessoa**: "uma das coisas mais ridículas... os dedos estão ridículos e está pior que minecraft". Quer o nível do Skyrim para todas as classes: espada, mãos de mago etc., "um universo pela frente".
 - Etapa 1 (P-032) feita: braços e mãos do próprio corpo realista, com a roupa da classe, a arma de verdade e dedos fechando no cabo.
 - Lição: peça feita de primitivas (cilindro + cápsulas) num lugar em close é o pior caso do princípio 1. Em close, use sempre o modelo realista.
-
+- Etapa 2 (P-032) feita: golpes em combo por arma, arco puxando a corda com a flecha, besta com coice e recarga, magia acesa na palma, alaúde/flauta do Bardo e escudo que levanta ao apanhar.
