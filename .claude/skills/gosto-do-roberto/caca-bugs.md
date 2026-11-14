@@ -116,12 +116,15 @@ O exemplo dele: no navio "eu ficava meio que dando uns teleportes".
 - **Medição**: `renderer.info` + `gl.finish()` por cena.
   - Pegadinha: `S.time` pode estar parado logo depois de entrar no mundo (o 1º lote de `__sim` não avançou). Confira `S.time` antes de confiar nos números.
   - O tempo de GPU com o painel oculto oscila muito; compare chamadas de desenho e triângulos.
-- **Fica para depois**:
-  - **Proposta P-031**: os monstros dos campos são montados com dezenas de peças animadas cada um, e a vila passa de 4 mil chamadas de desenho por causa deles e do Noctívago (279 peças).
-  - O destravador ainda pode dar um salto de ~0,9 m quando se empurra uma quina por 1 s (Pedraclara, casa em 314, -30).
-  - O verificador completo (música e câmera nas salas) precisa do painel visível.
+- **Resto da faxina (mesmo dia)**:
+  - **P-030 feita**: casas do porto com mais espaço (os anexos de lado entravam na vizinha), armazéns 1,5 m para dentro, feira da vila (50° → 44°) e de Pedraclara (90° → 100°) longe do estábulo e da casa ao lado.
+  - **Terraços dos clãs (Pedrafunda)**: o paredão é curvo e o bloco é reto; agora a frente INTEIRA (pontas incluídas) fica fora da rocha, e a base virou talude com contrafortes entrando na encosta. Antes parecia um funil, depois um casco pendurado.
+  - **Destravador pulando ~0,9 m na emenda em V da muralha de Pedraclara**: a colisão convergia devagar entre dois trechos quase paralelos e o herói afundava. `resolve` agora repete as passadas até assentar (máx. 12), e `trulyStuck` só acusa "dentro de algo" se o ponto assentado ficar a mais de 0,6 m. Teste certo: andar até a quina empurrando (24 direções × 150 quadros), não sortear pontos já dentro da parede.
+  - **P-031 (parte segura)**: peças de monstro com menos de 6 cm (flores, olhos, cravos) não projetam sombra. Na vila, 1.682 → 1.302 chamadas de desenho. Falta juntar as peças modelo a modelo (cuidado: o golem desmonta pedra por pedra no `die`, usando `userData.rock`).
+  - Câmera nas salas: 0 problemas. A música continua sem teste por script (precisa de gesto do usuário para o AudioContext).
+- **Pegadinhas de teste**: `__sim(seg)` recebe SEGUNDOS (`__sim(1/30)` não faz nada). O CULL das cidades usa o relógio real: depois de teleportar, espere ~0,7 s de verdade antes de fotografar.
 
 ### Falsos alarmes conhecidos
 - **Gudrun e Irmão Hulda** (Pedrafunda) ficam 1,35 m acima do chão de propósito, na base da estátua e no degrau do templo. Dá para conversar com eles de baixo.
-- "Prédios encavalados" baixos (até ~3 m) em casas em fileira do porto e de Pedrafunda podem ser geminadas de propósito (P-030).
+- "Prédios encavalados" baixos (~1,2 m) que sobraram (igreja × estábulo da vila, casas dos anões) são beirais encostados, não paredes cruzadas (conferido de cima depois da P-030).
 - "NPC dentro de objeto" para NPCs sentados ou atrás de balcão (Dona Rosa, Velho Gui, Rei Aldemar, Irmão Caio, Ilka...): o círculo de colisão do móvel os cobre, mas o jogador conversa normalmente.

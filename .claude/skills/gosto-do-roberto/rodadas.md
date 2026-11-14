@@ -399,3 +399,10 @@ Uma entrada por rodada. **Reincidência** = ele voltou a reclamar de algo já ma
   - o F conversa;
   - a câmera não sai da taverna em 36 ângulos.
   - Falta ele sentir o mouse de verdade.
+
+## 2026-11-13 — "pode ir pro resto" (fim da faxina de bugs)
+- P-030 (casas encavaladas) feita no porto, na vila e em Pedraclara.
+- Terraços de Pedrafunda assentados no paredão (frente inteira fora da rocha, base em talude com contrafortes).
+- Fim do pulo do destravador nas emendas de muralha.
+- Sombra das peças minúsculas dos monstros desligada (−23% de chamadas na vila). Juntar peças por modelo segue em aberto na P-031.
+

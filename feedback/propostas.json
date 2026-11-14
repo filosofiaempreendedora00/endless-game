@@ -416,12 +416,13 @@
     "evidencias": [
       "caça-bugs 2026-11-13 (prédios encavalados)"
     ],
-    "status": "proposta"
+    "status": "feita",
+    "resposta": "As casas do porto ganharam mais espaço entre si (os anexos não entram mais na vizinha), os armazéns recuaram 1,5 m e as feiras da vila e de Pedraclara saíram de cima do estábulo e da casa ao lado. O verificador (prédios encavalados) não acusa mais nenhum desses."
   },
   {
     "id": "P-031",
     "titulo": "Monstros mais leves para a placa de vídeo",
-    "detalhe": "Cada monstro dos campos é montado com dezenas de peças animadas separadas. Perto da vila, eles e o Noctívago (279 peças) passam de 4 mil desenhos por quadro, o que pesa no FPS. A proposta é juntar as peças que se mexem juntas e desenhar os monstros iguais de uma vez só, sem mudar o visual.",
+    "detalhe": "Cada monstro dos campos é montado com dezenas de peças animadas separadas. Perto da vila, eles e o Noctívago (279 peças) passam de 4 mil desenhos por quadro, o que pesa no FPS. A proposta é juntar as peças que se mexem juntas e desenhar os monstros iguais de uma vez só, sem mudar o visual. (Parte feita em 2026-11-13: peças com menos de 6 cm não projetam mais sombra, −23% de chamadas de desenho na vila. Falta juntar as peças de cada modelo.)",
     "principios": [
       "16. Desempenho é parte do gosto"
     ],

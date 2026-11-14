@@ -146,9 +146,12 @@ export function buildCliffDwellings(ctx, H, { spots } = {}) {
   const glass = M.glass(), out = [];
   for (const [deg, yW, W] of spots || [[160, 12, 30], [198, 24, 26], [232, 14, 24], [308, 16, 24], [342, 26, 26], [18, 12, 30]]) {
     const a = deg * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
-    let d = 0; for (let dd = 66; dd < 140; dd += 0.25) { if (heightAt(C.x + ca * dd, C.z + sa * dd) - base >= yW - 1) { d = dd; break; } }
+    // o paredão é curvo e o bloco é reto: a frente INTEIRA (pontas incluídas) tem de ficar fora da rocha; antes só o meio era
+    // conferido, as pontas afundavam na encosta e o terraço parecia um funil pendurado
+    const ry = Math.atan2(-ca, -sa), tx = Math.cos(ry), tz = -Math.sin(ry);
+    let d = 0; for (let dd = 66; dd < 140; dd += 0.25) { let hit = false; for (const u of [-0.5, -0.3, 0, 0.3, 0.5]) for (const f of [0, 3.4]) if (heightAt(C.x + ca * (dd - f) + tx * u * (W + 1), C.z + sa * (dd - f) + tz * u * (W + 1)) - base >= yW - 1) hit = true; if (hit) { d = dd; break; } }
     if (!d) continue;
-    const HH = 13, ry = Math.atan2(-ca, -sa), x = ca * d, z = sa * d;
+    const HH = 13, x = ca * d, z = sa * d;
     T = new THREE.Matrix4().compose(v.set(x, yW, z), q.setFromEuler(e.set(0, ry, 0, 'YXZ')), one);
     // o muro de arrimo desce até a encosta mais baixa sob o bloco (a rocha varia ao longo da largura: antes uma ponta ficava no ar)
     let low = 0; for (const u of [-0.5, -0.25, 0, 0.25, 0.5]) { const px = x + Math.cos(ry) * u * W, pz = z - Math.sin(ry) * u * W; for (const f of [0, 2.5]) low = Math.min(low, heightAt(C.x + px - ca * f, C.z + pz - sa * f) - base - yW); }
@@ -163,6 +166,12 @@ export function buildCliffDwellings(ctx, H, { spots } = {}) {
       if (k < nD - 1) { const lx = px + W / nD / 2; box(1.1, HH, 0.9, st, lx, HH / 2, 0.35); for (let j = 0; j < 2; j++) box(1.5 - j * 0.2, 0.4, 1.2, cv, lx, 0.2 + j * 0.4, 0.4); } } // pilastras entre as casas
     box(W + 1.0, 0.6, 3.2, cv, 0, -0.3, 1.6); box(W + 1.0, 1.0, 0.4, cv, 0, 0.5, 3.0); for (const s of [-1, 1]) box(0.4, 1.0, 3.2, cv, s * (W / 2 + 0.3), 0.5, 1.6); // passarela com mureta
     for (let k = 0; k < Math.floor(W / 3); k++) box(0.8, 2.4, 1.6, cv, -W / 2 + 1.5 + k * 3, -1.7, 2.0, 0, -0.55); // mísulas sob a passarela
+    { // base em TALUDE (mais larga embaixo, como alicerce de fortaleza) e contrafortes entrando na rocha: o muro de arrimo não parece mais um casco pendurado
+      const hS = dn + 1, bat = 0.2, zc = 1.2 + Math.tan(bat) * hS / 2;
+      box(W + 1.6, hS, 3.0, st, 0, -0.9 - hS / 2, zc, 0, -bat);
+      for (let y = -4; y > -0.9 - hS + 1; y -= 4) box(W + 1.9, 0.35, 0.5, cv, 0, y, 1.2 + 1.5 + Math.tan(bat) * (-0.9 - y) + 0.05, 0, -bat); // fiadas de pedra marcando o talude
+      const nB = nD + 1; for (let k = 0; k < nB; k++) { const bx = -W / 2 + k * W / nD, bt = 0.42, hb = hS + 1.5, zb = 2.4 + Math.tan(bt) * hb / 2;
+        box(1.9, hb, 2.6, cv, bx, -0.4 - hb / 2, zb, 0, -bt); box(2.3, 0.6, 1.2, cv, bx, -0.5, 3.2, 0, 0); } } // contrafortes nas quinas e entre as casas
     out.push({ x: C.x + x + ca * -2, z: C.z + z + sa * -2, y: base + yW, ry });
   }
   const g = put(ctx, K, 'terracos_dos_clas', C.x, C.z, 0, { y: base, occ: false }); g.userData.far = 900;

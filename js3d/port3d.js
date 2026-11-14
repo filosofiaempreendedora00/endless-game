@@ -431,7 +431,7 @@ export function buildPortCity(ctx) {
   fishT.forEach((t, i) => { const p = H(q - 9, t); put(ctx, fishStall(40 + i), 'banca_de_peixe', p.x, p.z, YAW_SEA, { box: [[0, 0, 1.45, 0.75]] }); });
   // 6) casas do litoral: fileira de frente para o mar (abertura no meio para a praça) e uma segunda fileira atrás
   const houses = [];
-  const ROW1 = [[-58, 7.4], [-49, 8], [-40, 7], [-31, 8.2], [31, 8.2], [40, 7], [49, 8], [58, 7.4]], ROW2 = [[-31, 7], [-22, 6.5], [22, 6.5], [31, 7]];
+  const ROW1 = [[-65, 7.4], [-53, 8], [-41, 7], [-30, 8.2], [30, 8.2], [41, 7], [53, 8], [65, 7.4]], ROW2 = [[-33, 7], [-21, 6.5], [21, 6.5], [33, 7]]; // P-030: mais espaço entre as casas (os anexos de lado entravam na vizinha)
   ROW1.forEach(([t, w], i) => houses.push({ s: 6.5 + (i % 2) * 0.8, t, w, d: 6.4, seed: 80 + i }));
   ROW2.forEach(([t, w], i) => houses.push({ s: -9 + (i % 2), t, w, d: 6.2, seed: 120 + i }));
   for (const h of houses) { const p = H(h.s, h.t), { K, box } = coastHouse(h.seed, h.w, h.d); h.g = put(ctx, K, 'casa_do_porto', p.x, p.z, YAW_SEA + (r() - 0.5) * 0.06, { box }); }
@@ -540,7 +540,7 @@ export function buildMerchants(ctx) {
   { const p = H(-64, 0); put(ctx, guildHall(), 'guilda_dos_mercadores', p.x, p.z, YAW_SEA, { box: [[0, 0, 11, 8]] });
     for (const sx of [-1, 1]) { const b = makeBanner('guilda', 1.6, 5); const q = H(-64 + 8.1, sx * 5.5); b.position.set(q.x, gY(p.x, p.z) + 9.3, q.z); b.rotation.y = YAW_SEA; ctx.scene.add(b); } }
   // armazéns na orla, com o portão de carga virado para o cais
-  [[-46, -4], [46, -4], [-56, -18], [56, -18]].forEach(([t, s], i) => { const p = H(s, t), { K, box } = warehouse(300 + i); put(ctx, K, 'armazem', p.x, p.z, YAW_SEA + (t < 0 ? 0.12 : -0.12), { box }); });
+  [[-46, -5.5], [46, -5.5], [-56, -19], [56, -19]].forEach(([t, s], i) => { const p = H(s, t), { K, box } = warehouse(300 + i); put(ctx, K, 'armazem', p.x, p.z, YAW_SEA + (t < 0 ? 0.12 : -0.12), { box }); });
   // rua das bancas: duas fileiras de frente uma para a outra, com a rua no meio (s ≈ -43)
   for (let k = 0; k < 10; k++) { const t = -22 + (k % 5) * 11, s = k < 5 ? -48 : -38, p = H(s, t); put(ctx, marketStall(500 + k, k), 'banca_do_mercado', p.x, p.z, YAW_SEA + (k < 5 ? 0 : Math.PI), { box: [[0, 0, 1.8, 0.9]] }); }
   // mercadores: cada um atrás da sua banca, de frente para a rua; o mestre da guilda no alto da escadaria

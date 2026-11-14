@@ -1015,7 +1015,7 @@ async function buildWorld() { // P-010: monta aos pedaços (worldYield cede a ve
   // vila: poço no centro, casas em anel virado para a praça (a leste fica a saída da estrada)
   place('well', V.x, V.z, { rot: 0, rf: 0.6 });
   cobblePlaza(V.x, V.z, 14.5, 6); // auditoria: praça calçada de pedra
-  const ring = [['tavern', 160, 23], ['home_A', 200, 22], ['home_B', 235, 22], ['blacksmith', 270, 23], ['home_A_red', 305, 23], ['church', 120, 25], ['home_B_red', 85, 22], ['market', 50, 22]];
+  const ring = [['tavern', 160, 23], ['home_A', 200, 22], ['home_B', 235, 22], ['blacksmith', 270, 23], ['home_A_red', 305, 23], ['church', 120, 25], ['home_B_red', 85, 22], ['market', 44, 22]]; // P-030: a feira encostava no estábulo (50° → 44°)
   for (const [n, deg, r] of ring) {
     const a = deg * Math.PI / 180, x = V.x + Math.cos(a) * r, z = V.z + Math.sin(a) * r;
     let bo, hh = null;
@@ -1281,7 +1281,7 @@ async function buildFrontier() { // P-010: em etapas (worldYield)
   }
   for (const deg of [45, 135, 225, 315]) { const a = deg * Math.PI / 180; place('tower', C.x + Math.cos(a) * R, C.z + Math.sin(a) * R, { rf: 0.5 }); }
   for (const sz of [-4.5, 4.5]) { place('tower', C.x - R - 0.5, C.z + sz, { rf: 0.4, scale: 0.7 }); place('flag_red', C.x - R + 1.5, C.z + sz * 1.5, { solid: false }); }
-  const ring2 = [['church', 270, 22], ['tavern', 225, 21], ['home_A', 315, 21], ['blacksmith', 35, 22], ['market', 90, 21], ['home_B', 140, 21], ['home_A_red', 0, 23], ['home_B_red', 62, 23]];
+  const ring2 = [['church', 270, 22], ['tavern', 225, 21], ['home_A', 315, 21], ['blacksmith', 35, 22], ['market', 100, 20], ['home_B', 140, 21], /* P-030: a feira encostava na casa ao lado (90° → 100°) */ ['home_A_red', 0, 23], ['home_B_red', 62, 23]];
   for (const [n, deg, r] of ring2) { const a = deg * Math.PI / 180, x = C.x + Math.cos(a) * r, z = C.z + Math.sin(a) * r; // auditoria: prédios de verdade também em Pedraclara
     if (/^home_/.test(n)) codeBuilding(villageHouse(57 + Math.round(deg), 7.6, 6.4), x, z, C, 'casa_da_vila');
     else if (n === 'tavern') codeBuilding(villageTavern(8), x, z, C, 'taverna_da_vila');
@@ -1733,6 +1733,9 @@ function monsterVisual(m) {
   const cr = makeCritter(d.shape, d.color, d.mini || d.boss, d.variant);
   const s = Math.max(0.6, d.size) * (d.shape === 'blob' ? 1.1 : 1);
   cr.root.scale.setScalar(s);
+  // P-031 (parte segura): peças minúsculas (flores, olhos, cravos < 6 cm) não projetam sombra — a sombra delas nem aparece,
+  // mas cada uma era mais uma chamada de desenho no passe de sombra (na vila, ~1/3 das peças dos monstros)
+  cr.root.traverse(o => { if (!o.isMesh || !o.castShadow || o.isSkinnedMesh) return; const g = o.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); if (g.boundingSphere.radius * s * Math.max(o.scale.x, o.scale.y, o.scale.z) < 0.06) o.castShadow = false; });
   const obj = new THREE.Group(); obj.add(cr.root);
   const h = (d.shape === 'bee' ? 1.4 : d.shape === 'wolf' ? 1.1 : d.shape === 'dummy' ? 2.1 : d.shape === 'demonking' ? 0.95 : d.shape === 'goatmage' ? 0.85 : d.shape === 'frostdragon' ? 0.75 : d.shape === 'lichqueen' ? 1.0 : d.shape === 'cactus' ? 1.25 : d.shape === 'saltlizard' ? 0.7 : d.shape === 'scorpion' ? 0.55 : d.shape === 'ant' ? 0.55 : d.shape === 'runnerbird' ? 2.1 : d.shape === 'bat' ? 1.45 : d.shape === 'scarecrow' ? 1.9 : d.shape === 'golem' ? 1.85 : d.shape === 'treant' ? 1.65 : 0.9) * s; // P-001: construtos com corpo próprio
   return { obj, critter: cr, kind: 'critter', height: h, radius: 0.45 * s * (d.shape === 'frostdragon' ? 1.3 : d.shape === 'saltlizard' ? 1.4 : 1) };
@@ -2351,7 +2354,7 @@ const SWIM_DEPTH = 1.25, SWIM_CLIMB = 2.75; // nadando, os pés ficam 1,25 m aba
 function resolve(x, z, r) {
   colGrid();
   const near = cgrid.get(Math.floor(x / CG) * 100003 + Math.floor(z / CG)) || NOCOL;
-  for (let it = 0; it < 3; it++) for (const c of near) {
+  for (let it = 0, moved = 1; it < 12 && moved; it++) { moved = 0; const ox = x, oz = z; for (const c of near) { // repete até assentar: na emenda em V de dois trechos de muralha 3 passadas deixavam o herói afundar ~1 m (e o destravador dava um pulo)
     if (c.swim && !RES_SWIM) continue; // casco de barco: só barra quem nada (no convés valem as amuradas)
     if (c.y0 !== undefined && (RES_Y < c.y0 || RES_Y > c.y1)) continue; // S-281: colisão de andar (guarda-corpo, lateral da escada) só vale na altura dela
     const dx = x - c.x, dz = z - c.z;
@@ -2370,7 +2373,7 @@ function resolve(x, z, r) {
     }
     const d = Math.hypot(dx, dz), min = c.r + r;
     if (d < min && d > 0.0001) { x = c.x + dx / d * min; z = c.z + dz / d * min; }
-  }
+  } if (it >= 2 && Math.abs(x - ox) + Math.abs(z - oz) > 0.002) moved = 1; else if (it < 2) moved = 1; }
   const I = x > HALF + 100 ? roomAt(x, z) : null; // vale para jogador, mascote e monstros (a masmorra tem monstros)
   if (I && I.round) { const dx = x - I.x, dz = z - I.z, d = Math.hypot(dx, dz), R = I.round - 0.6; if (d > R) { x = I.x + dx / d * R; z = I.z + dz / d * R; } }
   else if (I) { x = clamp(x, I.x - I.w / 2 + 0.6, I.x + I.w / 2 - 0.6); z = clamp(z, I.z - I.d / 2 + 0.6, I.z + I.d / 2 - 0.3); }
@@ -2379,7 +2382,9 @@ function resolve(x, z, r) {
 }
 // preso de verdade = dentro de algo (a colisão empurra o próprio ponto) ou sem nenhuma direção para andar
 function trulyStuck(x, z) {
-  const q = resolve(x, z, 0.45); if (Math.hypot(q.x - x, q.z - z) > 0.05) return true;
+  // quina em V aberto (dois trechos de muralha): a colisão assenta aos poucos — o ponto anda alguns cm por passada sem estar DENTRO de nada.
+  // Antes qualquer empurrão > 5 cm já contava como preso e o destravador dava um pulo de ~0,9 m ao empurrar a quina.
+  let q = { x, z }; for (let i = 0; i < 12; i++) q = resolve(q.x, q.z, 0.45); if (Math.hypot(q.x - x, q.z - z) > 0.6) return true;
   const g0 = groundAt(x, z);
   for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6, cx = x + Math.sin(a) * 0.25, cz = z + Math.cos(a) * 0.25, r = resolve(cx, cz, 0.45);
     if (Math.hypot(r.x - x, r.z - z) > 0.12 && groundAt(r.x, r.z) - g0 < 0.3) return false; }
